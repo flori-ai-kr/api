@@ -55,7 +55,7 @@ class PhotoCardService(
         requirePhotoLimit(request.photos.size)
         val card = PhotoCard(TenantContext.currentUserId(), requireNotNull(request.title))
         card.description = request.description
-        card.tags = request.tags
+        card.tags = request.tags.toTypedArray()
         card.photos = request.photos
         card.saleId = request.saleId
         return PhotoCardResponse.from(photoCardRepository.save(card))
@@ -69,7 +69,7 @@ class PhotoCardService(
         val card = load(id)
         request.title?.let { card.title = it }
         request.description?.let { card.description = it }
-        request.tags?.let { card.tags = it }
+        request.tags?.let { card.tags = it.toTypedArray() }
         request.photos?.let {
             requirePhotoLimit(it.size)
             card.photos = it

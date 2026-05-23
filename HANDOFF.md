@@ -4,8 +4,15 @@
 
 ## 현재 상태
 
+- **SPEC-SERVER-011 (인사이트 API) 완료** (2026-05-23).
+  - 공유 읽기(테넌트 무관, 인증만): 트렌드(category/limit/offset·카테고리별 최신), 인스타 계정(activeOnly), 포스트(accountId/region/sortBy/daysAgo, account 임베드).
+  - 스크랩(테넌트 격리): 토글(대상 존재 검증·레이스 안전 saveAndFlush), 메모(스크랩 후만), 맵/목록/개수.
+  - 내부 API(`/internal/**`, `InternalAuthVerifier` Bearer 타이밍-세이프): 트렌드 수집(멱등 source_url + 신규 시 broadcast), 포스트 수집(멱등 shortcode), 계정 등록/수정/삭제. `BroadcastService`(전체 활성 토큰).
+  - **타입 충돌 수정**: `photo_cards.tags`를 `Array<String>`(네이티브 ARRAY)로 변경 — List<String> 네이티브 ARRAY/JSON 전역 충돌 회피(insights key_points/image_urls가 List<String> JSON). [중요: 새 List<String> 컬럼은 JSON만, 배열은 Array<String> 또는 List<Int>로]
+  - "읽음 처리"는 스키마 미지원으로 미구현(스크랩이 저장 메커니즘).
+  - 검증: **131테스트 통과(스킵 0)** — 15개 신규(ingest 4 + read 3 + auth 3 + scrap 5).
 - **SPEC-SERVER-010 (사진첩 + 태그 API) 완료** (2026-05-23).
-  - 사진카드 `PhotoCard`(tags TEXT[], photos jsonb[{url,originalName}] — Hibernate 네이티브) CRUD + 매출(sale_id) 연동 + 매출별 조회.
+  - 사진카드 `PhotoCard`(tags Array<String> text[], photos jsonb[{url,originalName}] — Hibernate 네이티브) CRUD + 매출(sale_id) 연동 + 매출별 조회.
   - 목록: 커서 페이지네이션(updated_at desc, page 8) + tag 포함/customerId(sales 조인) 필터(단일 네이티브 쿼리, NULL CAST).
   - presigned 업로드 타깃(S3PresignService): 소유권·최대 10장·이미지 메타 검증 + 키 생성. 사진 순서변경/1장 삭제.
   - 태그 `PhotoTag` CRUD(중복 409 — saveAndFlush로 즉시 포착, 색상 랜덤), 삭제 시 카드 tags에서 array_remove.
@@ -71,12 +78,12 @@
 
 ## 다음 할 일
 
-- **SPEC-SERVER-011 (인사이트 API)**: 트렌드/인스타 계정·포스트 조회(공유 읽기), 스크랩 CRUD+메모(polymorphic), 읽음 처리, 내부 API(Bearer, 수집/브로드캐스트). deps: 004 ✅
-  - 원본: `~/Desktop/hazel-admin/src/lib/actions/insights.ts`, `scraps.ts`, `src/app/api/internal/trends/route.ts`.
-  - trend_articles/instagram_accounts/instagram_posts는 **공유 읽기**(테넌트 무관, 인증 사용자면 조회 가능). insight_scraps는 polymorphic(target_type+target_id, (user_id,target_type,target_id) unique) — 테넌트 격리.
-  - 내부 API: `INTERNAL_API_KEY` Bearer 인증(타임-세이프 비교)으로 수집/브로드캐스트. SecurityConfig에 `/internal/**` 경로 + 내부 키 필터 또는 컨트롤러 레벨 검증.
-  - 읽음 처리: 스크랩/인사이트 읽음 상태. 원본 로직 확인 필요.
-- 도메인 패턴 참고: 기존 모든 도메인. 공유 읽기는 user_id 격리 예외(단, 인증 필요).
+- **SPEC-SERVER-012 (설정 API)**: 카드사 수수료/입금일, 매출설정(카테고리/결제방식), 지출설정(카테고리/결제방식), 사용자설정(BottomNav JSONB), 푸시 구독 등록/해지. deps: 004 ✅
+  - 원본: `~/Desktop/hazel-admin/src/lib/actions/settings.ts`, `sale-settings.ts`, `expense-settings.ts`, `push.ts`, insights.ts의 user_preferences.
+  - 설정 테이블들(card_company_settings/sale_categories/payment_methods/expense_categories/expense_payment_methods)은 가입 시 시드됨(SPEC-003) — 여기서 CRUD 노출. (value,user_id)/(name,user_id) unique.
+  - user_preferences(bottom_nav_items JSONB) upsert. push_subscriptions(endpoint=FCM 토큰) 등록/해지.
+  - 모든 쿼리 TenantContext 격리.
+- 도메인 패턴 참고: 기존 모든 도메인. **새 List<String> 컬럼은 JSON만, text[] 배열은 Array<String> 사용**(타입 충돌 회피).
 - [중요] SPEC 완료 시 ROADMAP status를 `DONE`으로 정확히 갱신 — 앱 세션이 이 상태를 보고 연동을 시작한다.
 
 ## 빌드/실행 메모
@@ -103,6 +110,7 @@
 
 ## 로그 (최신이 위로)
 
+- 2026-05-23 — SPEC-SERVER-011 완료. 인사이트 API(트렌드/인스타 공유 읽기·스크랩·내부 수집/브로드캐스트). photo_cards.tags Array<String> 타입충돌 수정. 131테스트 통과.
 - 2026-05-23 — SPEC-SERVER-010 완료. 사진첩+태그 API(카드 CRUD·presigned 업로드·커서 페이지·태그 cascade). 116테스트 통과.
 - 2026-05-23 — SPEC-SERVER-009 완료. 입금대조 API(카드 입금 목록·단건/다건 확인·되돌리기·요약). 105테스트 통과.
 - 2026-05-23 — SPEC-SERVER-008 완료. 예약+캘린더 API(CRUD·매출전환·픽업·리마인더/요약 @Scheduled 푸시). 100테스트 통과.

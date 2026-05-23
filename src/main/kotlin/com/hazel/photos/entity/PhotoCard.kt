@@ -37,9 +37,10 @@ class PhotoCard(
     @Column(name = "description")
     var description: String? = null
 
+    // Array<String>(네이티브 ARRAY) — List<String>(JSON)과 다른 자바 타입이라 전역 타입 충돌 회피
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "tags", columnDefinition = "text[]")
-    var tags: List<String> = emptyList()
+    var tags: Array<String> = emptyArray()
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "photos", columnDefinition = "jsonb")

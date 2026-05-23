@@ -63,7 +63,7 @@ data class PhotoCardResponse(
                 id = requireNotNull(c.id),
                 title = c.title,
                 description = c.description,
-                tags = c.tags,
+                tags = c.tags.toList(),
                 photos = c.photos,
                 saleId = c.saleId,
                 createdAt = c.createdAt,

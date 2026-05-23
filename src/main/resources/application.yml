@@ -51,6 +51,10 @@ fcm:
   enabled: ${FCM_ENABLED:false}
   credentials: ${FCM_CREDENTIALS:}
 
+# 내부 API(수집/브로드캐스트) Bearer 키. 미설정 시 내부 API 접근 차단.
+internal:
+  api-key: ${INTERNAL_API_KEY:}
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
