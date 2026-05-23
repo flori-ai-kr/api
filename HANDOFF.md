@@ -4,6 +4,13 @@
 
 ## 현재 상태
 
+- **SPEC-SERVER-006 (지출 + 고정비 API) 완료** (2026-05-23).
+  - 지출: `Expense` CRUD + 월 필터 + 자동완성(물품명/거래처/비고 빈도순). total_amount=단가*수량 서버 계산.
+  - 고정비: `RecurringExpense`(days_of_week/days_of_month INT[], yearly_dates jsonb — **Hibernate 6 네이티브 @JdbcTypeCode**, validate 통과) + CRUD/토글/빠른추가.
+  - this/all 분기 4종(이것만/이후 모두 × 수정/삭제) — skip 마커, 템플릿 end_date 단축.
+  - 자동생성: `RecurringScheduleEvaluator`(순수 발생판정) + `RecurringExpenseGenerator`(`@Scheduled` KST 00:30, `ON CONFLICT (recurring_id,date)` 멱등). `ScheduleConfig(@EnableScheduling)`.
+  - 검증: **76테스트 통과(스킵 0)** — 21개 신규(evaluator 5 + 지출 5 + 생성기 4 + 고정비 7). 멱등/skip/멀티테넌시 포함.
+  - detekt constructorThreshold 10으로 상향(다필드 JPA 엔티티).
 - **SPEC-SERVER-005 (매출 API) 완료** (2026-05-23). **첫 도메인 SPEC — 레이어/멀티테넌시 패턴 확립.**
   - `Sale` 엔티티 + `SaleRepository`(JpaSpecificationExecutor) + `SaleSpecifications`(동적 필터).
   - CRUD + 무한스크롤(offset/limit, hasMore) + 다중선택 필터(category/payment/channel IN, month 연/월/일, search ILIKE) + 비고 자동완성(빈도순).
@@ -42,13 +49,12 @@
 
 ## 다음 할 일
 
-- **SPEC-SERVER-006 (지출 + 고정비 API)**: 지출 CRUD + 자동완성, 고정비(recurring) CRUD(this/future/all 분기) + 빠른추가,
-  `@Scheduled` KST 00:30 고정비 자동 생성(recurring_skips 고려). deps: 004 ✅
-  - 원본: `~/Desktop/hazel-admin/src/lib/actions/expenses.ts`, `recurring-expenses.ts`. 지출 총액 = unit_price*quantity(서버 계산).
-  - 고정비 다중값(days_of_week/days_of_month/yearly_dates) → expenses 자동생성, `(recurring_id,date)` unique로 멱등.
-  - 스케줄 자동생성은 `@Scheduled` + 멱등 INSERT. 테스트는 생성 로직을 직접 호출(스케줄 트리거 분리).
-  - 패턴은 SPEC-005 매출(Sale*) 구조 그대로 따른다. 모든 쿼리 `TenantContext` 격리.
-- 도메인 패턴 참고: `com.hazel.sales`(엔티티/Repository+Specification/Service[TenantContext]/Controller/DTO, Zonky 통합테스트 + 순수 단위테스트).
+- **SPEC-SERVER-007 (고객 API)**: CRUD + 등급/성별 + findOrCreate(전화번호+user_id 복합) + 고객별 매출 조회. deps: 004 ✅
+  - 원본: `~/Desktop/hazel-admin/src/lib/actions/customers.ts`. `(phone, user_id)` 복합 unique로 findOrCreate.
+  - 완료 후 SPEC-005 매출의 customer 자동연결(findOrCreate)을 연동할 수 있음(현재는 customer_id 소유권 검증만).
+  - 패턴은 sales/expenses 구조 동일. 모든 쿼리 `TenantContext` 격리. 등급(new/regular/vip/blacklist)·성별(male/female) CHECK.
+- 도메인 패턴 참고: `com.hazel.sales`, `com.hazel.expenses`(엔티티/Repository(+Specification)/Service[TenantContext]/Controller/DTO, Zonky 통합테스트 + 순수 단위테스트).
+- 배열/jsonb 컬럼은 Hibernate 6 네이티브 `@JdbcTypeCode(SqlTypes.ARRAY/JSON)` 사용(validate 친화적).
 - [중요] SPEC 완료 시 ROADMAP status를 `DONE`으로 정확히 갱신 — 앱 세션이 이 상태를 보고 연동을 시작한다.
 
 ## 빌드/실행 메모
@@ -75,6 +81,7 @@
 
 ## 로그 (최신이 위로)
 
+- 2026-05-23 — SPEC-SERVER-006 완료. 지출+고정비 API(CRUD·자동완성·this/all 분기·@Scheduled 멱등 자동생성). 76테스트 통과.
 - 2026-05-23 — SPEC-SERVER-005 완료. 매출 API(CRUD·무한스크롤·필터·자동완성·미수·서버 입금계산). 첫 도메인 패턴 확립. 55테스트 통과.
 - 2026-05-23 — SPEC-SERVER-004 완료. 공통 인프라(Discord 에러 리포팅·S3 presign·FCM 추상화·CORS·보안헤더). 41테스트 통과.
 - 2026-05-23 — SPEC-SERVER-003 완료. JWT 인증 + refresh 회전 + BCrypt + 가입 시드 + TenantContext + /me. 28테스트 통과.
