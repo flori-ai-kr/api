@@ -4,6 +4,12 @@
 
 ## 현재 상태
 
+- **SPEC-SERVER-002 (DB + Flyway baseline) 완료** (2026-05-23).
+  - JPA + Flyway(core+postgresql) + PostgreSQL 드라이버 + hypersistence-utils 추가.
+  - `application.yml`: datasource/JPA/Flyway 전부 `${ENV}` 참조, `ddl-auto=none`, `open-in-view=false`.
+  - `V1__init_schema.sql`: 원본 Supabase 스키마 이식. RLS 전부 제거 + `auth.users` FK 제거 + 자체 `users` 테이블, 모든 `user_id`→`users(id)` ON DELETE CASCADE. 총 22테이블(users + 21). jsonb/배열/uuid/timestamptz·복합 unique 유지. 드리프트 반영(sales.is_unpaid, reservations.reminder_sent/pickup_completed, recurring_expenses 다중값, expenses.category CHECK 제거, calendar_events).
+  - `V2__seed_instagram_accounts.sql`: 공유 계정 15건 시드.
+  - 테스트: **Zonky embedded-postgres**(Docker 불필요, 실제 PG)로 마이그레이션 실제 적용 검증 + DB 무관 SQL 규칙 테스트. 전체 11테스트 통과(스킵 0).
 - **SPEC-SERVER-001 (프로젝트 스켈레톤) 완료** (2026-05-23).
   - Gradle(KTS) + Spring Boot 3.4.1 + Kotlin 2.1.0, Java 21 toolchain, Gradle Wrapper 8.11.1 동봉.
   - 패키지: `com.hazel`(메인) + `com.hazel.common`(config/health). 도메인 패키지는 후속 SPEC에서 추가.
@@ -15,10 +21,12 @@
 
 ## 다음 할 일
 
-- **SPEC-SERVER-002 (DB + Flyway baseline)**: RDS 연결, Flyway, 원본 Supabase 20테이블 이식 마이그레이션
-  (RLS·`auth.users` FK 제거, 자체 `users` 테이블 추가, `user_id`→`users` 참조). jsonb/배열/uuid/timestamptz 유지.
-  - 원본 스키마 참고: `~/Desktop/hazel-admin` (ARCHITECTURE.md ERD / Supabase 마이그레이션).
-  - JPA/Flyway 의존성 추가 시 datasource 없으면 컨텍스트 부팅 실패 주의 → 로컬 docker-compose Postgres 또는 테스트는 Testcontainers.
+- **SPEC-SERVER-003 (인증)**: Spring Security + JWT(access+refresh rotation), BCrypt,
+  `POST /auth/signup`(가입 시 사용자별 기본 카테고리/결제방식/카드사 시드), `/auth/login`, `/auth/refresh`, `/auth/logout`,
+  JWT 필터 → `TenantContext`.
+  - `users` 테이블은 V1에 이미 존재. refresh token 저장소(테이블)는 SPEC-003에서 Flyway 마이그레이션 `V3__...`로 추가.
+  - 기본 시드 참고(가입 시): 원본 `~/Desktop/hazel-admin`의 기본 카테고리/결제방식/카드사 — `src/lib/actions/`와 `src/types/database.ts`의 `PRODUCT_CATEGORIES`/`PAYMENT_METHODS` 참고.
+  - 엔티티 추가 시 `ddl-auto`는 `validate` 권장(스키마 SSOT는 여전히 Flyway).
 - [중요] SPEC 완료 시 ROADMAP status를 `DONE`으로 정확히 갱신 — 앱 세션이 이 상태를 보고 연동을 시작한다.
 
 ## 빌드/실행 메모
@@ -45,5 +53,6 @@
 
 ## 로그 (최신이 위로)
 
+- 2026-05-23 — SPEC-SERVER-002 완료. Flyway baseline(22테이블, RLS 제거·자체 users) + 시드. Zonky 임베디드 PG로 마이그레이션 실제 적용 검증. 11테스트 통과.
 - 2026-05-23 — SPEC-SERVER-001 완료. Spring Boot(Kotlin) 스켈레톤 부팅 + 헬스체크 + Swagger + ktlint/detekt 게이트. build test 통과.
 - 2026-05-23 — 부트스트랩. ROADMAP 13개 SPEC(Phase1) + 1개(Phase2) 정의. 병렬 모드 활성화.

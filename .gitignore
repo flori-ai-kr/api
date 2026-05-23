@@ -20,3 +20,6 @@ application-local.yml
 # OS / logs
 .DS_Store
 *.log
+
+# Claude Code 로컬 아티팩트
+.claude/

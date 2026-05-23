@@ -22,18 +22,30 @@ repositories {
 }
 
 val springdocVersion = "2.7.0"
+val hypersistenceVersion = "3.9.0"
+val embeddedDbTestVersion = "2.5.1"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$springdocVersion")
+    // jsonb / 배열 컬럼의 JPA 매핑 (도메인 SPEC에서 사용)
+    implementation("io.hypersistence:hypersistence-utils-hibernate-63:$hypersistenceVersion")
+
+    implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-database-postgresql")
+    runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    // Docker 없이 실제 PostgreSQL을 띄워 Flyway/리포지토리를 검증 (CI·로컬 동일)
+    testImplementation("io.zonky.test:embedded-database-spring-test:$embeddedDbTestVersion")
+    testImplementation("io.zonky.test:embedded-postgres:2.0.7")
 }
 
 kotlin {
