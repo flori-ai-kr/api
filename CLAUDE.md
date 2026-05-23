@@ -83,3 +83,8 @@ Hazel(꽃집 어드민)의 모바일 앱 백엔드. Spring Boot(Kotlin) REST API
 - `ROADMAP.md` — SPEC 목록·순서·상태
 - `HANDOFF.md` — 직전 세션 상태·다음 할 일
 - 원본 웹 로직 참고: `~/Desktop/hazel-admin/src/lib/actions/`, `~/Desktop/hazel-admin/docs/ARCHITECTURE.md`
+## 문서화 규칙 [HARD]
+
+- **모든 문서는 한국어로 작성한다.** SPEC 명세(`.moai/specs/*/spec.md`), README, DESIGN, API 설명, ROADMAP/HANDOFF, 커밋 메시지까지 전부 한국어. 영어 금지 — 단 코드/식별자/함수명/타입은 영어.
+- **각 SPEC은 문서를 갱신하며 진행한다**: (1) 착수 시 `spec.md`에 목표·인수기준·범위 기록, (2) 구현 중 주요 결정/트레이드오프를 `spec.md` 또는 `docs/`에 남김, (3) 완료 시 README/DESIGN/관련 문서 최신화 + ROADMAP/HANDOFF 갱신.
+- 문서 없는 코드 커밋 금지 — 코드와 문서를 함께 커밋한다.
