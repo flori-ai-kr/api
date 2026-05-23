@@ -4,6 +4,12 @@
 
 ## 현재 상태
 
+- **SPEC-SERVER-008 (예약 + 캘린더 API) 완료** (2026-05-23).
+  - 예약: `Reservation` CRUD + 월별/다가오는/리마인더(48h) 조회 + 제목·메모 자동완성.
+  - 매출 연동: 예약→매출 전환(SaleService로 생성+sale_id 연결), 매출에 픽업 추가(고객정보 상속), 매출별 예약 조회, 픽업 완료.
+  - 캘린더: `CalendarEvent` CRUD + 월 겹침 조회 + 범위 검증(`com.hazel.calendar`).
+  - 스케줄 푸시: `ReservationNotificationService` — 5분마다 도달 리마인더 발송+reminder_sent 마킹(멱등), 매일 08:00 KST 당일 픽업 요약. PushService 사용(토큰 push_subscriptions 조회, 영구실패 비활성화).
+  - 검증: **100테스트 통과(스킵 0)** — 14개 신규(예약 7 + 알림 3 + 캘린더 4). 전환·상속·리마인더 윈도·스케줄러·멀티테넌시 포함.
 - **SPEC-SERVER-007 (고객 API) 완료** (2026-05-23).
   - `Customer` CRUD(중복 전화 409) + 등급/성별 검증 + 등급 변경 + 부분 수정.
   - `findOrCreate`((phone,user_id) 복합키, 레이스 시 재조회), 이름 부분검색(top10), 전화번호 중복 확인.
@@ -55,14 +61,12 @@
 
 ## 다음 할 일
 
-- **SPEC-SERVER-008 (예약 + 캘린더 API)**: 예약 CRUD + 매출 전환 + 픽업완료 + 자동완성, 캘린더 이벤트 CRUD,
-  `@Scheduled` 일일 요약(08:00 KST)·개별 리마인더(reminder_at) 푸시. deps: 005 ✅, 007 ✅
-  - 원본: `~/Desktop/hazel-admin/src/lib/actions/reservations.ts`, `calendar-events.ts`. 예약↔매출 양방향 FK(sale_id/reservation_id).
-  - 예약 테이블에 reminder_sent/pickup_completed 컬럼 있음(V1). 캘린더 이벤트는 calendar_events 테이블.
-  - 푸시는 SPEC-004의 `PushService` 사용(로컬은 LoggingPushService 폴백). `@Scheduled`는 ScheduleConfig 재사용. 테스트는 발송 로직 직접 호출.
-  - 매출 전환: 예약 → 매출 생성 후 sale_id 연결(SaleService 재사용 가능).
-- 도메인 패턴 참고: `com.hazel.sales`, `com.hazel.expenses`, `com.hazel.customers`.
-- 배열/jsonb 컬럼은 Hibernate 6 네이티브 `@JdbcTypeCode(SqlTypes.ARRAY/JSON)` 사용(validate 친화적).
+- **SPEC-SERVER-009 (입금대조 API)**: 카드 입금 목록 + 다건 확인 + 되돌리기. deps: 005 ✅
+  - 원본: `~/Desktop/hazel-admin/src/lib/actions/deposits.ts`. 카드 매출 중 deposit_status로 필터.
+  - 확인: deposit_status pending→completed + deposited_at 기록. 되돌리기: completed→pending + deposited_at 클리어.
+  - sales 테이블 직접 다룸(SaleRepository 확장 또는 신규 deposits 서비스). `deposited_at` 컬럼은 V1에 있으나 Sale 엔티티 미매핑 → 매핑 추가 필요.
+  - 다건 확인(여러 sale_id 일괄) 멱등 처리. 모든 쿼리 TenantContext 격리.
+- 도메인 패턴 참고: `com.hazel.sales`, `com.hazel.expenses`, `com.hazel.customers`, `com.hazel.reservations`, `com.hazel.calendar`.
 - [중요] SPEC 완료 시 ROADMAP status를 `DONE`으로 정확히 갱신 — 앱 세션이 이 상태를 보고 연동을 시작한다.
 
 ## 빌드/실행 메모
@@ -89,6 +93,7 @@
 
 ## 로그 (최신이 위로)
 
+- 2026-05-23 — SPEC-SERVER-008 완료. 예약+캘린더 API(CRUD·매출전환·픽업·리마인더/요약 @Scheduled 푸시). 100테스트 통과.
 - 2026-05-23 — SPEC-SERVER-007 완료. 고객 API(CRUD·등급·findOrCreate·고객별 매출·통계 실시간 집계). 86테스트 통과.
 - 2026-05-23 — SPEC-SERVER-006 완료. 지출+고정비 API(CRUD·자동완성·this/all 분기·@Scheduled 멱등 자동생성). 76테스트 통과.
 - 2026-05-23 — SPEC-SERVER-005 완료. 매출 API(CRUD·무한스크롤·필터·자동완성·미수·서버 입금계산). 첫 도메인 패턴 확립. 55테스트 통과.

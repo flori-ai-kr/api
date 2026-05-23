@@ -16,7 +16,7 @@
 | SPEC-SERVER-005 | DONE | 004 | **매출 API**: CRUD + 무한스크롤(loadMore) + 자동완성 + 미수(unpaid) 완료/되돌리기 + 카드수수료/입금예정일 서버 계산 + 다중선택 필터(category/payment/channel `.in()`) |
 | SPEC-SERVER-006 | DONE | 004 | **지출 + 고정비 API**: 지출 CRUD + 자동완성, 고정비(recurring) CRUD(this/future/all 분기) + 빠른추가, `@Scheduled` KST 00:30 고정비 자동 생성(recurring_skips 고려) |
 | SPEC-SERVER-007 | DONE | 004 | **고객 API**: CRUD + 등급/성별 + findOrCreate(전화번호+user_id 복합) + 고객별 매출 조회 |
-| SPEC-SERVER-008 | TODO | 005,007 | **예약 + 캘린더 API**: 예약 CRUD + 매출 전환 + 픽업완료 + 자동완성, 캘린더 이벤트 CRUD, `@Scheduled` 일일 요약(08:00 KST)·개별 리마인더(reminder_at) 푸시 |
+| SPEC-SERVER-008 | DONE | 005,007 | **예약 + 캘린더 API**: 예약 CRUD + 매출 전환 + 픽업완료 + 자동완성, 캘린더 이벤트 CRUD, `@Scheduled` 일일 요약(08:00 KST)·개별 리마인더(reminder_at) 푸시 |
 | SPEC-SERVER-009 | TODO | 005 | **입금대조 API**: 카드 입금 목록 + 다건 확인 + 되돌리기 |
 | SPEC-SERVER-010 | TODO | 004 | **사진첩 + 태그 API**: 사진카드 CRUD(매출 연동) + presigned 업로드 타깃 발급(소유권/메타 검증) + 태그 CRUD + 정렬 |
 | SPEC-SERVER-011 | TODO | 004 | **인사이트 API**: 트렌드/인스타 계정·포스트 조회(공유 읽기), 스크랩 CRUD+메모(polymorphic), 읽음 처리, 내부 API(Bearer, 수집/브로드캐스트) |
