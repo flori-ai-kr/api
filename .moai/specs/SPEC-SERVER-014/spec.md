@@ -23,14 +23,22 @@
 6. **OpenAPI**: `/subscription` 노출(springdoc).
 
 ## 인수기준
-- [ ] subscriptions 마이그레이션 + 엔티티/리포지토리(`user_id` 격리)
-- [ ] 웹훅 5종 이벤트 상태전이 테스트 통과
-- [ ] `GET /subscription` 동작 + OpenAPI 노출
-- [ ] 게이팅 헬퍼 + 비구독 403 통합테스트
-- [ ] `user_id` 격리 테스트 통과
-- [ ] `./gradlew build test` 전체 통과
-- [ ] 시크릿은 env placeholder, 실제 RevenueCat 계정/스토어/배포 없음
-- [ ] 한국어 문서(spec/주석 외 산출물) + 변경 파일만 커밋
+- [x] subscriptions 마이그레이션 + 엔티티/리포지토리(`user_id` 격리)
+- [x] 웹훅 5종 이벤트 상태전이 테스트 통과
+- [x] `GET /subscription` 동작 + OpenAPI 노출
+- [x] 게이팅 헬퍼 + 비구독 403 통합테스트
+- [x] `user_id` 격리 테스트 통과
+- [x] `./gradlew build test` 전체 통과 (159테스트, 스킵 0)
+- [x] 시크릿은 env placeholder, 실제 RevenueCat 계정/스토어/배포 없음
+- [x] 한국어 문서(spec/주석 외 산출물) + 변경 파일만 커밋
+
+## 구현 결정/트레이드오프
+- **통합테스트 DB**: 명세는 Testcontainers를 언급했으나 repo 표준인 **Zonky 임베디드 PostgreSQL**로 통일(Docker 불필요·기존 34개 통합테스트와 동일 경로). "실제 PG에서 검증"이라는 의도는 동일하게 충족.
+- **게이팅 방식**: `@RequiresSubscription` 어노테이션 + `HandlerInterceptor`(AOP 의존성 미도입). 인터셉터는 `ObjectProvider<SubscriptionService>`로 지연 주입 → `@WebMvcTest` 슬라이스(서비스 빈 부재)에서도 컨텍스트가 깨지지 않음.
+- **웹훅 인증**: 사전 공유 Bearer 시크릿. `InternalAuthVerifier`와의 중복을 `common/security/BearerSecret`(타이밍-세이프 비교)로 공통화하고 양쪽이 재사용.
+- **상태 매핑**: `SubscriptionStatusMapper`(순수 함수)로 분리해 단위테스트. CANCELLATION은 active 유지(자동갱신 해제일 뿐 기간말까지 접근), 만료는 EXPIRATION 이벤트로 처리.
+- **app_user_id 매핑**: 앱이 사용자 UUID를 설정. 미존재/형식오류 사용자는 상태 갱신을 건너뛰고 이벤트만 익명 기록(웹훅 재시도 폭주 방지 위해 항상 200 ACK).
+- **활성 판정**: `active`·`in_grace`를 활성으로 간주(게이팅 통과). 만료/없음/환불은 차단.
 
 ## 비고
 - 앱(APP-014)과 계약: 앱은 RevenueCat SDK로 구매하고, 백엔드는 웹훅으로 상태를 받는다(서버가 SSOT). 앱은 `GET /subscription` 으로 상태 동기화.

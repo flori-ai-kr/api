@@ -55,6 +55,10 @@ fcm:
 internal:
   api-key: ${INTERNAL_API_KEY:}
 
+# RevenueCat 구독 웹훅 Bearer 시크릿. 미설정 시 웹훅 접근 차단(실제 키는 운영에서 env 주입).
+revenuecat:
+  webhook-secret: ${REVENUECAT_WEBHOOK_SECRET:}
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

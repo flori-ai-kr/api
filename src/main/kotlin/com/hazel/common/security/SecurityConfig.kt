@@ -58,6 +58,7 @@ class SecurityConfig(
                 authorize("/swagger-ui/**", permitAll)
                 authorize("/swagger-ui.html", permitAll)
                 authorize("/internal/**", permitAll) // 내부 API는 InternalAuthVerifier(Bearer 키)로 별도 인증
+                authorize("/webhooks/**", permitAll) // 외부 웹훅은 사전 공유 Bearer 시크릿으로 별도 인증
                 authorize(anyRequest, authenticated)
             }
             exceptionHandling {

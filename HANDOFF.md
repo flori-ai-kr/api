@@ -4,6 +4,14 @@
 
 ## 현재 상태
 
+- 🎉 **전체 14개 SPEC DONE** (Phase 1: 13 + Phase 2: 1, 2026-05-23). 다음 TODO 없음 → 자율 loop 정지.
+- **SPEC-SERVER-014 (구독/결제) 완료** (2026-05-23). **Phase 2 첫/유일 SPEC.**
+  - `V4__subscriptions.sql`: `subscriptions`(user_id UNIQUE, 사용자당 1행) + `subscription_events`(append-only 이력, raw_event jsonb).
+  - `POST /webhooks/revenuecat`: 사전 공유 Bearer 시크릿(`RevenueCatWebhookVerifier`, 타이밍-세이프) → 이벤트 매핑 → upsert. 항상 200 ACK(재시도 폭주 방지). SecurityConfig `/webhooks/**` 공개.
+  - 상태 매핑 `SubscriptionStatusMapper`(순수): 구매/갱신/상품변경/취소복원/취소→active, BILLING_ISSUE→in_grace, EXPIRATION→expired, REFUND→none.
+  - `GET /subscription`(현재 상태 DTO, OpenAPI 노출) + `@RequiresSubscription` 어노테이션 + `SubscriptionAccessInterceptor`(ObjectProvider 지연주입 — 슬라이스 안전) 게이팅. 비구독 403.
+  - 중복 제거: 내부 API/웹훅 Bearer 검증을 `common/security/BearerSecret`로 공통화(`InternalAuthVerifier`도 이를 재사용).
+  - 검증: **159테스트 통과(스킵 0)** — 14개 신규(매퍼 6 + HTTP 8: 전이/취소/none/게이팅403/웹훅인증/격리/무토큰).
 - 🎉 **Phase 1 (M1 기반 + M2 도메인) 13개 SPEC 전부 DONE** (2026-05-23). 백엔드 REST API 완성 — 앱 연동 준비 완료.
 - **보안/클린아키텍처 리뷰 반영 완료** (2026-05-23): security-auditor + code-reviewer 병렬 리뷰 후 수정. **145테스트 통과(스킵 0).**
   - 보안: 푸시 구독 테넌트 격리(findByEndpoint 전역조회 제거), 예약·사진 `saleId` 소유권 검증(IDOR 차단), JWT 기본 시크릿 운영 부팅 가드 + alg-confusion 테스트, actuator 공개 범위 축소(health/info), 내부 키 비교 길이-무관 다이제스트화.
