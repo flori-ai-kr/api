@@ -4,6 +4,10 @@
 
 ## 현재 상태
 
+- **SPEC-SERVER-009 (입금대조 API) 완료** (2026-05-23).
+  - 카드 매출 입금 목록(status/cardCompany/month 필터, `DepositSpecifications`) + 단건/다건 확인 + 되돌리기 + 요약(대기/완료 건수·금액).
+  - `Sale`에 `deposited_at` 매핑 추가, `SaleResponse`에 `depositedAt` 노출. 다건 확인은 `findByUserIdAndIdIn`으로 본인 매출만(타 테넌트 ID 무시).
+  - 검증: **105테스트 통과(스킵 0)** — 5개 신규(목록/확인/되돌리기/요약/멀티테넌시).
 - **SPEC-SERVER-008 (예약 + 캘린더 API) 완료** (2026-05-23).
   - 예약: `Reservation` CRUD + 월별/다가오는/리마인더(48h) 조회 + 제목·메모 자동완성.
   - 매출 연동: 예약→매출 전환(SaleService로 생성+sale_id 연결), 매출에 픽업 추가(고객정보 상속), 매출별 예약 조회, 픽업 완료.
@@ -61,12 +65,12 @@
 
 ## 다음 할 일
 
-- **SPEC-SERVER-009 (입금대조 API)**: 카드 입금 목록 + 다건 확인 + 되돌리기. deps: 005 ✅
-  - 원본: `~/Desktop/hazel-admin/src/lib/actions/deposits.ts`. 카드 매출 중 deposit_status로 필터.
-  - 확인: deposit_status pending→completed + deposited_at 기록. 되돌리기: completed→pending + deposited_at 클리어.
-  - sales 테이블 직접 다룸(SaleRepository 확장 또는 신규 deposits 서비스). `deposited_at` 컬럼은 V1에 있으나 Sale 엔티티 미매핑 → 매핑 추가 필요.
-  - 다건 확인(여러 sale_id 일괄) 멱등 처리. 모든 쿼리 TenantContext 격리.
-- 도메인 패턴 참고: `com.hazel.sales`, `com.hazel.expenses`, `com.hazel.customers`, `com.hazel.reservations`, `com.hazel.calendar`.
+- **SPEC-SERVER-010 (사진첩 + 태그 API)**: 사진카드 CRUD(매출 연동) + presigned 업로드 타깃 발급(소유권/메타 검증) + 태그 CRUD + 정렬. deps: 004 ✅
+  - 원본: `~/Desktop/hazel-admin/src/lib/actions/photo-cards.ts`, `photo-tags.ts`. photo_cards.photos는 JSONB([{url,originalName}]), tags TEXT[].
+  - presigned PUT 발급은 SPEC-004 `S3PresignService` 사용. 키 생성 규칙 + 소유권 검증 + 카드당 최대 10장 제한.
+  - photo_cards: tags TEXT[] + photos jsonb → Hibernate 네이티브 `@JdbcTypeCode(ARRAY/JSON)`. photo_tags: (name,user_id) unique.
+  - 사진카드 sale_id 연동(매출). 모든 쿼리 TenantContext 격리.
+- 도메인 패턴 참고: `com.hazel.expenses`(배열/jsonb 매핑 예시), `com.hazel.common.storage`(S3PresignService).
 - [중요] SPEC 완료 시 ROADMAP status를 `DONE`으로 정확히 갱신 — 앱 세션이 이 상태를 보고 연동을 시작한다.
 
 ## 빌드/실행 메모
@@ -93,6 +97,7 @@
 
 ## 로그 (최신이 위로)
 
+- 2026-05-23 — SPEC-SERVER-009 완료. 입금대조 API(카드 입금 목록·단건/다건 확인·되돌리기·요약). 105테스트 통과.
 - 2026-05-23 — SPEC-SERVER-008 완료. 예약+캘린더 API(CRUD·매출전환·픽업·리마인더/요약 @Scheduled 푸시). 100테스트 통과.
 - 2026-05-23 — SPEC-SERVER-007 완료. 고객 API(CRUD·등급·findOrCreate·고객별 매출·통계 실시간 집계). 86테스트 통과.
 - 2026-05-23 — SPEC-SERVER-006 완료. 지출+고정비 API(CRUD·자동완성·this/all 분기·@Scheduled 멱등 자동생성). 76테스트 통과.

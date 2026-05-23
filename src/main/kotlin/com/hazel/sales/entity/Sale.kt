@@ -58,6 +58,9 @@ class Sale(
     @Column(name = "deposit_status")
     var depositStatus: String = "not_applicable"
 
+    @Column(name = "deposited_at")
+    var depositedAt: Instant? = null
+
     @Column(name = "customer_name")
     var customerName: String? = null
 
