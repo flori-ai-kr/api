@@ -4,6 +4,11 @@
 
 ## 현재 상태
 
+- **SPEC-SERVER-012 (설정 API) 완료** (2026-05-23).
+  - value/label 설정 4종(매출/지출 카테고리·결제방식): `@MappedSuperclass LabelSetting` + `@NoRepositoryBean` 제네릭 리포지토리 + 추상 `LabelSettingService<T>`(DRY). list/add(슬러그)/update/delete, 중복 409.
+  - 카드사: list(활성)/create/update(fee_rate·deposit_days)/소프트 삭제, 중복 409. 사용자 설정(bottom_nav_items jsonb) 조회·upsert. 푸시 구독 등록/해지/상태.
+  - **CGLIB 프록시 이슈 수정**: 추상 베이스의 @Transactional 메서드를 `open`으로 — all-open이 @Service만 열어 상속된 final 메서드를 어드바이스 못 해 repository null이던 문제 해결.
+  - 검증: **138테스트 통과(스킵 0)** — 7개 신규(label/card/prefs/push/멀티테넌시).
 - **SPEC-SERVER-011 (인사이트 API) 완료** (2026-05-23).
   - 공유 읽기(테넌트 무관, 인증만): 트렌드(category/limit/offset·카테고리별 최신), 인스타 계정(activeOnly), 포스트(accountId/region/sortBy/daysAgo, account 임베드).
   - 스크랩(테넌트 격리): 토글(대상 존재 검증·레이스 안전 saveAndFlush), 메모(스크랩 후만), 맵/목록/개수.
@@ -76,14 +81,15 @@
   - 멀티스테이지 `Dockerfile`(temurin 21).
 - **병렬 모드**: `~/Desktop/hazel-app`과 동시 진행. 백엔드는 앱을 기다리지 않고 독립 실행.
 
-## 다음 할 일
+## 다음 할 일 — **마지막 Phase 1 SPEC**
 
-- **SPEC-SERVER-012 (설정 API)**: 카드사 수수료/입금일, 매출설정(카테고리/결제방식), 지출설정(카테고리/결제방식), 사용자설정(BottomNav JSONB), 푸시 구독 등록/해지. deps: 004 ✅
-  - 원본: `~/Desktop/hazel-admin/src/lib/actions/settings.ts`, `sale-settings.ts`, `expense-settings.ts`, `push.ts`, insights.ts의 user_preferences.
-  - 설정 테이블들(card_company_settings/sale_categories/payment_methods/expense_categories/expense_payment_methods)은 가입 시 시드됨(SPEC-003) — 여기서 CRUD 노출. (value,user_id)/(name,user_id) unique.
-  - user_preferences(bottom_nav_items JSONB) upsert. push_subscriptions(endpoint=FCM 토큰) 등록/해지.
-  - 모든 쿼리 TenantContext 격리.
-- 도메인 패턴 참고: 기존 모든 도메인. **새 List<String> 컬럼은 JSON만, text[] 배열은 Array<String> 사용**(타입 충돌 회피).
+- **SPEC-SERVER-013 (대시보드 + 통계)**: 오늘/월 집계, 다가오는 예약, 발동 리마인더, 카테고리/결제수단/채널/고객 통계(네이티브 SQL 집계). deps: 005 ✅, 006 ✅, 007 ✅
+  - 원본: `~/Desktop/hazel-admin/src/lib/actions/dashboard.ts`, `statistics.ts`, `get_sales_summary`/`get_customer_stats` RPC.
+  - **네이티브 SQL 집계**(JdbcTemplate): 매출 요약(total/card/naverpay/transfer/cash/count, unpaid 제외), 카테고리/결제수단/채널별 매출, 고객별 매출 통계.
+  - 대시보드: 오늘/이번 달 매출·지출 합계, 다가오는 예약(ReservationService.upcoming 재사용), 발동 리마인더(triggeredReminders 재사용).
+  - 통계 쿼리는 모두 user_id 바인딩(SQL 인젝션 방지·테넌트 격리). 미수(unpaid) 매출은 총매출에서 제외.
+  - 완료 시 **Phase 1(M1+M2) 13개 SPEC 전부 DONE** → 앱 연동 준비 완료.
+- 도메인 패턴 참고: 기존 모든 도메인. 통계는 네이티브 SQL + JdbcTemplate.
 - [중요] SPEC 완료 시 ROADMAP status를 `DONE`으로 정확히 갱신 — 앱 세션이 이 상태를 보고 연동을 시작한다.
 
 ## 빌드/실행 메모
@@ -110,6 +116,7 @@
 
 ## 로그 (최신이 위로)
 
+- 2026-05-23 — SPEC-SERVER-012 완료. 설정 API(카드사/매출·지출설정/하단바/푸시구독). 추상 서비스 @Transactional open 수정. 138테스트 통과.
 - 2026-05-23 — SPEC-SERVER-011 완료. 인사이트 API(트렌드/인스타 공유 읽기·스크랩·내부 수집/브로드캐스트). photo_cards.tags Array<String> 타입충돌 수정. 131테스트 통과.
 - 2026-05-23 — SPEC-SERVER-010 완료. 사진첩+태그 API(카드 CRUD·presigned 업로드·커서 페이지·태그 cascade). 116테스트 통과.
 - 2026-05-23 — SPEC-SERVER-009 완료. 입금대조 API(카드 입금 목록·단건/다건 확인·되돌리기·요약). 105테스트 통과.
