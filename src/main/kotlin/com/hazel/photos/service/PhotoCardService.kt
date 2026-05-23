@@ -13,6 +13,7 @@ import com.hazel.photos.dto.UploadTargetResponse
 import com.hazel.photos.entity.PhotoCard
 import com.hazel.photos.entity.PhotoFile
 import com.hazel.photos.repository.PhotoCardRepository
+import com.hazel.sales.repository.SaleRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -26,6 +27,7 @@ import java.util.UUID
 class PhotoCardService(
     private val photoCardRepository: PhotoCardRepository,
     private val s3PresignService: S3PresignService,
+    private val saleRepository: SaleRepository,
 ) {
     @Transactional(readOnly = true)
     fun list(
@@ -57,7 +59,7 @@ class PhotoCardService(
         card.description = request.description
         card.tags = request.tags.toTypedArray()
         card.photos = request.photos
-        card.saleId = request.saleId
+        card.saleId = request.saleId?.also { verifySaleOwnership(it) }
         return PhotoCardResponse.from(photoCardRepository.save(card))
     }
 
@@ -74,7 +76,10 @@ class PhotoCardService(
             requirePhotoLimit(it.size)
             card.photos = it
         }
-        request.saleId?.let { card.saleId = it }
+        request.saleId?.let {
+            verifySaleOwnership(it)
+            card.saleId = it
+        }
         card.updatedAt = Instant.now()
         return PhotoCardResponse.from(photoCardRepository.save(card))
     }
@@ -157,6 +162,13 @@ class PhotoCardService(
     private fun load(id: UUID): PhotoCard =
         photoCardRepository.findByIdAndUserId(id, TenantContext.currentUserId())
             ?: throw AppException(ErrorCode.NOT_FOUND, "사진 카드를 찾을 수 없습니다")
+
+    /** 매출 연동(sale_id) 소유권 검증 — 타 테넌트 매출 연결 차단. */
+    private fun verifySaleOwnership(saleId: UUID) {
+        if (saleRepository.findByIdAndUserId(saleId, TenantContext.currentUserId()) == null) {
+            throw AppException(ErrorCode.VALIDATION, "유효하지 않은 매출입니다")
+        }
+    }
 
     private companion object {
         const val PAGE_SIZE = 8

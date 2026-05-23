@@ -1,5 +1,6 @@
 package com.hazel.insights.controller
 
+import com.hazel.common.security.InternalAuthVerifier
 import com.hazel.insights.dto.IngestResultResponse
 import com.hazel.insights.dto.InstagramAccountCreateRequest
 import com.hazel.insights.dto.InstagramAccountResponse
@@ -7,7 +8,6 @@ import com.hazel.insights.dto.InstagramAccountUpdateRequest
 import com.hazel.insights.dto.InstagramPostsBulkRequest
 import com.hazel.insights.dto.TrendArticlesBulkRequest
 import com.hazel.insights.service.InsightIngestService
-import com.hazel.insights.service.InternalAuthVerifier
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid

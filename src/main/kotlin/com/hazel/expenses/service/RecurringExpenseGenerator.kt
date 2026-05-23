@@ -1,5 +1,6 @@
 package com.hazel.expenses.service
 
+import com.hazel.common.util.KST
 import com.hazel.expenses.entity.RecurringExpense
 import com.hazel.expenses.repository.RecurringExpenseRepository
 import com.hazel.expenses.repository.RecurringSkipRepository
@@ -10,7 +11,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.sql.Date
 import java.time.LocalDate
-import java.time.ZoneId
 
 /**
  * 고정비 자동생성. 매일 KST 00:30, 발생 대상(active·due·skip 제외) 템플릿으로 expenses를 멱등 생성.
@@ -68,8 +68,4 @@ class RecurringExpenseGenerator(
             rule.note,
             rule.id,
         )
-
-    private companion object {
-        val KST: ZoneId = ZoneId.of("Asia/Seoul")
-    }
 }

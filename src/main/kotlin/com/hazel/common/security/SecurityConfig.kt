@@ -52,7 +52,8 @@ class SecurityConfig(
             authorizeHttpRequests {
                 authorize("/auth/**", permitAll)
                 authorize("/health", permitAll)
-                authorize("/actuator/**", permitAll)
+                authorize("/actuator/health/**", permitAll) // 헬스만 공개, 그 외 actuator는 인증 필요
+                authorize("/actuator/info", permitAll)
                 authorize("/v3/api-docs/**", permitAll)
                 authorize("/swagger-ui/**", permitAll)
                 authorize("/swagger-ui.html", permitAll)

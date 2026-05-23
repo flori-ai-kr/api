@@ -3,6 +3,7 @@ package com.hazel.reservations.service
 import com.hazel.common.error.AppException
 import com.hazel.common.error.ErrorCode
 import com.hazel.common.tenant.TenantContext
+import com.hazel.common.util.KST
 import com.hazel.reservations.dto.AddPickupRequest
 import com.hazel.reservations.dto.ReservationCreateRequest
 import com.hazel.reservations.dto.ReservationResponse
@@ -12,7 +13,6 @@ import com.hazel.reservations.entity.Reservation
 import com.hazel.reservations.repository.ReservationRepository
 import com.hazel.sales.dto.SaleCreateRequest
 import com.hazel.sales.dto.SaleResponse
-import com.hazel.sales.repository.SaleRepository
 import com.hazel.sales.service.SaleService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -20,7 +20,6 @@ import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.ZoneId
 import java.util.UUID
 
 /**
@@ -31,7 +30,6 @@ import java.util.UUID
 class ReservationService(
     private val reservationRepository: ReservationRepository,
     private val saleService: SaleService,
-    private val saleRepository: SaleRepository,
 ) {
     @Transactional(readOnly = true)
     fun listByMonth(month: String): List<ReservationResponse> {
@@ -104,7 +102,10 @@ class ReservationService(
         request.description?.let { reservation.description = it }
         request.amount?.let { reservation.amount = it }
         request.status?.let { reservation.status = validStatus(it) }
-        request.saleId?.let { reservation.saleId = it }
+        request.saleId?.let {
+            saleService.get(it) // 소유권 검증(타 테넌트 매출 연결 차단) — 미존재/타인 시 NOT_FOUND
+            reservation.saleId = it
+        }
         request.pickupCompleted?.let { reservation.pickupCompleted = it }
         request.reminderAt?.let {
             reservation.reminderAt = it
@@ -151,9 +152,7 @@ class ReservationService(
         request: AddPickupRequest,
     ): ReservationResponse {
         val userId = TenantContext.currentUserId()
-        val sale =
-            saleRepository.findByIdAndUserId(saleId, userId)
-                ?: throw AppException(ErrorCode.NOT_FOUND, "매출을 찾을 수 없습니다")
+        val sale = saleService.get(saleId) // 소유권 검증 + 고객정보 상속(SaleService 경유)
         val reservation = Reservation(userId, requireNotNull(request.date))
         reservation.time = request.time
         reservation.customerName = sale.customerName ?: ""
@@ -178,7 +177,6 @@ class ReservationService(
         const val STATUS_PENDING = "pending"
         const val STATUS_CANCELLED = "cancelled"
         val STATUSES = setOf("pending", "confirmed", "completed", "cancelled")
-        val KST: ZoneId = ZoneId.of("Asia/Seoul")
         val REMINDER_WINDOW: Duration = Duration.ofHours(48)
     }
 }

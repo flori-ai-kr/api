@@ -2,6 +2,7 @@ package com.hazel.insights.service
 
 import com.hazel.common.error.AppException
 import com.hazel.common.error.ErrorCode
+import com.hazel.common.util.KST
 import com.hazel.insights.dto.IngestResultResponse
 import com.hazel.insights.dto.InstagramAccountCreateRequest
 import com.hazel.insights.dto.InstagramAccountResponse
@@ -19,7 +20,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import java.util.UUID
 
 /**
@@ -127,8 +127,4 @@ class InsightIngestService(
         } catch (_: DataIntegrityViolationException) {
             throw AppException(ErrorCode.DUPLICATE, "이미 등록된 계정입니다")
         }
-
-    private companion object {
-        val KST: ZoneId = ZoneId.of("Asia/Seoul")
-    }
 }

@@ -3,6 +3,7 @@ package com.hazel.expenses.service
 import com.hazel.common.error.AppException
 import com.hazel.common.error.ErrorCode
 import com.hazel.common.tenant.TenantContext
+import com.hazel.common.util.monthRange
 import com.hazel.expenses.dto.ExpenseCreateRequest
 import com.hazel.expenses.dto.ExpenseResponse
 import com.hazel.expenses.dto.ExpenseSuggestionsResponse
@@ -12,8 +13,6 @@ import com.hazel.expenses.repository.ExpenseRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
-import java.time.LocalDate
-import java.time.YearMonth
 import java.util.UUID
 
 /**
@@ -98,20 +97,4 @@ class ExpenseService(
     private fun load(id: UUID): Expense =
         expenseRepository.findByIdAndUserId(id, TenantContext.currentUserId())
             ?: throw AppException(ErrorCode.NOT_FOUND, "지출을 찾을 수 없습니다")
-
-    private fun monthRange(month: String?): Pair<LocalDate, LocalDate>? {
-        if (month.isNullOrBlank()) return null
-        return when (month.length) {
-            YEAR_LENGTH -> LocalDate.of(month.toInt(), 1, 1) to LocalDate.of(month.toInt(), MONTHS, LAST_DAY_DEC)
-            DAY_LENGTH -> LocalDate.parse(month).let { it to it }
-            else -> YearMonth.parse(month).let { it.atDay(1) to it.atEndOfMonth() }
-        }
-    }
-
-    private companion object {
-        const val YEAR_LENGTH = 4
-        const val DAY_LENGTH = 10
-        const val MONTHS = 12
-        const val LAST_DAY_DEC = 31
-    }
 }

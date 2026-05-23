@@ -1,4 +1,4 @@
-package com.hazel.insights.service
+package com.hazel.common.security
 
 import com.hazel.common.error.AppException
 import org.assertj.core.api.Assertions.assertThatCode

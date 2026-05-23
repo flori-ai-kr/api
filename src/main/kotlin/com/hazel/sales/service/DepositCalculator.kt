@@ -1,5 +1,6 @@
 package com.hazel.sales.service
 
+import com.hazel.common.domain.DepositStatuses
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
@@ -30,18 +31,18 @@ class DepositCalculator(
     ): Deposit {
         // 카드가 아니면 입금대조 대상 아님
         if (paymentMethod != PAYMENT_CARD || cardCompany.isNullOrBlank()) {
-            return Deposit(fee = null, expectedDeposit = null, expectedDepositDate = null, depositStatus = STATUS_NA)
+            return Deposit(null, null, null, DepositStatuses.NOT_APPLICABLE)
         }
         val setting =
             findCardSetting(userId, cardCompany)
-                ?: return Deposit(fee = null, expectedDeposit = amount, expectedDepositDate = null, depositStatus = STATUS_PENDING)
+                ?: return Deposit(null, amount, null, DepositStatuses.PENDING)
 
         val fee = computeFee(amount, setting.feeRate)
         return Deposit(
             fee = fee,
             expectedDeposit = amount - fee,
             expectedDepositDate = addBusinessDays(date, setting.depositDays),
-            depositStatus = STATUS_PENDING,
+            depositStatus = DepositStatuses.PENDING,
         )
     }
 
@@ -65,7 +66,5 @@ class DepositCalculator(
 
     private companion object {
         const val PAYMENT_CARD = "card"
-        const val STATUS_NA = "not_applicable"
-        const val STATUS_PENDING = "pending"
     }
 }

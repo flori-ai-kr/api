@@ -18,8 +18,6 @@ interface CardCompanyRepository : JpaRepository<CardCompanySetting, UUID> {
 interface UserPreferencesRepository : JpaRepository<UserPreferences, UUID>
 
 interface PushSubscriptionRepository : JpaRepository<PushSubscription, UUID> {
-    fun findByEndpoint(endpoint: String): PushSubscription?
-
     fun findByUserIdAndEndpoint(
         userId: UUID,
         endpoint: String,

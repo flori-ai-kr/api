@@ -1,6 +1,7 @@
 package com.hazel.dashboard.service
 
 import com.hazel.common.tenant.TenantContext
+import com.hazel.common.util.KST
 import com.hazel.dashboard.dto.CategoryOption
 import com.hazel.dashboard.dto.CategoryStat
 import com.hazel.dashboard.dto.ChannelStat
@@ -19,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional
 import java.sql.Date
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.ZoneId
 import java.util.UUID
 
 /**
@@ -224,7 +224,6 @@ class DashboardService(
     ): Int = if (total > 0) Math.round(amount.toDouble() / total * PERCENT).toInt() else 0
 
     private companion object {
-        val KST: ZoneId = ZoneId.of("Asia/Seoul")
         const val RECENT_LIMIT = 5
         const val PERCENT = 100
         val EMPTY_SUMMARY = DashboardSummary(0, 0, 0, 0, 0, 0, 0, 0)

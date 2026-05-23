@@ -36,6 +36,9 @@ class PhotoCardServiceIntegrationTest {
     lateinit var photoCardRepository: PhotoCardRepository
 
     @Autowired
+    lateinit var saleRepository: com.hazel.sales.repository.SaleRepository
+
+    @Autowired
     lateinit var authService: AuthService
 
     @Autowired
@@ -55,7 +58,7 @@ class PhotoCardServiceIntegrationTest {
                 cloudfront = StorageProperties.CloudFront("cdn.hazel.dev"),
             ),
         )
-    private val signingService by lazy { PhotoCardService(photoCardRepository, presignService) }
+    private val signingService by lazy { PhotoCardService(photoCardRepository, presignService, saleRepository) }
 
     @AfterEach
     fun tearDown() = TenantContext.clear()

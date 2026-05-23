@@ -1,10 +1,9 @@
 package com.hazel.sales.repository
 
+import com.hazel.common.util.monthRange
 import com.hazel.sales.entity.Sale
 import jakarta.persistence.criteria.Predicate
 import org.springframework.data.jpa.domain.Specification
-import java.time.LocalDate
-import java.time.YearMonth
 import java.util.UUID
 
 /**
@@ -48,21 +47,4 @@ object SaleSpecifications {
             }
             cb.and(*predicates.toTypedArray())
         }
-
-    private fun monthRange(month: String?): Pair<LocalDate, LocalDate>? {
-        if (month.isNullOrBlank()) return null
-        return when (month.length) {
-            YEAR_LENGTH -> LocalDate.of(month.toInt(), 1, 1) to LocalDate.of(month.toInt(), MONTHS, LAST_DAY_DEC)
-            DAY_LENGTH -> LocalDate.parse(month).let { it to it }
-            else ->
-                YearMonth.parse(month).let {
-                    it.atDay(1) to it.atEndOfMonth()
-                }
-        }
-    }
-
-    private const val YEAR_LENGTH = 4
-    private const val DAY_LENGTH = 10
-    private const val MONTHS = 12
-    private const val LAST_DAY_DEC = 31
 }

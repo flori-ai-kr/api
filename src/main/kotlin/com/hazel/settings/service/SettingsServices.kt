@@ -118,8 +118,10 @@ class PushSubscriptionService(
         userAgent: String?,
     ) {
         val userId = TenantContext.currentUserId()
-        val subscription = repository.findByEndpoint(endpoint) ?: PushSubscription(userId, endpoint)
-        subscription.userId = userId
+        // 멀티테넌시: 본인 소유 구독만 갱신한다. 같은 endpoint(FCM 토큰, 전역 unique)가
+        // 다른 사용자 소유면 신규 INSERT가 unique 제약에 걸려 409가 되며, 타 사용자 구독을
+        // 가로채거나 덮어쓰지 않는다.(findByEndpoint 전역 조회는 의도적으로 사용하지 않음)
+        val subscription = repository.findByUserIdAndEndpoint(userId, endpoint) ?: PushSubscription(userId, endpoint)
         subscription.p256dh = p256dh
         subscription.auth = auth
         subscription.userAgent = userAgent

@@ -4,7 +4,12 @@
 
 ## 현재 상태
 
-- 🎉 **Phase 1 (M1 기반 + M2 도메인) 13개 SPEC 전부 DONE** (2026-05-23). 백엔드 REST API 완성 — 앱 연동 준비 완료. **142테스트 통과(스킵 0), 34 테스트 클래스.**
+- 🎉 **Phase 1 (M1 기반 + M2 도메인) 13개 SPEC 전부 DONE** (2026-05-23). 백엔드 REST API 완성 — 앱 연동 준비 완료.
+- **보안/클린아키텍처 리뷰 반영 완료** (2026-05-23): security-auditor + code-reviewer 병렬 리뷰 후 수정. **145테스트 통과(스킵 0).**
+  - 보안: 푸시 구독 테넌트 격리(findByEndpoint 전역조회 제거), 예약·사진 `saleId` 소유권 검증(IDOR 차단), JWT 기본 시크릿 운영 부팅 가드 + alg-confusion 테스트, actuator 공개 범위 축소(health/info), 내부 키 비교 길이-무관 다이제스트화.
+  - 클린아키텍처: `SaleService` 고객검증 raw JDBC→`CustomerRepository`, `DepositService.summary` 네이티브 집계화, `sendDailySummary` readOnly→read-write, 시더 테이블명 allowlist, `InternalAuthVerifier`→`common/security` 이동, `ReservationService` 직접 `SaleRepository` 제거.
+  - 유지보수: `monthRange`/`KST`/`PaymentMethods`/`DepositStatuses` 공통화(중복 제거).
+  - **의도적 유지(리뷰 반론)**: `completeUnpaid`의 `is_unpaid=true`는 원본 의미 충실(현재상태=payment_method, 합계는 'unpaid' 제외 → 중복집계 없음). 레이트리밋·prod Swagger 비활성·CORS credentials는 배포 단계 항목.
 - **SPEC-SERVER-013 (대시보드 + 통계) 완료** (2026-05-23). **마지막 SPEC.**
   - 오늘 대시보드 `GET /dashboard/today`: 미수 제외 매출 요약 + 다가오는 예약 + 발동 리마인더 + 최근 매출 5건 + 매출 카테고리(기존 서비스 재사용).
   - 월 통계 `GET /dashboard/month`: 매출/지출 요약 + 카테고리/결제수단/채널/지출 통계(금액·비율) + 고객 통계(총/재방문/신규).

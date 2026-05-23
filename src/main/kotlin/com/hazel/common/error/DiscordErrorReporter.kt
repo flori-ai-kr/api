@@ -1,12 +1,12 @@
 package com.hazel.common.error
 
+import com.hazel.common.util.KST
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
-import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
@@ -84,7 +84,6 @@ class DiscordErrorReporter(
     }
 
     private companion object {
-        val KST: ZoneId = ZoneId.of("Asia/Seoul")
         val TIMESTAMP_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
         const val EMBED_COLOR = 0xE5614E
         const val DEDUP_WINDOW_MS = 5 * 60 * 1000L

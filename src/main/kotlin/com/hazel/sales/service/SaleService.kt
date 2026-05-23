@@ -1,8 +1,11 @@
 package com.hazel.sales.service
 
+import com.hazel.common.domain.DepositStatuses
+import com.hazel.common.domain.PaymentMethods
 import com.hazel.common.error.AppException
 import com.hazel.common.error.ErrorCode
 import com.hazel.common.tenant.TenantContext
+import com.hazel.customers.repository.CustomerRepository
 import com.hazel.sales.dto.SaleCreateRequest
 import com.hazel.sales.dto.SaleResponse
 import com.hazel.sales.dto.SaleUpdateRequest
@@ -12,7 +15,6 @@ import com.hazel.sales.repository.SaleRepository
 import com.hazel.sales.repository.SaleSpecifications
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
-import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -26,7 +28,7 @@ import java.util.UUID
 class SaleService(
     private val saleRepository: SaleRepository,
     private val depositCalculator: DepositCalculator,
-    private val jdbcTemplate: JdbcTemplate,
+    private val customerRepository: CustomerRepository,
 ) {
     @Transactional(readOnly = true)
     fun list(
@@ -61,7 +63,7 @@ class SaleService(
         val amount = requireNotNull(request.amount)
         request.customerId?.let { verifyCustomerOwnership(userId, it) }
 
-        val isUnpaid = paymentMethod == PAYMENT_UNPAID
+        val isUnpaid = paymentMethod == PaymentMethods.UNPAID
         val sale =
             Sale(
                 userId = userId,
@@ -129,7 +131,7 @@ class SaleService(
     fun revertUnpaid(id: UUID): SaleResponse {
         val sale = load(id)
         if (!sale.isUnpaid) throw AppException(ErrorCode.VALIDATION, "미수 매출이 아닙니다")
-        sale.paymentMethod = PAYMENT_UNPAID
+        sale.paymentMethod = PaymentMethods.UNPAID
         applyDeposit(sale, isUnpaid = true)
         sale.updatedAt = Instant.now()
         return SaleResponse.from(saleRepository.save(sale))
@@ -150,7 +152,7 @@ class SaleService(
     ) {
         val deposit =
             if (isUnpaid) {
-                DepositCalculator.Deposit(null, null, null, "not_applicable")
+                DepositCalculator.Deposit(null, null, null, DepositStatuses.NOT_APPLICABLE)
             } else {
                 depositCalculator.calculate(sale.userId, sale.date, sale.amount, sale.paymentMethod, sale.cardCompany)
             }
@@ -160,32 +162,26 @@ class SaleService(
         sale.depositStatus = deposit.depositStatus
     }
 
+    // 고객 도메인 리포지토리를 통해 소유권 검증(raw SQL 대신 도메인 경계 준수)
     private fun verifyCustomerOwnership(
         userId: UUID,
         customerId: UUID,
     ) {
-        val owned =
-            jdbcTemplate.queryForObject(
-                "SELECT count(*) FROM customers WHERE id = ?::uuid AND user_id = ?::uuid",
-                Long::class.java,
-                customerId,
-                userId,
-            ) ?: 0
-        if (owned == 0L) throw AppException(ErrorCode.VALIDATION, "유효하지 않은 고객입니다")
+        if (customerRepository.findByIdAndUserId(customerId, userId) == null) {
+            throw AppException(ErrorCode.VALIDATION, "유효하지 않은 고객입니다")
+        }
     }
 
     private fun requireValidPaymentMethod(
         value: String,
         allowUnpaid: Boolean,
     ): String {
-        val allowed = if (allowUnpaid) PAYMENT_METHODS else PAYMENT_METHODS - PAYMENT_UNPAID
+        val allowed = if (allowUnpaid) PaymentMethods.SALE else PaymentMethods.SALE - PaymentMethods.UNPAID
         if (value !in allowed) throw AppException(ErrorCode.VALIDATION, "올바르지 않은 결제방식입니다")
         return value
     }
 
     private companion object {
-        const val PAYMENT_UNPAID = "unpaid"
         const val DEFAULT_CHANNEL = "other"
-        val PAYMENT_METHODS = setOf("cash", "card", "transfer", "naverpay", "kakaopay", "unpaid")
     }
 }

@@ -1,16 +1,20 @@
 package com.hazel.deposits.service
 
+import com.hazel.common.domain.DepositStatuses
 import com.hazel.common.error.AppException
 import com.hazel.common.error.ErrorCode
 import com.hazel.common.tenant.TenantContext
+import com.hazel.common.util.monthRange
 import com.hazel.deposits.dto.DepositSummaryResponse
 import com.hazel.deposits.repository.DepositSpecifications
 import com.hazel.sales.dto.SaleResponse
 import com.hazel.sales.entity.Sale
 import com.hazel.sales.repository.SaleRepository
 import org.springframework.data.domain.Sort
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.sql.Date
 import java.time.Instant
 import java.util.UUID
 
@@ -21,6 +25,7 @@ import java.util.UUID
 @Service
 class DepositService(
     private val saleRepository: SaleRepository,
+    private val jdbcTemplate: JdbcTemplate,
 ) {
     @Transactional(readOnly = true)
     fun list(
@@ -34,26 +39,44 @@ class DepositService(
             .map(SaleResponse::from)
     }
 
+    /** 요약: 네이티브 집계로 대기/완료 건수·예상입금액(expected_deposit ?: amount)을 산출. */
     @Transactional(readOnly = true)
     fun summary(month: String?): DepositSummaryResponse {
-        val spec = DepositSpecifications.filter(TenantContext.currentUserId(), month, null, null)
+        val userId = TenantContext.currentUserId()
+        val range = monthRange(month)
+        val sql =
+            buildString {
+                append("SELECT deposit_status AS status, COUNT(*) AS cnt, ")
+                append("COALESCE(SUM(COALESCE(expected_deposit, amount)), 0) AS amount ")
+                append("FROM sales WHERE user_id = ?::uuid AND payment_method = 'card' ")
+                if (range != null) append("AND date BETWEEN ? AND ? ")
+                append("GROUP BY deposit_status")
+            }
+        val args =
+            if (range != null) {
+                arrayOf<Any>(userId, Date.valueOf(range.first), Date.valueOf(range.second))
+            } else {
+                arrayOf<Any>(userId)
+            }
+
         var pendingCount = 0
         var pendingAmount = 0L
         var completedCount = 0
         var completedAmount = 0L
-        saleRepository.findAll(spec).forEach { sale ->
-            val amount = (sale.expectedDeposit ?: sale.amount).toLong()
-            when (sale.depositStatus) {
-                STATUS_PENDING -> {
-                    pendingCount += 1
-                    pendingAmount += amount
-                }
-                STATUS_COMPLETED -> {
-                    completedCount += 1
-                    completedAmount += amount
+        jdbcTemplate
+            .query(sql, { rs, _ -> Triple(rs.getString("status"), rs.getInt("cnt"), rs.getLong("amount")) }, *args)
+            .forEach { (status, cnt, amount) ->
+                when (status) {
+                    DepositStatuses.PENDING -> {
+                        pendingCount = cnt
+                        pendingAmount = amount
+                    }
+                    DepositStatuses.COMPLETED -> {
+                        completedCount = cnt
+                        completedAmount = amount
+                    }
                 }
             }
-        }
         return DepositSummaryResponse(pendingCount, pendingAmount, completedCount, completedAmount)
     }
 
@@ -77,14 +100,14 @@ class DepositService(
     @Transactional
     fun revert(id: UUID): SaleResponse {
         val sale = load(id)
-        sale.depositStatus = STATUS_PENDING
+        sale.depositStatus = DepositStatuses.PENDING
         sale.depositedAt = null
         sale.updatedAt = Instant.now()
         return SaleResponse.from(saleRepository.save(sale))
     }
 
     private fun markCompleted(sale: Sale) {
-        sale.depositStatus = STATUS_COMPLETED
+        sale.depositStatus = DepositStatuses.COMPLETED
         sale.depositedAt = Instant.now()
         sale.updatedAt = Instant.now()
     }
@@ -92,9 +115,4 @@ class DepositService(
     private fun load(id: UUID): Sale =
         saleRepository.findByIdAndUserId(id, TenantContext.currentUserId())
             ?: throw AppException(ErrorCode.NOT_FOUND, "매출을 찾을 수 없습니다")
-
-    private companion object {
-        const val STATUS_PENDING = "pending"
-        const val STATUS_COMPLETED = "completed"
-    }
 }

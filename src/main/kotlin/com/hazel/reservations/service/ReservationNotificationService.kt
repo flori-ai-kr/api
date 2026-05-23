@@ -2,6 +2,7 @@ package com.hazel.reservations.service
 
 import com.hazel.common.push.PushMessage
 import com.hazel.common.push.PushService
+import com.hazel.common.util.KST
 import com.hazel.reservations.repository.ReservationRepository
 import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.JdbcTemplate
@@ -10,7 +11,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import java.util.UUID
 
 /**
@@ -50,7 +50,8 @@ class ReservationNotificationService(
         return due.size
     }
 
-    @Transactional(readOnly = true)
+    // readOnly 아님: notify()가 영구실패 토큰 비활성화(UPDATE)를 수행할 수 있음
+    @Transactional
     fun sendDailySummary(today: LocalDate): Int {
         val byUser = reservationRepository.findByDateAndStatusNot(today, "cancelled").groupBy { it.userId }
         byUser.forEach { (userId, reservations) ->
@@ -76,9 +77,5 @@ class ReservationNotificationService(
                 jdbcTemplate.update("UPDATE push_subscriptions SET is_active = FALSE WHERE endpoint = ?", token)
             }
         }
-    }
-
-    private companion object {
-        val KST: ZoneId = ZoneId.of("Asia/Seoul")
     }
 }

@@ -1,8 +1,10 @@
 package com.hazel.expenses.service
 
+import com.hazel.common.domain.PaymentMethods
 import com.hazel.common.error.AppException
 import com.hazel.common.error.ErrorCode
 import com.hazel.common.tenant.TenantContext
+import com.hazel.common.util.KST
 import com.hazel.expenses.dto.ExpenseResponse
 import com.hazel.expenses.dto.RecurringExpenseRequest
 import com.hazel.expenses.dto.RecurringExpenseResponse
@@ -17,7 +19,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import java.util.UUID
 
 /**
@@ -215,13 +216,11 @@ class RecurringExpenseService(
     }
 
     private fun requireValidPayment(value: String): String {
-        if (value !in PAYMENT_METHODS) throw AppException(ErrorCode.VALIDATION, "올바르지 않은 결제방식입니다")
+        if (value !in PaymentMethods.EXPENSE) throw AppException(ErrorCode.VALIDATION, "올바르지 않은 결제방식입니다")
         return value
     }
 
     private companion object {
-        val KST: ZoneId = ZoneId.of("Asia/Seoul")
         val FREQUENCIES = setOf("weekly", "monthly", "yearly")
-        val PAYMENT_METHODS = setOf("cash", "card", "transfer", "naverpay", "kakaopay")
     }
 }

@@ -35,7 +35,8 @@ class DefaultDataSeeder(
         userId: UUID,
         rows: List<Setting>,
     ) {
-        // table 인자는 내부 상수만 전달 — 외부 입력 아님
+        // 방어적 가드: 테이블명은 SQL 바인딩 불가하므로 허용 목록으로만 보간(인젝션 차단).
+        require(table in ALLOWED_TABLES) { "허용되지 않은 테이블: $table" }
         val sql =
             "INSERT INTO $table (user_id, value, label, color, sort_order) " +
                 "VALUES (?, ?, ?, ?, ?) ON CONFLICT (value, user_id) DO NOTHING"
@@ -60,6 +61,8 @@ class DefaultDataSeeder(
     private companion object {
         val DEFAULT_FEE_RATE: BigDecimal = BigDecimal("2.0")
         const val DEFAULT_DEPOSIT_DAYS = 3
+        val ALLOWED_TABLES =
+            setOf("sale_categories", "payment_methods", "expense_categories", "expense_payment_methods")
 
         val SALE_CATEGORIES =
             listOf(
