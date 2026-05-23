@@ -10,6 +10,7 @@
   - 클린아키텍처: `SaleService` 고객검증 raw JDBC→`CustomerRepository`, `DepositService.summary` 네이티브 집계화, `sendDailySummary` readOnly→read-write, 시더 테이블명 allowlist, `InternalAuthVerifier`→`common/security` 이동, `ReservationService` 직접 `SaleRepository` 제거.
   - 유지보수: `monthRange`/`KST`/`PaymentMethods`/`DepositStatuses` 공통화(중복 제거).
   - **의도적 유지(리뷰 반론)**: `completeUnpaid`의 `is_unpaid=true`는 원본 의미 충실(현재상태=payment_method, 합계는 'unpaid' 제외 → 중복집계 없음). 레이트리밋·prod Swagger 비활성·CORS credentials는 배포 단계 항목.
+- **문서 세트 추가** (2026-05-23): `README.md`(개요·Quick Start·환경변수·구조·문서 인덱스), `docs/PATTERNS.md`(레이어/멀티테넌시/DTO/에러/트랜잭션 패턴 + 새 도메인 추가 레시피 + 컨벤션), `docs/KOTLIN.md`(Kotlin/Spring 관용구 입문자용 + all-open·엔티티·@field: 함정). 기존 `docs/ARCHITECTURE.md`와 상호 링크.
 - **SPEC-SERVER-013 (대시보드 + 통계) 완료** (2026-05-23). **마지막 SPEC.**
   - 오늘 대시보드 `GET /dashboard/today`: 미수 제외 매출 요약 + 다가오는 예약 + 발동 리마인더 + 최근 매출 5건 + 매출 카테고리(기존 서비스 재사용).
   - 월 통계 `GET /dashboard/month`: 매출/지출 요약 + 카테고리/결제수단/채널/지출 통계(금액·비율) + 고객 통계(총/재방문/신규).
