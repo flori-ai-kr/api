@@ -61,6 +61,11 @@ Hazel(꽃집 어드민)의 모바일 앱 백엔드. Spring Boot(Kotlin) REST API
 7. 다음 TODO SPEC으로 반복
 ```
 
+### 병렬 실행 (앱과 동시 진행) [HARD]
+
+`~/Desktop/hazel-app`이 이 repo와 동시에 돌아간다. **백엔드는 앱을 기다리지 않고** ROADMAP 순서대로 독립 진행한다.
+단, **앱 세션이 이 repo의 `ROADMAP.md` 상태를 읽어 연동 시점을 판단**하므로, SPEC 완료 시 status를 정확히 `DONE`으로 갱신하는 것이 앱 연동의 신호다. 상태 갱신을 빠뜨리지 않는다.
+
 ### 커밋 규칙
 - `git add -A` 금지 → 변경 파일만 명시 추가
 - conventional commits, 한국어 메시지 (예: `feat: JWT 인증 + refresh 로테이션 (SPEC-SERVER-003)`)
