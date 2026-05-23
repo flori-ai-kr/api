@@ -1,0 +1,17 @@
+build:
+  maxIssues: 0
+
+config:
+  validation: true
+  warningsAsErrors: false
+
+# Spring Kotlin 관용구와 충돌하는 규칙 비활성
+performance:
+  SpreadOperator:
+    active: false
+
+style:
+  # Map/DTO 즉시 반환 등 짧은 표현식에서 과도하게 걸리는 규칙 완화
+  ReturnCount:
+    active: true
+    max: 3
