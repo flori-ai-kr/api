@@ -4,6 +4,14 @@
 
 ## 현재 상태
 
+- **SPEC-SERVER-005 (매출 API) 완료** (2026-05-23). **첫 도메인 SPEC — 레이어/멀티테넌시 패턴 확립.**
+  - `Sale` 엔티티 + `SaleRepository`(JpaSpecificationExecutor) + `SaleSpecifications`(동적 필터).
+  - CRUD + 무한스크롤(offset/limit, hasMore) + 다중선택 필터(category/payment/channel IN, month 연/월/일, search ILIKE) + 비고 자동완성(빈도순).
+  - **서버 계산(SSOT)**: `DepositCalculator`/`DepositMath` — 카드 fee=round(amount*rate/100), expected=amount-fee, 입금예정일=+N영업일(주말 제외), pending. 비카드 not_applicable.
+  - 미수: is_unpaid(영구 마커) + `/complete-unpaid`·`/revert-unpaid`.
+  - 모든 쿼리 `TenantContext.currentUserId()` 격리. customer_id 제공 시 소유권 검증.
+  - 검증: **55테스트 통과(스킵 0)** — 14개 신규(math 3 + service 7 + HTTP 4). 멀티테넌시 격리(서비스·HTTP) 포함.
+  - detekt 임계값 조정(LongParameterList 8, TooManyFunctions 20 — 도메인 API 특성 반영).
 - **SPEC-SERVER-004 (공통 인프라) 완료** (2026-05-23).
   - 에러: `GlobalExceptionHandler` 확장(검증/제약/DataIntegrity→409/AccessDenied→403/일반→500) + `DiscordErrorReporter`(@Async, 미설정 시 콘솔 폴백, 5분 dedup, 스택/PII 새니타이즈). `AsyncConfig(@EnableAsync)`.
   - 스토리지: `S3PresignService.presignUpload`(presigned PUT + CloudFront/S3 파일 URL), `S3Presigner` 빈(지연 자격증명, 무자격증명 부팅 OK).
@@ -34,13 +42,13 @@
 
 ## 다음 할 일
 
-- **SPEC-SERVER-005 (매출 API)**: CRUD + 무한스크롤(loadMore) + 자동완성 + 미수(unpaid) 완료/되돌리기
-  + 카드수수료/입금예정일 **서버 계산** + 다중선택 필터(category/payment/channel `.in()`). deps: 004 ✅
-  - 원본 로직: `~/Desktop/hazel-admin/src/lib/actions/sales.ts`. 계산식: `expected_deposit = amount*(1-fee_rate/100)`, 입금예정일=영업일 N일(카드사 `deposit_days`).
-  - **첫 도메인 SPEC** — 엔티티/리포지토리 패턴 확립. 모든 쿼리 `TenantContext.currentUserId()`로 격리(HARD). hypersistence-utils로 `photos TEXT[]` 매핑.
-  - JPA 엔티티 추가 시 `ddl-auto=validate`가 스키마와 대조 — 컬럼/타입 정확히 매핑.
-  - 멀티테넌시 격리 테스트(다른 user 데이터 접근 차단) 필수.
-- 공통 인프라 활용: 데이터 쿼리는 항상 `TenantContext.currentUserId()`로 격리. 에러는 `AppException(ErrorCode.*)`.
+- **SPEC-SERVER-006 (지출 + 고정비 API)**: 지출 CRUD + 자동완성, 고정비(recurring) CRUD(this/future/all 분기) + 빠른추가,
+  `@Scheduled` KST 00:30 고정비 자동 생성(recurring_skips 고려). deps: 004 ✅
+  - 원본: `~/Desktop/hazel-admin/src/lib/actions/expenses.ts`, `recurring-expenses.ts`. 지출 총액 = unit_price*quantity(서버 계산).
+  - 고정비 다중값(days_of_week/days_of_month/yearly_dates) → expenses 자동생성, `(recurring_id,date)` unique로 멱등.
+  - 스케줄 자동생성은 `@Scheduled` + 멱등 INSERT. 테스트는 생성 로직을 직접 호출(스케줄 트리거 분리).
+  - 패턴은 SPEC-005 매출(Sale*) 구조 그대로 따른다. 모든 쿼리 `TenantContext` 격리.
+- 도메인 패턴 참고: `com.hazel.sales`(엔티티/Repository+Specification/Service[TenantContext]/Controller/DTO, Zonky 통합테스트 + 순수 단위테스트).
 - [중요] SPEC 완료 시 ROADMAP status를 `DONE`으로 정확히 갱신 — 앱 세션이 이 상태를 보고 연동을 시작한다.
 
 ## 빌드/실행 메모
@@ -67,6 +75,7 @@
 
 ## 로그 (최신이 위로)
 
+- 2026-05-23 — SPEC-SERVER-005 완료. 매출 API(CRUD·무한스크롤·필터·자동완성·미수·서버 입금계산). 첫 도메인 패턴 확립. 55테스트 통과.
 - 2026-05-23 — SPEC-SERVER-004 완료. 공통 인프라(Discord 에러 리포팅·S3 presign·FCM 추상화·CORS·보안헤더). 41테스트 통과.
 - 2026-05-23 — SPEC-SERVER-003 완료. JWT 인증 + refresh 회전 + BCrypt + 가입 시드 + TenantContext + /me. 28테스트 통과.
 - 2026-05-23 — SPEC-SERVER-002 완료. Flyway baseline(22테이블, RLS 제거·자체 users) + 시드. Zonky 임베디드 PG로 마이그레이션 실제 적용 검증. 11테스트 통과.

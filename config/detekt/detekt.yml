@@ -10,6 +10,15 @@ performance:
   SpreadOperator:
     active: false
 
+# 도메인 API 특성(필터 다중 파라미터, 다필드 엔티티, 다기능 서비스) 반영한 임계값
+complexity:
+  LongParameterList:
+    functionThreshold: 8
+    constructorThreshold: 8
+  TooManyFunctions:
+    thresholdInClasses: 20
+    thresholdInFiles: 20
+
 style:
   # Map/DTO 즉시 반환 등 짧은 표현식에서 과도하게 걸리는 규칙 완화
   ReturnCount:
