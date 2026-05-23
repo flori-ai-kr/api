@@ -23,11 +23,13 @@
 | SPEC-SERVER-012 | DONE | 004 | **설정 API**: 카드사 수수료/입금일, 매출설정(카테고리/결제방식), 지출설정, 사용자설정(BottomNav JSONB), 푸시 구독 등록/해지 |
 | SPEC-SERVER-013 | DONE | 005,006,007 | **대시보드 + 통계**: 오늘/월 집계, 다가오는 예약, 발동 리마인더, 카테고리/결제수단/채널/고객 통계(네이티브 SQL 집계) |
 
+> 🟢 **Phase 2 활성화 (2026-05-23)**: 사용자 승인. SPEC-SERVER-014(결제/구독)를 진행한다. **범위는 코드 구현만** — 실제 RevenueCat 계정/스토어 상품/심사/배포/키 발급 없음, 시크릿은 env placeholder, 테스트는 샘플/모의. 상세 명세: `.moai/specs/SPEC-SERVER-014/spec.md`. 빌드/테스트 통과 후 커밋, 완료 시 정지.
+
 ## Phase 2 — 결제 (앱 출시 후)
 
 | SPEC | status | deps | 범위 |
 |------|--------|------|------|
-| SPEC-SERVER-014 | TODO | (앱 M4 완료) | **구독/결제**: `subscriptions` 테이블, RevenueCat 웹훅 수신 → 엔티틀먼트 갱신, 구독 상태 조회 API, 접근 게이팅 |
+| SPEC-SERVER-014 | TODO | ✅ 앱 Phase1 완료 | **구독/결제**: `subscriptions` 테이블, RevenueCat 웹훅 수신 → 엔티틀먼트 갱신, 구독 상태 조회 API, 접근 게이팅 |
 
 ## 진행 규칙
 - 한 세션은 SPEC을 **하나씩** 끝낸다(빌드·테스트·커밋까지). 그 후 다음 TODO로.

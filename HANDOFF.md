@@ -139,3 +139,7 @@
 - 2026-05-23 — SPEC-SERVER-002 완료. Flyway baseline(22테이블, RLS 제거·자체 users) + 시드. Zonky 임베디드 PG로 마이그레이션 실제 적용 검증. 11테스트 통과.
 - 2026-05-23 — SPEC-SERVER-001 완료. Spring Boot(Kotlin) 스켈레톤 부팅 + 헬스체크 + Swagger + ktlint/detekt 게이트. build test 통과.
 - 2026-05-23 — 부트스트랩. ROADMAP 13개 SPEC(Phase1) + 1개(Phase2) 정의. 병렬 모드 활성화.
+
+## [활성화] Phase 2 결제 (2026-05-23)
+- 사용자 A 선택. **SPEC-014(결제/구독) 진행 — 코드 구현만**(실계정/배포/키 없음, env placeholder, 모의 테스트).
+- loop 재시작 필요(Phase1 완료로 정지했었음).
