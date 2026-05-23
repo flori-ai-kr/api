@@ -4,6 +4,12 @@
 
 ## 현재 상태
 
+- 🎉 **Phase 1 (M1 기반 + M2 도메인) 13개 SPEC 전부 DONE** (2026-05-23). 백엔드 REST API 완성 — 앱 연동 준비 완료. **142테스트 통과(스킵 0), 34 테스트 클래스.**
+- **SPEC-SERVER-013 (대시보드 + 통계) 완료** (2026-05-23). **마지막 SPEC.**
+  - 오늘 대시보드 `GET /dashboard/today`: 미수 제외 매출 요약 + 다가오는 예약 + 발동 리마인더 + 최근 매출 5건 + 매출 카테고리(기존 서비스 재사용).
+  - 월 통계 `GET /dashboard/month`: 매출/지출 요약 + 카테고리/결제수단/채널/지출 통계(금액·비율) + 고객 통계(총/재방문/신규).
+  - **네이티브 SQL 집계**(JdbcTemplate, Postgres FILTER/GROUP BY/EXISTS), 모든 쿼리 user_id 바인딩(격리·인젝션 방지), 미수 제외.
+  - 검증: 4개 신규(오늘/월/비율합/멀티테넌시).
 - **SPEC-SERVER-012 (설정 API) 완료** (2026-05-23).
   - value/label 설정 4종(매출/지출 카테고리·결제방식): `@MappedSuperclass LabelSetting` + `@NoRepositoryBean` 제네릭 리포지토리 + 추상 `LabelSettingService<T>`(DRY). list/add(슬러그)/update/delete, 중복 409.
   - 카드사: list(활성)/create/update(fee_rate·deposit_days)/소프트 삭제, 중복 409. 사용자 설정(bottom_nav_items jsonb) 조회·upsert. 푸시 구독 등록/해지/상태.
@@ -81,15 +87,12 @@
   - 멀티스테이지 `Dockerfile`(temurin 21).
 - **병렬 모드**: `~/Desktop/hazel-app`과 동시 진행. 백엔드는 앱을 기다리지 않고 독립 실행.
 
-## 다음 할 일 — **마지막 Phase 1 SPEC**
+## 다음 할 일 — Phase 1 완료
 
-- **SPEC-SERVER-013 (대시보드 + 통계)**: 오늘/월 집계, 다가오는 예약, 발동 리마인더, 카테고리/결제수단/채널/고객 통계(네이티브 SQL 집계). deps: 005 ✅, 006 ✅, 007 ✅
-  - 원본: `~/Desktop/hazel-admin/src/lib/actions/dashboard.ts`, `statistics.ts`, `get_sales_summary`/`get_customer_stats` RPC.
-  - **네이티브 SQL 집계**(JdbcTemplate): 매출 요약(total/card/naverpay/transfer/cash/count, unpaid 제외), 카테고리/결제수단/채널별 매출, 고객별 매출 통계.
-  - 대시보드: 오늘/이번 달 매출·지출 합계, 다가오는 예약(ReservationService.upcoming 재사용), 발동 리마인더(triggeredReminders 재사용).
-  - 통계 쿼리는 모두 user_id 바인딩(SQL 인젝션 방지·테넌트 격리). 미수(unpaid) 매출은 총매출에서 제외.
-  - 완료 시 **Phase 1(M1+M2) 13개 SPEC 전부 DONE** → 앱 연동 준비 완료.
-- 도메인 패턴 참고: 기존 모든 도메인. 통계는 네이티브 SQL + JdbcTemplate.
+- **Phase 1 전부 완료.** ROADMAP의 다음 TODO는 **SPEC-SERVER-014 (구독/결제)** — `deps: (앱 M4 완료)` 이므로 **현재 진행 불가**(앱 출시 후 Phase 2). 자율 루프는 진행 가능한 TODO가 없어 여기서 멈춘다.
+- **남은 운영 준비물(사용자 작업)**: 배포 환경변수 — `DB_URL`/`DB_USER`/`DB_PASSWORD`, `JWT_SECRET`, `AWS_*`/`S3_BUCKET`/`CLOUDFRONT_DOMAIN`, `FCM_ENABLED`/`FCM_CREDENTIALS`, `DISCORD_WEBHOOK_URL`, `INTERNAL_API_KEY`, `CORS_ALLOWED_ORIGINS`. (코드는 모두 `${ENV}` 참조, 미설정 시 로컬 graceful 동작.)
+- **앱 연동**: Swagger UI(`/swagger-ui.html`) / OpenAPI(`/v3/api-docs`)가 계약 출처. hazel-app(Flutter)이 이 ROADMAP의 DONE 상태를 보고 연동.
+- **후속(선택)**: 통합 e2e 스모크, 실제 RDS/Testcontainers 기반 CI, 부하/보안 점검.
 - [중요] SPEC 완료 시 ROADMAP status를 `DONE`으로 정확히 갱신 — 앱 세션이 이 상태를 보고 연동을 시작한다.
 
 ## 빌드/실행 메모
@@ -116,6 +119,7 @@
 
 ## 로그 (최신이 위로)
 
+- 2026-05-23 — 🎉 **Phase 1 완료(13/13 SPEC)**. SPEC-SERVER-013 완료. 대시보드+통계(네이티브 SQL 집계). 142테스트 통과. Phase 2(결제)는 앱 M4 완료 후.
 - 2026-05-23 — SPEC-SERVER-012 완료. 설정 API(카드사/매출·지출설정/하단바/푸시구독). 추상 서비스 @Transactional open 수정. 138테스트 통과.
 - 2026-05-23 — SPEC-SERVER-011 완료. 인사이트 API(트렌드/인스타 공유 읽기·스크랩·내부 수집/브로드캐스트). photo_cards.tags Array<String> 타입충돌 수정. 131테스트 통과.
 - 2026-05-23 — SPEC-SERVER-010 완료. 사진첩+태그 API(카드 CRUD·presigned 업로드·커서 페이지·태그 cascade). 116테스트 통과.
