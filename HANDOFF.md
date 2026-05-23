@@ -4,6 +4,12 @@
 
 ## 현재 상태
 
+- **SPEC-SERVER-010 (사진첩 + 태그 API) 완료** (2026-05-23).
+  - 사진카드 `PhotoCard`(tags TEXT[], photos jsonb[{url,originalName}] — Hibernate 네이티브) CRUD + 매출(sale_id) 연동 + 매출별 조회.
+  - 목록: 커서 페이지네이션(updated_at desc, page 8) + tag 포함/customerId(sales 조인) 필터(단일 네이티브 쿼리, NULL CAST).
+  - presigned 업로드 타깃(S3PresignService): 소유권·최대 10장·이미지 메타 검증 + 키 생성. 사진 순서변경/1장 삭제.
+  - 태그 `PhotoTag` CRUD(중복 409 — saveAndFlush로 즉시 포착, 색상 랜덤), 삭제 시 카드 tags에서 array_remove.
+  - 검증: **116테스트 통과(스킵 0)** — 11개 신규(카드 7 + 태그 4). 업로드 발급·필터·cascade·멀티테넌시 포함.
 - **SPEC-SERVER-009 (입금대조 API) 완료** (2026-05-23).
   - 카드 매출 입금 목록(status/cardCompany/month 필터, `DepositSpecifications`) + 단건/다건 확인 + 되돌리기 + 요약(대기/완료 건수·금액).
   - `Sale`에 `deposited_at` 매핑 추가, `SaleResponse`에 `depositedAt` 노출. 다건 확인은 `findByUserIdAndIdIn`으로 본인 매출만(타 테넌트 ID 무시).
@@ -65,12 +71,12 @@
 
 ## 다음 할 일
 
-- **SPEC-SERVER-010 (사진첩 + 태그 API)**: 사진카드 CRUD(매출 연동) + presigned 업로드 타깃 발급(소유권/메타 검증) + 태그 CRUD + 정렬. deps: 004 ✅
-  - 원본: `~/Desktop/hazel-admin/src/lib/actions/photo-cards.ts`, `photo-tags.ts`. photo_cards.photos는 JSONB([{url,originalName}]), tags TEXT[].
-  - presigned PUT 발급은 SPEC-004 `S3PresignService` 사용. 키 생성 규칙 + 소유권 검증 + 카드당 최대 10장 제한.
-  - photo_cards: tags TEXT[] + photos jsonb → Hibernate 네이티브 `@JdbcTypeCode(ARRAY/JSON)`. photo_tags: (name,user_id) unique.
-  - 사진카드 sale_id 연동(매출). 모든 쿼리 TenantContext 격리.
-- 도메인 패턴 참고: `com.hazel.expenses`(배열/jsonb 매핑 예시), `com.hazel.common.storage`(S3PresignService).
+- **SPEC-SERVER-011 (인사이트 API)**: 트렌드/인스타 계정·포스트 조회(공유 읽기), 스크랩 CRUD+메모(polymorphic), 읽음 처리, 내부 API(Bearer, 수집/브로드캐스트). deps: 004 ✅
+  - 원본: `~/Desktop/hazel-admin/src/lib/actions/insights.ts`, `scraps.ts`, `src/app/api/internal/trends/route.ts`.
+  - trend_articles/instagram_accounts/instagram_posts는 **공유 읽기**(테넌트 무관, 인증 사용자면 조회 가능). insight_scraps는 polymorphic(target_type+target_id, (user_id,target_type,target_id) unique) — 테넌트 격리.
+  - 내부 API: `INTERNAL_API_KEY` Bearer 인증(타임-세이프 비교)으로 수집/브로드캐스트. SecurityConfig에 `/internal/**` 경로 + 내부 키 필터 또는 컨트롤러 레벨 검증.
+  - 읽음 처리: 스크랩/인사이트 읽음 상태. 원본 로직 확인 필요.
+- 도메인 패턴 참고: 기존 모든 도메인. 공유 읽기는 user_id 격리 예외(단, 인증 필요).
 - [중요] SPEC 완료 시 ROADMAP status를 `DONE`으로 정확히 갱신 — 앱 세션이 이 상태를 보고 연동을 시작한다.
 
 ## 빌드/실행 메모
@@ -97,6 +103,7 @@
 
 ## 로그 (최신이 위로)
 
+- 2026-05-23 — SPEC-SERVER-010 완료. 사진첩+태그 API(카드 CRUD·presigned 업로드·커서 페이지·태그 cascade). 116테스트 통과.
 - 2026-05-23 — SPEC-SERVER-009 완료. 입금대조 API(카드 입금 목록·단건/다건 확인·되돌리기·요약). 105테스트 통과.
 - 2026-05-23 — SPEC-SERVER-008 완료. 예약+캘린더 API(CRUD·매출전환·픽업·리마인더/요약 @Scheduled 푸시). 100테스트 통과.
 - 2026-05-23 — SPEC-SERVER-007 완료. 고객 API(CRUD·등급·findOrCreate·고객별 매출·통계 실시간 집계). 86테스트 통과.

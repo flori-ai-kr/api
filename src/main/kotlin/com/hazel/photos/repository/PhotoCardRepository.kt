@@ -1,0 +1,53 @@
+package com.hazel.photos.repository
+
+import com.hazel.photos.entity.PhotoCard
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
+import java.util.UUID
+
+interface PhotoCardRepository : JpaRepository<PhotoCard, UUID> {
+    fun findByIdAndUserId(
+        id: UUID,
+        userId: UUID,
+    ): PhotoCard?
+
+    fun findFirstByUserIdAndSaleId(
+        userId: UUID,
+        saleId: UUID,
+    ): PhotoCard?
+
+    /**
+     * 커서 페이지네이션(updated_at desc) + 선택 필터(tag 포함, 고객별 sales 조인).
+     * NULL 파라미터는 CAST...IS NULL 로 필터 미적용 처리.
+     */
+    @Query(
+        value =
+            "SELECT pc.* FROM photo_cards pc LEFT JOIN sales s ON pc.sale_id = s.id " +
+                "WHERE pc.user_id = :userId " +
+                "AND (CAST(:cursor AS timestamptz) IS NULL OR pc.updated_at < CAST(:cursor AS timestamptz)) " +
+                "AND (CAST(:tag AS text) IS NULL OR :tag = ANY(pc.tags)) " +
+                "AND (CAST(:customerId AS uuid) IS NULL OR s.customer_id = CAST(:customerId AS uuid)) " +
+                "ORDER BY pc.updated_at DESC LIMIT :limit",
+        nativeQuery = true,
+    )
+    fun findPage(
+        @Param("userId") userId: UUID,
+        @Param("cursor") cursor: String?,
+        @Param("tag") tag: String?,
+        @Param("customerId") customerId: String?,
+        @Param("limit") limit: Int,
+    ): List<PhotoCard>
+
+    /** 태그 삭제 시 해당 태그를 사용하는 카드들에서 태그명 제거. */
+    @Modifying
+    @Query(
+        value = "UPDATE photo_cards SET tags = array_remove(tags, :tagName) WHERE user_id = :userId AND :tagName = ANY(tags)",
+        nativeQuery = true,
+    )
+    fun removeTagFromCards(
+        @Param("userId") userId: UUID,
+        @Param("tagName") tagName: String,
+    ): Int
+}

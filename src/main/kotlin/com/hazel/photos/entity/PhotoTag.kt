@@ -1,0 +1,33 @@
+package com.hazel.photos.entity
+
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.Table
+import java.time.Instant
+import java.util.UUID
+
+/**
+ * 사진 태그. (name, user_id) 복합 unique. 멀티테넌시: user_id 격리.
+ */
+@Entity
+@Table(name = "photo_tags")
+class PhotoTag(
+    @Column(name = "user_id", nullable = false)
+    var userId: UUID,
+    @Column(name = "name", nullable = false)
+    var name: String,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id")
+    var id: UUID? = null
+
+    @Column(name = "color")
+    var color: String = "#6b7280"
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    var createdAt: Instant = Instant.now()
+}
