@@ -1,6 +1,8 @@
 package com.hazel.sales.repository
 
 import com.hazel.sales.entity.Sale
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Query
@@ -14,6 +16,13 @@ interface SaleRepository :
         id: UUID,
         userId: UUID,
     ): Sale?
+
+    /** 고객별 매출(테넌트 격리). 고객 도메인(SPEC-007)에서 사용. */
+    fun findByUserIdAndCustomerId(
+        userId: UUID,
+        customerId: UUID,
+        pageable: Pageable,
+    ): Page<Sale>
 
     /** 비고 자동완성: 빈도(사용 횟수) 내림차순. */
     @Query(

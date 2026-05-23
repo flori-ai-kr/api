@@ -4,6 +4,12 @@
 
 ## 현재 상태
 
+- **SPEC-SERVER-007 (고객 API) 완료** (2026-05-23).
+  - `Customer` CRUD(중복 전화 409) + 등급/성별 검증 + 등급 변경 + 부분 수정.
+  - `findOrCreate`((phone,user_id) 복합키, 레이스 시 재조회), 이름 부분검색(top10), 전화번호 중복 확인.
+  - 고객별 매출 `GET /customers/{id}/sales`(소유권 확인 + 페이지네이션, SaleRepository 재사용).
+  - 구매 통계는 sales 실시간 집계(JdbcTemplate 네이티브, 통계 컬럼 미매핑). 목록 총구매액 내림차순.
+  - 검증: **86테스트 통과(스킵 0)** — 10개 신규(service 8 + HTTP 2). 통계 집계·findOrCreate·멀티테넌시 포함.
 - **SPEC-SERVER-006 (지출 + 고정비 API) 완료** (2026-05-23).
   - 지출: `Expense` CRUD + 월 필터 + 자동완성(물품명/거래처/비고 빈도순). total_amount=단가*수량 서버 계산.
   - 고정비: `RecurringExpense`(days_of_week/days_of_month INT[], yearly_dates jsonb — **Hibernate 6 네이티브 @JdbcTypeCode**, validate 통과) + CRUD/토글/빠른추가.
@@ -49,11 +55,13 @@
 
 ## 다음 할 일
 
-- **SPEC-SERVER-007 (고객 API)**: CRUD + 등급/성별 + findOrCreate(전화번호+user_id 복합) + 고객별 매출 조회. deps: 004 ✅
-  - 원본: `~/Desktop/hazel-admin/src/lib/actions/customers.ts`. `(phone, user_id)` 복합 unique로 findOrCreate.
-  - 완료 후 SPEC-005 매출의 customer 자동연결(findOrCreate)을 연동할 수 있음(현재는 customer_id 소유권 검증만).
-  - 패턴은 sales/expenses 구조 동일. 모든 쿼리 `TenantContext` 격리. 등급(new/regular/vip/blacklist)·성별(male/female) CHECK.
-- 도메인 패턴 참고: `com.hazel.sales`, `com.hazel.expenses`(엔티티/Repository(+Specification)/Service[TenantContext]/Controller/DTO, Zonky 통합테스트 + 순수 단위테스트).
+- **SPEC-SERVER-008 (예약 + 캘린더 API)**: 예약 CRUD + 매출 전환 + 픽업완료 + 자동완성, 캘린더 이벤트 CRUD,
+  `@Scheduled` 일일 요약(08:00 KST)·개별 리마인더(reminder_at) 푸시. deps: 005 ✅, 007 ✅
+  - 원본: `~/Desktop/hazel-admin/src/lib/actions/reservations.ts`, `calendar-events.ts`. 예약↔매출 양방향 FK(sale_id/reservation_id).
+  - 예약 테이블에 reminder_sent/pickup_completed 컬럼 있음(V1). 캘린더 이벤트는 calendar_events 테이블.
+  - 푸시는 SPEC-004의 `PushService` 사용(로컬은 LoggingPushService 폴백). `@Scheduled`는 ScheduleConfig 재사용. 테스트는 발송 로직 직접 호출.
+  - 매출 전환: 예약 → 매출 생성 후 sale_id 연결(SaleService 재사용 가능).
+- 도메인 패턴 참고: `com.hazel.sales`, `com.hazel.expenses`, `com.hazel.customers`.
 - 배열/jsonb 컬럼은 Hibernate 6 네이티브 `@JdbcTypeCode(SqlTypes.ARRAY/JSON)` 사용(validate 친화적).
 - [중요] SPEC 완료 시 ROADMAP status를 `DONE`으로 정확히 갱신 — 앱 세션이 이 상태를 보고 연동을 시작한다.
 
@@ -81,6 +89,7 @@
 
 ## 로그 (최신이 위로)
 
+- 2026-05-23 — SPEC-SERVER-007 완료. 고객 API(CRUD·등급·findOrCreate·고객별 매출·통계 실시간 집계). 86테스트 통과.
 - 2026-05-23 — SPEC-SERVER-006 완료. 지출+고정비 API(CRUD·자동완성·this/all 분기·@Scheduled 멱등 자동생성). 76테스트 통과.
 - 2026-05-23 — SPEC-SERVER-005 완료. 매출 API(CRUD·무한스크롤·필터·자동완성·미수·서버 입금계산). 첫 도메인 패턴 확립. 55테스트 통과.
 - 2026-05-23 — SPEC-SERVER-004 완료. 공통 인프라(Discord 에러 리포팅·S3 presign·FCM 추상화·CORS·보안헤더). 41테스트 통과.
