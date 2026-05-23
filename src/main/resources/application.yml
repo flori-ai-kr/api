@@ -10,8 +10,8 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      # 스키마의 SSOT는 Flyway. 엔티티가 추가되는 도메인 SPEC에서는 validate 권장.
-      ddl-auto: none
+      # 스키마의 SSOT는 Flyway. 엔티티-스키마 정합성은 validate로 강제.
+      ddl-auto: validate
     open-in-view: false
     properties:
       hibernate.jdbc.time_zone: UTC
@@ -22,6 +22,12 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+
+jwt:
+  # 운영에서는 반드시 32바이트 이상의 강한 값으로 교체(환경변수 주입). 아래는 로컬 개발용 플레이스홀더.
+  secret: ${JWT_SECRET:local-dev-insecure-jwt-secret-please-change-32bytes+}
+  access-ttl-seconds: ${JWT_ACCESS_TTL:900}        # 15분
+  refresh-ttl-seconds: ${JWT_REFRESH_TTL:1209600}  # 14일
 
 springdoc:
   swagger-ui:

@@ -4,6 +4,13 @@
 
 ## 현재 상태
 
+- **SPEC-SERVER-003 (인증) 완료** (2026-05-23).
+  - Spring Security 무상태 + 자체 JWT(HS256, access 15분) + refresh 회전(불투명 난수, DB에 SHA-256 해시 저장) + BCrypt.
+  - `V3__refresh_tokens.sql` 추가. 엔티티 `User`/`RefreshToken`, `ddl-auto=validate`로 전환.
+  - `common/security`(JwtTokenProvider/Filter/SecurityConfig/JwtProperties/UserPrincipal), `common/tenant`(TenantContext ThreadLocal), `common/error`(경량 ErrorCode/AppException/ErrorResponse/GlobalExceptionHandler).
+  - `auth`: signup(+기본설정 시드)/login/refresh/logout + 보호 엔드포인트 `GET /me`.
+  - 가입 시드: 매출카테고리11·매출결제4·지출카테고리7·지출결제3·카드사9(JdbcTemplate, 멱등). saveAndFlush로 같은 트랜잭션 FK 보장.
+  - 검증: Zonky 임베디드 PG + 보안필터 전체 흐름. **28테스트 통과(스킵 0)**.
 - **SPEC-SERVER-002 (DB + Flyway baseline) 완료** (2026-05-23).
   - JPA + Flyway(core+postgresql) + PostgreSQL 드라이버 + hypersistence-utils 추가.
   - `application.yml`: datasource/JPA/Flyway 전부 `${ENV}` 참조, `ddl-auto=none`, `open-in-view=false`.
@@ -21,12 +28,12 @@
 
 ## 다음 할 일
 
-- **SPEC-SERVER-003 (인증)**: Spring Security + JWT(access+refresh rotation), BCrypt,
-  `POST /auth/signup`(가입 시 사용자별 기본 카테고리/결제방식/카드사 시드), `/auth/login`, `/auth/refresh`, `/auth/logout`,
-  JWT 필터 → `TenantContext`.
-  - `users` 테이블은 V1에 이미 존재. refresh token 저장소(테이블)는 SPEC-003에서 Flyway 마이그레이션 `V3__...`로 추가.
-  - 기본 시드 참고(가입 시): 원본 `~/Desktop/hazel-admin`의 기본 카테고리/결제방식/카드사 — `src/lib/actions/`와 `src/types/database.ts`의 `PRODUCT_CATEGORIES`/`PAYMENT_METHODS` 참고.
-  - 엔티티 추가 시 `ddl-auto`는 `validate` 권장(스키마 SSOT는 여전히 Flyway).
+- **SPEC-SERVER-004 (공통 인프라)**: `@ControllerAdvice` 표준 에러 응답 **확장 + Discord 웹훅** 로깅,
+  `TenantContext`(이미 존재 — 재사용), S3 presigned PUT 발급 서비스, FCM 발송 서비스, CORS, 보안 헤더.
+  - 기존 `common/error/GlobalExceptionHandler`는 경량 버전 — SPEC-004에서 Discord 리포팅 + 핸들러(404/403/일반예외/DB제약 등) 보강.
+  - `DISCORD_WEBHOOK_URL`, `AWS_*`/`S3_BUCKET`/`CLOUDFRONT_DOMAIN`, `FCM` 서비스계정 환경변수 사용(없을 때 로컬 graceful 동작 고려).
+  - CORS: 앱/웹 origin 화이트리스트. 보안 헤더 추가.
+- 인증 활용: 도메인 SPEC(005~)에서 데이터 쿼리는 항상 `TenantContext.currentUserId()`로 격리.
 - [중요] SPEC 완료 시 ROADMAP status를 `DONE`으로 정확히 갱신 — 앱 세션이 이 상태를 보고 연동을 시작한다.
 
 ## 빌드/실행 메모
@@ -53,6 +60,7 @@
 
 ## 로그 (최신이 위로)
 
+- 2026-05-23 — SPEC-SERVER-003 완료. JWT 인증 + refresh 회전 + BCrypt + 가입 시드 + TenantContext + /me. 28테스트 통과.
 - 2026-05-23 — SPEC-SERVER-002 완료. Flyway baseline(22테이블, RLS 제거·자체 users) + 시드. Zonky 임베디드 PG로 마이그레이션 실제 적용 검증. 11테스트 통과.
 - 2026-05-23 — SPEC-SERVER-001 완료. Spring Boot(Kotlin) 스켈레톤 부팅 + 헬스체크 + Swagger + ktlint/detekt 게이트. build test 통과.
 - 2026-05-23 — 부트스트랩. ROADMAP 13개 SPEC(Phase1) + 1개(Phase2) 정의. 병렬 모드 활성화.
