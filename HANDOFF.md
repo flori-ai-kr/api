@@ -4,7 +4,13 @@
 
 ## 현재 상태
 
-- 🎉 **전체 14개 SPEC DONE** (Phase 1: 13 + Phase 2: 1, 2026-05-23). 다음 TODO 없음 → 자율 loop 정지.
+- 🎉 **전체 15개 SPEC DONE** (Phase 1: 13 + Phase 2: 1 + 품질개선 RF-001, 2026-05-23). 다음 TODO 없음 → 자율 loop 정지.
+- **SPEC-SERVER-RF-001 (리팩터링 & 품질) 완료** (2026-05-23). AUDIT → REFACTOR → DOCUMENT, 동작 보존.
+  - **AUDIT**: 4차원 점검(`.moai/specs/SPEC-SERVER-RF-001/audit.md`) + 독립 code-reviewer 교차검증. **멀티테넌시 user_id 격리 전수 재확인 = 누락 0건**(findById/findAll/existsById/네이티브 SQL 전수, 의도적 전역/cross-tenant 식별).
+  - **REFACTOR**(behavior-preserving 4건): R1 `monthRange` 잘못된 입력 500→400(VALIDATION)+테스트 / R2 `ReservationStatuses` → `common/domain` 추출 / R3 `SettingsServices.kt` → 3파일 분리 / R4 교차도메인 접근 주석(`DepositCalculator`·`UserPreferenceService`).
+  - **보류**(동작 변경이라 별도 SPEC): `deleteRecurringFromInstance` 스킵행(ON CONFLICT가 이미 방지)·`BroadcastService` LIMIT·`InsightService` region JPQL 푸시다운.
+  - 문서: `audit.md` + `refactor-log.md` + `docs/PATTERNS.md` 공통상수 표 갱신.
+  - 검증: **165테스트 통과(스킵 0)** — 6개 신규(DateRangesTest).
 - **SPEC-SERVER-014 (구독/결제) 완료** (2026-05-23). **Phase 2 첫/유일 SPEC.**
   - `V4__subscriptions.sql`: `subscriptions`(user_id UNIQUE, 사용자당 1행) + `subscription_events`(append-only 이력, raw_event jsonb).
   - `POST /webhooks/revenuecat`: 사전 공유 Bearer 시크릿(`RevenueCatWebhookVerifier`, 타이밍-세이프) → 이벤트 매핑 → upsert. 항상 200 ACK(재시도 폭주 방지). SecurityConfig `/webhooks/**` 공개.

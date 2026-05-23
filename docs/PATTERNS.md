@@ -283,7 +283,10 @@ class SaleService(
 | 위치 | 내용 |
 |---|---|
 | [`common/domain/PaymentMethods.kt`](../src/main/kotlin/com/hazel/common/domain/PaymentMethods.kt) | `PaymentMethods.SALE/EXPENSE/UNPAID`, `DepositStatuses.PENDING/COMPLETED/NOT_APPLICABLE` |
-| [`common/util/DateRanges.kt`](../src/main/kotlin/com/hazel/common/util/DateRanges.kt) | `KST`(=`ZoneId.of("Asia/Seoul")`), `monthRange(month)` (YYYY-MM → 시작·끝 날짜) |
+| [`common/domain/ReservationStatuses.kt`](../src/main/kotlin/com/hazel/common/domain/ReservationStatuses.kt) | `ReservationStatuses.PENDING/CONFIRMED/COMPLETED/CANCELLED` + `ALL` |
+| [`common/util/DateRanges.kt`](../src/main/kotlin/com/hazel/common/util/DateRanges.kt) | `KST`(=`ZoneId.of("Asia/Seoul")`), `monthRange(month)` (YYYY/YYYY-MM/YYYY-MM-DD → 시작·끝 날짜, 잘못된 형식은 400 VALIDATION) |
+
+> 도메인 상태/수단 문자열은 새로 만들지 말고 `common/domain`의 상수를 쓴다. 새 상태군이 생기면 같은 패턴으로 `common/domain`에 추가한다(예: `ReservationStatuses`).
 
 ```kotlin
 // ❌ 도메인마다 흩어진 매직값

@@ -46,6 +46,8 @@ class DepositCalculator(
         )
     }
 
+    // settings 도메인 테이블(card_company_settings)을 교차 조회한다 — 수수료 계산(SSOT) 핫패스라
+    // 단일 컬럼 네이티브 조회로 유지. user_id 바인딩으로 테넌트 격리(컬럼 변경 시 이 SQL도 함께 갱신).
     private fun findCardSetting(
         userId: UUID,
         cardCompany: String,

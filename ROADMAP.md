@@ -25,7 +25,7 @@
 
 > 🟢 **Phase 2 활성화 (2026-05-23)**: 사용자 승인. SPEC-SERVER-014(결제/구독) 완료. **범위는 코드 구현만** — 실제 RevenueCat 계정/스토어 상품/심사/배포/키 발급 없음, 시크릿은 env placeholder, 테스트는 샘플/모의. 상세 명세: `.moai/specs/SPEC-SERVER-014/spec.md`.
 >
-> ✅ **모든 SPEC 완료 (2026-05-23)**: Phase 1(13) + Phase 2(1) = 14개 전부 DONE. 다음 TODO 없음 — 자율 loop 정지 상태.
+> ✅ **모든 SPEC 완료 (2026-05-23)**: Phase 1(13) + Phase 2(1) + 품질개선 RF-001 = 15개 전부 DONE. 다음 TODO 없음 — 자율 loop 정지 상태.
 
 ## Phase 2 — 결제 (앱 출시 후)
 
@@ -44,4 +44,4 @@
 
 | SPEC | status | deps | 범위 |
 |------|--------|------|------|
-| SPEC-SERVER-RF-001 | TODO | — | **리팩터링 & 품질**: 클린아키텍처·보안·확장성·유지보수성 4차원 audit → 동작보존 리팩터(`./gradlew build test` 그린) → 문서화. 명세 `.moai/specs/SPEC-SERVER-RF-001/spec.md` |
+| SPEC-SERVER-RF-001 | DONE | — | **리팩터링 & 품질**: 4차원 audit(멀티테넌시 격리 누락 0건 재확인) → 동작보존 리팩터 4건(monthRange 400 검증·ReservationStatuses 추출·SettingsServices 분리·교차도메인 주석) → 문서화(audit.md·refactor-log.md). 165테스트 통과. 명세 `.moai/specs/SPEC-SERVER-RF-001/spec.md` |

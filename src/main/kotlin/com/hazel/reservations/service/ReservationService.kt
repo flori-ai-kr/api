@@ -1,5 +1,6 @@
 package com.hazel.reservations.service
 
+import com.hazel.common.domain.ReservationStatuses
 import com.hazel.common.error.AppException
 import com.hazel.common.error.ErrorCode
 import com.hazel.common.tenant.TenantContext
@@ -47,7 +48,7 @@ class ReservationService(
         reservationRepository
             .findByUserIdAndStatusNotAndDateGreaterThanEqualOrderByDateAscTimeAsc(
                 TenantContext.currentUserId(),
-                STATUS_CANCELLED,
+                ReservationStatuses.CANCELLED,
                 LocalDate.now(KST),
             ).map(ReservationResponse::from)
 
@@ -83,7 +84,7 @@ class ReservationService(
         reservation.title = requireNotNull(request.title)
         reservation.description = request.description
         reservation.amount = request.amount
-        reservation.status = validStatus(request.status ?: STATUS_PENDING)
+        reservation.status = validStatus(request.status ?: ReservationStatuses.PENDING)
         reservation.reminderAt = request.reminderAt
         return ReservationResponse.from(reservationRepository.save(reservation))
     }
@@ -169,14 +170,11 @@ class ReservationService(
             ?: throw AppException(ErrorCode.NOT_FOUND, "예약을 찾을 수 없습니다")
 
     private fun validStatus(value: String): String {
-        if (value !in STATUSES) throw AppException(ErrorCode.VALIDATION, "올바르지 않은 상태입니다")
+        if (value !in ReservationStatuses.ALL) throw AppException(ErrorCode.VALIDATION, "올바르지 않은 상태입니다")
         return value
     }
 
     private companion object {
-        const val STATUS_PENDING = "pending"
-        const val STATUS_CANCELLED = "cancelled"
-        val STATUSES = setOf("pending", "confirmed", "completed", "cancelled")
         val REMINDER_WINDOW: Duration = Duration.ofHours(48)
     }
 }
