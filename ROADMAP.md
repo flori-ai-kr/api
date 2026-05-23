@@ -12,7 +12,7 @@
 | SPEC-SERVER-001 | DONE | — | **프로젝트 스켈레톤**: Gradle KTS + Spring Boot(Kotlin, Java21), 패키지 구조(common/), `application.yml`(env 참조), 헬스체크 엔드포인트, Dockerfile, springdoc-openapi, `.gitignore`, ktlint/detekt |
 | SPEC-SERVER-002 | DONE | 001 | **DB + Flyway baseline**: RDS 연결 설정, Flyway, 원본 Supabase 스키마(20테이블) 이식 마이그레이션 작성 — RLS·`auth.users` FK 제거, 자체 `users` 테이블 추가, `user_id`가 `users` 참조. jsonb/배열/uuid/timestamptz 유지 |
 | SPEC-SERVER-003 | DONE | 002 | **인증**: Spring Security + JWT(access+refresh rotation), BCrypt, `POST /auth/signup`(가입 시 사용자별 기본 카테고리/결제방식/카드사 시드), `/auth/login`, `/auth/refresh`, `/auth/logout`, JWT 필터 → `TenantContext` |
-| SPEC-SERVER-004 | TODO | 003 | **공통 인프라**: `@ControllerAdvice` 표준 에러 응답 + Discord 웹훅 로깅, `TenantContext`(요청 스코프, userId), S3 presigned PUT 발급 서비스, FCM 발송 서비스, CORS, 보안 헤더 |
+| SPEC-SERVER-004 | DONE | 003 | **공통 인프라**: `@ControllerAdvice` 표준 에러 응답 + Discord 웹훅 로깅, `TenantContext`(요청 스코프, userId), S3 presigned PUT 발급 서비스, FCM 발송 서비스, CORS, 보안 헤더 |
 | SPEC-SERVER-005 | TODO | 004 | **매출 API**: CRUD + 무한스크롤(loadMore) + 자동완성 + 미수(unpaid) 완료/되돌리기 + 카드수수료/입금예정일 서버 계산 + 다중선택 필터(category/payment/channel `.in()`) |
 | SPEC-SERVER-006 | TODO | 004 | **지출 + 고정비 API**: 지출 CRUD + 자동완성, 고정비(recurring) CRUD(this/future/all 분기) + 빠른추가, `@Scheduled` KST 00:30 고정비 자동 생성(recurring_skips 고려) |
 | SPEC-SERVER-007 | TODO | 004 | **고객 API**: CRUD + 등급/성별 + findOrCreate(전화번호+user_id 복합) + 고객별 매출 조회 |

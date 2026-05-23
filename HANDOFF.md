@@ -4,6 +4,12 @@
 
 ## 현재 상태
 
+- **SPEC-SERVER-004 (공통 인프라) 완료** (2026-05-23).
+  - 에러: `GlobalExceptionHandler` 확장(검증/제약/DataIntegrity→409/AccessDenied→403/일반→500) + `DiscordErrorReporter`(@Async, 미설정 시 콘솔 폴백, 5분 dedup, 스택/PII 새니타이즈). `AsyncConfig(@EnableAsync)`.
+  - 스토리지: `S3PresignService.presignUpload`(presigned PUT + CloudFront/S3 파일 URL), `S3Presigner` 빈(지연 자격증명, 무자격증명 부팅 OK).
+  - 푸시: `PushService` 추상화 + `FirebasePushService`(fcm.enabled=true) + `LoggingPushService`(폴백, ConditionalOnMissingBean).
+  - CORS(origin 화이트리스트 env) + 보안헤더(Referrer-Policy 추가, DENY/nosniff 기본) → SecurityConfig 통합.
+  - 검증: **41테스트 통과(스킵 0)** — Discord 새니타이즈/리포팅·시크릿 비노출, S3 presign 오프라인, CORS 프리플라이트, 보안헤더, 푸시 폴백.
 - **SPEC-SERVER-003 (인증) 완료** (2026-05-23).
   - Spring Security 무상태 + 자체 JWT(HS256, access 15분) + refresh 회전(불투명 난수, DB에 SHA-256 해시 저장) + BCrypt.
   - `V3__refresh_tokens.sql` 추가. 엔티티 `User`/`RefreshToken`, `ddl-auto=validate`로 전환.
@@ -28,12 +34,13 @@
 
 ## 다음 할 일
 
-- **SPEC-SERVER-004 (공통 인프라)**: `@ControllerAdvice` 표준 에러 응답 **확장 + Discord 웹훅** 로깅,
-  `TenantContext`(이미 존재 — 재사용), S3 presigned PUT 발급 서비스, FCM 발송 서비스, CORS, 보안 헤더.
-  - 기존 `common/error/GlobalExceptionHandler`는 경량 버전 — SPEC-004에서 Discord 리포팅 + 핸들러(404/403/일반예외/DB제약 등) 보강.
-  - `DISCORD_WEBHOOK_URL`, `AWS_*`/`S3_BUCKET`/`CLOUDFRONT_DOMAIN`, `FCM` 서비스계정 환경변수 사용(없을 때 로컬 graceful 동작 고려).
-  - CORS: 앱/웹 origin 화이트리스트. 보안 헤더 추가.
-- 인증 활용: 도메인 SPEC(005~)에서 데이터 쿼리는 항상 `TenantContext.currentUserId()`로 격리.
+- **SPEC-SERVER-005 (매출 API)**: CRUD + 무한스크롤(loadMore) + 자동완성 + 미수(unpaid) 완료/되돌리기
+  + 카드수수료/입금예정일 **서버 계산** + 다중선택 필터(category/payment/channel `.in()`). deps: 004 ✅
+  - 원본 로직: `~/Desktop/hazel-admin/src/lib/actions/sales.ts`. 계산식: `expected_deposit = amount*(1-fee_rate/100)`, 입금예정일=영업일 N일(카드사 `deposit_days`).
+  - **첫 도메인 SPEC** — 엔티티/리포지토리 패턴 확립. 모든 쿼리 `TenantContext.currentUserId()`로 격리(HARD). hypersistence-utils로 `photos TEXT[]` 매핑.
+  - JPA 엔티티 추가 시 `ddl-auto=validate`가 스키마와 대조 — 컬럼/타입 정확히 매핑.
+  - 멀티테넌시 격리 테스트(다른 user 데이터 접근 차단) 필수.
+- 공통 인프라 활용: 데이터 쿼리는 항상 `TenantContext.currentUserId()`로 격리. 에러는 `AppException(ErrorCode.*)`.
 - [중요] SPEC 완료 시 ROADMAP status를 `DONE`으로 정확히 갱신 — 앱 세션이 이 상태를 보고 연동을 시작한다.
 
 ## 빌드/실행 메모
@@ -60,6 +67,7 @@
 
 ## 로그 (최신이 위로)
 
+- 2026-05-23 — SPEC-SERVER-004 완료. 공통 인프라(Discord 에러 리포팅·S3 presign·FCM 추상화·CORS·보안헤더). 41테스트 통과.
 - 2026-05-23 — SPEC-SERVER-003 완료. JWT 인증 + refresh 회전 + BCrypt + 가입 시드 + TenantContext + /me. 28테스트 통과.
 - 2026-05-23 — SPEC-SERVER-002 완료. Flyway baseline(22테이블, RLS 제거·자체 users) + 시드. Zonky 임베디드 PG로 마이그레이션 실제 적용 검증. 11테스트 통과.
 - 2026-05-23 — SPEC-SERVER-001 완료. Spring Boot(Kotlin) 스켈레톤 부팅 + 헬스체크 + Swagger + ktlint/detekt 게이트. build test 통과.

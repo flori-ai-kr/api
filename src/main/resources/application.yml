@@ -29,6 +29,28 @@ jwt:
   access-ttl-seconds: ${JWT_ACCESS_TTL:900}        # 15분
   refresh-ttl-seconds: ${JWT_REFRESH_TTL:1209600}  # 14일
 
+# CORS 허용 origin (앱/웹). 콤마 구분.
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8081}
+
+# 운영 에러 알림 (미설정 시 콘솔 로깅으로 폴백)
+discord:
+  webhook-url: ${DISCORD_WEBHOOK_URL:}
+
+# S3 presigned 업로드 (bucket 미설정 시 관련 빈 미생성 — 로컬 부팅 가능)
+aws:
+  region: ${AWS_REGION:ap-northeast-2}
+  s3:
+    bucket: ${S3_BUCKET:}
+    presign-expiry-seconds: ${S3_PRESIGN_EXPIRY:300}
+  cloudfront:
+    domain: ${CLOUDFRONT_DOMAIN:}
+
+# FCM 푸시 (enabled=true 일 때만 Firebase 초기화)
+fcm:
+  enabled: ${FCM_ENABLED:false}
+  credentials: ${FCM_CREDENTIALS:}
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

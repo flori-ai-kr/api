@@ -26,6 +26,8 @@ val springdocVersion = "2.7.0"
 val hypersistenceVersion = "3.9.0"
 val embeddedDbTestVersion = "2.5.1"
 val jjwtVersion = "0.12.6"
+val awsSdkVersion = "2.29.20"
+val firebaseAdminVersion = "9.4.1"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -47,6 +49,12 @@ dependencies {
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
+
+    // S3 presigned URL 발급
+    implementation(platform("software.amazon.awssdk:bom:$awsSdkVersion"))
+    implementation("software.amazon.awssdk:s3")
+    // FCM 푸시
+    implementation("com.google.firebase:firebase-admin:$firebaseAdminVersion")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")

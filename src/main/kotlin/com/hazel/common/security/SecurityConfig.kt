@@ -17,6 +17,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
+import org.springframework.web.cors.CorsConfigurationSource
 
 /**
  * 무상태(stateless) JWT 보안 구성.
@@ -27,6 +29,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 class SecurityConfig(
     private val tokenProvider: JwtTokenProvider,
     private val objectMapper: ObjectMapper,
+    private val corsConfigurationSource: CorsConfigurationSource,
 ) {
     @Bean
     fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
@@ -40,6 +43,11 @@ class SecurityConfig(
             csrf { disable() }
             httpBasic { disable() }
             formLogin { disable() }
+            cors { configurationSource = corsConfigurationSource }
+            headers {
+                // X-Frame-Options: DENY, X-Content-Type-Options: nosniff 는 기본값. Referrer-Policy만 추가.
+                referrerPolicy { policy = ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN }
+            }
             sessionManagement { sessionCreationPolicy = SessionCreationPolicy.STATELESS }
             authorizeHttpRequests {
                 authorize("/auth/**", permitAll)
