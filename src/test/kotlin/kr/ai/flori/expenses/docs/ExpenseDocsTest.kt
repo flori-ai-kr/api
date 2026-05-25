@@ -4,8 +4,10 @@ import kr.ai.flori.common.docs.RestDocsSupport
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.restdocs.generate.RestDocumentationGenerator
 import org.springframework.restdocs.payload.JsonFieldType
 import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
+import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
@@ -225,6 +227,7 @@ class ExpenseDocsTest : RestDocsSupport() {
 
         mockMvc
             .get("/expenses/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/expenses/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isOk() } }
             .andDo {
@@ -233,6 +236,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                         identifier = "expense-get",
                         tag = "Expenses",
                         summary = "지출 단건 조회",
+                        pathParameters = listOf(parameterWithName("id").description("지출 UUID")),
                         responseFields = expenseResponseFields,
                     ),
                 )
@@ -248,6 +252,7 @@ class ExpenseDocsTest : RestDocsSupport() {
 
         mockMvc
             .patch("/expenses/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/expenses/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -265,6 +270,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                         identifier = "expense-update",
                         tag = "Expenses",
                         summary = "지출 수정 (제공된 필드만 반영, 총액 재계산)",
+                        pathParameters = listOf(parameterWithName("id").description("지출 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("date")
@@ -353,6 +359,7 @@ class ExpenseDocsTest : RestDocsSupport() {
 
         mockMvc
             .delete("/expenses/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/expenses/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isNoContent() } }
             .andDo {
@@ -361,6 +368,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                         identifier = "expense-delete",
                         tag = "Expenses",
                         summary = "지출 삭제",
+                        pathParameters = listOf(parameterWithName("id").description("지출 UUID")),
                     ),
                 )
             }

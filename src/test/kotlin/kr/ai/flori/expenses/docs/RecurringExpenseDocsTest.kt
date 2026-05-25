@@ -7,8 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.restdocs.generate.RestDocumentationGenerator
 import org.springframework.restdocs.payload.JsonFieldType
 import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
+import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
@@ -302,6 +304,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
 
         mockMvc
             .get("/recurring-expenses/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/recurring-expenses/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isOk() } }
             .andDo {
@@ -310,6 +313,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         identifier = "recurring-expense-get",
                         tag = "RecurringExpenses",
                         summary = "고정비 단건 조회",
+                        pathParameters = listOf(parameterWithName("id").description("고정비 UUID")),
                         responseFields = recurringResponseFields,
                     ),
                 )
@@ -325,6 +329,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
 
         mockMvc
             .put("/recurring-expenses/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/recurring-expenses/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -347,6 +352,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         identifier = "recurring-expense-update",
                         tag = "RecurringExpenses",
                         summary = "고정비 수정 (전체 교체 — PUT)",
+                        pathParameters = listOf(parameterWithName("id").description("고정비 UUID")),
                         requestFields = recurringRequestFields,
                         responseFields = recurringResponseFields,
                     ),
@@ -363,6 +369,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
 
         mockMvc
             .post("/recurring-expenses/$id/toggle") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/recurring-expenses/{id}/toggle")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content = json(mapOf("isActive" to false))
@@ -373,6 +380,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         identifier = "recurring-expense-toggle",
                         tag = "RecurringExpenses",
                         summary = "고정비 활성/비활성 토글",
+                        pathParameters = listOf(parameterWithName("id").description("고정비 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("isActive")
@@ -394,6 +402,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
 
         mockMvc
             .post("/recurring-expenses/$id/quick-add") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/recurring-expenses/{id}/quick-add")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isCreated() } }
             .andDo {
@@ -402,6 +411,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         identifier = "recurring-expense-quick-add",
                         tag = "RecurringExpenses",
                         summary = "빠른 추가 (오늘 날짜로 즉시 지출 생성, 템플릿과 분리)",
+                        pathParameters = listOf(parameterWithName("id").description("고정비 UUID")),
                         responseFields =
                             listOf(
                                 fieldWithPath("id").type(JsonFieldType.STRING).description("생성된 지출 UUID"),
@@ -469,6 +479,10 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
 
         mockMvc
             .patch("/recurring-expenses/instances/$expenseId") {
+                requestAttr(
+                    RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE,
+                    "/recurring-expenses/instances/{expenseId}",
+                )
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 param("scope", "this")
                 contentType = MediaType.APPLICATION_JSON
@@ -486,6 +500,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         identifier = "recurring-instance-update-this",
                         tag = "RecurringExpenses",
                         summary = "고정비 인스턴스 수정 — 이것만 (scope=this, 해당 지출만 변경)",
+                        pathParameters = listOf(parameterWithName("expenseId").description("지출 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("date")
@@ -538,6 +553,10 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
 
         mockMvc
             .patch("/recurring-expenses/instances/$expenseId") {
+                requestAttr(
+                    RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE,
+                    "/recurring-expenses/instances/{expenseId}",
+                )
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 param("scope", "all")
                 contentType = MediaType.APPLICATION_JSON
@@ -554,6 +573,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         identifier = "recurring-instance-update-all",
                         tag = "RecurringExpenses",
                         summary = "고정비 인스턴스 수정 — 이후 모두 (scope=all, 템플릿+인스턴스 동시 변경)",
+                        pathParameters = listOf(parameterWithName("expenseId").description("지출 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("date")
@@ -613,6 +633,10 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
 
         mockMvc
             .delete("/recurring-expenses/instances/$expenseId") {
+                requestAttr(
+                    RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE,
+                    "/recurring-expenses/instances/{expenseId}",
+                )
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 param("scope", "this")
             }.andExpect { status { isNoContent() } }
@@ -622,6 +646,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         identifier = "recurring-instance-delete-this",
                         tag = "RecurringExpenses",
                         summary = "고정비 인스턴스 삭제 — 이것만 (scope=this, skip 기록 후 지출 삭제)",
+                        pathParameters = listOf(parameterWithName("expenseId").description("지출 UUID")),
                     ),
                 )
             }
@@ -639,6 +664,10 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
 
         mockMvc
             .delete("/recurring-expenses/instances/$expenseId") {
+                requestAttr(
+                    RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE,
+                    "/recurring-expenses/instances/{expenseId}",
+                )
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 param("scope", "all")
             }.andExpect { status { isNoContent() } }
@@ -648,6 +677,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         identifier = "recurring-instance-delete-all",
                         tag = "RecurringExpenses",
                         summary = "고정비 인스턴스 삭제 — 이후 모두 (scope=all, 템플릿 종료일 단축)",
+                        pathParameters = listOf(parameterWithName("expenseId").description("지출 UUID")),
                     ),
                 )
             }
@@ -662,6 +692,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
 
         mockMvc
             .delete("/recurring-expenses/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/recurring-expenses/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isNoContent() } }
             .andDo {
@@ -670,6 +701,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         identifier = "recurring-expense-delete",
                         tag = "RecurringExpenses",
                         summary = "고정비 삭제 (템플릿 전체 삭제)",
+                        pathParameters = listOf(parameterWithName("id").description("고정비 UUID")),
                     ),
                 )
             }
