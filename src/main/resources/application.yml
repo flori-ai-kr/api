@@ -60,10 +60,14 @@ revenuecat:
   webhook-secret: ${REVENUECAT_WEBHOOK_SECRET:}
 
 springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
+  # 문서 출처 = 테스트가 생성한 OpenAPI(static/docs/open-api-3.0.1.json).
+  # 런타임 어노테이션 스캔(api-docs)은 끄고, swagger-ui는 그 정적 스펙을 로드한다.
   api-docs:
-    path: /v3/api-docs
+    enabled: false
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    url: /docs/open-api-3.0.1.json
 
 management:
   endpoints:
