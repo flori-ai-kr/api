@@ -57,6 +57,7 @@ class SecurityConfig(
                 authorize("/v3/api-docs/**", permitAll)
                 authorize("/swagger-ui/**", permitAll)
                 authorize("/swagger-ui.html", permitAll)
+                authorize("/docs/open-api-3.0.1.json", permitAll) // 테스트 생성 OpenAPI 스펙(이 파일만 공개)
                 authorize("/internal/**", permitAll) // 내부 API는 InternalAuthVerifier(Bearer 키)로 별도 인증
                 authorize("/webhooks/**", permitAll) // 외부 웹훅은 사전 공유 Bearer 시크릿으로 별도 인증
                 authorize(anyRequest, authenticated)

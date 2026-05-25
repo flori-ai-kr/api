@@ -52,5 +52,6 @@ application-local.yml
 .moai/status_line.sh
 .moai/memory/
 .moai/worktrees/
+.moai/logs/
 .moai/evolution/telemetry/*.jsonl
 !.moai/evolution/telemetry/.gitkeep

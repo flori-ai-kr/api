@@ -23,7 +23,8 @@ Flori(꽃집 어드민)의 모바일 앱 백엔드. Spring Boot(Kotlin) REST API
 | 푸시 | **FCM** (Firebase Admin SDK) |
 | 스케줄 | **Spring `@Scheduled`** (기존 Vercel Cron 대체) |
 | 에러 로깅 | **@ControllerAdvice 표준 응답 + Discord 웹훅** |
-| API 문서 | **springdoc-openapi (Swagger UI)** — 앱이 계약(contract)을 읽는 출처 |
+| API 문서 | **Spring REST Docs + ePages `restdocs-api-spec` 0.19.2** — 테스트가 OpenAPI 3 스펙을 생성(SSOT). `OpenApiConfig`가 정적 스펙과 JWT bearerAuth를 병합해 `/v3/api-docs`로 노출, springdoc swagger-ui가 표시(Authorize 버튼). `packages-to-scan` 더미로 컨트롤러 스캔 억제. |
+| 커버리지 | **JaCoCo line 80% 게이트** — `jacocoTestCoverageVerification`이 `check`/CI에 연결(현재 89%). 제외: Application·config·dto |
 
 ## 아키텍처 원칙 (HARD)
 
