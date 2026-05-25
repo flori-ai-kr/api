@@ -58,5 +58,5 @@
 | SPEC-SERVER-017 | DONE | 015 | **(C1+C3) BaseEntity/Auditing + 엔티티 업데이트 컨벤션**: `common/entity` `BaseEntity`(@CreationTimestamp/@UpdateTimestamp)·`BaseCreatedEntity` 신설 → 19개 엔티티 전환, 서비스 수동 updatedAt 24곳 제거. 입금 상태 전이 도메인 메서드(C3 예시). ddl validate·167테스트 통과. 명세 `.moai/specs/SPEC-SERVER-017/spec.md` |
 | SPEC-SERVER-018 | DONE | 015 | **(E1) 리치 OpenAPI 어노테이션**: JWT bearer 보안 스킴 전역 등록(Authorize 버튼) + ErrorResponse·AuthDtos·SaleDtos 핵심 필드 `@Schema`(설명/예시/허용값). 패턴 정착. 167테스트 통과. 명세 `.moai/specs/SPEC-SERVER-018/spec.md` |
 | SPEC-SERVER-019 | DONE | 015 | **(D1+D2) 스케줄러 멱등성 + 실패격리**: `V5 notification_log` + 원자적 claim(ON CONFLICT)으로 일일요약 중복발송 차단(at-most-once). 리마인더·요약·고정비생성 건별 try-catch(DataAccessException)+@Transactional 제거로 PG abort 격리. 168테스트 통과. 명세 `.moai/specs/SPEC-SERVER-019/spec.md` |
-| SPEC-SERVER-020 | TODO | 015 | **(B4) 에러리포팅 PII 마스킹+truncate**: `DiscordErrorReporter`에 이메일/전화 등 PII 마스킹 + 메시지 길이 제한. "내부 디테일 비노출" 강화 |
+| SPEC-SERVER-020 | DONE | 015 | **(B4) 에러리포팅 PII 마스킹+truncate**: 공통 `maskSensitive`(경로/이메일/전화/토큰/키) 추출 → 메시지·액션 필드까지 `sanitizeMessage`+truncate 적용, 전화번호 마스킹 추가. 170테스트 통과. 명세 `.moai/specs/SPEC-SERVER-020/spec.md` |
 | SPEC-SERVER-021 | TODO | 015 | **(DOC1) 컨벤션 ADR 문서 체계**: `docs/conventions/yy-mm-dd-*.md`(Overview/Best Practice/Rationale+공식링크) 신설로 결정 근거를 코드와 함께 보존 |

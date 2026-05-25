@@ -59,8 +59,8 @@ class DiscordErrorReporter(
         val timestamp = ZonedDateTime.now(KST).format(TIMESTAMP_FORMAT)
         val fields =
             buildList {
-                add(field("오류 메시지", truncate(message, MAX_FIELD_LENGTH)))
-                add(field("액션", action))
+                add(field("오류 메시지", truncate(sanitizeMessage(message), MAX_FIELD_LENGTH)))
+                add(field("액션", truncate(sanitizeMessage(action), MAX_FIELD_LENGTH)))
                 add(field("시간 (KST)", timestamp))
                 throwable.stackTraceToString().takeIf { it.isNotBlank() }?.let {
                     add(field("스택", "```\n${truncate(sanitizeStack(it), MAX_STACK_LENGTH)}\n```"))

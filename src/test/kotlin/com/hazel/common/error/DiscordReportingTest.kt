@@ -40,4 +40,21 @@ class DiscordReportingTest {
     fun `짧은 문자열은 그대로 둔다`() {
         assertThat(truncate("ok", MAX_FIELD_LENGTH)).isEqualTo("ok")
     }
+
+    @Test
+    fun `메시지의 이메일·전화번호를 마스킹한다`() {
+        val msg = "중복 고객 bob@example.com 전화 010-1234-5678 처리 실패"
+
+        val sanitized = sanitizeMessage(msg)
+
+        assertThat(sanitized).doesNotContain("bob@example.com")
+        assertThat(sanitized).contains("[EMAIL]")
+        assertThat(sanitized).doesNotContain("010-1234-5678")
+        assertThat(sanitized).contains("[PHONE]")
+    }
+
+    @Test
+    fun `스택의 전화번호도 마스킹된다`() {
+        assertThat(sanitizeStack("phone=02-123-4567 leaked")).contains("[PHONE]")
+    }
 }
