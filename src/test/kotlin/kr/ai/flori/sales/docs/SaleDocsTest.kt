@@ -4,8 +4,10 @@ import kr.ai.flori.common.docs.RestDocsSupport
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.restdocs.generate.RestDocumentationGenerator
 import org.springframework.restdocs.payload.JsonFieldType
 import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
+import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
@@ -267,6 +269,7 @@ class SaleDocsTest : RestDocsSupport() {
 
         mockMvc
             .get("/sales/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/sales/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isOk() } }
             .andDo {
@@ -275,6 +278,7 @@ class SaleDocsTest : RestDocsSupport() {
                         identifier = "sale-get",
                         tag = "Sales",
                         summary = "매출 단건 조회",
+                        pathParameters = listOf(parameterWithName("id").description("매출 UUID")),
                         responseFields = saleResponseFields,
                     ),
                 )
@@ -290,6 +294,7 @@ class SaleDocsTest : RestDocsSupport() {
 
         mockMvc
             .patch("/sales/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/sales/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -306,6 +311,7 @@ class SaleDocsTest : RestDocsSupport() {
                         identifier = "sale-update",
                         tag = "Sales",
                         summary = "매출 수정 (제공된 필드만 반영, 입금값 재계산)",
+                        pathParameters = listOf(parameterWithName("id").description("매출 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("date")
@@ -386,6 +392,7 @@ class SaleDocsTest : RestDocsSupport() {
 
         mockMvc
             .post("/sales/$id/complete-unpaid") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/sales/{id}/complete-unpaid")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content = json(mapOf("paymentMethod" to "cash"))
@@ -396,6 +403,7 @@ class SaleDocsTest : RestDocsSupport() {
                         identifier = "sale-complete-unpaid",
                         tag = "Sales",
                         summary = "미수 완료 (미수 매출의 결제방식 확정)",
+                        pathParameters = listOf(parameterWithName("id").description("매출 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("paymentMethod")
@@ -444,6 +452,7 @@ class SaleDocsTest : RestDocsSupport() {
         // 되돌리기 문서화
         mockMvc
             .post("/sales/$id/revert-unpaid") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/sales/{id}/revert-unpaid")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isOk() } }
             .andDo {
@@ -452,6 +461,7 @@ class SaleDocsTest : RestDocsSupport() {
                         identifier = "sale-revert-unpaid",
                         tag = "Sales",
                         summary = "미수 되돌리기 (결제방식을 다시 미수로)",
+                        pathParameters = listOf(parameterWithName("id").description("매출 UUID")),
                         responseFields = saleResponseFields,
                     ),
                 )
@@ -494,6 +504,7 @@ class SaleDocsTest : RestDocsSupport() {
 
         mockMvc
             .delete("/sales/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/sales/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isNoContent() } }
             .andDo {
@@ -502,6 +513,7 @@ class SaleDocsTest : RestDocsSupport() {
                         identifier = "sale-delete",
                         tag = "Sales",
                         summary = "매출 삭제",
+                        pathParameters = listOf(parameterWithName("id").description("매출 UUID")),
                     ),
                 )
             }
