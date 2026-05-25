@@ -6,7 +6,8 @@
 
 - 🔧 **유지보수/컨벤션 라운드 진행 중** (2026-05-25): SPEC-015~021. 의존성 최신화 + 기존 Java/Spring 레포(onetime/backend·batch, socc-assistant-api)의 검증 패턴을 hazel(Kotlin)에 선별 이식.
   - **SPEC-SERVER-015 (Spring Boot 3.5 업그레이드) 완료** (2026-05-25): EOL된 3.4.1 → **3.5.14**, springdoc 2.7.0 → **2.8.17**. Spring Framework 6 유지(저위험). `./gradlew build test` **165테스트 통과(0 실패)**, runtimeClasspath `spring-boot-starter-web -> 3.5.14` 확인. 문서 버전표기(ARCHITECTURE/HANDOFF) 갱신. 명세 `.moai/specs/SPEC-SERVER-015/spec.md`. 후속: 4.0(Jackson3·SF7)·Kotlin 2.2+ 는 별도.
-  - **다음 TODO**: SPEC-016(멀티테넌시 가드 테스트) → 017(BaseEntity) → 018(OpenAPI) → 019(스케줄러 멱등성) → 020(PII 마스킹) → 021(컨벤션 ADR 문서).
+  - **SPEC-SERVER-016 (멀티테넌시 격리 자동검출 테스트, A1) 완료** (2026-05-25): `common/tenant/TenantIsolationGuardTest` — 리플렉션으로 모든 `com.hazel` 리포지토리 선언 메서드가 `user_id` 격리(메서드명 UserId 또는 @Query user_id 참조)되는지 전수 검증. 비격리는 `intentionalGlobal` 화이트리스트(인증 3·스케줄러 3·자식엔티티 2·인사이트 공유콘텐츠 11)에만 허용 + 화이트리스트 자기검증(실재·실제 비격리). **첫 실행에서 `InsightRepositories.kt`(복수 파일명이라 수동검색 누락) 공유콘텐츠 11종을 자동 검출** = 가드 효과 실증. 신규 메서드가 user_id 빠뜨리면 실패. 167테스트 통과(+2). 명세 `.moai/specs/SPEC-SERVER-016/spec.md`.
+  - **다음 TODO**: SPEC-017(BaseEntity/Auditing) → 018(OpenAPI) → 019(스케줄러 멱등성) → 020(PII 마스킹) → 021(컨벤션 ADR 문서).
 - 🎉 **전체 15개 기능 SPEC DONE** (Phase 1: 13 + Phase 2: 1 + 품질개선 RF-001, 2026-05-23).
 - **SPEC-SERVER-RF-001 (리팩터링 & 품질) 완료** (2026-05-23). AUDIT → REFACTOR → DOCUMENT, 동작 보존.
   - **AUDIT**: 4차원 점검(`.moai/specs/SPEC-SERVER-RF-001/audit.md`) + 독립 code-reviewer 교차검증. **멀티테넌시 user_id 격리 전수 재확인 = 누락 0건**(findById/findAll/existsById/네이티브 SQL 전수, 의도적 전역/cross-tenant 식별).

@@ -54,7 +54,7 @@
 | SPEC | status | deps | 범위 |
 |------|--------|------|------|
 | SPEC-SERVER-015 | DONE | — | **Spring Boot 3.5 업그레이드**: EOL된 3.4.1 → 3.5.14, springdoc 2.7.0 → 2.8.17. 동작 보존, 165테스트 통과. 명세 `.moai/specs/SPEC-SERVER-015/spec.md` |
-| SPEC-SERVER-016 | TODO | 015 | **(A1) 멀티테넌시 격리 자동검출 테스트**: 모든 도메인 서비스/리포지토리가 `user_id` 격리를 강제하는지 자동 검증(교차테넌트 접근 차단 단언 + 리포지토리 시그니처 가드). hazel 1순위 HARD 원칙을 가드레일화 |
+| SPEC-SERVER-016 | DONE | 015 | **(A1) 멀티테넌시 격리 자동검출 테스트**: 리플렉션으로 모든 `com.hazel` 리포지토리 선언 메서드가 `user_id` 격리(메서드명 UserId 또는 @Query user_id)되는지 전수 검증, 의도적 전역은 화이트리스트(자기검증 포함). 첫 실행에서 insights 공유콘텐츠 11종 검출. 167테스트 통과. 명세 `.moai/specs/SPEC-SERVER-016/spec.md` |
 | SPEC-SERVER-017 | TODO | 015 | **(C1+C3) BaseEntity/Auditing + 엔티티 업데이트 컨벤션**: 공통 `BaseEntity`(생성/수정 시각 자동 관리)로 엔티티별 수동 createdAt/updatedAt 제거, 상태전이는 도메인 메서드로. 동작 보존 |
 | SPEC-SERVER-018 | TODO | 015 | **(E1) 리치 OpenAPI 어노테이션**: 앱이 계약으로 읽는 Swagger 품질 향상 — DTO `@Schema`(example/allowableValues), `@Parameter`(example), `@Operation` 상세화 |
 | SPEC-SERVER-019 | TODO | 015 | **(D1+D2) 스케줄러 멱등성 + 실패격리**: `@Scheduled` 리마인더/고정비 잡에 발송로그+NOT EXISTS 멱등성(중복 푸시 방지) + 잡/대상자 단위 try-catch 실패격리 |
