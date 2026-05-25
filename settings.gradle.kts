@@ -1,1 +1,1 @@
-rootProject.name = "hazel-server"
+rootProject.name = "flori-ai-server"

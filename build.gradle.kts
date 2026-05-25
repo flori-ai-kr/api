@@ -9,7 +9,7 @@ plugins {
     id("io.gitlab.arturbosch.detekt") version "1.23.7"
 }
 
-group = "com.hazel"
+group = "kr.ai.flori"
 version = "0.0.1-SNAPSHOT"
 
 java {

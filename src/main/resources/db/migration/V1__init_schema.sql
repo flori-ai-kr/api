@@ -1,5 +1,5 @@
 -- =============================================
--- Hazel Server — Flyway baseline (원본 Supabase 스키마 이식)
+-- Flori Server — Flyway baseline (원본 Supabase 스키마 이식)
 -- 변경점:
 --   * Supabase RLS(행 수준 보안) 정책 전부 제거 → 멀티테넌시는 애플리케이션이 강제
 --   * Supabase 인증 테이블 FK 제거 → 자체 users 테이블 추가, 모든 user_id가 users(id) 참조

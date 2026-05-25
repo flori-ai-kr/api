@@ -1,5 +1,5 @@
 -- 인사이트 팔로우 계정 시드 (공유 참조 데이터, 테넌트 무관)
--- 원본: hazel-admin/supabase/migrations/2026-04-17-insights.sql
+-- 원본: flori-ai/web/supabase/migrations/2026-04-17-insights.sql
 INSERT INTO instagram_accounts (username, display_name, profile_url, region, sort_order) VALUES
   ('heartmadebykigpcn',   'Heart Made by KIG',    'https://www.instagram.com/heartmadebykigpcn',   'international', 10),
   ('futurejenn',          'Future Jenn',          'https://www.instagram.com/futurejenn',          'international', 20),
