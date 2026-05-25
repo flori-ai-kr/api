@@ -14,9 +14,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.restdocs.generate.RestDocumentationGenerator
 import org.springframework.restdocs.payload.FieldDescriptor
 import org.springframework.restdocs.payload.JsonFieldType
 import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
+import org.springframework.restdocs.request.ParameterDescriptor
+import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.ResultHandler
 import org.springframework.test.web.servlet.delete
@@ -50,15 +53,17 @@ class InternalInsightDocsTest {
 
     private fun json(value: Any): String = objectMapper.writeValueAsString(value)
 
-    /** docs() 헬퍼 — RestDocsSupport와 동일한 패턴 */
+    /** docs() 헬퍼 — RestDocsSupport와 동일한 패턴 (pathParameters 지원 포함) */
     private fun docs(
         identifier: String,
         tag: String,
         summary: String,
+        pathParameters: List<ParameterDescriptor> = emptyList(),
         requestFields: List<FieldDescriptor> = emptyList(),
         responseFields: List<FieldDescriptor> = emptyList(),
     ): ResultHandler {
         val params = ResourceSnippetParameters.builder().tag(tag).summary(summary)
+        if (pathParameters.isNotEmpty()) params.pathParameters(*pathParameters.toTypedArray())
         if (requestFields.isNotEmpty()) params.requestFields(*requestFields.toTypedArray())
         if (responseFields.isNotEmpty()) params.responseFields(*responseFields.toTypedArray())
         return MockMvcRestDocumentationWrapper.document(identifier, snippets = arrayOf(resource(params.build())))
@@ -313,6 +318,10 @@ class InternalInsightDocsTest {
 
         mockMvc
             .put("/internal/instagram-accounts/$id") {
+                requestAttr(
+                    RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE,
+                    "/internal/instagram-accounts/{id}",
+                )
                 header(HttpHeaders.AUTHORIZATION, "Bearer $internalKey")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -331,6 +340,7 @@ class InternalInsightDocsTest {
                         identifier = "internal-update-instagram-account",
                         tag = "Internal",
                         summary = "[내부 API] 인스타 계정 수정 (제공된 필드만 반영)",
+                        pathParameters = listOf(parameterWithName("id").description("수정할 계정 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("username")
@@ -372,6 +382,10 @@ class InternalInsightDocsTest {
 
         mockMvc
             .delete("/internal/instagram-accounts/$id") {
+                requestAttr(
+                    RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE,
+                    "/internal/instagram-accounts/{id}",
+                )
                 header(HttpHeaders.AUTHORIZATION, "Bearer $internalKey")
             }.andExpect { status { isNoContent() } }
             .andDo {
@@ -380,6 +394,7 @@ class InternalInsightDocsTest {
                         identifier = "internal-delete-instagram-account",
                         tag = "Internal",
                         summary = "[내부 API] 인스타 계정 삭제 (204 No Content)",
+                        pathParameters = listOf(parameterWithName("id").description("삭제할 계정 UUID")),
                     ),
                 )
             }

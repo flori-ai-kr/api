@@ -1,7 +1,10 @@
 package kr.ai.flori.insights.docs
 
 import kr.ai.flori.common.docs.RestDocsSupport
+import kr.ai.flori.insights.entity.InstagramPost
 import kr.ai.flori.insights.entity.TrendArticle
+import kr.ai.flori.insights.repository.InstagramAccountRepository
+import kr.ai.flori.insights.repository.InstagramPostRepository
 import kr.ai.flori.insights.repository.TrendArticleRepository
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -12,6 +15,7 @@ import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
+import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
@@ -23,6 +27,12 @@ import java.util.UUID
 class ScrapDocsTest : RestDocsSupport() {
     @Autowired
     private lateinit var trendRepository: TrendArticleRepository
+
+    @Autowired
+    private lateinit var accountRepository: InstagramAccountRepository
+
+    @Autowired
+    private lateinit var postRepository: InstagramPostRepository
 
     /** InsightScrapResponse 공통 응답 필드 (prefix 없이) */
     private val scrapResponseFields =
@@ -61,6 +71,23 @@ class ScrapDocsTest : RestDocsSupport() {
                 collectedAt = LocalDate.now(),
             )
         return requireNotNull(trendRepository.save(article).id)
+    }
+
+    /** 인스타 포스트 시드 — Flyway에서 계정이 이미 시드되어 있으므로 첫 번째 계정을 사용 */
+    private fun seedPost(): UUID {
+        val account = accountRepository.findByActiveTrueOrderBySortOrderAscUsernameAsc().first()
+        val post =
+            InstagramPost(
+                accountId = requireNotNull(account.id),
+                shortcode = "SCRAP${UUID.randomUUID().toString().take(8)}",
+                permalink = "https://www.instagram.com/p/scrap_test/",
+                postedAt = Instant.now(),
+            ).apply {
+                imageUrls = listOf("https://cdn.example.com/scrap-img.jpg")
+                caption = "스크랩 문서화용 포스트"
+                likeCount = 42
+            }
+        return requireNotNull(postRepository.save(post).id)
     }
 
     // ── 1. 스크랩 토글 (추가) ──────────────────────────────────────────────────
@@ -281,11 +308,19 @@ class ScrapDocsTest : RestDocsSupport() {
     }
 
     // ── 6. 포스트 스크랩 목록 ─────────────────────────────────────────────────
-    // 포스트 스크랩은 포스트 엔티티가 필요하므로 빈 목록으로 문서화 (배열 레벨 필드만 선언)
 
     @Test
     fun `포스트 스크랩 목록 문서화`() {
+        val postId = seedPost()
         val token = signupAndToken()
+
+        // 포스트 스크랩 추가
+        mockMvc
+            .post("/insights/scraps/toggle") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content = json(mapOf("targetType" to "post", "targetId" to postId))
+            }.andReturn()
 
         mockMvc
             .get("/insights/scraps/posts") {
@@ -301,6 +336,33 @@ class ScrapDocsTest : RestDocsSupport() {
                         responseFields =
                             listOf(
                                 fieldWithPath("[]").type(JsonFieldType.ARRAY).description("포스트 스크랩 목록"),
+                                // scrap 필드 (InsightScrapResponse)
+                                fieldWithPath("[].scrap.id").type(JsonFieldType.STRING).description("스크랩 UUID"),
+                                fieldWithPath("[].scrap.targetType").type(JsonFieldType.STRING).description("대상 타입 (post)"),
+                                fieldWithPath("[].scrap.targetId").type(JsonFieldType.STRING).description("대상 UUID"),
+                                fieldWithPath("[].scrap.memo").type(JsonFieldType.STRING).optional().description("메모 (null 가능)"),
+                                fieldWithPath("[].scrap.createdAt").type(JsonFieldType.STRING).description("스크랩 생성 시각 (ISO-8601)"),
+                                fieldWithPath("[].scrap.updatedAt").type(JsonFieldType.STRING).description("최종 수정 시각 (ISO-8601)"),
+                                // post 필드 (InstagramPostResponse)
+                                fieldWithPath("[].post.id").type(JsonFieldType.STRING).description("포스트 UUID"),
+                                fieldWithPath("[].post.accountId").type(JsonFieldType.STRING).description("계정 UUID"),
+                                fieldWithPath("[].post.shortcode").type(JsonFieldType.STRING).description("인스타그램 shortcode"),
+                                fieldWithPath("[].post.permalink").type(JsonFieldType.STRING).description("퍼머링크 URL"),
+                                fieldWithPath("[].post.imageUrls").type(JsonFieldType.ARRAY).description("이미지 URL 목록"),
+                                fieldWithPath("[].post.caption").type(JsonFieldType.STRING).optional().description("캡션 (null 가능)"),
+                                fieldWithPath("[].post.likeCount").type(JsonFieldType.NUMBER).description("좋아요 수"),
+                                fieldWithPath("[].post.postedAt").type(JsonFieldType.STRING).description("게시 시각 (ISO-8601)"),
+                                fieldWithPath("[].post.account").type(JsonFieldType.OBJECT).optional().description("계정 정보 (null 가능)"),
+                                fieldWithPath("[].post.account.id").type(JsonFieldType.STRING).optional().description("계정 UUID"),
+                                fieldWithPath("[].post.account.username").type(JsonFieldType.STRING).optional().description("유저네임"),
+                                fieldWithPath(
+                                    "[].post.account.displayName",
+                                ).type(JsonFieldType.STRING).optional().description("표시명 (null 가능)"),
+                                fieldWithPath("[].post.account.profileUrl").type(JsonFieldType.STRING).optional().description("프로필 URL"),
+                                fieldWithPath("[].post.account.region").type(JsonFieldType.STRING).optional().description("지역"),
+                                fieldWithPath("[].post.account.sortOrder").type(JsonFieldType.NUMBER).optional().description("정렬 순서"),
+                                fieldWithPath("[].post.account.active").type(JsonFieldType.BOOLEAN).optional().description("활성 여부"),
+                                fieldWithPath("[].post.account.notes").type(JsonFieldType.STRING).optional().description("메모 (null 가능)"),
                             ),
                     ),
                 )
