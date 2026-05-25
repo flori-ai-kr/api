@@ -25,7 +25,8 @@
 
 > 🟢 **Phase 2 활성화 (2026-05-23)**: 사용자 승인. SPEC-SERVER-014(결제/구독) 완료. **범위는 코드 구현만** — 실제 RevenueCat 계정/스토어 상품/심사/배포/키 발급 없음, 시크릿은 env placeholder, 테스트는 샘플/모의. 상세 명세: `.moai/specs/SPEC-SERVER-014/spec.md`.
 >
-> ✅ **모든 SPEC 완료 (2026-05-23)**: Phase 1(13) + Phase 2(1) + 품질개선 RF-001 = 15개 전부 DONE. 다음 TODO 없음 — 자율 loop 정지 상태.
+> ✅ **기능 SPEC 완료 (2026-05-23)**: Phase 1(13) + Phase 2(1) + 품질개선 RF-001 = 15개 DONE.
+> 🔧 **유지보수/컨벤션 라운드 진행 중 (2026-05-25)**: SPEC-015~021 — 의존성 최신화 + 외부 레포 검증패턴 이식. 아래 "유지보수 & 컨벤션 정착" 섹션 참조.
 
 ## Phase 2 — 결제 (앱 출시 후)
 
@@ -45,3 +46,17 @@
 | SPEC | status | deps | 범위 |
 |------|--------|------|------|
 | SPEC-SERVER-RF-001 | DONE | — | **리팩터링 & 품질**: 4차원 audit(멀티테넌시 격리 누락 0건 재확인) → 동작보존 리팩터 4건(monthRange 400 검증·ReservationStatuses 추출·SettingsServices 분리·교차도메인 주석) → 문서화(audit.md·refactor-log.md). 165테스트 통과. 명세 `.moai/specs/SPEC-SERVER-RF-001/spec.md` |
+
+## 유지보수 & 컨벤션 정착 (2026-05-25)
+
+> 사용자 지시(2026-05-25): 의존성 최신화 + 기존 Java/Spring 레포(onetime/backend·batch, socc-assistant-api)의 검증된 패턴을 hazel(Kotlin)에 선별 이식. 동작 보존, 과엔지니어링 금지.
+
+| SPEC | status | deps | 범위 |
+|------|--------|------|------|
+| SPEC-SERVER-015 | DONE | — | **Spring Boot 3.5 업그레이드**: EOL된 3.4.1 → 3.5.14, springdoc 2.7.0 → 2.8.17. 동작 보존, 165테스트 통과. 명세 `.moai/specs/SPEC-SERVER-015/spec.md` |
+| SPEC-SERVER-016 | TODO | 015 | **(A1) 멀티테넌시 격리 자동검출 테스트**: 모든 도메인 서비스/리포지토리가 `user_id` 격리를 강제하는지 자동 검증(교차테넌트 접근 차단 단언 + 리포지토리 시그니처 가드). hazel 1순위 HARD 원칙을 가드레일화 |
+| SPEC-SERVER-017 | TODO | 015 | **(C1+C3) BaseEntity/Auditing + 엔티티 업데이트 컨벤션**: 공통 `BaseEntity`(생성/수정 시각 자동 관리)로 엔티티별 수동 createdAt/updatedAt 제거, 상태전이는 도메인 메서드로. 동작 보존 |
+| SPEC-SERVER-018 | TODO | 015 | **(E1) 리치 OpenAPI 어노테이션**: 앱이 계약으로 읽는 Swagger 품질 향상 — DTO `@Schema`(example/allowableValues), `@Parameter`(example), `@Operation` 상세화 |
+| SPEC-SERVER-019 | TODO | 015 | **(D1+D2) 스케줄러 멱등성 + 실패격리**: `@Scheduled` 리마인더/고정비 잡에 발송로그+NOT EXISTS 멱등성(중복 푸시 방지) + 잡/대상자 단위 try-catch 실패격리 |
+| SPEC-SERVER-020 | TODO | 015 | **(B4) 에러리포팅 PII 마스킹+truncate**: `DiscordErrorReporter`에 이메일/전화 등 PII 마스킹 + 메시지 길이 제한. "내부 디테일 비노출" 강화 |
+| SPEC-SERVER-021 | TODO | 015 | **(DOC1) 컨벤션 ADR 문서 체계**: `docs/conventions/yy-mm-dd-*.md`(Overview/Best Practice/Rationale+공식링크) 신설로 결정 근거를 코드와 함께 보존 |

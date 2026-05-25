@@ -1,6 +1,6 @@
 plugins {
     val kotlinVersion = "2.1.0"
-    id("org.springframework.boot") version "3.4.1"
+    id("org.springframework.boot") version "3.5.14"
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.spring") version kotlinVersion
@@ -22,7 +22,7 @@ repositories {
     mavenCentral()
 }
 
-val springdocVersion = "2.7.0"
+val springdocVersion = "2.8.17"
 val hypersistenceVersion = "3.9.0"
 val embeddedDbTestVersion = "2.5.1"
 val jjwtVersion = "0.12.6"

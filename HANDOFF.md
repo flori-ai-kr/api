@@ -4,7 +4,10 @@
 
 ## 현재 상태
 
-- 🎉 **전체 15개 SPEC DONE** (Phase 1: 13 + Phase 2: 1 + 품질개선 RF-001, 2026-05-23). 다음 TODO 없음 → 자율 loop 정지.
+- 🔧 **유지보수/컨벤션 라운드 진행 중** (2026-05-25): SPEC-015~021. 의존성 최신화 + 기존 Java/Spring 레포(onetime/backend·batch, socc-assistant-api)의 검증 패턴을 hazel(Kotlin)에 선별 이식.
+  - **SPEC-SERVER-015 (Spring Boot 3.5 업그레이드) 완료** (2026-05-25): EOL된 3.4.1 → **3.5.14**, springdoc 2.7.0 → **2.8.17**. Spring Framework 6 유지(저위험). `./gradlew build test` **165테스트 통과(0 실패)**, runtimeClasspath `spring-boot-starter-web -> 3.5.14` 확인. 문서 버전표기(ARCHITECTURE/HANDOFF) 갱신. 명세 `.moai/specs/SPEC-SERVER-015/spec.md`. 후속: 4.0(Jackson3·SF7)·Kotlin 2.2+ 는 별도.
+  - **다음 TODO**: SPEC-016(멀티테넌시 가드 테스트) → 017(BaseEntity) → 018(OpenAPI) → 019(스케줄러 멱등성) → 020(PII 마스킹) → 021(컨벤션 ADR 문서).
+- 🎉 **전체 15개 기능 SPEC DONE** (Phase 1: 13 + Phase 2: 1 + 품질개선 RF-001, 2026-05-23).
 - **SPEC-SERVER-RF-001 (리팩터링 & 품질) 완료** (2026-05-23). AUDIT → REFACTOR → DOCUMENT, 동작 보존.
   - **AUDIT**: 4차원 점검(`.moai/specs/SPEC-SERVER-RF-001/audit.md`) + 독립 code-reviewer 교차검증. **멀티테넌시 user_id 격리 전수 재확인 = 누락 0건**(findById/findAll/existsById/네이티브 SQL 전수, 의도적 전역/cross-tenant 식별).
   - **REFACTOR**(behavior-preserving 4건): R1 `monthRange` 잘못된 입력 500→400(VALIDATION)+테스트 / R2 `ReservationStatuses` → `common/domain` 추출 / R3 `SettingsServices.kt` → 3파일 분리 / R4 교차도메인 접근 주석(`DepositCalculator`·`UserPreferenceService`).
@@ -99,7 +102,7 @@
   - `V2__seed_instagram_accounts.sql`: 공유 계정 15건 시드.
   - 테스트: **Zonky embedded-postgres**(Docker 불필요, 실제 PG)로 마이그레이션 실제 적용 검증 + DB 무관 SQL 규칙 테스트. 전체 11테스트 통과(스킵 0).
 - **SPEC-SERVER-001 (프로젝트 스켈레톤) 완료** (2026-05-23).
-  - Gradle(KTS) + Spring Boot 3.4.1 + Kotlin 2.1.0, Java 21 toolchain, Gradle Wrapper 8.11.1 동봉.
+  - Gradle(KTS) + Spring Boot 3.5.14 + Kotlin 2.1.0, Java 21 toolchain, Gradle Wrapper 8.11.1 동봉.
   - 패키지: `com.hazel`(메인) + `com.hazel.common`(config/health). 도메인 패키지는 후속 SPEC에서 추가.
   - `GET /health` → `HealthResponse{status,service,time}` (DB 비의존). Actuator `/actuator/health` 포함.
   - springdoc-openapi(`/swagger-ui.html`, `/v3/api-docs`) + OpenAPI 메타.

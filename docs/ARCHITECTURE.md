@@ -18,7 +18,7 @@ flowchart TB
     end
 
     subgraph AWS["AWS Cloud (ap-northeast-2)"]
-        subgraph Server["Hazel Server · Spring Boot 3.4 (Kotlin / Java 21)"]
+        subgraph Server["Hazel Server · Spring Boot 3.5 (Kotlin / Java 21)"]
             Sec[Security Filter<br/>JWT → TenantContext]
             Ctrl[Controllers<br/>REST + @Valid]
             Svc[Services<br/>비즈니스 SSOT]
@@ -105,7 +105,7 @@ flowchart LR
 
 ## 기술 스택 선정 이유
 
-### Kotlin + Spring Boot 3.4 (Java 21)
+### Kotlin + Spring Boot 3.5 (Java 21)
 
 **왜 이 조합인가:**
 
@@ -566,7 +566,7 @@ flowchart LR
 
 | 패키지 | 버전 | 용도 |
 |---|---|---|
-| Spring Boot | 3.4.1 | 프레임워크 |
+| Spring Boot | 3.5.14 | 프레임워크 |
 | Kotlin | 2.1.0 | 언어 (jvm·spring·jpa 플러그인) |
 | Java toolchain | 21 | 빌드/런타임 |
 | Gradle (wrapper) | 8.11.1 | 빌드 |
@@ -578,7 +578,7 @@ flowchart LR
 | JJWT | 0.12.6 | 자체 JWT |
 | AWS SDK v2 (s3) | 2.29.20 | presigned URL |
 | Firebase Admin | 9.4.1 | FCM |
-| springdoc-openapi | 2.7.0 | Swagger UI |
+| springdoc-openapi | 2.8.17 | Swagger UI |
 | ktlint (plugin / engine) | 12.1.1 / 1.5.0 | 포맷 |
 | detekt | 1.23.7 | 정적 분석 |
 | embedded-database-spring-test (Zonky) | 2.5.1 | 테스트용 임베디드 PG |
