@@ -1,0 +1,237 @@
+{
+  "openapi" : "3.0.1",
+  "info" : {
+    "title" : "Flori Server API",
+    "description" : "Spring REST Docs로 생성·검증된 Flori 백엔드 API 계약",
+    "version" : "0.0.1"
+  },
+  "servers" : [ {
+    "url" : "http://localhost:8080"
+  } ],
+  "tags" : [ ],
+  "paths" : {
+    "/auth/login" : {
+      "post" : {
+        "tags" : [ "Auth" ],
+        "summary" : "로그인",
+        "description" : "로그인",
+        "operationId" : "auth-login",
+        "requestBody" : {
+          "content" : {
+            "application/json;charset=UTF-8" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/auth-login-1529695140"
+              },
+              "examples" : {
+                "auth-login" : {
+                  "value" : "{\"email\":\"auth-doc-9127b20d-08a7-43a9-a896-df3b5447750e@flori.dev\",\"password\":\"password123\"}"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "200",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/auth-signup1260436310"
+                },
+                "examples" : {
+                  "auth-login" : {
+                    "value" : "{\"accessToken\":\"eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiI3OTk1NjUyZS1hZDRkLTRmYTgtYjdjZS0zNjhlOTFiODNhZTciLCJlbWFpbCI6ImF1dGgtZG9jLTkxMjdiMjBkLTA4YTctNDNhOS1hODk2LWRmM2I1NDQ3NzUwZUBmbG9yaS5kZXYiLCJpYXQiOjE3Nzk3MDg1NzQsImV4cCI6MTc3OTcwOTQ3NH0.oq0Cj3fWPNfXzD1Fubef2oxsPRP5dAgrNJhgLP3GFnBxYqrESQctvirgmcrkZT1X\",\"refreshToken\":\"ekiDrg44nTexOF6N0tbAr0SCN5Inc7fY1xGJFsMkY1g\",\"expiresIn\":900,\"tokenType\":\"Bearer\"}"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout" : {
+      "post" : {
+        "tags" : [ "Auth" ],
+        "summary" : "로그아웃(refresh 무효화)",
+        "description" : "로그아웃(refresh 무효화)",
+        "operationId" : "auth-logout",
+        "requestBody" : {
+          "content" : {
+            "application/json;charset=UTF-8" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/auth-logout-2059659370"
+              },
+              "examples" : {
+                "auth-logout" : {
+                  "value" : "{\"refreshToken\":\"0Xo33W3ioFOf2BvjQzFZJID18S9vSzQ5EysiQjlPRPA\"}"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "204" : {
+            "description" : "204"
+          }
+        }
+      }
+    },
+    "/auth/refresh" : {
+      "post" : {
+        "tags" : [ "Auth" ],
+        "summary" : "토큰 갱신(refresh 로테이션)",
+        "description" : "토큰 갱신(refresh 로테이션)",
+        "operationId" : "auth-refresh",
+        "requestBody" : {
+          "content" : {
+            "application/json;charset=UTF-8" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/auth-refresh762640904"
+              },
+              "examples" : {
+                "auth-refresh" : {
+                  "value" : "{\"refreshToken\":\"DPdw3B9RP6aTseXYOTvoeVeA_aCAuroYQ5jDOGdRx_w\"}"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "200",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/auth-signup1260436310"
+                },
+                "examples" : {
+                  "auth-refresh" : {
+                    "value" : "{\"accessToken\":\"eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJiMjc2ZDVmZC02ZDAwLTRkZDQtOGUwNi1mNTk4OWMyNTI0MTMiLCJlbWFpbCI6ImF1dGgtZG9jLTRjMDhmNzUzLTczOGEtNDU4My04OTVhLWI5ZGM2M2VhZGIzYkBmbG9yaS5kZXYiLCJpYXQiOjE3Nzk3MDg1NzQsImV4cCI6MTc3OTcwOTQ3NH0.QCaE_v3hcJMSySOIZ04ZzRPW9lyQ3IUyTJcdx6jwysA6vkZJQGCnGtqYUxj-1U-6\",\"refreshToken\":\"rmunrw40AhKB5vf-WTvvIWjSwT-g_Tq3G1IlHazsec8\",\"expiresIn\":900,\"tokenType\":\"Bearer\"}"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/signup" : {
+      "post" : {
+        "tags" : [ "Auth" ],
+        "summary" : "회원가입",
+        "description" : "회원가입",
+        "operationId" : "auth-signup",
+        "requestBody" : {
+          "content" : {
+            "application/json;charset=UTF-8" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/auth-signup-1544621401"
+              },
+              "examples" : {
+                "auth-signup" : {
+                  "value" : "{\"email\":\"auth-doc-695f4d05-d31d-4aac-b1b2-35f97cfd42c7@flori.dev\",\"password\":\"password123\",\"name\":\"사장님\"}"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "description" : "201",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/auth-signup1260436310"
+                },
+                "examples" : {
+                  "auth-signup" : {
+                    "value" : "{\"accessToken\":\"eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiI0ODA3MWNjZC0xZTIwLTQwYWQtYjRjNS0yZjI0MDQ1MjU2NDYiLCJlbWFpbCI6ImF1dGgtZG9jLTY5NWY0ZDA1LWQzMWQtNGFhYy1iMWIyLTM1Zjk3Y2ZkNDJjN0BmbG9yaS5kZXYiLCJpYXQiOjE3Nzk3MDg1NzQsImV4cCI6MTc3OTcwOTQ3NH0.RM8Iiw_HYQxAdZ4m2mbl4tlge54L22Rg1lt9PKY4Xefwz-LKZfHTqSl8sn2VV-M4\",\"refreshToken\":\"h-chrlaKeSXoiLBhYnonEvqDKCpvenlnq44V_BwHP68\",\"expiresIn\":900,\"tokenType\":\"Bearer\"}"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "auth-signup1260436310" : {
+        "required" : [ "accessToken", "expiresIn", "refreshToken", "tokenType" ],
+        "type" : "object",
+        "properties" : {
+          "expiresIn" : {
+            "type" : "number",
+            "description" : "access 만료까지 남은 초"
+          },
+          "tokenType" : {
+            "type" : "string",
+            "description" : "토큰 타입(Bearer)"
+          },
+          "accessToken" : {
+            "type" : "string",
+            "description" : "API 호출용 access 토큰(짧은 TTL)"
+          },
+          "refreshToken" : {
+            "type" : "string",
+            "description" : "access 재발급용 refresh 토큰(로테이션)"
+          }
+        }
+      },
+      "auth-signup-1544621401" : {
+        "required" : [ "email", "password" ],
+        "type" : "object",
+        "properties" : {
+          "password" : {
+            "type" : "string",
+            "description" : "비밀번호(8~72자)"
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "표시 이름(선택)",
+            "nullable" : true
+          },
+          "email" : {
+            "type" : "string",
+            "description" : "로그인 이메일"
+          }
+        }
+      },
+      "auth-logout-2059659370" : {
+        "required" : [ "refreshToken" ],
+        "type" : "object",
+        "properties" : {
+          "refreshToken" : {
+            "type" : "string",
+            "description" : "무효화할 refresh 토큰"
+          }
+        }
+      },
+      "auth-refresh762640904" : {
+        "required" : [ "refreshToken" ],
+        "type" : "object",
+        "properties" : {
+          "refreshToken" : {
+            "type" : "string",
+            "description" : "발급받은 refresh 토큰"
+          }
+        }
+      },
+      "auth-login-1529695140" : {
+        "required" : [ "email", "password" ],
+        "type" : "object",
+        "properties" : {
+          "password" : {
+            "type" : "string",
+            "description" : "비밀번호"
+          },
+          "email" : {
+            "type" : "string",
+            "description" : "로그인 이메일"
+          }
+        }
+      }
+    }
+  }
+}
