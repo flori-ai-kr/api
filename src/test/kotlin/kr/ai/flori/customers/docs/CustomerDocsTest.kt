@@ -4,8 +4,10 @@ import kr.ai.flori.common.docs.RestDocsSupport
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.restdocs.generate.RestDocumentationGenerator
 import org.springframework.restdocs.payload.JsonFieldType
 import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
+import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
@@ -340,6 +342,7 @@ class CustomerDocsTest : RestDocsSupport() {
 
         mockMvc
             .get("/customers/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/customers/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isOk() } }
             .andDo {
@@ -348,6 +351,7 @@ class CustomerDocsTest : RestDocsSupport() {
                         identifier = "customer-get",
                         tag = "Customers",
                         summary = "고객 단건 조회 (구매 통계 포함)",
+                        pathParameters = listOf(parameterWithName("id").description("고객 UUID")),
                         responseFields = customerResponseFields,
                     ),
                 )
@@ -364,6 +368,7 @@ class CustomerDocsTest : RestDocsSupport() {
 
         mockMvc
             .get("/customers/$id/sales") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/customers/{id}/sales")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 param("page", "0")
                 param("size", "10")
@@ -374,6 +379,7 @@ class CustomerDocsTest : RestDocsSupport() {
                         identifier = "customer-sales",
                         tag = "Customers",
                         summary = "고객별 매출 조회 (페이지네이션)",
+                        pathParameters = listOf(parameterWithName("id").description("고객 UUID")),
                         responseFields = salesPageResponseFields,
                     ),
                 )
@@ -482,6 +488,7 @@ class CustomerDocsTest : RestDocsSupport() {
 
         mockMvc
             .patch("/customers/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/customers/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -498,6 +505,7 @@ class CustomerDocsTest : RestDocsSupport() {
                         identifier = "customer-update",
                         tag = "Customers",
                         summary = "고객 수정 (제공된 필드만 반영)",
+                        pathParameters = listOf(parameterWithName("id").description("고객 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("name")
@@ -536,6 +544,7 @@ class CustomerDocsTest : RestDocsSupport() {
 
         mockMvc
             .patch("/customers/$id/grade") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/customers/{id}/grade")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content = json(mapOf("grade" to "vip"))
@@ -546,6 +555,7 @@ class CustomerDocsTest : RestDocsSupport() {
                         identifier = "customer-update-grade",
                         tag = "Customers",
                         summary = "고객 등급 변경",
+                        pathParameters = listOf(parameterWithName("id").description("고객 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("grade")
@@ -567,6 +577,7 @@ class CustomerDocsTest : RestDocsSupport() {
 
         mockMvc
             .delete("/customers/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/customers/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isNoContent() } }
             .andDo {
@@ -575,6 +586,7 @@ class CustomerDocsTest : RestDocsSupport() {
                         identifier = "customer-delete",
                         tag = "Customers",
                         summary = "고객 삭제",
+                        pathParameters = listOf(parameterWithName("id").description("고객 UUID")),
                     ),
                 )
             }
