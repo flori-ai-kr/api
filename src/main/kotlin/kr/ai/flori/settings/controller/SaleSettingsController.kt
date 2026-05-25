@@ -1,7 +1,5 @@
 package kr.ai.flori.settings.controller
 
-import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import kr.ai.flori.settings.dto.LabelSettingCreateRequest
 import kr.ai.flori.settings.dto.LabelSettingResponse
@@ -20,32 +18,27 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
-@Tag(name = "SaleSettings", description = "매출 설정(카테고리/결제방식)")
 @RestController
 @RequestMapping("/settings")
 class SaleSettingsController(
     private val categoryService: SaleCategorySettingService,
     private val paymentService: SalePaymentMethodSettingService,
 ) {
-    @Operation(summary = "매출 카테고리 목록")
     @GetMapping("/sale-categories")
     fun categories(): List<LabelSettingResponse> = categoryService.list()
 
-    @Operation(summary = "매출 카테고리 생성")
     @PostMapping("/sale-categories")
     @ResponseStatus(HttpStatus.CREATED)
     fun createCategory(
         @Valid @RequestBody request: LabelSettingCreateRequest,
     ): LabelSettingResponse = categoryService.add(requireNotNull(request.label), request.color, request.value)
 
-    @Operation(summary = "매출 카테고리 수정")
     @PutMapping("/sale-categories/{id}")
     fun updateCategory(
         @PathVariable id: UUID,
         @Valid @RequestBody request: LabelSettingUpdateRequest,
     ): LabelSettingResponse = categoryService.update(id, requireNotNull(request.label), requireNotNull(request.color))
 
-    @Operation(summary = "매출 카테고리 삭제")
     @DeleteMapping("/sale-categories/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteCategory(
@@ -54,25 +47,21 @@ class SaleSettingsController(
         categoryService.delete(id)
     }
 
-    @Operation(summary = "매출 결제방식 목록")
     @GetMapping("/payment-methods")
     fun payments(): List<LabelSettingResponse> = paymentService.list()
 
-    @Operation(summary = "매출 결제방식 생성")
     @PostMapping("/payment-methods")
     @ResponseStatus(HttpStatus.CREATED)
     fun createPayment(
         @Valid @RequestBody request: LabelSettingCreateRequest,
     ): LabelSettingResponse = paymentService.add(requireNotNull(request.label), request.color, request.value)
 
-    @Operation(summary = "매출 결제방식 수정")
     @PutMapping("/payment-methods/{id}")
     fun updatePayment(
         @PathVariable id: UUID,
         @Valid @RequestBody request: LabelSettingUpdateRequest,
     ): LabelSettingResponse = paymentService.update(id, requireNotNull(request.label), requireNotNull(request.color))
 
-    @Operation(summary = "매출 결제방식 삭제")
     @DeleteMapping("/payment-methods/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deletePayment(
