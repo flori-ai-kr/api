@@ -12,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.restdocs.payload.FieldDescriptor
+import org.springframework.restdocs.request.ParameterDescriptor
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.ResultHandler
 import org.springframework.test.web.servlet.post
@@ -50,16 +51,28 @@ abstract class RestDocsSupport {
 
     /**
      * Kotlin MockMvc DSL의 `andDo { handle(...) }`에 넣을 RestDocs 핸들러를 만든다.
-     * ePages `resource(...)`로 태그·요약·request/response 필드를 함께 기술해 OpenAPI를 풍부화한다.
+     * ePages `resource(...)`로 태그·요약·경로/요청/응답 필드를 함께 기술해 OpenAPI를 풍부화한다.
+     *
+     * 경로 파라미터가 있으면 `pathParameters`를 넘기고, 요청 DSL 블록 안에서 URI 템플릿을 직접 세팅한다:
+     *
+     *   mockMvc.get("/customers/$id") {
+     *       requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/customers/{id}")
+     *       header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+     *   }.andDo { handle(docs(..., pathParameters = listOf(parameterWithName("id").description("고객 UUID")))) }
+     *
+     * (RequestPostProcessor(`with{}`)로 세팅하면 @AutoConfigureRestDocs의 ConfigurerApplyingRequestPostProcessor가
+     *  그보다 먼저 템플릿을 캡처해 null이 되므로, 반드시 `requestAttr`로 빌더에 직접 넣어 UUID가 박히지 않게 한다.)
      */
     protected fun docs(
         identifier: String,
         tag: String,
         summary: String,
+        pathParameters: List<ParameterDescriptor> = emptyList(),
         requestFields: List<FieldDescriptor> = emptyList(),
         responseFields: List<FieldDescriptor> = emptyList(),
     ): ResultHandler {
         val params = ResourceSnippetParameters.builder().tag(tag).summary(summary)
+        if (pathParameters.isNotEmpty()) params.pathParameters(*pathParameters.toTypedArray())
         if (requestFields.isNotEmpty()) params.requestFields(*requestFields.toTypedArray())
         if (responseFields.isNotEmpty()) params.responseFields(*responseFields.toTypedArray())
         return MockMvcRestDocumentationWrapper.document(identifier, snippets = arrayOf(resource(params.build())))
