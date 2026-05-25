@@ -55,5 +55,6 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       # 테스트는 Zonky 임베디드 PostgreSQL을 띄워 실제 DB에서 검증 — 별도 서비스 컨테이너 불필요.
-      - name: Run tests
-        run: ./gradlew test --no-daemon
+      # jacocoTestCoverageVerification: line 커버리지 80% 게이트(현재 89%).
+      - name: Run tests + coverage gate
+        run: ./gradlew test jacocoTestCoverageVerification --no-daemon

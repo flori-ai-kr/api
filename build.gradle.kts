@@ -159,3 +159,6 @@ tasks.jacocoTestCoverageVerification {
         }
     }
 }
+
+// 커버리지 게이트를 검증 파이프라인(check→build)에 연결 (현재 line 89%)
+tasks.named("check") { dependsOn(tasks.jacocoTestCoverageVerification) }
