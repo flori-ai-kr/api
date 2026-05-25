@@ -4,8 +4,10 @@ import kr.ai.flori.common.docs.RestDocsSupport
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.restdocs.generate.RestDocumentationGenerator
 import org.springframework.restdocs.payload.JsonFieldType
 import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
+import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
@@ -127,6 +129,7 @@ class PhotoTagDocsTest : RestDocsSupport() {
 
         mockMvc
             .put("/photo-tags/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/photo-tags/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -143,6 +146,7 @@ class PhotoTagDocsTest : RestDocsSupport() {
                         identifier = "photo-tag-update",
                         tag = "PhotoTags",
                         summary = "태그 수정 (이름·색상 전체 교체)",
+                        pathParameters = listOf(parameterWithName("id").description("태그 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("name")
@@ -167,6 +171,7 @@ class PhotoTagDocsTest : RestDocsSupport() {
 
         mockMvc
             .delete("/photo-tags/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/photo-tags/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isNoContent() } }
             .andDo {
@@ -175,6 +180,7 @@ class PhotoTagDocsTest : RestDocsSupport() {
                         identifier = "photo-tag-delete",
                         tag = "PhotoTags",
                         summary = "태그 삭제 (사용 중인 모든 사진 카드에서도 자동 제거)",
+                        pathParameters = listOf(parameterWithName("id").description("태그 UUID")),
                     ),
                 )
             }

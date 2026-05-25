@@ -4,8 +4,10 @@ import kr.ai.flori.common.docs.RestDocsSupport
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.restdocs.generate.RestDocumentationGenerator
 import org.springframework.restdocs.payload.JsonFieldType
 import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
+import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 
@@ -239,6 +241,7 @@ class DepositDocsTest : RestDocsSupport() {
 
         mockMvc
             .post("/deposits/$id/confirm") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/deposits/{id}/confirm")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isOk() } }
             .andDo {
@@ -247,6 +250,7 @@ class DepositDocsTest : RestDocsSupport() {
                         identifier = "deposit-confirm",
                         tag = "Deposits",
                         summary = "입금 단건 확인 (depositStatus=completed, deposited_at 기록)",
+                        pathParameters = listOf(parameterWithName("id").description("매출 UUID")),
                         responseFields = saleResponseFields,
                     ),
                 )
@@ -305,6 +309,7 @@ class DepositDocsTest : RestDocsSupport() {
 
         mockMvc
             .post("/deposits/$id/revert") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/deposits/{id}/revert")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isOk() } }
             .andDo {
@@ -313,6 +318,7 @@ class DepositDocsTest : RestDocsSupport() {
                         identifier = "deposit-revert",
                         tag = "Deposits",
                         summary = "입금 되돌리기 (depositStatus=pending, deposited_at 제거)",
+                        pathParameters = listOf(parameterWithName("id").description("매출 UUID")),
                         responseFields = saleResponseFields,
                     ),
                 )

@@ -4,8 +4,10 @@ import kr.ai.flori.common.docs.RestDocsSupport
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.restdocs.generate.RestDocumentationGenerator
 import org.springframework.restdocs.payload.JsonFieldType
 import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
+import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
@@ -15,9 +17,8 @@ import org.springframework.test.web.servlet.post
  * PhotoCards API RestDocs 문서화.
  * 실제 보안 체인 + Zonky PG에서 각 엔드포인트를 1회 호출하며 OpenAPI 스펙을 생성한다.
  *
- * S3 presigned 업로드 타깃 발급 엔드포인트(POST /{id}/upload-targets)는 테스트 컨텍스트에서
- * S3_BUCKET 환경변수가 미설정이면 AppException(INTERNAL)이 발생한다.
- * 해당 엔드포인트는 이 테스트에서 제외하며 DONE_WITH_CONCERNS 로 기록한다.
+ * S3 presigned 업로드 타깃 발급 엔드포인트(POST /{id}/upload-targets)는 더미 S3Presigner 빈이
+ * 필요해 별도 테스트 클래스(PhotoUploadTargetsDocsTest)에서 문서화한다.
  */
 class PhotoCardDocsTest : RestDocsSupport() {
     /** PhotoCardResponse 공통 응답 필드 — 단건/생성/수정에서 재사용 */
@@ -207,6 +208,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
 
         mockMvc
             .get("/photo-cards/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/photo-cards/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isOk() } }
             .andDo {
@@ -215,6 +217,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                         identifier = "photo-card-get",
                         tag = "PhotoCards",
                         summary = "사진 카드 단건 조회",
+                        pathParameters = listOf(parameterWithName("id").description("사진 카드 UUID")),
                         responseFields = photoCardResponseFields,
                     ),
                 )
@@ -249,6 +252,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
         // 연결된 사진 카드가 없으므로 204 반환
         mockMvc
             .get("/photo-cards/by-sale/$saleId") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/photo-cards/by-sale/{saleId}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isNoContent() } }
             .andDo {
@@ -257,6 +261,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                         identifier = "photo-card-by-sale-not-found",
                         tag = "PhotoCards",
                         summary = "매출별 사진 카드 조회 — 없음 (204 No Content)",
+                        pathParameters = listOf(parameterWithName("saleId").description("매출 UUID")),
                     ),
                 )
             }
@@ -295,6 +300,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
 
         mockMvc
             .get("/photo-cards/by-sale/$saleId") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/photo-cards/by-sale/{saleId}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isOk() } }
             .andDo {
@@ -303,6 +309,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                         identifier = "photo-card-by-sale-found",
                         tag = "PhotoCards",
                         summary = "매출별 사진 카드 조회 — 있음 (200 + 카드 반환)",
+                        pathParameters = listOf(parameterWithName("saleId").description("매출 UUID")),
                         responseFields = photoCardResponseFields,
                     ),
                 )
@@ -318,6 +325,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
 
         mockMvc
             .patch("/photo-cards/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/photo-cards/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -334,6 +342,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                         identifier = "photo-card-update",
                         tag = "PhotoCards",
                         summary = "사진 카드 수정 (제공된 필드만 반영)",
+                        pathParameters = listOf(parameterWithName("id").description("사진 카드 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("title")
@@ -392,6 +401,10 @@ class PhotoCardDocsTest : RestDocsSupport() {
 
         mockMvc
             .patch("/photo-cards/$id/photos/reorder") {
+                requestAttr(
+                    RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE,
+                    "/photo-cards/{id}/photos/reorder",
+                )
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -411,6 +424,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                         identifier = "photo-card-reorder",
                         tag = "PhotoCards",
                         summary = "사진 순서 변경 (photos 배열 전체를 원하는 순서로 전달)",
+                        pathParameters = listOf(parameterWithName("id").description("사진 카드 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("photos")
@@ -458,6 +472,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
 
         mockMvc
             .delete("/photo-cards/$id/photos") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/photo-cards/{id}/photos")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 param("url", photoUrl)
             }.andExpect { status { isOk() } }
@@ -467,6 +482,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                         identifier = "photo-card-delete-photo",
                         tag = "PhotoCards",
                         summary = "사진 1장 삭제 (url 쿼리 파라미터로 대상 지정)",
+                        pathParameters = listOf(parameterWithName("id").description("사진 카드 UUID")),
                         responseFields = photoCardResponseFields,
                     ),
                 )
@@ -482,6 +498,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
 
         mockMvc
             .delete("/photo-cards/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/photo-cards/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isOk() } }
             .andDo {
@@ -490,6 +507,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                         identifier = "photo-card-delete",
                         tag = "PhotoCards",
                         summary = "사진 카드 삭제 (정리 대상 사진 목록 반환)",
+                        pathParameters = listOf(parameterWithName("id").description("사진 카드 UUID")),
                         responseFields =
                             listOf(
                                 fieldWithPath("[]")
