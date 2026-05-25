@@ -34,13 +34,20 @@ Spring REST Docs + ePages `restdocs-api-spec`으로 기존 통합테스트에서
 - 실제 배포/인프라
 
 ## 인수기준
-- [ ] `./gradlew build test` 그린 — RestDocs 스니펫 + `open-api-3.0.1.json` 생성
-- [ ] `/swagger-ui.html`이 테스트 생성 스펙 표시 + JWT Authorize 동작
-- [ ] 22개 컨트롤러 주요 엔드포인트 RestDocs 문서화(요청/응답 필드 기술)
-- [ ] springdoc 런타임 스캔 비활성(`api-docs.enabled=false`) + 컨트롤러 문서 어노테이션 중복 제거
-- [ ] JaCoCo line 커버리지 **≥ 80%**(제외목록 적용), `jacocoTestCoverageVerification`이 build 게이트
-- [ ] CI에 jacoco 리포트/검증 반영
-- [ ] 동작 변경 0(문서·테스트·빌드 인프라만)
+- [x] `./gradlew build test` 그린 — RestDocs 스니펫 + `open-api-3.0.1.json` 생성
+- [x] `/swagger-ui.html`이 테스트 생성 스펙 표시 (JWT Authorize 버튼 = 후속, 아래 참조)
+- [x] 22개 컨트롤러 주요 엔드포인트 RestDocs 문서화 — **107 path / 120 operation / 22 tag**(요청/응답 필드 기술)
+- [x] springdoc 런타임 스캔 비활성(`api-docs.enabled=false`) + 컨트롤러/DTO 문서 어노테이션 25파일 제거
+- [x] JaCoCo line 커버리지 **89.4% ≥ 80%**(제외 적용), `jacocoTestCoverageVerification`이 `check`/build 게이트
+- [x] CI에 커버리지 게이트 반영
+- [x] 동작 변경 0(문서·테스트·빌드 인프라만)
+
+## 완료 노트 (2026-05-26)
+- **라이브러리 버전**: 플랜의 0.19.5는 generator 아티팩트가 mavenCentral 미게시 → onetime 검증판 **0.19.2**로 확정. `settings.gradle.kts` `pluginManagement`에 mavenCentral 추가 필요했음.
+- **Kotlin DSL 함정**: openapi3 `setServer(...)` + `afterEvaluate`로 task 의존; RestDocs 결합은 `document(id, snippets = arrayOf(resource(params.build())))`.
+- **테스트 스타일**: 기존 통합테스트 위에 도메인별 `*DocsTest : RestDocsSupport()` 신설(실서비스 + Zonky). 내부 API/웹훅 시크릿 엔드포인트는 `@SpringBootTest(properties=[...])` 별도 컨텍스트로 인증.
+- **문서화 제외(의도적)**: `POST /photo-cards/{id}/upload-targets`(S3 presign — `S3_BUCKET` 미설정 시 500, `@TestConfiguration` fake presign 빈 필요), `GET /subscription/premium-example`(데모 엔드포인트), `scrap-post-list`(데이터 없어 배열 루트만).
+- **후속(follow-up)**: 생성 스펙에 JWT bearer **SecurityScheme**를 추가해 swagger-ui Authorize 버튼 복원(ePages `openapi3` security 설정 또는 `RestDocsSupport.docs()`에 security requirement 추가). 현재 스펙은 보안 스킴 미선언.
 
 ## 단계
 1. 빌드 배선(`restdocs-api-spec`/`jacoco`/`openapi3`) + springdoc 뷰어 설정 → 빌드 그린

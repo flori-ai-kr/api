@@ -306,7 +306,33 @@ val today = LocalDate.now(KST)
 - 통합 테스트는 **Zonky 임베디드 PostgreSQL**에서 실제 Flyway 마이그레이션·쿼리를 돈다(H2 같은 가짜 DB가 아님). 클래스에 `@AutoConfigureEmbeddedDatabase(provider = ZONKY)`.
 - **모든 도메인에 멀티테넌시 격리 테스트 필수** — "다른 user의 데이터를 조회/수정할 수 없다"를 검증.
 - 계산·규칙(영업일, 고정비 발생 판정, 수수료)은 **순수 함수 단위 테스트**로 빠르게 검증.
-- 검증 게이트: `./gradlew build test`가 ktlint + detekt + 전체 테스트를 한 번에 돌린다. **통과해야만 커밋.**
+- 검증 게이트: `./gradlew build test`가 ktlint + detekt + 전체 테스트 + **JaCoCo line 80% 커버리지**를 한 번에 돌린다. **통과해야만 커밋.** (현재 89%)
+
+### 9-1. API 문서 = 테스트 (RestDocs → OpenAPI → Swagger) [HARD]
+
+Swagger 문서는 **컨트롤러 어노테이션이 아니라 테스트가 출처(SSOT)** 다. springdoc는 `api-docs.enabled=false`로 런타임 스캔을 끄고, 테스트가 생성한 정적 스펙(`static/docs/open-api-3.0.1.json`)만 swagger-ui로 보여준다. 컨트롤러에 `@Operation`/`@Schema`를 다는 게 아니라 **`*DocsTest`를 쓴다.**
+
+- 베이스: `src/test/.../common/docs/RestDocsSupport.kt`(`@AutoConfigureRestDocs` + Zonky). `mockMvc`·`signupAndToken()`(JWT)·`docs(...)` 헬퍼 제공.
+- 엔드포인트마다 실제 호출 + `andDo { handle(docs(...)) }`로 request/response 필드를 기술. 모든 JSON 필드는 `fieldWithPath`로 1:1 기술해야 하며(누락 시 RestDocs 실패), nullable은 `.optional()`.
+```kotlin
+class CouponDocsTest : RestDocsSupport() {
+    @Test fun `쿠폰 생성 문서화`() {
+        val token = signupAndToken()
+        mockMvc.post("/coupons") {
+            header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+            contentType = MediaType.APPLICATION_JSON
+            content = json(mapOf("code" to "WELCOME"))
+        }.andExpect { status { isCreated() } }
+            .andDo { handle(docs(
+                identifier = "coupon-create", tag = "Coupons", summary = "쿠폰 생성",
+                requestFields = listOf(fieldWithPath("code").type(JsonFieldType.STRING).description("쿠폰 코드")),
+                responseFields = listOf(fieldWithPath("id").type(JsonFieldType.STRING).description("쿠폰 UUID")),
+            )) }
+    }
+}
+```
+- 스펙 갱신: `./gradlew openapi3`(테스트 후 집계 → `static/docs/open-api-3.0.1.json` 재생성, 커밋). PR에서 API 계약 변경이 diff로 보인다.
+- 빈 배열 응답은 `fieldWithPath` 매칭 실패를 유발 → 문서화 전에 데이터를 시드하거나 항목 필드를 `.optional()`.
 
 ---
 

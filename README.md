@@ -54,19 +54,22 @@ Docs:
 | Push | FCM (Firebase Admin SDK) |
 | Scheduling | Spring `@Scheduled` (KST) |
 | Error reporting | `@ControllerAdvice` standard responses + Discord webhook |
-| API docs | springdoc-openapi (Swagger UI) — the contract the app reads |
-| Lint & test | ktlint / detekt / JUnit + Zonky embedded PostgreSQL |
+| API docs | **Spring REST Docs + ePages restdocs-api-spec** — the OpenAPI 3 contract is generated from (and guaranteed by) the integration tests, served via springdoc Swagger UI |
+| Lint & test | ktlint / detekt / JUnit + Zonky embedded PostgreSQL / JaCoCo (line coverage gate 80%) |
 
 ## Development
 
 ```bash
-./gradlew build test     # ktlint + detekt + full test suite (embedded PostgreSQL)
+./gradlew build test     # ktlint + detekt + full test suite + JaCoCo 80% gate (embedded PostgreSQL)
 ./gradlew ktlintFormat   # auto-format
+./gradlew openapi3       # regenerate the OpenAPI spec from RestDocs tests (→ static/docs/open-api-3.0.1.json)
 ./gradlew bootRun        # run locally (profile: local, graceful env fallback)
-open http://localhost:8080/swagger-ui.html   # API contract
+open http://localhost:8080/swagger-ui.html   # API contract (renders the test-generated spec)
 ```
 
 Tests run against Zonky embedded PostgreSQL, so no local database is required for `./gradlew test`. Flyway applies the schema on boot; health check at `GET /health`.
+
+**API docs are test-driven:** each endpoint is exercised by a `*DocsTest` (RestDocs) that captures the real request/response, so the Swagger contract cannot drift from actual behavior. springdoc only serves the generated static spec (`springdoc.api-docs.enabled=false`).
 
 ## Security model
 
