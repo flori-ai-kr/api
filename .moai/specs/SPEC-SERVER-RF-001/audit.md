@@ -1,6 +1,6 @@
 # SPEC-SERVER-RF-001 — 코드베이스 점검 결과(AUDIT)
 
-점검일: 2026-05-23. 대상: `src/main/kotlin/com/hazel/**` + `db/migration/**` (구현 완료된 14개 SPEC).
+점검일: 2026-05-23. 대상: `src/main/kotlin/com/flori/**` + `db/migration/**` (구현 완료된 14개 SPEC).
 방법: 멀티테넌시 격리 전수 grep + 4차원 수동 점검 + 독립 코드리뷰(code-reviewer 에이전트) 교차검증.
 
 ## 0. 종합 결론

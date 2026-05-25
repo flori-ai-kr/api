@@ -5,7 +5,7 @@
 
 ## 배경
 - 출처: `onetime/backend`의 `BaseEntity`(@CreatedDate/@LastModifiedDate Auditing) + `socc-assistant-api`의 엔티티 업데이트 컨벤션 ADR(단일 필드 setter, 다중 필드/규칙은 도메인 메서드 — Anemic 안티패턴 회피).
-- 기존 hazel: 19개 엔티티가 각자 `createdAt/updatedAt` 컬럼을 선언하고, 24곳의 서비스가 `entity.updatedAt = Instant.now()`를 수동 호출 → 중복·누락 위험.
+- 기존 flori: 19개 엔티티가 각자 `createdAt/updatedAt` 컬럼을 선언하고, 24곳의 서비스가 `entity.updatedAt = Instant.now()`를 수동 호출 → 중복·누락 위험.
 
 ## 구현 (C1)
 - `common/entity/BaseEntity.kt` 신설:

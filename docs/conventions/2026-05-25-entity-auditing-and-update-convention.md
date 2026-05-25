@@ -31,5 +31,5 @@
 
 ## 적용 범위·예외
 
-- 적용: `com.hazel.common.entity.BaseEntity`/`BaseCreatedEntity`를 상속하는 19개 엔티티.
+- 적용: `kr.ai.flori.common.entity.BaseEntity`/`BaseCreatedEntity`를 상속하는 19개 엔티티.
 - 예외: `UserPreferences`(updated_at만), `InstagramPost`(타임스탬프 없음) — 수동 관리 유지.

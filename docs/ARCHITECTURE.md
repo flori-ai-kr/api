@@ -1,8 +1,8 @@
-# Hazel Server — 아키텍처 & 기술 선정 이유
+# Flori Server — 아키텍처 & 기술 선정 이유
 
 > 최종 업데이트: 2026-05-23
 
-이 문서는 Hazel(꽃집 어드민) **모바일 앱 백엔드 API**의 기술 스택과 아키텍처를 설명한다. 단순히 "무엇을 쓰는가"가 아니라 **"왜 이것을 골랐는가"**에 초점을 맞춘다. 모든 선택에는 *기존 Next.js+Supabase 웹앱의 비즈니스 로직을 네이티브 앱이 호출 가능한 REST API로 재구현하고, 자체 AWS 인프라 위에 올린다*는 도메인 맥락이 반영되어 있다.
+이 문서는 Flori(꽃집 어드민) **모바일 앱 백엔드 API**의 기술 스택과 아키텍처를 설명한다. 단순히 "무엇을 쓰는가"가 아니라 **"왜 이것을 골랐는가"**에 초점을 맞춘다. 모든 선택에는 *기존 Next.js+Supabase 웹앱의 비즈니스 로직을 네이티브 앱이 호출 가능한 REST API로 재구현하고, 자체 AWS 인프라 위에 올린다*는 도메인 맥락이 반영되어 있다.
 
 설계 SSOT는 `docs/DESIGN.md`, 진행 상태는 `ROADMAP.md`, 세션 인수인계는 `HANDOFF.md`를 참조한다.
 
@@ -13,12 +13,12 @@
 ```mermaid
 flowchart TB
     subgraph Clients["클라이언트"]
-        App([Flutter 앱<br/>hazel-app])
+        App([Flutter 앱<br/>flori-ai/mobile])
         Collector([수집 워커<br/>트렌드/인스타])
     end
 
     subgraph AWS["AWS Cloud (ap-northeast-2)"]
-        subgraph Server["Hazel Server · Spring Boot 3.5 (Kotlin / Java 21)"]
+        subgraph Server["Flori Server · Spring Boot 3.5 (Kotlin / Java 21)"]
             Sec[Security Filter<br/>JWT → TenantContext]
             Ctrl[Controllers<br/>REST + @Valid]
             Svc[Services<br/>비즈니스 SSOT]
@@ -73,7 +73,7 @@ flowchart LR
         CCfg[config<br/>CORS·Async·Schedule]
     end
 
-    subgraph Domain["도메인 패키지 (com.hazel.*)"]
+    subgraph Domain["도메인 패키지 (kr.ai.flori.*)"]
         direction TB
         D[controller → service → repository<br/>DTO 경계]
     end
@@ -463,7 +463,7 @@ erDiagram
 | 설정 | `/settings/{sale-categories,payment-methods,expense-*,card-companies,preferences}`, `/push/*` | Auth |
 | 대시보드 | `GET /dashboard/today`·`/dashboard/month` | Auth |
 
-전체 계약은 `/swagger-ui.html`(OpenAPI `/v3/api-docs`)에서 확인한다 — **hazel-app이 읽는 계약의 출처**.
+전체 계약은 `/swagger-ui.html`(OpenAPI `/v3/api-docs`)에서 확인한다 — **flori-ai/mobile이 읽는 계약의 출처**.
 
 ---
 

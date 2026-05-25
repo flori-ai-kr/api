@@ -12,7 +12,7 @@
 2. **리포지토리 격리**: 모든 도메인 조회/변경은 `...AndUserId` 파생 쿼리 또는 `@Query`의 `user_id` 조건으로 격리한다. 네이티브 SQL도 `user_id = ?` 바인딩 필수.
 3. **load-then-check**: 상속된 `findById` 등으로 로드한 뒤 서비스에서 소유권(`userId` 일치)을 확인하는 패턴도 허용하되, 가능한 한 리포지토리 레벨에서 격리한다. 다른 엔티티의 FK(`saleId` 등)는 그대로 신뢰하지 말고 소유 여부를 먼저 검증한다.
 4. **의도적 전역은 명시**: 인증(사용자/토큰 조회), 스케줄러(전체 테넌트 시스템 작업), 공유 콘텐츠(인사이트 트렌드/인스타) 등 비격리 쿼리는 **자동 가드 화이트리스트에 사유와 함께** 등록한다.
-5. **자동 가드**: `TenantIsolationGuardTest`가 모든 `com.hazel` 리포지토리의 선언 메서드를 리플렉션으로 전수 검사 — 격리(메서드명 `UserId` 또는 `@Query` `user_id`)되거나 화이트리스트에 있어야 통과. 새 메서드가 `user_id`를 빠뜨리면 테스트 실패.
+5. **자동 가드**: `TenantIsolationGuardTest`가 모든 `kr.ai.flori` 리포지토리의 선언 메서드를 리플렉션으로 전수 검사 — 격리(메서드명 `UserId` 또는 `@Query` `user_id`)되거나 화이트리스트에 있어야 통과. 새 메서드가 `user_id`를 빠뜨리면 테스트 실패.
 6. **복합 unique**: `(phone, user_id)`, `(value, user_id)`, `(user_id, target_type, target_id)` 등 테넌트 스코프 unique 제약을 유지한다.
 
 ## 근거 (Rationale)

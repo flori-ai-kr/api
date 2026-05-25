@@ -1,11 +1,11 @@
 # SPEC-SERVER-018 — 리치 OpenAPI 어노테이션 (E1)
 
 ## 목표
-hazel-app이 계약(contract)으로 읽는 Swagger 문서의 품질을 높인다. JWT 인증 스킴을 전역 등록하고, 핵심 DTO에 `@Schema`(설명·예시·허용값)를 부여해 앱이 필드 의미·예시를 바로 파악하도록 한다.
+flori-ai/mobile이 계약(contract)으로 읽는 Swagger 문서의 품질을 높인다. JWT 인증 스킴을 전역 등록하고, 핵심 DTO에 `@Schema`(설명·예시·허용값)를 부여해 앱이 필드 의미·예시를 바로 파악하도록 한다.
 
 ## 배경
 - 출처: `socc-assistant-api`의 `@Schema`(example/allowableValues)·`SwaggerConfiguration`(bearer-jwt SecurityScheme) 패턴.
-- 기존 hazel: `@Operation` 요약만 있고 **JWT 보안 스킴 미등록**(Swagger Authorize 버튼 없음), DTO 필드 설명/예시 없음.
+- 기존 flori: `@Operation` 요약만 있고 **JWT 보안 스킴 미등록**(Swagger Authorize 버튼 없음), DTO 필드 설명/예시 없음.
 
 ## 범위 (전 DTO가 아닌 핵심 + 공통, 패턴 정착)
 - `OpenApiConfig`: JWT **bearer 보안 스킴 전역 등록** + `addSecurityItem` → Authorize 버튼 + 보호 엔드포인트 계약 노출.

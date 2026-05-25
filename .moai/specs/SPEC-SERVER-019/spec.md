@@ -10,7 +10,7 @@
 
 ## 핵심 설계
 - PostgreSQL은 **트랜잭션 내 한 문장 오류 시 트랜잭션 전체가 abort**된다. 따라서 진짜 건별 격리를 위해 스케줄 처리 메서드의 **메서드 레벨 `@Transactional`을 제거** → 각 작업(save/claim/insert/구독 비활성화)이 독립 커밋되게 한다.
-- 잡 레벨 격리(한 회차 실패가 다음 회차를 막지 않음)는 **Spring 스케줄러가 메서드별로 이미 제공** → 별도 래퍼 불필요(hazel은 잡마다 별도 @Scheduled 메서드).
+- 잡 레벨 격리(한 회차 실패가 다음 회차를 막지 않음)는 **Spring 스케줄러가 메서드별로 이미 제공** → 별도 래퍼 불필요(flori은 잡마다 별도 @Scheduled 메서드).
 - 건별 catch는 코드베이스 컨벤션(구체 예외)에 맞춰 `DataAccessException`(DB 실패 = 실제 격리 대상)으로 한정. (detekt `TooGenericExceptionCaught` 회피 겸)
 
 ## 구현

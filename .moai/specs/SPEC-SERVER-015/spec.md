@@ -5,7 +5,7 @@ EOL(2025-12-31 만료)된 Spring Boot 3.4 라인에서 **현재 OSS 지원되는
 
 ## 배경
 - Spring Boot 3.4는 2025-12-31자로 OSS 지원 종료(EOL) → 신규 CVE 패치를 못 받음.
-- hazel CLAUDE.md "보안 1순위" 원칙과 충돌하므로 지원 라인으로 이동 필요.
+- flori CLAUDE.md "보안 1순위" 원칙과 충돌하므로 지원 라인으로 이동 필요.
 - 3.5는 Spring Framework 6 유지(호환성 깨짐 최소) → 저위험 경로. (4.0은 Jackson 2→3·SF7 등 breaking change가 있어 후속 과제로 분리.)
 
 ## 범위

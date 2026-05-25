@@ -4,7 +4,7 @@
 결정의 **근거(왜)** 가 코드와 함께 보존되도록 `docs/conventions/` ADR 디렉터리를 신설한다. 출처: `socc-assistant-api`의 `docs/conventions/`(결정마다 Overview/Best Practice/Rationale + 공식 참고링크).
 
 ## 배경
-- 기존 hazel은 `docs/PATTERNS.md` 단일 파일로 "어떻게(how)"는 잘 설명하나, 개별 결정의 "왜(why)"·대안·근거가 흩어져 있었다.
+- 기존 flori은 `docs/PATTERNS.md` 단일 파일로 "어떻게(how)"는 잘 설명하나, 개별 결정의 "왜(why)"·대안·근거가 흩어져 있었다.
 - 무인 loop로 진행되는 repo 특성상, 미래 세션이 결정 배경을 빠르게 파악할 수 있어야 한다.
 
 ## 구현

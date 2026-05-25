@@ -1,4 +1,4 @@
-# Hazel Server — ROADMAP
+# Flori Server — ROADMAP
 
 자율 실행의 단일 진입점. 세션은 이 파일을 먼저 읽고, `status: TODO`이며 `deps`가 모두 `DONE`인 첫 SPEC을 골라 진행한다.
 완료 시 해당 SPEC의 status를 `DONE`으로 바꾸고 `HANDOFF.md`를 갱신한다.
@@ -49,12 +49,12 @@
 
 ## 유지보수 & 컨벤션 정착 (2026-05-25)
 
-> 사용자 지시(2026-05-25): 의존성 최신화 + 기존 Java/Spring 레포(onetime/backend·batch, socc-assistant-api)의 검증된 패턴을 hazel(Kotlin)에 선별 이식. 동작 보존, 과엔지니어링 금지.
+> 사용자 지시(2026-05-25): 의존성 최신화 + 기존 Java/Spring 레포(onetime/backend·batch, socc-assistant-api)의 검증된 패턴을 flori(Kotlin)에 선별 이식. 동작 보존, 과엔지니어링 금지.
 
 | SPEC | status | deps | 범위 |
 |------|--------|------|------|
 | SPEC-SERVER-015 | DONE | — | **Spring Boot 3.5 업그레이드**: EOL된 3.4.1 → 3.5.14, springdoc 2.7.0 → 2.8.17. 동작 보존, 165테스트 통과. 명세 `.moai/specs/SPEC-SERVER-015/spec.md` |
-| SPEC-SERVER-016 | DONE | 015 | **(A1) 멀티테넌시 격리 자동검출 테스트**: 리플렉션으로 모든 `com.hazel` 리포지토리 선언 메서드가 `user_id` 격리(메서드명 UserId 또는 @Query user_id)되는지 전수 검증, 의도적 전역은 화이트리스트(자기검증 포함). 첫 실행에서 insights 공유콘텐츠 11종 검출. 167테스트 통과. 명세 `.moai/specs/SPEC-SERVER-016/spec.md` |
+| SPEC-SERVER-016 | DONE | 015 | **(A1) 멀티테넌시 격리 자동검출 테스트**: 리플렉션으로 모든 `kr.ai.flori` 리포지토리 선언 메서드가 `user_id` 격리(메서드명 UserId 또는 @Query user_id)되는지 전수 검증, 의도적 전역은 화이트리스트(자기검증 포함). 첫 실행에서 insights 공유콘텐츠 11종 검출. 167테스트 통과. 명세 `.moai/specs/SPEC-SERVER-016/spec.md` |
 | SPEC-SERVER-017 | DONE | 015 | **(C1+C3) BaseEntity/Auditing + 엔티티 업데이트 컨벤션**: `common/entity` `BaseEntity`(@CreationTimestamp/@UpdateTimestamp)·`BaseCreatedEntity` 신설 → 19개 엔티티 전환, 서비스 수동 updatedAt 24곳 제거. 입금 상태 전이 도메인 메서드(C3 예시). ddl validate·167테스트 통과. 명세 `.moai/specs/SPEC-SERVER-017/spec.md` |
 | SPEC-SERVER-018 | DONE | 015 | **(E1) 리치 OpenAPI 어노테이션**: JWT bearer 보안 스킴 전역 등록(Authorize 버튼) + ErrorResponse·AuthDtos·SaleDtos 핵심 필드 `@Schema`(설명/예시/허용값). 패턴 정착. 167테스트 통과. 명세 `.moai/specs/SPEC-SERVER-018/spec.md` |
 | SPEC-SERVER-019 | DONE | 015 | **(D1+D2) 스케줄러 멱등성 + 실패격리**: `V5 notification_log` + 원자적 claim(ON CONFLICT)으로 일일요약 중복발송 차단(at-most-once). 리마인더·요약·고정비생성 건별 try-catch(DataAccessException)+@Transactional 제거로 PG abort 격리. 168테스트 통과. 명세 `.moai/specs/SPEC-SERVER-019/spec.md` |

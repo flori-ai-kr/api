@@ -1,16 +1,16 @@
-# Hazel Server — 설계 (SSOT)
+# Flori Server — 설계 (SSOT)
 
-> Hazel 모바일 전환 프로그램 · 백엔드 파트 설계. 2026-05-23 작성.
-> 프로그램 전체 맥락은 `~/Desktop/hazel-admin/docs/superpowers/specs/2026-05-23-hazel-mobile-migration-design.md` 참조.
+> Flori 모바일 전환 프로그램 · 백엔드 파트 설계. 2026-05-23 작성.
+> 프로그램 전체 맥락은 `~/Desktop/flori-ai/web/docs/superpowers/specs/2026-05-23-flori-mobile-migration-design.md` 참조.
 
 ## 1. 배경
 
-기존 Hazel 어드민(`~/Desktop/hazel-admin`)은 Next.js 16 + Supabase 웹앱. 모든 비즈니스 로직이 **Next.js Server Actions**에 묶여 있어 네이티브 앱이 호출할 수 없다. 이 백엔드는 그 로직을 **REST API**로 재구현하고 자체 AWS 인프라 위에 올린다.
+기존 Flori 어드민(`~/Desktop/flori-ai/web`)은 Next.js 16 + Supabase 웹앱. 모든 비즈니스 로직이 **Next.js Server Actions**에 묶여 있어 네이티브 앱이 호출할 수 없다. 이 백엔드는 그 로직을 **REST API**로 재구현하고 자체 AWS 인프라 위에 올린다.
 
 ## 2. 전체 아키텍처
 
 ```
- Flutter 앱 (hazel-app) ──REST+JWT──→ Hazel Server (이 repo)
+ Flutter 앱 (flori-ai/mobile) ──REST+JWT──→ Flori Server (이 repo)
                                        ├ Spring Security + JWT
                                        ├ @Scheduled (Cron 대체)
                                        ├ S3 presigned 발급
@@ -31,7 +31,7 @@ Kotlin + Gradle(KTS) / Spring Boot 3.x(Java 21) / Spring Data JPA + Hibernate(js
 ## 4. 레이어 / 패키지 구조
 
 ```
-com.hazel
+kr.ai.flori
 ├── common/
 │   ├── config/      (Security, CORS, OpenAPI, Jackson, Async/Schedule)
 │   ├── security/    (JWT provider, 필터, UserDetails)
@@ -69,7 +69,7 @@ com.hazel
 
 ## 7. 도메인 매핑 (원본 Server Actions → API)
 
-원본 `~/Desktop/hazel-admin/src/lib/actions/`의 함수들을 REST 리소스로 옮긴다. 비즈니스 규칙은 원본 그대로:
+원본 `~/Desktop/flori-ai/web/src/lib/actions/`의 함수들을 REST 리소스로 옮긴다. 비즈니스 규칙은 원본 그대로:
 - 카드수수료 `expected_deposit = amount * (1 - fee_rate/100)`, 입금예정일 영업일 N일
 - 지출 총액 `unit_price * quantity`
 - 고정비: 주/월/연 + 다중 일자, recurring_skips, `(recurring_id,date)` unique, this/future/all 분기
@@ -93,7 +93,7 @@ com.hazel
 
 ## 10. API 계약 (앱 연동)
 
-- springdoc-openapi로 OpenAPI 3 + Swagger UI 노출. **이것이 hazel-app이 읽는 계약의 출처.**
+- springdoc-openapi로 OpenAPI 3 + Swagger UI 노출. **이것이 flori-ai/mobile이 읽는 계약의 출처.**
 - 표준 에러 응답 포맷 고정(code/message). 페이지네이션/필터 규약 일관.
 
 ## 11. 테스트 / 품질

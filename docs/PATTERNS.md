@@ -43,7 +43,7 @@ PostgreSQL
 
 각 레이어의 책임을 코드로 보면:
 
-**Controller** — HTTP만. 비즈니스 로직 없음. ([`SaleController.kt`](../src/main/kotlin/com/hazel/sales/controller/SaleController.kt))
+**Controller** — HTTP만. 비즈니스 로직 없음. ([`SaleController.kt`](../src/main/kotlin/com/flori/sales/controller/SaleController.kt))
 
 ```kotlin
 @Tag(name = "Sales", description = "매출 관리")          // Swagger 그룹
@@ -63,7 +63,7 @@ class SaleController(
 
 > 컨트롤러가 하는 "정규화"의 예: `list`에서 `limit.coerceIn(1, 100)`으로 페이지 크기를 강제(과도한 limit 방어). 비즈니스 규칙이 아닌 HTTP 입력 위생이므로 컨트롤러에 둔다.
 
-**Service** — 로직·격리·트랜잭션. ([`SaleService.kt`](../src/main/kotlin/com/hazel/sales/service/SaleService.kt))
+**Service** — 로직·격리·트랜잭션. ([`SaleService.kt`](../src/main/kotlin/com/flori/sales/service/SaleService.kt))
 
 ```kotlin
 @Service
@@ -83,7 +83,7 @@ class SaleService(
 }
 ```
 
-**Repository** — 데이터 접근만. 인터페이스만 선언하면 Spring이 구현을 만든다. ([`SaleRepository.kt`](../src/main/kotlin/com/hazel/sales/repository/SaleRepository.kt))
+**Repository** — 데이터 접근만. 인터페이스만 선언하면 Spring이 구현을 만든다. ([`SaleRepository.kt`](../src/main/kotlin/com/flori/sales/repository/SaleRepository.kt))
 
 ```kotlin
 interface SaleRepository :
@@ -93,7 +93,7 @@ interface SaleRepository :
 }
 ```
 
-**패키지 규칙**: 도메인별로 `com.hazel.<domain>` 아래 `controller / service / repository / entity / dto` 하위 패키지를 둔다. 도메인에 속하지 않는 횡단 관심사(보안·에러·테넌트·S3·푸시·설정)는 `com.hazel.common/`.
+**패키지 규칙**: 도메인별로 `kr.ai.flori.<domain>` 아래 `controller / service / repository / entity / dto` 하위 패키지를 둔다. 도메인에 속하지 않는 횡단 관심사(보안·에러·테넌트·S3·푸시·설정)는 `kr.ai.flori.common/`.
 
 ---
 
@@ -117,7 +117,7 @@ flowchart LR
 
 ### 구성요소
 
-**① 필터가 set/clear** — [`JwtAuthenticationFilter.kt`](../src/main/kotlin/com/hazel/common/security/JwtAuthenticationFilter.kt). `finally`에서 반드시 `clear()` (스레드풀 재사용 시 이전 사용자 id 누수 방지):
+**① 필터가 set/clear** — [`JwtAuthenticationFilter.kt`](../src/main/kotlin/com/flori/common/security/JwtAuthenticationFilter.kt). `finally`에서 반드시 `clear()` (스레드풀 재사용 시 이전 사용자 id 누수 방지):
 
 ```kotlin
 try {
@@ -133,7 +133,7 @@ try {
 }
 ```
 
-**② TenantContext가 보관** — [`TenantContext.kt`](../src/main/kotlin/com/hazel/common/tenant/TenantContext.kt). 인증이 없으면 안전한 기본값으로 **예외**를 던진다(빈 결과가 아니라 401):
+**② TenantContext가 보관** — [`TenantContext.kt`](../src/main/kotlin/com/flori/common/tenant/TenantContext.kt). 인증이 없으면 안전한 기본값으로 **예외**를 던진다(빈 결과가 아니라 401):
 
 ```kotlin
 object TenantContext {
@@ -165,7 +165,7 @@ private fun load(id: UUID): Sale =
 
 ## 3. DTO 경계
 
-**엔티티는 컨트롤러 밖으로 나가지 않는다.** 요청과 응답 DTO는 분리한다. 한 도메인의 모든 DTO는 `<Domain>Dtos.kt` 한 파일에 모은다. ([`SaleDtos.kt`](../src/main/kotlin/com/hazel/sales/dto/SaleDtos.kt))
+**엔티티는 컨트롤러 밖으로 나가지 않는다.** 요청과 응답 DTO는 분리한다. 한 도메인의 모든 DTO는 `<Domain>Dtos.kt` 한 파일에 모은다. ([`SaleDtos.kt`](../src/main/kotlin/com/flori/sales/dto/SaleDtos.kt))
 
 ```kotlin
 // 요청: 검증 애너테이션을 붙인다. 서버 계산값(fee 등)은 받지 않는다.
@@ -221,7 +221,7 @@ private fun requireValidPayment(value: String): String {
 
 도메인 코드는 `AppException(ErrorCode.X)`만 던진다. HTTP 상태 매핑·응답 형식·Discord 알림은 전부 `@RestControllerAdvice` 한 곳에서 처리한다.
 
-**ErrorCode** = (HTTP 상태 + 기본 메시지) 매핑 테이블. ([`ErrorCode.kt`](../src/main/kotlin/com/hazel/common/error/ErrorCode.kt))
+**ErrorCode** = (HTTP 상태 + 기본 메시지) 매핑 테이블. ([`ErrorCode.kt`](../src/main/kotlin/com/flori/common/error/ErrorCode.kt))
 
 ```kotlin
 enum class ErrorCode(val status: HttpStatus, val defaultMessage: String) {
@@ -232,7 +232,7 @@ enum class ErrorCode(val status: HttpStatus, val defaultMessage: String) {
 }
 ```
 
-**GlobalExceptionHandler** ([파일](../src/main/kotlin/com/hazel/common/error/GlobalExceptionHandler.kt)):
+**GlobalExceptionHandler** ([파일](../src/main/kotlin/com/flori/common/error/GlobalExceptionHandler.kt)):
 - 예상된 예외(`AppException`, 검증 실패, 제약 위반) → 그대로 매핑, **Discord 전송 안 함**.
 - 예기치 못한 예외(5xx) → **Discord 리포팅** + 일반 메시지로 교체 → 스택/쿼리 같은 내부 디테일을 클라이언트에 노출하지 않음.
 
@@ -283,9 +283,9 @@ class SaleService(
 
 | 위치 | 내용 |
 |---|---|
-| [`common/domain/PaymentMethods.kt`](../src/main/kotlin/com/hazel/common/domain/PaymentMethods.kt) | `PaymentMethods.SALE/EXPENSE/UNPAID`, `DepositStatuses.PENDING/COMPLETED/NOT_APPLICABLE` |
-| [`common/domain/ReservationStatuses.kt`](../src/main/kotlin/com/hazel/common/domain/ReservationStatuses.kt) | `ReservationStatuses.PENDING/CONFIRMED/COMPLETED/CANCELLED` + `ALL` |
-| [`common/util/DateRanges.kt`](../src/main/kotlin/com/hazel/common/util/DateRanges.kt) | `KST`(=`ZoneId.of("Asia/Seoul")`), `monthRange(month)` (YYYY/YYYY-MM/YYYY-MM-DD → 시작·끝 날짜, 잘못된 형식은 400 VALIDATION) |
+| [`common/domain/PaymentMethods.kt`](../src/main/kotlin/com/flori/common/domain/PaymentMethods.kt) | `PaymentMethods.SALE/EXPENSE/UNPAID`, `DepositStatuses.PENDING/COMPLETED/NOT_APPLICABLE` |
+| [`common/domain/ReservationStatuses.kt`](../src/main/kotlin/com/flori/common/domain/ReservationStatuses.kt) | `ReservationStatuses.PENDING/CONFIRMED/COMPLETED/CANCELLED` + `ALL` |
+| [`common/util/DateRanges.kt`](../src/main/kotlin/com/flori/common/util/DateRanges.kt) | `KST`(=`ZoneId.of("Asia/Seoul")`), `monthRange(month)` (YYYY/YYYY-MM/YYYY-MM-DD → 시작·끝 날짜, 잘못된 형식은 400 VALIDATION) |
 
 > 도메인 상태/수단 문자열은 새로 만들지 말고 `common/domain`의 상수를 쓴다. 새 상태군이 생기면 같은 패턴으로 `common/domain`에 추가한다(예: `ReservationStatuses`).
 
@@ -368,7 +368,7 @@ class CouponService(private val couponRepository: CouponRepository) {
 
 | 항목 | 규칙 |
 |------|------|
-| 패키지 | `com.hazel.<domain>.{controller,service,repository,entity,dto}`; 횡단은 `common/` |
+| 패키지 | `kr.ai.flori.<domain>.{controller,service,repository,entity,dto}`; 횡단은 `common/` |
 | 네이밍 | 컨트롤러 `XController`, 서비스 `XService`, 리포 `XRepository`, DTO `XRequest`/`XResponse` |
 | DTO 파일 | 도메인당 `XDtos.kt` 하나에 모음 |
 | 엔티티 | `class`(not data class) + `var`, `@Id`는 nullable `UUID? = null` |

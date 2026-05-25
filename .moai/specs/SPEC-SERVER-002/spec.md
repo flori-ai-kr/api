@@ -4,7 +4,7 @@
 
 ## 목표
 
-원본 Hazel(Supabase) 스키마를 자체 PostgreSQL로 이식하고 Flyway로 버전 관리한다.
+원본 Flori(Supabase) 스키마를 자체 PostgreSQL로 이식하고 Flyway로 버전 관리한다.
 Supabase 고유 요소(RLS, `auth.users` FK)를 제거하고 자체 `users` 테이블을 도입해, 이후 도메인 SPEC이 엔티티/리포지토리를 올릴 수 있는 DB 토대를 만든다.
 
 ## 범위 (In)

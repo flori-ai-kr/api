@@ -1,12 +1,12 @@
-# HANDOFF — Hazel Server
+# HANDOFF — Flori Server
 
 > 각 세션은 작업 후 이 파일을 갱신한다. 다음 세션은 ROADMAP.md + 이 파일을 읽고 이어간다.
 
 ## 현재 상태
 
-- 🔧 **유지보수/컨벤션 라운드 진행 중** (2026-05-25): SPEC-015~021. 의존성 최신화 + 기존 Java/Spring 레포(onetime/backend·batch, socc-assistant-api)의 검증 패턴을 hazel(Kotlin)에 선별 이식.
+- 🔧 **유지보수/컨벤션 라운드 진행 중** (2026-05-25): SPEC-015~021. 의존성 최신화 + 기존 Java/Spring 레포(onetime/backend·batch, socc-assistant-api)의 검증 패턴을 flori(Kotlin)에 선별 이식.
   - **SPEC-SERVER-015 (Spring Boot 3.5 업그레이드) 완료** (2026-05-25): EOL된 3.4.1 → **3.5.14**, springdoc 2.7.0 → **2.8.17**. Spring Framework 6 유지(저위험). `./gradlew build test` **165테스트 통과(0 실패)**, runtimeClasspath `spring-boot-starter-web -> 3.5.14` 확인. 문서 버전표기(ARCHITECTURE/HANDOFF) 갱신. 명세 `.moai/specs/SPEC-SERVER-015/spec.md`. 후속: 4.0(Jackson3·SF7)·Kotlin 2.2+ 는 별도.
-  - **SPEC-SERVER-016 (멀티테넌시 격리 자동검출 테스트, A1) 완료** (2026-05-25): `common/tenant/TenantIsolationGuardTest` — 리플렉션으로 모든 `com.hazel` 리포지토리 선언 메서드가 `user_id` 격리(메서드명 UserId 또는 @Query user_id 참조)되는지 전수 검증. 비격리는 `intentionalGlobal` 화이트리스트(인증 3·스케줄러 3·자식엔티티 2·인사이트 공유콘텐츠 11)에만 허용 + 화이트리스트 자기검증(실재·실제 비격리). **첫 실행에서 `InsightRepositories.kt`(복수 파일명이라 수동검색 누락) 공유콘텐츠 11종을 자동 검출** = 가드 효과 실증. 신규 메서드가 user_id 빠뜨리면 실패. 167테스트 통과(+2). 명세 `.moai/specs/SPEC-SERVER-016/spec.md`.
+  - **SPEC-SERVER-016 (멀티테넌시 격리 자동검출 테스트, A1) 완료** (2026-05-25): `common/tenant/TenantIsolationGuardTest` — 리플렉션으로 모든 `kr.ai.flori` 리포지토리 선언 메서드가 `user_id` 격리(메서드명 UserId 또는 @Query user_id 참조)되는지 전수 검증. 비격리는 `intentionalGlobal` 화이트리스트(인증 3·스케줄러 3·자식엔티티 2·인사이트 공유콘텐츠 11)에만 허용 + 화이트리스트 자기검증(실재·실제 비격리). **첫 실행에서 `InsightRepositories.kt`(복수 파일명이라 수동검색 누락) 공유콘텐츠 11종을 자동 검출** = 가드 효과 실증. 신규 메서드가 user_id 빠뜨리면 실패. 167테스트 통과(+2). 명세 `.moai/specs/SPEC-SERVER-016/spec.md`.
   - **SPEC-SERVER-017 (BaseEntity/Auditing + 엔티티 업데이트 컨벤션, C1+C3) 완료** (2026-05-25): `common/entity/BaseEntity.kt` — `BaseCreatedEntity`(@CreationTimestamp) + `BaseEntity`(+@UpdateTimestamp). **19개 엔티티 전환**(both→BaseEntity 13, created-only→BaseCreatedEntity 6=RefreshToken/RecurringSkip/TrendArticle/PhotoTag/SubscriptionEvent/LabelSetting). 서비스 **24곳 수동 updatedAt 제거**(Hibernate가 자동 갱신) + Instant import 정리. **범위 외**: UserPreferences(updated_at만), InstagramPost(타임스탬프 없음). C3: `Sale.markDepositCompleted()/revertDeposit()` 도메인 메서드(DepositService가 호출). ddl-auto=validate 통과(컬럼 불변), 167테스트(0 실패). PATTERNS.md recipe 갱신. 명세 `.moai/specs/SPEC-SERVER-017/spec.md`.
   - **SPEC-SERVER-018 (리치 OpenAPI 어노테이션, E1) 완료** (2026-05-25): `OpenApiConfig`에 **JWT bearer 보안 스킴 전역 등록**(Swagger Authorize 버튼) + `ErrorResponse`·`AuthDtos`·`SaleDtos`(요청 + 서버계산 SSOT 필드)에 `@Schema`(설명/예시/허용값). 나머지 DTO는 동일 패턴 점진 적용. 함정: Kotlin 블록주석 중첩 → KDoc에 `/webhooks/**` 같은 글롭이 "Unclosed comment" 유발(수정). 167테스트 통과. 명세 `.moai/specs/SPEC-SERVER-018/spec.md`.
   - **SPEC-SERVER-019 (스케줄러 멱등성 + 실패격리, D1+D2) 완료** (2026-05-25): `V5__notification_log.sql`(user_id·type·dedup_key UNIQUE) + `ReservationNotificationService.claimOnce()`(INSERT ON CONFLICT DO NOTHING, 갱신행수==1) → 일일요약 at-most-once. **건별 격리**(D2): 리마인더·일일요약·고정비생성에서 메서드 `@Transactional` 제거(PG는 tx 내 1문장 오류 시 전체 abort → 독립 커밋으로 격리) + 건별 `catch(DataAccessException)`. 잡 레벨 격리는 Spring 스케줄러가 메서드별 제공(래퍼 불요). 일일요약 멱등성 테스트 추가(2회 호출→2번째 0건). 168테스트 통과(+1). 명세 `.moai/specs/SPEC-SERVER-019/spec.md`.
@@ -64,7 +64,7 @@
 - **SPEC-SERVER-008 (예약 + 캘린더 API) 완료** (2026-05-23).
   - 예약: `Reservation` CRUD + 월별/다가오는/리마인더(48h) 조회 + 제목·메모 자동완성.
   - 매출 연동: 예약→매출 전환(SaleService로 생성+sale_id 연결), 매출에 픽업 추가(고객정보 상속), 매출별 예약 조회, 픽업 완료.
-  - 캘린더: `CalendarEvent` CRUD + 월 겹침 조회 + 범위 검증(`com.hazel.calendar`).
+  - 캘린더: `CalendarEvent` CRUD + 월 겹침 조회 + 범위 검증(`kr.ai.flori.calendar`).
   - 스케줄 푸시: `ReservationNotificationService` — 5분마다 도달 리마인더 발송+reminder_sent 마킹(멱등), 매일 08:00 KST 당일 픽업 요약. PushService 사용(토큰 push_subscriptions 조회, 영구실패 비활성화).
   - 검증: **100테스트 통과(스킵 0)** — 14개 신규(예약 7 + 알림 3 + 캘린더 4). 전환·상속·리마인더 윈도·스케줄러·멀티테넌시 포함.
 - **SPEC-SERVER-007 (고객 API) 완료** (2026-05-23).
@@ -109,18 +109,18 @@
   - 테스트: **Zonky embedded-postgres**(Docker 불필요, 실제 PG)로 마이그레이션 실제 적용 검증 + DB 무관 SQL 규칙 테스트. 전체 11테스트 통과(스킵 0).
 - **SPEC-SERVER-001 (프로젝트 스켈레톤) 완료** (2026-05-23).
   - Gradle(KTS) + Spring Boot 3.5.14 + Kotlin 2.1.0, Java 21 toolchain, Gradle Wrapper 8.11.1 동봉.
-  - 패키지: `com.hazel`(메인) + `com.hazel.common`(config/health). 도메인 패키지는 후속 SPEC에서 추가.
+  - 패키지: `kr.ai.flori`(메인) + `kr.ai.flori.common`(config/health). 도메인 패키지는 후속 SPEC에서 추가.
   - `GET /health` → `HealthResponse{status,service,time}` (DB 비의존). Actuator `/actuator/health` 포함.
   - springdoc-openapi(`/swagger-ui.html`, `/v3/api-docs`) + OpenAPI 메타.
   - 품질 게이트: ktlint 1.5.0(official) + detekt 1.23.7. `./gradlew build test` 통과(테스트 2개).
   - 멀티스테이지 `Dockerfile`(temurin 21).
-- **병렬 모드**: `~/Desktop/hazel-app`과 동시 진행. 백엔드는 앱을 기다리지 않고 독립 실행.
+- **병렬 모드**: `~/Desktop/flori-ai/mobile`과 동시 진행. 백엔드는 앱을 기다리지 않고 독립 실행.
 
 ## 다음 할 일 — Phase 1 완료
 
 - **Phase 1 전부 완료.** ROADMAP의 다음 TODO는 **SPEC-SERVER-014 (구독/결제)** — `deps: (앱 M4 완료)` 이므로 **현재 진행 불가**(앱 출시 후 Phase 2). 자율 루프는 진행 가능한 TODO가 없어 여기서 멈춘다.
 - **남은 운영 준비물(사용자 작업)**: 배포 환경변수 — `DB_URL`/`DB_USER`/`DB_PASSWORD`, `JWT_SECRET`, `AWS_*`/`S3_BUCKET`/`CLOUDFRONT_DOMAIN`, `FCM_ENABLED`/`FCM_CREDENTIALS`, `DISCORD_WEBHOOK_URL`, `INTERNAL_API_KEY`, `CORS_ALLOWED_ORIGINS`. (코드는 모두 `${ENV}` 참조, 미설정 시 로컬 graceful 동작.)
-- **앱 연동**: Swagger UI(`/swagger-ui.html`) / OpenAPI(`/v3/api-docs`)가 계약 출처. hazel-app(Flutter)이 이 ROADMAP의 DONE 상태를 보고 연동.
+- **앱 연동**: Swagger UI(`/swagger-ui.html`) / OpenAPI(`/v3/api-docs`)가 계약 출처. flori-ai/mobile(Flutter)이 이 ROADMAP의 DONE 상태를 보고 연동.
 - **후속(선택)**: 통합 e2e 스모크, 실제 RDS/Testcontainers 기반 CI, 부하/보안 점검.
 - [중요] SPEC 완료 시 ROADMAP status를 `DONE`으로 정확히 갱신 — 앱 세션이 이 상태를 보고 연동을 시작한다.
 

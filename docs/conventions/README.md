@@ -1,6 +1,6 @@
 # 컨벤션 ADR (Architecture Decision Records)
 
-이 디렉터리는 hazel-server의 **결정과 그 근거**를 코드와 함께 보존한다. "왜 이렇게 하는가"가 사라지지 않도록, 각 컨벤션은 배경·결정·근거·공식 문서 링크를 한 문서에 담는다.
+이 디렉터리는 flori-ai-server의 **결정과 그 근거**를 코드와 함께 보존한다. "왜 이렇게 하는가"가 사라지지 않도록, 각 컨벤션은 배경·결정·근거·공식 문서 링크를 한 문서에 담는다.
 
 > 출처 패턴: `socc-assistant-api`의 `docs/conventions/`(결정마다 Overview/Best Practice/Rationale + 공식 참고링크).
 

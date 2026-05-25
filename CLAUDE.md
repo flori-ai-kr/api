@@ -1,7 +1,7 @@
-# Hazel Server — 꽃집 관리 백엔드 API
+# Flori Server — 꽃집 관리 백엔드 API
 
-Hazel(꽃집 어드민)의 모바일 앱 백엔드. Spring Boot(Kotlin) REST API.
-이 repo는 **Hazel 모바일 전환 프로그램의 백엔드 파트**다. 자매 repo: `~/Desktop/hazel-app`(Flutter), 원본 웹 `~/Desktop/hazel-admin`(Next.js, 참고용).
+Flori(꽃집 어드민)의 모바일 앱 백엔드. Spring Boot(Kotlin) REST API.
+이 repo는 **Flori 모바일 전환 프로그램의 백엔드 파트**다. 자매 repo: `~/Desktop/flori-ai/mobile`(Flutter), 원본 웹 `~/Desktop/flori-ai/web`(Next.js, 참고용).
 
 ## 이 repo의 역할
 
@@ -27,7 +27,7 @@ Hazel(꽃집 어드민)의 모바일 앱 백엔드. Spring Boot(Kotlin) REST API
 
 ## 아키텍처 원칙 (HARD)
 
-- **클린 아키텍처 / 레이어 분리**: `controller → service → repository`. 도메인별 패키지(`com.hazel.<domain>`). 횡단 관심사는 `com.hazel.common/`(security, error, tenant, s3, push, config).
+- **클린 아키텍처 / 레이어 분리**: `controller → service → repository`. 도메인별 패키지(`kr.ai.flori.<domain>`). 횡단 관심사는 `kr.ai.flori.common/`(security, error, tenant, s3, push, config).
 - **DTO 경계**: 엔티티를 컨트롤러 밖으로 노출하지 않는다. 요청/응답 DTO 분리.
 - **멀티테넌시 = 보안 1순위** [HARD]: 모든 데이터 쿼리는 JWT에서 추출한 `userId`로 격리한다. `TenantContext`(요청 스코프) + 서비스/리포지토리 레벨 강제. **`user_id` 필터 누락은 곧 데이터 유출**이므로 절대 빠뜨리지 않는다. RLS가 없으므로 애플리케이션이 유일한 방어선.
 - **검증은 시스템 경계에서**: 컨트롤러 진입점에서 `@Valid`. ID는 UUID 형식 검증.
@@ -63,7 +63,7 @@ Hazel(꽃집 어드민)의 모바일 앱 백엔드. Spring Boot(Kotlin) REST API
 
 ### 병렬 실행 (앱과 동시 진행) [HARD]
 
-`~/Desktop/hazel-app`이 이 repo와 동시에 돌아간다. **백엔드는 앱을 기다리지 않고** ROADMAP 순서대로 독립 진행한다.
+`~/Desktop/flori-ai/mobile`이 이 repo와 동시에 돌아간다. **백엔드는 앱을 기다리지 않고** ROADMAP 순서대로 독립 진행한다.
 단, **앱 세션이 이 repo의 `ROADMAP.md` 상태를 읽어 연동 시점을 판단**하므로, SPEC 완료 시 status를 정확히 `DONE`으로 갱신하는 것이 앱 연동의 신호다. 상태 갱신을 빠뜨리지 않는다.
 
 ### 커밋 규칙
@@ -82,7 +82,7 @@ Hazel(꽃집 어드민)의 모바일 앱 백엔드. Spring Boot(Kotlin) REST API
 - `docs/DESIGN.md` — 전체 아키텍처 설계 (SSOT)
 - `ROADMAP.md` — SPEC 목록·순서·상태
 - `HANDOFF.md` — 직전 세션 상태·다음 할 일
-- 원본 웹 로직 참고: `~/Desktop/hazel-admin/src/lib/actions/`, `~/Desktop/hazel-admin/docs/ARCHITECTURE.md`
+- 원본 웹 로직 참고: `~/Desktop/flori-ai/web/src/lib/actions/`, `~/Desktop/flori-ai/web/docs/ARCHITECTURE.md`
 ## 문서화 규칙 [HARD]
 
 - **모든 문서는 한국어로 작성한다.** SPEC 명세(`.moai/specs/*/spec.md`), README, DESIGN, API 설명, ROADMAP/HANDOFF, 커밋 메시지까지 전부 한국어. 영어 금지 — 단 코드/식별자/함수명/타입은 영어.
