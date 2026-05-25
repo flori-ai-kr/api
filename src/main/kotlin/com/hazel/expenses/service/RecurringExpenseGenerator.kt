@@ -5,10 +5,10 @@ import com.hazel.expenses.entity.RecurringExpense
 import com.hazel.expenses.repository.RecurringExpenseRepository
 import com.hazel.expenses.repository.RecurringSkipRepository
 import org.slf4j.LoggerFactory
+import org.springframework.dao.DataAccessException
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import java.sql.Date
 import java.time.LocalDate
 
@@ -33,7 +33,6 @@ class RecurringExpenseGenerator(
         log.info("고정비 자동생성 완료: date={} inserted={}", today, count)
     }
 
-    @Transactional
     fun generateForDate(date: LocalDate): Int {
         val due = recurringRepository.findByIsActiveTrue().filter { RecurringScheduleEvaluator.isDue(it, date) }
         if (due.isEmpty()) return 0
@@ -44,7 +43,16 @@ class RecurringExpenseGenerator(
                 .map { it.recurringId }
                 .toSet()
 
-        return due.filter { it.id !in skipped }.sumOf { insertExpense(it, date) }
+        // 건별 격리: 한 템플릿 생성 실패가 나머지를 막지 않는다(메서드 @Transactional 미사용 = 건별 독립 커밋).
+        var inserted = 0
+        due.filter { it.id !in skipped }.forEach { rule ->
+            try {
+                inserted += insertExpense(rule, date)
+            } catch (e: DataAccessException) {
+                log.error("고정비 자동생성 실패 recurringId={}", rule.id, e)
+            }
+        }
+        return inserted
     }
 
     private fun insertExpense(

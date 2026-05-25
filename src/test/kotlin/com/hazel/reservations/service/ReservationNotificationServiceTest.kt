@@ -77,4 +77,14 @@ class ReservationNotificationServiceTest {
 
         assertThat(notificationService.sendDailySummary(today)).isGreaterThanOrEqualTo(1)
     }
+
+    @Test
+    fun `일일 요약은 같은 날짜에 1회만 발송된다(notification_log 멱등성)`() {
+        newTenant()
+        val day = LocalDate.of(2026, 7, 1)
+        reservationService.create(ReservationCreateRequest(day, null, "홍길동", null, "픽업A"))
+
+        assertThat(notificationService.sendDailySummary(day)).isEqualTo(1) // 첫 발송
+        assertThat(notificationService.sendDailySummary(day)).isEqualTo(0) // 중복 트리거 → claim 실패로 스킵
+    }
 }
