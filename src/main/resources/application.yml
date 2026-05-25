@@ -60,14 +60,15 @@ revenuecat:
   webhook-secret: ${REVENUECAT_WEBHOOK_SECRET:}
 
 springdoc:
-  # 문서 출처 = 테스트가 생성한 OpenAPI(static/docs/open-api-3.0.1.json).
-  # 런타임 어노테이션 스캔(api-docs)은 끄고, swagger-ui는 그 정적 스펙을 로드한다.
-  api-docs:
-    enabled: false
+  # 문서 출처 = 테스트(RestDocs)가 생성한 정적 OpenAPI(static/docs/open-api-3.0.1.json).
+  # springdoc는 swagger-ui 뷰어로만 쓰고 그 정적 스펙을 로드한다(swagger-ui.url).
+  # ⚠️ api-docs.enabled=false로 두면 springdoc 자동설정 전체(swagger-ui 포함)가 비활성되므로 끄지 않는다.
+  #    런타임 /v3/api-docs(어노테이션 제거됨 → 빈약)는 미사용 — swagger-ui는 위 정적 스펙을 본다.
   swagger-ui:
     enabled: true
     path: /swagger-ui.html
     url: /docs/open-api-3.0.1.json
+    disable-swagger-default-url: true
 
 management:
   endpoints:
