@@ -111,7 +111,6 @@ class InsightIngestService(
         request.sortOrder?.let { account.sortOrder = it }
         request.active?.let { account.active = it }
         request.notes?.let { account.notes = it }
-        account.updatedAt = Instant.now()
         return InstagramAccountResponse.from(saveUnique(account))
     }
 

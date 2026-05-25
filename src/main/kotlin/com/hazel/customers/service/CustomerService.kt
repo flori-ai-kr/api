@@ -19,7 +19,6 @@ import org.springframework.data.domain.Sort
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 import java.util.UUID
 
 /**
@@ -109,7 +108,6 @@ class CustomerService(
         request.grade?.let { customer.grade = validGrade(it) }
         request.gender?.let { customer.gender = validGender(it) }
         request.note?.let { customer.note = it }
-        customer.updatedAt = Instant.now()
         return CustomerResponse.from(saveUnique(customer), statsFor(customer.userId, id))
     }
 
@@ -120,7 +118,6 @@ class CustomerService(
     ): CustomerResponse {
         val customer = load(id)
         customer.grade = validGrade(grade)
-        customer.updatedAt = Instant.now()
         return CustomerResponse.from(customerRepository.save(customer), statsFor(customer.userId, id))
     }
 

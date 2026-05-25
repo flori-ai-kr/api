@@ -18,7 +18,6 @@ import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 import java.util.UUID
 
 /**
@@ -62,7 +61,6 @@ class ScrapService(
             scrapRepository.findByUserIdAndTargetTypeAndTargetId(userId, validType(targetType), targetId)
                 ?: throw AppException(ErrorCode.NOT_FOUND, "먼저 스크랩한 후 메모를 저장할 수 있어요")
         scrap.memo = memo?.takeIf { it.isNotBlank() }
-        scrap.updatedAt = Instant.now()
         return InsightScrapResponse.from(scrapRepository.save(scrap))
     }
 

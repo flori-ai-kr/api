@@ -16,7 +16,6 @@ import com.hazel.photos.repository.PhotoCardRepository
 import com.hazel.sales.repository.SaleRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 import java.util.UUID
 
 /**
@@ -80,7 +79,6 @@ class PhotoCardService(
             verifySaleOwnership(it)
             card.saleId = it
         }
-        card.updatedAt = Instant.now()
         return PhotoCardResponse.from(photoCardRepository.save(card))
     }
 
@@ -100,7 +98,6 @@ class PhotoCardService(
     ): PhotoCardResponse {
         val card = load(id)
         card.photos = photos
-        card.updatedAt = Instant.now()
         return PhotoCardResponse.from(photoCardRepository.save(card))
     }
 
@@ -111,7 +108,6 @@ class PhotoCardService(
     ): PhotoCardResponse {
         val card = load(id)
         card.photos = card.photos.filterNot { it.url == photoUrl }
-        card.updatedAt = Instant.now()
         return PhotoCardResponse.from(photoCardRepository.save(card))
     }
 

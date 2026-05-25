@@ -1,5 +1,6 @@
 package com.hazel.settings.entity
 
+import com.hazel.common.entity.BaseCreatedEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -7,7 +8,6 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass
 import jakarta.persistence.Table
-import java.time.Instant
 import java.util.UUID
 
 /**
@@ -18,7 +18,7 @@ import java.util.UUID
 abstract class LabelSetting(
     @Column(name = "user_id", nullable = false)
     var userId: UUID,
-) {
+) : BaseCreatedEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -35,9 +35,6 @@ abstract class LabelSetting(
 
     @Column(name = "sort_order")
     var sortOrder: Int = 0
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now()
 }
 
 @Entity

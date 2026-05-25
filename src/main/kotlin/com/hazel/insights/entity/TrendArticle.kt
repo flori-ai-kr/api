@@ -1,5 +1,6 @@
 package com.hazel.insights.entity
 
+import com.hazel.common.entity.BaseCreatedEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -28,7 +29,7 @@ class TrendArticle(
     var sourceUrl: String,
     @Column(name = "collected_at", nullable = false)
     var collectedAt: LocalDate,
-) {
+) : BaseCreatedEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -43,7 +44,4 @@ class TrendArticle(
 
     @Column(name = "published_at")
     var publishedAt: Instant? = null
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now()
 }

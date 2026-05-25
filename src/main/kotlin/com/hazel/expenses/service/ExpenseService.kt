@@ -12,7 +12,6 @@ import com.hazel.expenses.entity.Expense
 import com.hazel.expenses.repository.ExpenseRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 import java.util.UUID
 
 /**
@@ -85,7 +84,6 @@ class ExpenseService(
         request.vendor?.let { expense.vendor = it }
         request.note?.let { expense.note = it }
         expense.totalAmount = expense.unitPrice * expense.quantity
-        expense.updatedAt = Instant.now()
         return ExpenseResponse.from(expenseRepository.save(expense))
     }
 

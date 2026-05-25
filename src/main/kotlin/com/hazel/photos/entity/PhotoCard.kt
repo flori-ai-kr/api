@@ -1,5 +1,6 @@
 package com.hazel.photos.entity
 
+import com.hazel.common.entity.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -8,7 +9,6 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
-import java.time.Instant
 import java.util.UUID
 
 /** 사진 파일(jsonb 배열 요소). */
@@ -28,7 +28,7 @@ class PhotoCard(
     var userId: UUID,
     @Column(name = "title", nullable = false)
     var title: String,
-) {
+) : BaseEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -48,10 +48,4 @@ class PhotoCard(
 
     @Column(name = "sale_id")
     var saleId: UUID? = null
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now()
-
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
 }

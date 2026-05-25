@@ -1,12 +1,12 @@
 package com.hazel.expenses.entity
 
+import com.hazel.common.entity.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
@@ -33,7 +33,7 @@ class Expense(
     var totalAmount: Int,
     @Column(name = "payment_method", nullable = false)
     var paymentMethod: String,
-) {
+) : BaseEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -53,10 +53,4 @@ class Expense(
 
     @Column(name = "is_recurring_modified", nullable = false)
     var isRecurringModified: Boolean = false
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now()
-
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
 }

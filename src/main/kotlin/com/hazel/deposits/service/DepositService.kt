@@ -15,7 +15,6 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.sql.Date
-import java.time.Instant
 import java.util.UUID
 
 /**
@@ -83,7 +82,7 @@ class DepositService(
     @Transactional
     fun confirm(id: UUID): SaleResponse {
         val sale = load(id)
-        markCompleted(sale)
+        sale.markDepositCompleted()
         return SaleResponse.from(saleRepository.save(sale))
     }
 
@@ -92,7 +91,7 @@ class DepositService(
     fun confirmMultiple(ids: List<UUID>): Int {
         if (ids.isEmpty()) return 0
         val sales = saleRepository.findByUserIdAndIdIn(TenantContext.currentUserId(), ids)
-        sales.forEach { markCompleted(it) }
+        sales.forEach { it.markDepositCompleted() }
         saleRepository.saveAll(sales)
         return sales.size
     }
@@ -100,16 +99,8 @@ class DepositService(
     @Transactional
     fun revert(id: UUID): SaleResponse {
         val sale = load(id)
-        sale.depositStatus = DepositStatuses.PENDING
-        sale.depositedAt = null
-        sale.updatedAt = Instant.now()
+        sale.revertDeposit()
         return SaleResponse.from(saleRepository.save(sale))
-    }
-
-    private fun markCompleted(sale: Sale) {
-        sale.depositStatus = DepositStatuses.COMPLETED
-        sale.depositedAt = Instant.now()
-        sale.updatedAt = Instant.now()
     }
 
     private fun load(id: UUID): Sale =

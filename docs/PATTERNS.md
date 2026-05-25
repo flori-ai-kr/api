@@ -316,17 +316,19 @@ val today = LocalDate.now(KST)
 **0. (스키마가 새로 필요하면) Flyway 마이그레이션 추가**
 `src/main/resources/db/migration/V{다음번호}__add_coupons.sql` 생성. 기존 V 파일은 절대 수정하지 않는다(불변). `user_id uuid not null` 컬럼 필수.
 
-**1. 엔티티** — `coupons/entity/Coupon.kt`
+**1. 엔티티** — `coupons/entity/Coupon.kt`. 생성/수정 시각은 `BaseEntity`를 상속해 자동 관리(직접 선언·갱신 ❌).
 ```kotlin
 @Entity @Table(name = "coupons")
 class Coupon(
     @Column(name = "user_id", nullable = false) var userId: UUID,
     @Column(name = "code", nullable = false) var code: String,
-) {
+) : BaseEntity() {              // created_at/updated_at 자동 — common/entity/BaseEntity.kt
     @Id @GeneratedValue(strategy = GenerationType.UUID) var id: UUID? = null
 }
 ```
 > `data class`가 아니라 `class` + `var`를 쓰는 이유는 [KOTLIN.md §엔티티](KOTLIN.md) 참고.
+> 생성 시각만 필요한 append-only/이력 엔티티는 `BaseCreatedEntity`를 상속한다. `updated_at`이 없거나(예: `UserPreferences`) 타임스탬프가 아예 없는 엔티티만 베이스를 쓰지 않는다.
+> **다중 필드 상태 전이**(예: 입금 완료 = status+시각 동시 변경)는 서비스가 흩뿌리지 말고 엔티티 도메인 메서드(`sale.markDepositCompleted()`)로 캡슐화한다.
 
 **2. 리포지토리** — `coupons/repository/CouponRepository.kt`. **반드시 `...AndUserId` 메서드로** 격리.
 ```kotlin

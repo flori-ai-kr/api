@@ -1,12 +1,12 @@
 package com.hazel.auth.entity
 
+import com.hazel.common.entity.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import java.time.Instant
 import java.util.UUID
 
 /**
@@ -21,7 +21,7 @@ class User(
     var passwordHash: String,
     @Column(name = "name")
     var name: String? = null,
-) {
+) : BaseEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -29,10 +29,4 @@ class User(
 
     @Column(name = "is_active", nullable = false)
     var isActive: Boolean = true
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now()
-
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
 }

@@ -1,5 +1,6 @@
 package com.hazel.auth.entity
 
+import com.hazel.common.entity.BaseCreatedEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -21,7 +22,7 @@ class RefreshToken(
     var tokenHash: String,
     @Column(name = "expires_at", nullable = false)
     var expiresAt: Instant,
-) {
+) : BaseCreatedEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -29,7 +30,4 @@ class RefreshToken(
 
     @Column(name = "revoked", nullable = false)
     var revoked: Boolean = false
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now()
 }

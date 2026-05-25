@@ -1,12 +1,12 @@
 package com.hazel.customers.entity
 
+import com.hazel.common.entity.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import java.time.Instant
 import java.util.UUID
 
 /**
@@ -22,7 +22,7 @@ class Customer(
     var name: String,
     @Column(name = "phone", nullable = false)
     var phone: String,
-) {
+) : BaseEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -36,10 +36,4 @@ class Customer(
 
     @Column(name = "note")
     var note: String? = null
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now()
-
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
 }

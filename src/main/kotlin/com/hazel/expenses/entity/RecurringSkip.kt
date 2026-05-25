@@ -1,12 +1,12 @@
 package com.hazel.expenses.entity
 
+import com.hazel.common.entity.BaseCreatedEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
@@ -22,12 +22,9 @@ class RecurringSkip(
     var recurringId: UUID,
     @Column(name = "skip_date", nullable = false)
     var skipDate: LocalDate,
-) {
+) : BaseCreatedEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
     var id: UUID? = null
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now()
 }

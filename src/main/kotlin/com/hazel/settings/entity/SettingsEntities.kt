@@ -1,5 +1,6 @@
 package com.hazel.settings.entity
 
+import com.hazel.common.entity.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -22,7 +23,7 @@ class CardCompanySetting(
     var userId: UUID,
     @Column(name = "name", nullable = false)
     var name: String,
-) {
+) : BaseEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -36,12 +37,6 @@ class CardCompanySetting(
 
     @Column(name = "is_active")
     var isActive: Boolean = true
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now()
-
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
 
     companion object {
         const val DEFAULT_DEPOSIT_DAYS = 3
@@ -93,10 +88,4 @@ class PushSubscription(
 
     @Column(name = "is_active")
     var isActive: Boolean = true
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now()
-
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
 }

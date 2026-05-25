@@ -1,5 +1,6 @@
 package com.hazel.reservations.entity
 
+import com.hazel.common.entity.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -22,7 +23,7 @@ class Reservation(
     var userId: UUID,
     @Column(name = "date", nullable = false)
     var date: LocalDate,
-) {
+) : BaseEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -60,10 +61,4 @@ class Reservation(
 
     @Column(name = "pickup_completed", nullable = false)
     var pickupCompleted: Boolean = false
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now()
-
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
 }

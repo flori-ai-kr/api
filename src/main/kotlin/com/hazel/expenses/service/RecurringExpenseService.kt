@@ -17,7 +17,6 @@ import com.hazel.expenses.repository.RecurringExpenseRepository
 import com.hazel.expenses.repository.RecurringSkipRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
@@ -71,7 +70,6 @@ class RecurringExpenseService(
         rule.frequency = requireValidFrequency(requireNotNull(request.frequency))
         rule.startDate = requireNotNull(request.startDate)
         applyRuleFields(rule, request)
-        rule.updatedAt = Instant.now()
         return RecurringExpenseResponse.from(recurringRepository.save(rule))
     }
 
@@ -87,7 +85,6 @@ class RecurringExpenseService(
     ): RecurringExpenseResponse {
         val rule = loadRule(id)
         rule.isActive = isActive
-        rule.updatedAt = Instant.now()
         return RecurringExpenseResponse.from(recurringRepository.save(rule))
     }
 
@@ -120,7 +117,6 @@ class RecurringExpenseService(
         val expense = loadExpense(expenseId)
         applyInstanceFields(expense, fields)
         expense.isRecurringModified = true
-        expense.updatedAt = Instant.now()
         expenseRepository.save(expense)
     }
 
@@ -140,12 +136,10 @@ class RecurringExpenseService(
         fields.paymentMethod?.let { rule.paymentMethod = requireValidPayment(it) }
         fields.vendor?.let { rule.vendor = it }
         fields.note?.let { rule.note = it }
-        rule.updatedAt = Instant.now()
         recurringRepository.save(rule)
 
         applyInstanceFields(expense, fields)
         expense.isRecurringModified = false
-        expense.updatedAt = Instant.now()
         expenseRepository.save(expense)
     }
 
@@ -168,7 +162,6 @@ class RecurringExpenseService(
         val recurringId = expense.recurringId ?: throw AppException(ErrorCode.NOT_FOUND, "반복 지출 정보를 찾을 수 없습니다")
         val rule = loadRule(recurringId)
         rule.endDate = expense.date.minusDays(1)
-        rule.updatedAt = Instant.now()
         recurringRepository.save(rule)
         expenseRepository.delete(expense)
     }

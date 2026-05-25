@@ -1,12 +1,12 @@
 package com.hazel.insights.entity
 
+import com.hazel.common.entity.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import java.time.Instant
 import java.util.UUID
 
 /**
@@ -22,7 +22,7 @@ class InsightScrap(
     var targetType: String,
     @Column(name = "target_id", nullable = false)
     var targetId: UUID,
-) {
+) : BaseEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -30,10 +30,4 @@ class InsightScrap(
 
     @Column(name = "memo")
     var memo: String? = null
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now()
-
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
 }

@@ -112,7 +112,6 @@ class ReservationService(
             reservation.reminderAt = it
             reservation.reminderSent = false // 리마인더 변경 시 재발송 가능하도록 리셋
         }
-        reservation.updatedAt = Instant.now()
         return ReservationResponse.from(reservationRepository.save(reservation))
     }
 
@@ -123,7 +122,6 @@ class ReservationService(
     ): ReservationResponse {
         val reservation = load(id)
         reservation.pickupCompleted = completed
-        reservation.updatedAt = Instant.now()
         return ReservationResponse.from(reservationRepository.save(reservation))
     }
 
@@ -141,7 +139,6 @@ class ReservationService(
         val reservation = load(reservationId)
         val sale = saleService.create(saleRequest)
         reservation.saleId = sale.id
-        reservation.updatedAt = Instant.now()
         reservationRepository.save(reservation)
         return sale
     }

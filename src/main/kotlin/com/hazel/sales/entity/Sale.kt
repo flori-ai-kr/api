@@ -1,5 +1,7 @@
 package com.hazel.sales.entity
 
+import com.hazel.common.domain.DepositStatuses
+import com.hazel.common.entity.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -31,7 +33,7 @@ class Sale(
     var amount: Int,
     @Column(name = "payment_method", nullable = false)
     var paymentMethod: String,
-) {
+) : BaseEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -76,9 +78,18 @@ class Sale(
     @Column(name = "has_review")
     var hasReview: Boolean = false
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now()
+    /**
+     * 입금 완료 처리(입금대조 도메인). 상태·시각을 함께 전이해 불변식을 한곳에 둔다.
+     * 다중 필드 전이는 서비스가 흩뿌리지 않고 엔티티 메서드로 캡슐화한다(엔티티 업데이트 컨벤션).
+     */
+    fun markDepositCompleted() {
+        depositStatus = DepositStatuses.COMPLETED
+        depositedAt = Instant.now()
+    }
 
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
+    /** 입금 완료 되돌리기. */
+    fun revertDeposit() {
+        depositStatus = DepositStatuses.PENDING
+        depositedAt = null
+    }
 }

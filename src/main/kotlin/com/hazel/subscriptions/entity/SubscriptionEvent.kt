@@ -1,5 +1,6 @@
 package com.hazel.subscriptions.entity
 
+import com.hazel.common.entity.BaseCreatedEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -22,7 +23,7 @@ class SubscriptionEvent(
     var userId: UUID?,
     @Column(name = "event_type", nullable = false)
     var eventType: String,
-) {
+) : BaseCreatedEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -43,7 +44,4 @@ class SubscriptionEvent(
 
     @Column(name = "occurred_at")
     var occurredAt: Instant? = null
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now()
 }

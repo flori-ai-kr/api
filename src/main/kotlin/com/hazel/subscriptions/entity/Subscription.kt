@@ -1,5 +1,6 @@
 package com.hazel.subscriptions.entity
 
+import com.hazel.common.entity.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -24,7 +25,7 @@ class Subscription(
     var store: String,
     @Column(name = "product_id", nullable = false)
     var productId: String,
-) {
+) : BaseEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -41,10 +42,4 @@ class Subscription(
 
     @Column(name = "current_period_end")
     var currentPeriodEnd: Instant? = null
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now()
-
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
 }

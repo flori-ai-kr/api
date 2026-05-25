@@ -10,7 +10,6 @@ import com.hazel.common.error.ErrorCode
 import com.hazel.common.tenant.TenantContext
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.UUID
@@ -56,7 +55,6 @@ class CalendarEventService(
         request.color?.let { event.color = it }
         request.description?.let { event.description = it }
         requireValidRange(event.startDate, event.endDate)
-        event.updatedAt = Instant.now()
         return CalendarEventResponse.from(repository.save(event))
     }
 

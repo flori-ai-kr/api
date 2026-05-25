@@ -87,7 +87,6 @@ class SubscriptionService(
         subscription.entitlement = resolveEntitlement(event, existing?.entitlement)
         event.originalTransactionId?.let { subscription.originalTransactionId = it }
         event.expirationAtMs?.let { subscription.currentPeriodEnd = Instant.ofEpochMilli(it) }
-        subscription.updatedAt = Instant.now()
         subscriptionRepository.save(subscription)
     }
 

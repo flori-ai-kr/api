@@ -17,7 +17,6 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 import java.util.UUID
 
 /**
@@ -110,7 +109,6 @@ class SaleService(
         request.hasReview?.let { sale.hasReview = it }
         // is_unpaid 마커는 수정에서 변경하지 않음(생성 시 결정, complete/revert로만 전이)
         applyDeposit(sale, sale.isUnpaid)
-        sale.updatedAt = Instant.now()
         return SaleResponse.from(saleRepository.save(sale))
     }
 
@@ -123,7 +121,6 @@ class SaleService(
         if (!sale.isUnpaid) throw AppException(ErrorCode.VALIDATION, "미수 매출이 아닙니다")
         sale.paymentMethod = requireValidPaymentMethod(paymentMethod, allowUnpaid = false)
         applyDeposit(sale, isUnpaid = false)
-        sale.updatedAt = Instant.now()
         return SaleResponse.from(saleRepository.save(sale))
     }
 
@@ -133,7 +130,6 @@ class SaleService(
         if (!sale.isUnpaid) throw AppException(ErrorCode.VALIDATION, "미수 매출이 아닙니다")
         sale.paymentMethod = PaymentMethods.UNPAID
         applyDeposit(sale, isUnpaid = true)
-        sale.updatedAt = Instant.now()
         return SaleResponse.from(saleRepository.save(sale))
     }
 

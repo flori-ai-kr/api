@@ -1,5 +1,6 @@
 package com.hazel.expenses.entity
 
+import com.hazel.common.entity.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -8,7 +9,6 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
-import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
@@ -41,7 +41,7 @@ class RecurringExpense(
     var frequency: String,
     @Column(name = "start_date", nullable = false)
     var startDate: LocalDate,
-) {
+) : BaseEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -73,10 +73,4 @@ class RecurringExpense(
 
     @Column(name = "is_active", nullable = false)
     var isActive: Boolean = true
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now()
-
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
 }

@@ -6,7 +6,6 @@ import com.hazel.settings.entity.PushSubscription
 import com.hazel.settings.repository.PushSubscriptionRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 
 /**
  * 푸시 구독 등록/해지/상태. endpoint(FCM 토큰) 기준 upsert.
@@ -31,7 +30,6 @@ class PushSubscriptionService(
         subscription.auth = auth
         subscription.userAgent = userAgent
         subscription.isActive = true
-        subscription.updatedAt = Instant.now()
         repository.save(subscription)
     }
 
@@ -39,7 +37,6 @@ class PushSubscriptionService(
     fun unsubscribe(endpoint: String) {
         repository.findByUserIdAndEndpoint(TenantContext.currentUserId(), endpoint)?.let {
             it.isActive = false
-            it.updatedAt = Instant.now()
             repository.save(it)
         }
     }
