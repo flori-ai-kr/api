@@ -4,8 +4,10 @@ import kr.ai.flori.common.docs.RestDocsSupport
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.restdocs.generate.RestDocumentationGenerator
 import org.springframework.restdocs.payload.JsonFieldType
 import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
+import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
@@ -495,6 +497,7 @@ class ReservationDocsTest : RestDocsSupport() {
 
         mockMvc
             .get("/reservations/by-sale/$saleId") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/reservations/by-sale/{saleId}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isOk() } }
             .andDo {
@@ -503,6 +506,7 @@ class ReservationDocsTest : RestDocsSupport() {
                         identifier = "reservation-by-sale",
                         tag = "Reservations",
                         summary = "매출 연결 예약 목록",
+                        pathParameters = listOf(parameterWithName("saleId").description("매출 UUID")),
                         responseFields =
                             listOf(
                                 fieldWithPath("[]").type(JsonFieldType.ARRAY).description("매출에 연결된 예약 목록"),
@@ -561,6 +565,7 @@ class ReservationDocsTest : RestDocsSupport() {
 
         mockMvc
             .get("/reservations/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/reservations/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isOk() } }
             .andDo {
@@ -569,6 +574,7 @@ class ReservationDocsTest : RestDocsSupport() {
                         identifier = "reservation-get",
                         tag = "Reservations",
                         summary = "예약 단건 조회",
+                        pathParameters = listOf(parameterWithName("id").description("예약 UUID")),
                         responseFields = reservationResponseFields,
                     ),
                 )
@@ -584,6 +590,7 @@ class ReservationDocsTest : RestDocsSupport() {
 
         mockMvc
             .patch("/reservations/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/reservations/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -600,6 +607,7 @@ class ReservationDocsTest : RestDocsSupport() {
                         identifier = "reservation-update",
                         tag = "Reservations",
                         summary = "예약 수정 (제공된 필드만 반영, reminderAt 변경 시 reminderSent 리셋)",
+                        pathParameters = listOf(parameterWithName("id").description("예약 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("date")
@@ -662,6 +670,7 @@ class ReservationDocsTest : RestDocsSupport() {
 
         mockMvc
             .post("/reservations/$id/complete-pickup") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/reservations/{id}/complete-pickup")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content = json(mapOf("completed" to true))
@@ -672,6 +681,7 @@ class ReservationDocsTest : RestDocsSupport() {
                         identifier = "reservation-complete-pickup",
                         tag = "Reservations",
                         summary = "픽업 완료 처리",
+                        pathParameters = listOf(parameterWithName("id").description("예약 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("completed")
@@ -693,6 +703,7 @@ class ReservationDocsTest : RestDocsSupport() {
 
         mockMvc
             .post("/reservations/$id/convert-to-sale") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/reservations/{id}/convert-to-sale")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -711,6 +722,7 @@ class ReservationDocsTest : RestDocsSupport() {
                         identifier = "reservation-convert-to-sale",
                         tag = "Reservations",
                         summary = "예약 → 매출 전환 (매출 생성 후 예약에 saleId 연결)",
+                        pathParameters = listOf(parameterWithName("id").description("예약 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("date")
@@ -785,6 +797,7 @@ class ReservationDocsTest : RestDocsSupport() {
 
         mockMvc
             .post("/reservations/add-pickup/$saleId") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/reservations/add-pickup/{saleId}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -802,6 +815,7 @@ class ReservationDocsTest : RestDocsSupport() {
                         identifier = "reservation-add-pickup",
                         tag = "Reservations",
                         summary = "매출에 픽업 추가 (고객 정보는 매출에서 상속)",
+                        pathParameters = listOf(parameterWithName("saleId").description("매출 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("date")
@@ -838,6 +852,7 @@ class ReservationDocsTest : RestDocsSupport() {
 
         mockMvc
             .delete("/reservations/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/reservations/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isNoContent() } }
             .andDo {
@@ -846,6 +861,7 @@ class ReservationDocsTest : RestDocsSupport() {
                         identifier = "reservation-delete",
                         tag = "Reservations",
                         summary = "예약 삭제",
+                        pathParameters = listOf(parameterWithName("id").description("예약 UUID")),
                     ),
                 )
             }

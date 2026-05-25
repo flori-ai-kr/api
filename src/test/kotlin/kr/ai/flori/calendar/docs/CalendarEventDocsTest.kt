@@ -4,8 +4,10 @@ import kr.ai.flori.common.docs.RestDocsSupport
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.restdocs.generate.RestDocumentationGenerator
 import org.springframework.restdocs.payload.JsonFieldType
 import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
+import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
@@ -165,6 +167,7 @@ class CalendarEventDocsTest : RestDocsSupport() {
 
         mockMvc
             .get("/calendar-events/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/calendar-events/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isOk() } }
             .andDo {
@@ -173,6 +176,7 @@ class CalendarEventDocsTest : RestDocsSupport() {
                         identifier = "calendar-event-get",
                         tag = "CalendarEvents",
                         summary = "캘린더 이벤트 단건 조회",
+                        pathParameters = listOf(parameterWithName("id").description("이벤트 UUID")),
                         responseFields = calendarEventResponseFields,
                     ),
                 )
@@ -188,6 +192,7 @@ class CalendarEventDocsTest : RestDocsSupport() {
 
         mockMvc
             .patch("/calendar-events/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/calendar-events/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -204,6 +209,7 @@ class CalendarEventDocsTest : RestDocsSupport() {
                         identifier = "calendar-event-update",
                         tag = "CalendarEvents",
                         summary = "캘린더 이벤트 수정 (제공된 필드만 반영)",
+                        pathParameters = listOf(parameterWithName("id").description("이벤트 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("title")
@@ -242,6 +248,7 @@ class CalendarEventDocsTest : RestDocsSupport() {
 
         mockMvc
             .delete("/calendar-events/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/calendar-events/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isNoContent() } }
             .andDo {
@@ -250,6 +257,7 @@ class CalendarEventDocsTest : RestDocsSupport() {
                         identifier = "calendar-event-delete",
                         tag = "CalendarEvents",
                         summary = "캘린더 이벤트 삭제",
+                        pathParameters = listOf(parameterWithName("id").description("이벤트 UUID")),
                     ),
                 )
             }
