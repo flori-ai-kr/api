@@ -4,8 +4,10 @@ import kr.ai.flori.common.docs.RestDocsSupport
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.restdocs.generate.RestDocumentationGenerator
 import org.springframework.restdocs.payload.JsonFieldType
 import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
+import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
@@ -136,6 +138,7 @@ class CardCompanyDocsTest : RestDocsSupport() {
 
         mockMvc
             .patch("/settings/card-companies/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/settings/card-companies/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -152,6 +155,7 @@ class CardCompanyDocsTest : RestDocsSupport() {
                         identifier = "settings-card-company-update",
                         tag = "Settings",
                         summary = "카드사 수수료율·입금일 수정 (제공된 필드만 반영)",
+                        pathParameters = listOf(parameterWithName("id").description("카드사 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("feeRate")
@@ -178,6 +182,7 @@ class CardCompanyDocsTest : RestDocsSupport() {
 
         mockMvc
             .delete("/settings/card-companies/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/settings/card-companies/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isNoContent() } }
             .andDo {
@@ -186,6 +191,7 @@ class CardCompanyDocsTest : RestDocsSupport() {
                         identifier = "settings-card-company-delete",
                         tag = "Settings",
                         summary = "카드사 삭제 (소프트 삭제 — 목록에서 제외)",
+                        pathParameters = listOf(parameterWithName("id").description("카드사 UUID")),
                     ),
                 )
             }

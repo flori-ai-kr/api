@@ -4,8 +4,10 @@ import kr.ai.flori.common.docs.RestDocsSupport
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.restdocs.generate.RestDocumentationGenerator
 import org.springframework.restdocs.payload.JsonFieldType
 import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
+import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
@@ -162,6 +164,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
 
         mockMvc
             .put("/settings/expense-categories/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/settings/expense-categories/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -178,6 +181,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                         identifier = "settings-expense-category-update",
                         tag = "ExpenseSettings",
                         summary = "지출 카테고리 수정 (label·color 전체 교체)",
+                        pathParameters = listOf(parameterWithName("id").description("지출 카테고리 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("label")
@@ -202,6 +206,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
 
         mockMvc
             .delete("/settings/expense-categories/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/settings/expense-categories/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isNoContent() } }
             .andDo {
@@ -210,6 +215,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                         identifier = "settings-expense-category-delete",
                         tag = "ExpenseSettings",
                         summary = "지출 카테고리 삭제",
+                        pathParameters = listOf(parameterWithName("id").description("지출 카테고리 UUID")),
                     ),
                 )
             }
@@ -307,6 +313,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
 
         mockMvc
             .put("/settings/expense-payment-methods/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/settings/expense-payment-methods/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -323,6 +330,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                         identifier = "settings-expense-payment-method-update",
                         tag = "ExpenseSettings",
                         summary = "지출 결제방식 수정 (label·color 전체 교체)",
+                        pathParameters = listOf(parameterWithName("id").description("지출 결제방식 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("label")
@@ -347,6 +355,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
 
         mockMvc
             .delete("/settings/expense-payment-methods/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/settings/expense-payment-methods/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isNoContent() } }
             .andDo {
@@ -355,6 +364,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                         identifier = "settings-expense-payment-method-delete",
                         tag = "ExpenseSettings",
                         summary = "지출 결제방식 삭제",
+                        pathParameters = listOf(parameterWithName("id").description("지출 결제방식 UUID")),
                     ),
                 )
             }

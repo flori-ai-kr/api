@@ -4,8 +4,10 @@ import kr.ai.flori.common.docs.RestDocsSupport
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.restdocs.generate.RestDocumentationGenerator
 import org.springframework.restdocs.payload.JsonFieldType
 import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
+import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
@@ -163,6 +165,7 @@ class SaleSettingsDocsTest : RestDocsSupport() {
 
         mockMvc
             .put("/settings/sale-categories/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/settings/sale-categories/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -179,6 +182,7 @@ class SaleSettingsDocsTest : RestDocsSupport() {
                         identifier = "settings-sale-category-update",
                         tag = "SaleSettings",
                         summary = "매출 카테고리 수정 (label·color 전체 교체)",
+                        pathParameters = listOf(parameterWithName("id").description("매출 카테고리 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("label")
@@ -203,6 +207,7 @@ class SaleSettingsDocsTest : RestDocsSupport() {
 
         mockMvc
             .delete("/settings/sale-categories/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/settings/sale-categories/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isNoContent() } }
             .andDo {
@@ -211,6 +216,7 @@ class SaleSettingsDocsTest : RestDocsSupport() {
                         identifier = "settings-sale-category-delete",
                         tag = "SaleSettings",
                         summary = "매출 카테고리 삭제",
+                        pathParameters = listOf(parameterWithName("id").description("매출 카테고리 UUID")),
                     ),
                 )
             }
@@ -308,6 +314,7 @@ class SaleSettingsDocsTest : RestDocsSupport() {
 
         mockMvc
             .put("/settings/payment-methods/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/settings/payment-methods/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -324,6 +331,7 @@ class SaleSettingsDocsTest : RestDocsSupport() {
                         identifier = "settings-payment-method-update",
                         tag = "SaleSettings",
                         summary = "매출 결제방식 수정 (label·color 전체 교체)",
+                        pathParameters = listOf(parameterWithName("id").description("결제방식 UUID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("label")
@@ -348,6 +356,7 @@ class SaleSettingsDocsTest : RestDocsSupport() {
 
         mockMvc
             .delete("/settings/payment-methods/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/settings/payment-methods/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isNoContent() } }
             .andDo {
@@ -356,6 +365,7 @@ class SaleSettingsDocsTest : RestDocsSupport() {
                         identifier = "settings-payment-method-delete",
                         tag = "SaleSettings",
                         summary = "매출 결제방식 삭제",
+                        pathParameters = listOf(parameterWithName("id").description("결제방식 UUID")),
                     ),
                 )
             }
