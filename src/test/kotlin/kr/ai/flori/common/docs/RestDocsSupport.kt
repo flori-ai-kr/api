@@ -46,7 +46,9 @@ abstract class RestDocsSupport {
                     content = json(mapOf("email" to "docs-${UUID.randomUUID()}@flori.dev", "password" to "password123"))
                 }.andReturn()
                 .response.contentAsString
-        return objectMapper.readTree(res).get("accessToken").asText()
+        val node = objectMapper.readTree(res)
+        check(node.hasNonNull("accessToken")) { "signupAndToken 실패: 응답에 accessToken 없음. 응답=$res" }
+        return node.get("accessToken").asText()
     }
 
     /**

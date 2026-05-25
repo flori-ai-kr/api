@@ -310,7 +310,7 @@ val today = LocalDate.now(KST)
 
 ### 9-1. API 문서 = 테스트 (RestDocs → OpenAPI → Swagger) [HARD]
 
-Swagger 문서는 **컨트롤러 어노테이션이 아니라 테스트가 출처(SSOT)** 다. springdoc는 `api-docs.enabled=false`로 런타임 스캔을 끄고, 테스트가 생성한 정적 스펙(`static/docs/open-api-3.0.1.json`)만 swagger-ui로 보여준다. 컨트롤러에 `@Operation`/`@Schema`를 다는 게 아니라 **`*DocsTest`를 쓴다.**
+Swagger 문서는 **컨트롤러 어노테이션이 아니라 테스트가 출처(SSOT)** 다. springdoc 컨트롤러 스캔은 `packages-to-scan: kr.ai.flori.__docs_from_restdocs_only__`(더미 패키지)로 억제하고, `OpenApiConfig` 빈이 RestDocs 생성 정적 스펙(`static/docs/open-api-3.0.1.json`)을 읽어 JWT bearerAuth 보안 스킴과 합쳐 `/v3/api-docs`로 노출 → swagger-ui가 병합본을 표시(Authorize 버튼). 컨트롤러에 `@Operation`/`@Schema`를 다는 게 아니라 **`*DocsTest`를 쓴다.**
 
 - 베이스: `src/test/.../common/docs/RestDocsSupport.kt`(`@AutoConfigureRestDocs` + Zonky). `mockMvc`·`signupAndToken()`(JWT)·`docs(...)` 헬퍼 제공.
 - 엔드포인트마다 실제 호출 + `andDo { handle(docs(...)) }`로 request/response 필드를 기술. 모든 JSON 필드는 `fieldWithPath`로 1:1 기술해야 하며(누락 시 RestDocs 실패), nullable은 `.optional()`.

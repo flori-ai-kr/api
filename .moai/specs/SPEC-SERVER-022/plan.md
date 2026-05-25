@@ -4,7 +4,7 @@
 
 **Goal:** springdoc 어노테이션 기반 Swagger를, Spring REST Docs + ePages `restdocs-api-spec`으로 **테스트가 생성·보증하는 OpenAPI 3 문서**로 전환하고 JaCoCo line 80% 게이트를 건다.
 
-**Architecture:** 기존 통합테스트(`@SpringBootTest`+`@AutoConfigureMockMvc`+Zonky PG)에 `@AutoConfigureRestDocs`를 얹어 각 엔드포인트를 1회 호출하며 `document(resource(...))`로 OpenAPI를 산출 → `build/resources/main/static/docs/open-api-3.0.1.json` → springdoc swagger-ui가 그 정적 스펙을 표시(`api-docs.enabled=false`). 컨트롤러 문서 어노테이션은 제거.
+**Architecture:** 기존 통합테스트(`@SpringBootTest`+`@AutoConfigureMockMvc`+Zonky PG)에 `@AutoConfigureRestDocs`를 얹어 각 엔드포인트를 1회 호출하며 `document(resource(...))`로 OpenAPI를 산출 → `static/docs/open-api-3.0.1.json` → `OpenApiConfig`가 정적 스펙 + JWT bearerAuth를 병합해 `/v3/api-docs`로 노출 → springdoc swagger-ui가 병합본 표시(Authorize 버튼). `packages-to-scan` 더미로 컨트롤러 스캔 억제. 컨트롤러 문서 어노테이션은 제거. *(플랜 초안의 `api-docs.enabled=false`+`swagger-ui.url` 방식은 구현 중 OpenApiConfig 병합 방식으로 변경됨)*
 
 **Tech Stack:** Kotlin, Gradle Kotlin DSL, Spring Boot 3.5.14, `com.epages.restdocs-api-spec` 0.19.5, `spring-restdocs-mockmvc` 3.x, springdoc 2.8.17(뷰어), JaCoCo, Zonky embedded PostgreSQL.
 

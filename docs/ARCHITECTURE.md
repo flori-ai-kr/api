@@ -1,6 +1,6 @@
 # Flori Server — 아키텍처 & 기술 선정 이유
 
-> 최종 업데이트: 2026-05-23
+> 최종 업데이트: 2026-05-26
 
 이 문서는 Flori(꽃집 어드민) **모바일 앱 백엔드 API**의 기술 스택과 아키텍처를 설명한다. 단순히 "무엇을 쓰는가"가 아니라 **"왜 이것을 골랐는가"**에 초점을 맞춘다. 모든 선택에는 *기존 Next.js+Supabase 웹앱의 비즈니스 로직을 네이티브 앱이 호출 가능한 REST API로 재구현하고, 자체 AWS 인프라 위에 올린다*는 도메인 맥락이 반영되어 있다.
 
@@ -201,9 +201,9 @@ DESIGN은 Testcontainers를 권장하지만, **개발/CI 환경에 Docker 데몬
 | 푸시 | **FCM** (Firebase Admin) | 원본 Web Push(VAPID) → 네이티브 FCM. 미설정 시 로깅 폴백으로 graceful |
 | 스케줄 | **Spring `@Scheduled`** | Vercel Cron 대체. KST 타임존 cron |
 | jsonb/배열 | **Hibernate 네이티브 + hypersistence-utils** | validate 친화적 매핑 |
-| API 문서 | **springdoc-openapi (Swagger)** | 앱이 읽는 **계약(contract)의 출처** |
+| API 문서 | **Spring REST Docs + ePages `restdocs-api-spec` 0.19.2** | 테스트가 OpenAPI 3 스펙을 생성(SSOT). `OpenApiConfig`가 정적 스펙 + JWT bearerAuth를 병합 → `/v3/api-docs`. springdoc swagger-ui가 표시(Authorize 버튼). `packages-to-scan` 더미로 컨트롤러 스캔 억제 |
 | 에러 알림 | **Discord 웹훅** | 예기치 못한 오류만 비동기 전송, PII 새니타이즈 |
-| 품질 게이트 | **ktlint(official) + detekt** | 포맷·정적분석을 `build`에 연동 |
+| 품질 게이트 | **ktlint(official) + detekt + JaCoCo line 80%** | 포맷·정적분석·커버리지 게이트를 `build`에 연동 |
 
 ---
 
@@ -463,7 +463,7 @@ erDiagram
 | 설정 | `/settings/{sale-categories,payment-methods,expense-*,card-companies,preferences}`, `/push/*` | Auth |
 | 대시보드 | `GET /dashboard/today`·`/dashboard/month` | Auth |
 
-전체 계약은 `/swagger-ui.html`(OpenAPI `/v3/api-docs`)에서 확인한다 — **flori-ai/mobile이 읽는 계약의 출처**.
+전체 계약은 `/swagger-ui.html`에서 확인한다(RestDocs 테스트가 생성한 스펙 + JWT bearerAuth 병합 → `/v3/api-docs`) — **flori-ai/mobile이 읽는 계약의 출처**.
 
 ---
 
@@ -521,7 +521,7 @@ flowchart LR
     Unit["순수 단위 테스트<br/>입금계산·발생판정·스택 새니타이즈·JWT"] --> Gate
     Slice["슬라이스<br/>@WebMvcTest 헬스/에러핸들러"] --> Gate
     Integ["통합 (Zonky 임베디드 PG)<br/>도메인 서비스 + HTTP 흐름 + 멀티테넌시 격리"] --> Gate
-    Gate["./gradlew build test<br/>ktlint + detekt + 142 tests"]
+    Gate["./gradlew build test<br/>ktlint + detekt + JaCoCo 80% + 전체 테스트"]
 
     classDef t fill:#0277bd,color:#fff,stroke:#01579b
     classDef g fill:#2e7d32,color:#fff,stroke:#1b5e20
@@ -529,7 +529,7 @@ flowchart LR
     class Gate g
 ```
 
-- **게이트**: `./gradlew build test` — ktlint(official) + detekt + 전체 테스트가 모두 통과해야 커밋. (현재 **142 테스트, 34 클래스, 0 스킵**.)
+- **게이트**: `./gradlew build test` — ktlint(official) + detekt + 전체 테스트 + **JaCoCo line 80% 커버리지**가 모두 통과해야 커밋. (현재 **89.4% ≥ 80%**, 전체 테스트 0 스킵.)
 - **실 DB 검증**: Zonky 임베디드 PostgreSQL로 Flyway 마이그레이션·jsonb/배열·통계 집계를 실제 엔진에서 실행.
 - **멀티테넌시 필수 케이스**: 모든 도메인에 "다른 user 데이터 접근 차단" 테스트 포함(서비스·HTTP 양 레벨).
 - **계산/규칙 단위 테스트**: 카드수수료 반올림, 영업일 가산, 고정비 발생 판정(격주·말일 클램핑), 멱등 자동생성.
@@ -578,7 +578,10 @@ flowchart LR
 | JJWT | 0.12.6 | 자체 JWT |
 | AWS SDK v2 (s3) | 2.29.20 | presigned URL |
 | Firebase Admin | 9.4.1 | FCM |
-| springdoc-openapi | 2.8.17 | Swagger UI |
+| springdoc-openapi | 2.8.17 | Swagger UI (뷰어) |
+| ePages restdocs-api-spec | 0.19.2 | RestDocs → OpenAPI 3 생성 |
+| spring-restdocs-mockmvc | (Spring Boot BOM) | RestDocs MockMvc 통합 |
+| JaCoCo | 0.8.12 | 커버리지 측정 + line 80% 게이트 |
 | ktlint (plugin / engine) | 12.1.1 / 1.5.0 | 포맷 |
 | detekt | 1.23.7 | 정적 분석 |
 | embedded-database-spring-test (Zonky) | 2.5.1 | 테스트용 임베디드 PG |

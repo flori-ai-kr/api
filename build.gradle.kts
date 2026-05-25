@@ -119,6 +119,9 @@ openapi3 {
 // openapi3 task는 플러그인이 평가 시점에 등록 → afterEvaluate에서 test 의존 연결
 // (생성된 open-api-3.0.1.json은 src/main/resources/static/docs에 커밋되어 그대로 패키징됨)
 afterEvaluate {
+    // openapi3는 명시 실행(./gradlew openapi3)으로 스펙을 재생성·커밋한다.
+    // bootJar에 걸지 않는 이유: 응답 예시값이 테스트 데이터라 비결정적 → 매 빌드 스펙 churn 방지.
+    // (생성된 open-api-3.0.1.json은 static/docs에 커밋되어 jar에 그대로 패키징됨)
     tasks.named("openapi3") { dependsOn(tasks.test) }
 }
 

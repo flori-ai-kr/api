@@ -66,11 +66,11 @@ springdoc:
   # packages-to-scan: 더미 패키지로 컨트롤러 스캔 비활성(@Operation 제거됨 → 스캔 시 RestDocs 리치 경로 덮어쓰기 방지).
   packages-to-scan: kr.ai.flori.__docs_from_restdocs_only__
   api-docs:
-    enabled: true
+    enabled: ${SPRINGDOC_API_DOCS_ENABLED:true}     # 운영에선 env로 false 주입 → API 계약 비공개
   swagger-ui:
-    enabled: true
+    enabled: ${SPRINGDOC_SWAGGER_UI_ENABLED:true}   # 운영에선 env로 false
     path: /swagger-ui.html
-    persist-authorization: true   # 토큰 1회 입력 시 새로고침/요청 간 유지
+    persist-authorization: true   # 토큰 1회 입력 시 새로고침/요청 간 유지(운영 Swagger 비활성 권장)
 
 management:
   endpoints:

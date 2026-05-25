@@ -69,7 +69,7 @@ open http://localhost:8080/swagger-ui.html   # API contract (renders the test-ge
 
 Tests run against Zonky embedded PostgreSQL, so no local database is required for `./gradlew test`. Flyway applies the schema on boot; health check at `GET /health`.
 
-**API docs are test-driven:** each endpoint is exercised by a `*DocsTest` (RestDocs) that captures the real request/response, so the Swagger contract cannot drift from actual behavior. springdoc only serves the generated static spec (`springdoc.api-docs.enabled=false`).
+**API docs are test-driven:** each endpoint is exercised by a `*DocsTest` (RestDocs) that captures the real request/response, so the Swagger contract cannot drift from actual behavior. `OpenApiConfig` reads the generated static spec and merges JWT bearerAuth into `/v3/api-docs`; swagger-ui displays the merged result (Authorize button). Controller scanning is suppressed via a dummy `packages-to-scan`.
 
 ## Security model
 

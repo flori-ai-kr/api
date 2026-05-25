@@ -12,8 +12,9 @@ Spring REST Docs + ePages `restdocs-api-spec`으로 기존 통합테스트에서
 ## 설계 결정
 1. **라이브러리**: `com.epages.restdocs-api-spec` **0.19.5** + `spring-restdocs-mockmvc` (Spring REST Docs 3.x). onetime의 0.19.2 대비 최신 — Spring Boot 3.5 호환 안전. keecon 포크(타입추론)는 2024-10로 오래돼 미채택.
 2. **문서 SSOT = 테스트**. springdoc은 **뷰어로만 유지**:
-   - `springdoc.api-docs.enabled: false` (런타임 어노테이션 스캔 끔)
-   - `springdoc.swagger-ui.url: /docs/open-api-3.0.1.json` → `/swagger-ui.html`이 **테스트 생성 정적 스펙** 표시
+   - `springdoc.packages-to-scan: kr.ai.flori.__docs_from_restdocs_only__` (더미 패키지 → 컨트롤러 스캔 억제, `@Operation` 제거 후 스캔 시 RestDocs 리치 경로가 덮어써지는 것 방지)
+   - `springdoc.api-docs.enabled: true`(기본) — 운영에선 `SPRINGDOC_API_DOCS_ENABLED=false`로 비공개 가능
+   - `OpenApiConfig` 빈이 `static/docs/open-api-3.0.1.json`(RestDocs 생성)을 읽어 JWT bearerAuth 보안 스킴과 합쳐 `/v3/api-docs`로 노출 → swagger-ui가 병합본 표시(Authorize 버튼)
    - onetime의 `hidetake swagger.generator`는 flori엔 **불필요**(springdoc UI 재사용으로 간소화)
 3. **테스트 스타일**: 기존 통합테스트(`@SpringBootTest`+`@AutoConfigureMockMvc`+Zonky)에 `@AutoConfigureRestDocs` 추가 + `document(resource(...))` 연결. 공용 추상 베이스 `RestDocsSupport`.
 4. **중복 제거**: 문서 출처가 테스트가 되므로 컨트롤러 `@Operation`/`@Schema`/`@Tag` 제거(풀 도입, 코드 정리). JWT bearer SecurityScheme는 OpenAPI 보안 표기를 위해 유지/이관.
@@ -37,7 +38,7 @@ Spring REST Docs + ePages `restdocs-api-spec`으로 기존 통합테스트에서
 - [x] `./gradlew build test` 그린 — RestDocs 스니펫 + `open-api-3.0.1.json` 생성
 - [x] `/swagger-ui.html`이 테스트 생성 스펙 표시 (JWT Authorize 버튼 = 후속, 아래 참조)
 - [x] 22개 컨트롤러 주요 엔드포인트 RestDocs 문서화 — **107 path / 120 operation / 22 tag**(요청/응답 필드 기술)
-- [x] springdoc 런타임 스캔 비활성(`api-docs.enabled=false`) + 컨트롤러/DTO 문서 어노테이션 25파일 제거
+- [x] springdoc 컨트롤러 스캔 억제(`packages-to-scan` 더미) + 컨트롤러/DTO 문서 어노테이션 25파일 제거. `OpenApiConfig`가 정적 스펙+bearerAuth 병합 → `/v3/api-docs`
 - [x] JaCoCo line 커버리지 **89.4% ≥ 80%**(제외 적용), `jacocoTestCoverageVerification`이 `check`/build 게이트
 - [x] CI에 커버리지 게이트 반영
 - [x] 동작 변경 0(문서·테스트·빌드 인프라만)
