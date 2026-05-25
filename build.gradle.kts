@@ -7,6 +7,8 @@ plugins {
     kotlin("plugin.jpa") version kotlinVersion
     id("org.jlleitschuh.gradle.ktlint") version "12.1.1"
     id("io.gitlab.arturbosch.detekt") version "1.23.7"
+    id("com.epages.restdocs-api-spec") version "0.19.2"
+    jacoco
 }
 
 group = "kr.ai.flori"
@@ -63,6 +65,10 @@ dependencies {
     // Docker 없이 실제 PostgreSQL을 띄워 Flyway/리포지토리를 검증 (CI·로컬 동일)
     testImplementation("io.zonky.test:embedded-database-spring-test:$embeddedDbTestVersion")
     testImplementation("io.zonky.test:embedded-postgres:2.0.7")
+
+    // RestDocs → OpenAPI3 (테스트가 API 문서의 단일 출처)
+    testImplementation("com.epages:restdocs-api-spec-mockmvc:0.19.2")
+    testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
 }
 
 kotlin {
@@ -92,6 +98,64 @@ configurations.matching { it.name == "detekt" }.all {
     }
 }
 
+// === RestDocs → OpenAPI3 (테스트가 문서의 단일 출처) ===
+val snippetsDir = layout.buildDirectory.dir("generated-snippets")
+
 tasks.withType<Test> {
     useJUnitPlatform()
+    outputs.dir(snippetsDir)
+}
+
+openapi3 {
+    setServer(System.getenv("API_SERVER_URL") ?: "http://localhost:8080")
+    title = "Flori Server API"
+    description = "Spring REST Docs로 생성·검증된 Flori 백엔드 API 계약"
+    version = "0.0.1"
+    format = "json"
+    outputFileNamePrefix = "open-api-3.0.1"
+    outputDirectory = "src/main/resources/static/docs"
+}
+
+// openapi3 task는 플러그인이 평가 시점에 등록 → afterEvaluate에서 test 의존 연결
+// (생성된 open-api-3.0.1.json은 src/main/resources/static/docs에 커밋되어 그대로 패키징됨)
+afterEvaluate {
+    tasks.named("openapi3") { dependsOn(tasks.test) }
+}
+
+// === JaCoCo 커버리지 (게이트 check 연결은 80% 달성 후 Task15에서) ===
+jacoco { toolVersion = "0.8.12" }
+
+val coverageExclusions =
+    listOf(
+        "**/FloriServerApplicationKt.*",
+        "**/FloriServerApplication.*",
+        "**/common/config/**",
+        "**/dto/**",
+    )
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        html.required.set(true)
+        xml.required.set(true)
+    }
+    classDirectories.setFrom(
+        files(classDirectories.files.map { fileTree(it) { exclude(coverageExclusions) } }),
+    )
+}
+
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.jacocoTestReport)
+    classDirectories.setFrom(
+        files(classDirectories.files.map { fileTree(it) { exclude(coverageExclusions) } }),
+    )
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = "0.80".toBigDecimal()
+            }
+        }
+    }
 }
