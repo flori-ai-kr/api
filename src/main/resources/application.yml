@@ -60,15 +60,17 @@ revenuecat:
   webhook-secret: ${REVENUECAT_WEBHOOK_SECRET:}
 
 springdoc:
-  # 문서 출처 = 테스트(RestDocs)가 생성한 정적 OpenAPI(static/docs/open-api-3.0.1.json).
-  # springdoc는 swagger-ui 뷰어로만 쓰고 그 정적 스펙을 로드한다(swagger-ui.url).
-  # ⚠️ api-docs.enabled=false로 두면 springdoc 자동설정 전체(swagger-ui 포함)가 비활성되므로 끄지 않는다.
-  #    런타임 /v3/api-docs(어노테이션 제거됨 → 빈약)는 미사용 — swagger-ui는 위 정적 스펙을 본다.
+  # 문서 본문 = RestDocs 생성 스펙(static/docs/open-api-3.0.1.json).
+  # OpenApiConfig가 그 스펙(paths/components)을 읽어 bearerAuth 보안 스킴과 합쳐 /v3/api-docs로 노출하고,
+  # swagger-ui는 그 병합본을 보여준다(→ Authorize 버튼 동작).
+  # packages-to-scan: 더미 패키지로 컨트롤러 스캔 비활성(@Operation 제거됨 → 스캔 시 RestDocs 리치 경로 덮어쓰기 방지).
+  packages-to-scan: kr.ai.flori.__docs_from_restdocs_only__
+  api-docs:
+    enabled: true
   swagger-ui:
     enabled: true
     path: /swagger-ui.html
-    url: /docs/open-api-3.0.1.json
-    disable-swagger-default-url: true
+    persist-authorization: true   # 토큰 1회 입력 시 새로고침/요청 간 유지
 
 management:
   endpoints:

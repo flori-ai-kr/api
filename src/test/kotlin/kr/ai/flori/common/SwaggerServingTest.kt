@@ -34,4 +34,16 @@ class SwaggerServingTest {
     fun `swagger-ui 리소스가 서빙된다 (springdoc 활성)`() {
         mockMvc.get("/swagger-ui/index.html").andExpect { status { isOk() } }
     }
+
+    @Test
+    fun `v3 api-docs는 RestDocs 경로 + JWT bearerAuth 보안스킴 병합본으로 노출된다`() {
+        mockMvc
+            .get("/v3/api-docs")
+            .andExpect { status { isOk() } }
+            // Authorize 버튼 — JWT bearer 보안 스킴
+            .andExpect { content { string(org.hamcrest.Matchers.containsString("bearerAuth")) } }
+            .andExpect { content { string(org.hamcrest.Matchers.containsString("securitySchemes")) } }
+            // RestDocs 생성 경로가 병합돼 있음(스캔이 덮어쓰지 않음)
+            .andExpect { content { string(org.hamcrest.Matchers.containsString("\"/sales\"")) } }
+    }
 }
