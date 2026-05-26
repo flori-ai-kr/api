@@ -6,12 +6,14 @@ import kr.ai.flori.auth.dto.TokenResponse
 import kr.ai.flori.auth.entity.RefreshToken
 import kr.ai.flori.auth.entity.User
 import kr.ai.flori.auth.oauth.KakaoOAuthClient
+import kr.ai.flori.auth.oauth.KakaoUserInfo
 import kr.ai.flori.auth.repository.RefreshTokenRepository
 import kr.ai.flori.auth.repository.UserRepository
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.ErrorCode
 import kr.ai.flori.common.security.JwtProperties
 import kr.ai.flori.common.security.JwtTokenProvider
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -77,20 +79,29 @@ class AuthService(
         redirectUri: String,
     ): TokenResponse {
         val info = kakaoClient.authenticate(code, redirectUri)
-        val user =
-            userRepository.findByProviderAndProviderId("KAKAO", info.providerId)
-                ?: userRepository
-                    .saveAndFlush(
-                        User(
-                            provider = "KAKAO",
-                            providerId = info.providerId,
-                            name = info.nickname,
-                        ),
-                    ).also { seeder.seedForNewUser(requireNotNull(it.id)) }
+        val user = findOrCreateKakaoUser(info)
         if (!user.isActive) {
             throw AppException(ErrorCode.FORBIDDEN, "비활성화된 계정입니다")
         }
         return issueTokens(user)
+    }
+
+    private fun findOrCreateKakaoUser(info: KakaoUserInfo): User {
+        userRepository.findByProviderAndProviderId("KAKAO", info.providerId)?.let { return it }
+        return try {
+            userRepository
+                .saveAndFlush(
+                    User(
+                        provider = "KAKAO",
+                        providerId = info.providerId,
+                        name = info.nickname,
+                    ),
+                ).also { seeder.seedForNewUser(requireNotNull(it.id)) }
+        } catch (_: DataIntegrityViolationException) {
+            // 동시 첫 로그인 경쟁: 상대 요청이 먼저 INSERT 커밋 → 재조회해 기존 사용자 반환(멱등)
+            userRepository.findByProviderAndProviderId("KAKAO", info.providerId)
+                ?: throw AppException(ErrorCode.INTERNAL, "소셜 사용자 생성에 실패했습니다")
+        }
     }
 
     @Transactional

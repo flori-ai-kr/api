@@ -61,3 +61,9 @@
 | SPEC-SERVER-020 | DONE | 015 | **(B4) 에러리포팅 PII 마스킹+truncate**: 공통 `maskSensitive`(경로/이메일/전화/토큰/키) 추출 → 메시지·액션 필드까지 `sanitizeMessage`+truncate 적용, 전화번호 마스킹 추가. 170테스트 통과. 명세 `.moai/specs/SPEC-SERVER-020/spec.md` |
 | SPEC-SERVER-021 | DONE | 015 | **(DOC1) 컨벤션 ADR 문서 체계**: `docs/conventions/`(README 인덱스 + 작성규칙 `yy-mm-dd-*.md`) 신설, 핵심 ADR 2건(멀티테넌시 격리·엔티티 Auditing/업데이트) 근거+공식링크와 함께 작성. PATTERNS.md에서 링크. 명세 `.moai/specs/SPEC-SERVER-021/spec.md` |
 | SPEC-SERVER-022 | DONE | 018 | **(E2) RestDocs 검증 API 문서 + 커버리지 80%**: onetime 패턴 이식 — ePages `restdocs-api-spec` 0.19.2 + `spring-restdocs-mockmvc`로 기존 통합테스트에 RestDocs 연결 → OpenAPI3(107 path/120 op/22 tag) 생성 → `OpenApiConfig`가 정적 스펙+bearerAuth 병합→`/v3/api-docs`→swagger-ui 표시(`packages-to-scan` 더미로 컨트롤러 스캔 억제), 컨트롤러/DTO 문서 어노테이션 제거. JaCoCo **line 89.4%**(게이트 80%) check/CI 연결. 전 도메인 `*DocsTest`. 명세 `.moai/specs/SPEC-SERVER-022/spec.md` |
+
+## 앱 연동 SPEC
+
+| SPEC | status | deps | 범위 |
+|------|--------|------|------|
+| SPEC-RN-015 | DONE | SPEC-SERVER-022 | **카카오 OAuth 소셜 로그인**: `POST /auth/oauth/kakao`(KakaoOAuthRequest{code, redirectUri} → TokenResponse). 신규=가입+기본설정 시드, 기존=로그인. 동시 경쟁 DataIntegrityViolationException → 재조회 멱등. `kr.ai.flori.auth.oauth`(KakaoOAuthClient 인터페이스+Impl+Config+Properties, RestClient). User 엔티티 email/passwordHash nullable + provider/providerId 컬럼 추가. `V6__add_oauth_provider.sql`. 설정: `KAKAO_REST_API_KEY`, `KAKAO_CLIENT_SECRET`. |

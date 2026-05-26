@@ -6,4 +6,5 @@ package kr.ai.flori.common.error
 class AppException(
     val errorCode: ErrorCode,
     override val message: String = errorCode.defaultMessage,
-) : RuntimeException(message)
+    cause: Throwable? = null,
+) : RuntimeException(message, cause)

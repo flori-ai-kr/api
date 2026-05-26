@@ -33,6 +33,8 @@ flowchart TB
     subgraph External["외부 서비스"]
         FCM[FCM<br/>푸시]
         Discord[Discord<br/>에러 웹훅]
+        KakaoAuth[kauth.kakao.com<br/>카카오 토큰교환]
+        KakaoApi[kapi.kakao.com<br/>카카오 프로필조회]
     end
 
     App -->|"REST + Bearer JWT"| Sec
@@ -43,6 +45,8 @@ flowchart TB
     Sched --> Svc
     Svc -->|"토큰 발송"| FCM
     Adv -.->|"예기치 못한 오류"| Discord
+    Svc -->|"인증코드 교환"| KakaoAuth
+    Svc -->|"프로필 조회"| KakaoApi
 
     classDef client fill:#1565c0,color:#fff,stroke:#0d47a1
     classDef server fill:#ef6c00,color:#fff,stroke:#e65100
@@ -52,7 +56,7 @@ flowchart TB
     class App,Collector client
     class Sec,Ctrl,Svc,Repo,Sched,Adv server
     class RDS,S3 store
-    class FCM,Discord ext
+    class FCM,Discord,KakaoAuth,KakaoApi ext
 ```
 
 핵심 원칙: **앱은 표시만 하고, 계산·검증·격리는 서버가 책임진다.** 카드수수료·입금예정일·지출총액 등은 서버가 SSOT로 계산해 응답하고, 멀티테넌시(사용자별 데이터 격리)는 RLS 없이 애플리케이션이 유일한 방어선으로 강제한다. 기존 웹앱은 당분간 Supabase 위에서 그대로 동작하며, 이 백엔드는 독립 인프라로 분리 운영한다.
@@ -90,7 +94,7 @@ flowchart LR
 
 | 도메인 패키지 | 책임 |
 |---|---|
-| `auth` | 회원가입(기본 설정 시드)·로그인·refresh 회전·로그아웃·`/me` |
+| `auth` | 회원가입(기본 설정 시드)·로그인·**카카오 소셜 로그인**·refresh 회전·로그아웃·`/me` |
 | `sales` | 매출 CRUD·무한스크롤·필터·미수·**서버 입금계산** |
 | `expenses` | 지출 + 고정비(this/all 분기·**@Scheduled 자동생성**) |
 | `customers` | 고객 CRUD·findOrCreate·**실시간 구매통계** |
@@ -148,7 +152,7 @@ flowchart LR
 
 원본 스키마가 Supabase(PostgreSQL)다. jsonb·배열·`uuid`·`timestamptz`·부분 인덱스·`array_remove` 등 Postgres 고유 기능에 의존하므로 동일 엔진을 유지해 이식 리스크를 최소화한다.
 
-1. **Flyway 마이그레이션**: `V1`(스키마 baseline) → `V2`(공유 시드) → `V3`(refresh_tokens). 버전 관리되는 단방향 마이그레이션으로 재현 가능한 스키마를 보장한다.
+1. **Flyway 마이그레이션**: `V1`(스키마 baseline) → `V2`(공유 시드) → `V3`(refresh_tokens) → `V4`(subscriptions) → `V5`(notification_log) → `V6`(oauth_provider). 버전 관리되는 단방향 마이그레이션으로 재현 가능한 스키마를 보장한다.
 2. **이식 시 변환(HARD)**: Supabase **RLS 정책 전부 제거**, `auth.users` FK 제거 → **자체 `users` 테이블** 도입, 모든 `user_id`가 `users(id)`를 `ON DELETE CASCADE`로 참조. jsonb/배열/복합 unique는 그대로 유지.
 
 | 탈락 후보 | 이유 |
@@ -252,9 +256,22 @@ sequenceDiagram
     participant AS as AuthService
     participant DB as PostgreSQL
 
-    Note over U,DB: 로그인
+    Note over U,DB: 이메일 로그인
     U->>AS: POST /auth/login (email, pw)
     AS->>DB: findByEmail + BCrypt matches
+    AS->>DB: refresh 저장(SHA-256 해시)
+    AS-->>U: { accessToken(JWT), refreshToken(불투명) }
+
+    Note over U,DB: 카카오 소셜 로그인 (POST /auth/oauth/kakao)
+    U->>AS: code, redirectUri
+    AS->>AS: KakaoOAuthClient.authenticate()
+    AS->>AS: kauth.kakao.com 토큰교환
+    AS->>AS: kapi.kakao.com 프로필조회(providerId, nickname)
+    alt 신규 사용자
+        AS->>DB: User INSERT (provider=KAKAO, providerId) + 기본설정 시드
+    else 기존 사용자
+        AS->>DB: findByProviderAndProviderId
+    end
     AS->>DB: refresh 저장(SHA-256 해시)
     AS-->>U: { accessToken(JWT), refreshToken(불투명) }
 
@@ -377,8 +394,10 @@ erDiagram
 
     USERS {
         uuid id PK
-        string email UK
-        string password_hash "BCrypt"
+        string email UK "nullable (소셜 사용자)"
+        string password_hash "BCrypt, nullable (소셜 사용자)"
+        string provider "LOCAL|KAKAO, NOT NULL"
+        string provider_id "소셜 고유 ID, nullable"
         boolean is_active
     }
     SALES {
@@ -451,7 +470,7 @@ erDiagram
 
 | 도메인 | 대표 엔드포인트 | 권한 |
 |---|---|---|
-| 인증 | `POST /auth/{signup,login,refresh,logout}`, `GET /me` | Public / Auth |
+| 인증 | `POST /auth/{signup,login,oauth/kakao,refresh,logout}`, `GET /me` | Public / Auth |
 | 매출 | `GET/POST/PATCH/DELETE /sales`, `/sales/{id}/complete-unpaid`·`/revert-unpaid`, `/sales/suggestions` | Auth |
 | 지출·고정비 | `/expenses`, `/recurring-expenses`(+`/toggle`·`/quick-add`·`/instances/{id}?scope=this\|all`) | Auth |
 | 고객 | `/customers`(+`/search`·`/check-phone`·`/{id}/sales`·`/find-or-create`·`/{id}/grade`) | Auth |
@@ -487,6 +506,7 @@ erDiagram
 | **멀티테넌시** | `TenantContext`(ThreadLocal) + 전 쿼리 `user_id` 격리 | 테넌트 간 데이터 유출 |
 | **소유권 재검증** | `customer_id`·다건 `ids` 등 외부 식별자 소유 확인 | 교차 테넌트 식별자 주입 |
 | **비밀번호** | BCrypt 해시, 평문 로깅 금지 | 자격증명 노출 |
+| **소셜 로그인** | KakaoOAuthClient 인터페이스 분리 — 4xx/5xx·네트워크 오류를 `AppException(INVALID_TOKEN)`으로 변환(원인 체이닝, 500 노출 방지). client_secret '사용함'일 때만 전송. 동시 첫 로그인 경쟁은 DataIntegrityViolationException 캐치 후 재조회(멱등) | 카카오 API 오류 노출·중복 사용자 생성 |
 | **refresh 회전** | 불투명 난수 + SHA-256 해시 저장, 사용 시 회전·로그아웃 시 무효 | 토큰 탈취/재사용 |
 | **내부 API** | `InternalAuthVerifier` — `MessageDigest.isEqual` 타이밍-세이프, 키 미설정 시 전면 차단 | 수집 API 무단 호출 |
 | **입력 검증** | Jakarta Validation `@Valid`, 결제수단/등급/상태 화이트리스트 | 잘못된 입력 |
@@ -559,6 +579,8 @@ flowchart LR
 | `DISCORD_WEBHOOK_URL` | 에러 알림 |
 | `INTERNAL_API_KEY` | 내부 수집 API |
 | `CORS_ALLOWED_ORIGINS` | 앱/웹 origin 화이트리스트 |
+| `KAKAO_REST_API_KEY` | 카카오 OAuth REST API 키 |
+| `KAKAO_CLIENT_SECRET` | 카카오 OAuth 클라이언트 시크릿 ('사용 안 함'이면 빈 값으로 설정) |
 
 ---
 
