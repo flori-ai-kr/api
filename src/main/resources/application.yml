@@ -81,3 +81,8 @@ management:
     health:
       probes:
         enabled: true
+
+# 카카오 OAuth (소셜 로그인). client-secret은 운영에서 env 주입(커밋 금지).
+kakao:
+  rest-api-key: ${KAKAO_REST_API_KEY:}
+  client-secret: ${KAKAO_CLIENT_SECRET:}
