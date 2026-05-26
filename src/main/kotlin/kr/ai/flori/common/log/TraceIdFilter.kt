@@ -8,7 +8,7 @@ import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
-import java.util.*
+import java.util.UUID
 
 /**
  * 요청마다 짧은 추적 ID(traceId)를 MDC에 넣어, 한 요청에서 발생한 모든 로그를 묶을 수 있게 한다.
