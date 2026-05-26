@@ -26,8 +26,6 @@ class DashboardDocsTest : RestDocsSupport() {
             fieldWithPath("summary.transferAmount").type(JsonFieldType.NUMBER).description("계좌이체 합계(원)"),
             fieldWithPath("summary.naverpayAmount").type(JsonFieldType.NUMBER).description("네이버페이 합계(원)"),
             fieldWithPath("summary.kakaopayAmount").type(JsonFieldType.NUMBER).description("카카오페이 합계(원)"),
-            fieldWithPath("summary.pendingCount").type(JsonFieldType.NUMBER).description("[서버 계산 SSOT] 카드 입금 대기 건수"),
-            fieldWithPath("summary.pendingAmount").type(JsonFieldType.NUMBER).description("[서버 계산 SSOT] 카드 입금 대기 금액(원)"),
         )
 
     /** SaleResponse 인라인 필드 — 배열 항목은 모두 optional() (빈 배열 대응) */
@@ -39,12 +37,6 @@ class DashboardDocsTest : RestDocsSupport() {
             fieldWithPath("$prefix.productCategory").type(JsonFieldType.STRING).optional().description("상품 카테고리 (null 가능)"),
             fieldWithPath("$prefix.amount").type(JsonFieldType.NUMBER).optional().description("결제 금액(원)"),
             fieldWithPath("$prefix.paymentMethod").type(JsonFieldType.STRING).optional().description("결제방식"),
-            fieldWithPath("$prefix.cardCompany").type(JsonFieldType.STRING).optional().description("카드사"),
-            fieldWithPath("$prefix.fee").type(JsonFieldType.NUMBER).optional().description("[서버 계산 SSOT] 카드 수수료"),
-            fieldWithPath("$prefix.expectedDeposit").type(JsonFieldType.NUMBER).optional().description("[서버 계산 SSOT] 예상 입금액"),
-            fieldWithPath("$prefix.expectedDepositDate").type(JsonFieldType.STRING).optional().description("[서버 계산 SSOT] 입금 예정일"),
-            fieldWithPath("$prefix.depositStatus").type(JsonFieldType.STRING).optional().description("[서버 계산 SSOT] 입금 상태"),
-            fieldWithPath("$prefix.depositedAt").type(JsonFieldType.STRING).optional().description("실제 입금 확인 시각"),
             fieldWithPath("$prefix.reservationChannel").type(JsonFieldType.STRING).optional().description("예약 채널"),
             fieldWithPath("$prefix.customerName").type(JsonFieldType.STRING).optional().description("고객명"),
             fieldWithPath("$prefix.customerPhone").type(JsonFieldType.STRING).optional().description("고객 전화번호"),
@@ -98,7 +90,6 @@ class DashboardDocsTest : RestDocsSupport() {
                             "productCategory" to "basic_bouquet",
                             "amount" to 100_000,
                             "paymentMethod" to "card",
-                            "cardCompany" to "신한카드",
                             "reservationChannel" to "kakaotalk",
                             "customerPhone" to "01012345678",
                         ),

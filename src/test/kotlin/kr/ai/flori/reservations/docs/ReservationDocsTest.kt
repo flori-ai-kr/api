@@ -70,29 +70,6 @@ class ReservationDocsTest : RestDocsSupport() {
                 .description("상품 카테고리 (null 가능)"),
             fieldWithPath("amount").type(JsonFieldType.NUMBER).description("결제 금액(원)"),
             fieldWithPath("paymentMethod").type(JsonFieldType.STRING).description("결제방식"),
-            fieldWithPath("cardCompany")
-                .type(JsonFieldType.STRING)
-                .optional()
-                .description("카드사 (카드 결제일 때만 존재)"),
-            fieldWithPath("fee")
-                .type(JsonFieldType.NUMBER)
-                .optional()
-                .description("[서버 계산 SSOT] 카드 수수료 (amount × fee_rate/100). 카드 결제가 아니면 null"),
-            fieldWithPath("expectedDeposit")
-                .type(JsonFieldType.NUMBER)
-                .optional()
-                .description("[서버 계산 SSOT] 예상 입금액 (amount - fee). 카드 결제가 아니면 null"),
-            fieldWithPath("expectedDepositDate")
-                .type(JsonFieldType.STRING)
-                .optional()
-                .description("[서버 계산 SSOT] 입금 예정일 (영업일 N일 후). 카드 결제가 아니면 null"),
-            fieldWithPath("depositStatus")
-                .type(JsonFieldType.STRING)
-                .description("[서버 계산 SSOT] 입금 상태. not_applicable | pending | completed"),
-            fieldWithPath("depositedAt")
-                .type(JsonFieldType.STRING)
-                .optional()
-                .description("실제 입금 확인 시각 (ISO-8601, 입금 전이면 null)"),
             fieldWithPath("reservationChannel").type(JsonFieldType.STRING).description("예약 채널"),
             fieldWithPath("customerName")
                 .type(JsonFieldType.STRING)
@@ -737,10 +714,6 @@ class ReservationDocsTest : RestDocsSupport() {
                                 fieldWithPath("paymentMethod")
                                     .type(JsonFieldType.STRING)
                                     .description("결제방식. cash | card | transfer | naverpay | kakaopay | unpaid (필수)"),
-                                fieldWithPath("cardCompany")
-                                    .type(JsonFieldType.STRING)
-                                    .optional()
-                                    .description("카드사 (card 결제 시 수수료·입금예정일 계산 기준)"),
                                 fieldWithPath("reservationChannel")
                                     .type(JsonFieldType.STRING)
                                     .optional()

@@ -83,29 +83,6 @@ class CustomerDocsTest : RestDocsSupport() {
             fieldWithPath("sales[].paymentMethod")
                 .type(JsonFieldType.STRING)
                 .description("결제방식"),
-            fieldWithPath("sales[].cardCompany")
-                .type(JsonFieldType.STRING)
-                .optional()
-                .description("카드사 (카드 결제일 때만 존재)"),
-            fieldWithPath("sales[].fee")
-                .type(JsonFieldType.NUMBER)
-                .optional()
-                .description("[서버 계산 SSOT] 카드 수수료"),
-            fieldWithPath("sales[].expectedDeposit")
-                .type(JsonFieldType.NUMBER)
-                .optional()
-                .description("[서버 계산 SSOT] 예상 입금액"),
-            fieldWithPath("sales[].expectedDepositDate")
-                .type(JsonFieldType.STRING)
-                .optional()
-                .description("[서버 계산 SSOT] 입금 예정일"),
-            fieldWithPath("sales[].depositStatus")
-                .type(JsonFieldType.STRING)
-                .description("[서버 계산 SSOT] 입금 상태"),
-            fieldWithPath("sales[].depositedAt")
-                .type(JsonFieldType.STRING)
-                .optional()
-                .description("실제 입금 확인 시각"),
             fieldWithPath("sales[].reservationChannel")
                 .type(JsonFieldType.STRING)
                 .description("예약 채널"),

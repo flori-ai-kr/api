@@ -11,8 +11,6 @@ data class DashboardSummary(
     val transferAmount: Long,
     val naverpayAmount: Long,
     val kakaopayAmount: Long,
-    val pendingCount: Long,
-    val pendingAmount: Long,
 )
 
 data class CategoryStat(

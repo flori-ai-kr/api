@@ -54,7 +54,6 @@ class SaleApiIntegrationTest {
                                 "productCategory" to "basic_bouquet",
                                 "amount" to 100_000,
                                 "paymentMethod" to "card",
-                                "cardCompany" to "신한카드",
                             ),
                         )
                 }.andReturn()
@@ -63,7 +62,7 @@ class SaleApiIntegrationTest {
     }
 
     @Test
-    fun `생성 시 서버가 수수료를 계산하고 목록에 노출된다`() {
+    fun `매출 생성 후 목록에 노출된다`() {
         val token = signupToken()
 
         mockMvc
@@ -77,14 +76,11 @@ class SaleApiIntegrationTest {
                             "productCategory" to "basic_bouquet",
                             "amount" to 100_000,
                             "paymentMethod" to "card",
-                            "cardCompany" to "신한카드",
                         ),
                     )
             }.andExpect {
                 status { isCreated() }
-                jsonPath("$.fee") { value(2_000) }
-                jsonPath("$.expectedDeposit") { value(98_000) }
-                jsonPath("$.depositStatus") { value("pending") }
+                jsonPath("$.paymentMethod") { value("card") }
             }
 
         mockMvc

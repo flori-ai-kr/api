@@ -8,7 +8,6 @@ import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.ErrorCode
 import kr.ai.flori.common.tenant.TenantContext
-import kr.ai.flori.settings.service.CardCompanyService
 import kr.ai.flori.settings.service.PushSubscriptionService
 import kr.ai.flori.settings.service.SaleCategorySettingService
 import kr.ai.flori.settings.service.UserPreferenceService
@@ -18,7 +17,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import java.math.BigDecimal
 import java.util.UUID
 
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
@@ -26,9 +24,6 @@ import java.util.UUID
 class SettingsServiceIntegrationTest {
     @Autowired
     lateinit var saleCategoryService: SaleCategorySettingService
-
-    @Autowired
-    lateinit var cardCompanyService: CardCompanyService
 
     @Autowired
     lateinit var userPreferenceService: UserPreferenceService
@@ -77,29 +72,6 @@ class SettingsServiceIntegrationTest {
             .isInstanceOfSatisfying(AppException::class.java) {
                 assertThat(it.errorCode).isEqualTo(ErrorCode.DUPLICATE)
             }
-    }
-
-    @Test
-    fun `카드사는 가입 시드(9) + 등록·수정·소프트삭제`() {
-        newTenant()
-        assertThat(cardCompanyService.list()).hasSize(9)
-
-        val created = cardCompanyService.create("토스카드", BigDecimal("1.5"), 2)
-        assertThat(cardCompanyService.list()).hasSize(10)
-
-        val updated = cardCompanyService.update(created.id, BigDecimal("3.0"), 5)
-        assertThat(updated.feeRate).isEqualByComparingTo(BigDecimal("3.0"))
-        assertThat(updated.depositDays).isEqualTo(5)
-
-        cardCompanyService.delete(created.id)
-        assertThat(cardCompanyService.list()).hasSize(9) // 소프트 삭제 → 활성 목록에서 제외
-    }
-
-    @Test
-    fun `중복 카드사는 409`() {
-        newTenant()
-        assertThatThrownBy { cardCompanyService.create("신한카드", BigDecimal("2.0"), 3) }
-            .isInstanceOf(AppException::class.java)
     }
 
     @Test

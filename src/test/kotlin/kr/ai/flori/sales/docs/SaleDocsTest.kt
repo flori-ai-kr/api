@@ -16,7 +16,6 @@ import org.springframework.test.web.servlet.post
 /**
  * Sales API RestDocs 문서화.
  * 실제 보안 체인 + Zonky PG에서 각 엔드포인트를 1회 호출하며 OpenAPI 스펙을 생성한다.
- * fee/expectedDeposit/expectedDepositDate/depositStatus 는 서버가 계산하는 SSOT 값이다.
  */
 class SaleDocsTest : RestDocsSupport() {
     /** SaleResponse 공통 응답 필드 — 단건 조회/생성/수정/미수 처리에서 재사용 */
@@ -31,29 +30,6 @@ class SaleDocsTest : RestDocsSupport() {
                 .description("상품 카테고리 (null 가능)"),
             fieldWithPath("amount").type(JsonFieldType.NUMBER).description("결제 금액(원)"),
             fieldWithPath("paymentMethod").type(JsonFieldType.STRING).description("결제방식"),
-            fieldWithPath("cardCompany")
-                .type(JsonFieldType.STRING)
-                .optional()
-                .description("카드사 (카드 결제일 때만 존재)"),
-            fieldWithPath("fee")
-                .type(JsonFieldType.NUMBER)
-                .optional()
-                .description("[서버 계산 SSOT] 카드 수수료 (amount × fee_rate/100). 카드 결제가 아니면 null"),
-            fieldWithPath("expectedDeposit")
-                .type(JsonFieldType.NUMBER)
-                .optional()
-                .description("[서버 계산 SSOT] 예상 입금액 (amount - fee). 카드 결제가 아니면 null"),
-            fieldWithPath("expectedDepositDate")
-                .type(JsonFieldType.STRING)
-                .optional()
-                .description("[서버 계산 SSOT] 입금 예정일 (영업일 N일 후). 카드 결제가 아니면 null"),
-            fieldWithPath("depositStatus")
-                .type(JsonFieldType.STRING)
-                .description("[서버 계산 SSOT] 입금 상태. not_applicable | pending | completed"),
-            fieldWithPath("depositedAt")
-                .type(JsonFieldType.STRING)
-                .optional()
-                .description("실제 입금 확인 시각 (ISO-8601, 입금 전이면 null)"),
             fieldWithPath("reservationChannel").type(JsonFieldType.STRING).description("예약 채널"),
             fieldWithPath("customerName")
                 .type(JsonFieldType.STRING)
@@ -89,29 +65,6 @@ class SaleDocsTest : RestDocsSupport() {
                 .description("상품 카테고리 (null 가능)"),
             fieldWithPath("sales[].amount").type(JsonFieldType.NUMBER).description("결제 금액(원)"),
             fieldWithPath("sales[].paymentMethod").type(JsonFieldType.STRING).description("결제방식"),
-            fieldWithPath("sales[].cardCompany")
-                .type(JsonFieldType.STRING)
-                .optional()
-                .description("카드사 (카드 결제일 때만 존재)"),
-            fieldWithPath("sales[].fee")
-                .type(JsonFieldType.NUMBER)
-                .optional()
-                .description("[서버 계산 SSOT] 카드 수수료"),
-            fieldWithPath("sales[].expectedDeposit")
-                .type(JsonFieldType.NUMBER)
-                .optional()
-                .description("[서버 계산 SSOT] 예상 입금액"),
-            fieldWithPath("sales[].expectedDepositDate")
-                .type(JsonFieldType.STRING)
-                .optional()
-                .description("[서버 계산 SSOT] 입금 예정일"),
-            fieldWithPath("sales[].depositStatus")
-                .type(JsonFieldType.STRING)
-                .description("[서버 계산 SSOT] 입금 상태"),
-            fieldWithPath("sales[].depositedAt")
-                .type(JsonFieldType.STRING)
-                .optional()
-                .description("실제 입금 확인 시각"),
             fieldWithPath("sales[].reservationChannel")
                 .type(JsonFieldType.STRING)
                 .description("예약 채널"),
@@ -151,7 +104,6 @@ class SaleDocsTest : RestDocsSupport() {
                                 "productCategory" to "basic_bouquet",
                                 "amount" to 100_000,
                                 "paymentMethod" to "card",
-                                "cardCompany" to "신한카드",
                             ),
                         )
                 }.andReturn()
@@ -176,7 +128,6 @@ class SaleDocsTest : RestDocsSupport() {
                             "productCategory" to "basic_bouquet",
                             "amount" to 100_000,
                             "paymentMethod" to "card",
-                            "cardCompany" to "신한카드",
                             "reservationChannel" to "kakaotalk",
                             "customerName" to "김하늘",
                             "note" to "웨딩 부케",
@@ -188,7 +139,7 @@ class SaleDocsTest : RestDocsSupport() {
                     docs(
                         identifier = "sale-create",
                         tag = "Sales",
-                        summary = "매출 생성 (수수료/입금예정일/입금상태는 서버 계산)",
+                        summary = "매출 생성",
                         requestFields =
                             listOf(
                                 fieldWithPath("date")
@@ -203,10 +154,6 @@ class SaleDocsTest : RestDocsSupport() {
                                 fieldWithPath("paymentMethod")
                                     .type(JsonFieldType.STRING)
                                     .description("결제방식. 'unpaid' 이면 미수로 생성 (필수)"),
-                                fieldWithPath("cardCompany")
-                                    .type(JsonFieldType.STRING)
-                                    .optional()
-                                    .description("카드사 (card 결제 시 수수료·입금예정일 계산 기준)"),
                                 fieldWithPath("reservationChannel")
                                     .type(JsonFieldType.STRING)
                                     .optional()
@@ -310,7 +257,7 @@ class SaleDocsTest : RestDocsSupport() {
                     docs(
                         identifier = "sale-update",
                         tag = "Sales",
-                        summary = "매출 수정 (제공된 필드만 반영, 입금값 재계산)",
+                        summary = "매출 수정 (제공된 필드만 반영)",
                         pathParameters = listOf(parameterWithName("id").description("매출 UUID")),
                         requestFields =
                             listOf(
@@ -330,10 +277,6 @@ class SaleDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("결제방식 변경"),
-                                fieldWithPath("cardCompany")
-                                    .type(JsonFieldType.STRING)
-                                    .optional()
-                                    .description("카드사 변경"),
                                 fieldWithPath("reservationChannel")
                                     .type(JsonFieldType.STRING)
                                     .optional()
