@@ -5,12 +5,15 @@ import kr.ai.flori.auth.dto.SignupRequest
 import kr.ai.flori.auth.dto.TokenResponse
 import kr.ai.flori.auth.entity.RefreshToken
 import kr.ai.flori.auth.entity.User
+import kr.ai.flori.auth.oauth.KakaoOAuthClient
+import kr.ai.flori.auth.oauth.KakaoUserInfo
 import kr.ai.flori.auth.repository.RefreshTokenRepository
 import kr.ai.flori.auth.repository.UserRepository
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.ErrorCode
 import kr.ai.flori.common.security.JwtProperties
 import kr.ai.flori.common.security.JwtTokenProvider
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -20,7 +23,7 @@ import java.time.Instant
 import java.util.Base64
 
 /**
- * 인증 서비스: 가입(기본 설정 시드 포함) · 로그인 · refresh 회전 · 로그아웃.
+ * 인증 서비스: 가입(기본 설정 시드 포함) · 로그인 · 소셜 로그인 · refresh 회전 · 로그아웃.
  *
  * - 비밀번호는 BCrypt 해시로만 저장(평문 로깅 금지).
  * - access는 자체 JWT(짧은 TTL), refresh는 불투명 난수 + DB에 SHA-256 해시 저장.
@@ -34,6 +37,7 @@ class AuthService(
     private val tokenProvider: JwtTokenProvider,
     private val jwtProperties: JwtProperties,
     private val seeder: DefaultDataSeeder,
+    private val kakaoClient: KakaoOAuthClient,
 ) {
     private val secureRandom = SecureRandom()
 
@@ -59,13 +63,45 @@ class AuthService(
     fun login(request: LoginRequest): TokenResponse {
         // 이메일 미존재와 비밀번호 불일치를 동일 응답으로 처리(사용자 열거 방지)
         val user = userRepository.findByEmail(request.email)
-        if (user == null || !passwordEncoder.matches(request.password, user.passwordHash)) {
+        val hash = user?.passwordHash
+        if (user == null || hash == null || !passwordEncoder.matches(request.password, hash)) {
             throw AppException(ErrorCode.INVALID_CREDENTIALS)
         }
         if (!user.isActive) {
             throw AppException(ErrorCode.FORBIDDEN, "비활성화된 계정입니다")
         }
         return issueTokens(user)
+    }
+
+    @Transactional
+    fun oauthLogin(
+        code: String,
+        redirectUri: String,
+    ): TokenResponse {
+        val info = kakaoClient.authenticate(code, redirectUri)
+        val user = findOrCreateKakaoUser(info)
+        if (!user.isActive) {
+            throw AppException(ErrorCode.FORBIDDEN, "비활성화된 계정입니다")
+        }
+        return issueTokens(user)
+    }
+
+    private fun findOrCreateKakaoUser(info: KakaoUserInfo): User {
+        userRepository.findByProviderAndProviderId("KAKAO", info.providerId)?.let { return it }
+        return try {
+            userRepository
+                .saveAndFlush(
+                    User(
+                        provider = "KAKAO",
+                        providerId = info.providerId,
+                        name = info.nickname,
+                    ),
+                ).also { seeder.seedForNewUser(requireNotNull(it.id)) }
+        } catch (_: DataIntegrityViolationException) {
+            // 동시 첫 로그인 경쟁: 상대 요청이 먼저 INSERT 커밋 → 재조회해 기존 사용자 반환(멱등)
+            userRepository.findByProviderAndProviderId("KAKAO", info.providerId)
+                ?: throw AppException(ErrorCode.INTERNAL, "소셜 사용자 생성에 실패했습니다")
+        }
     }
 
     @Transactional
@@ -97,7 +133,7 @@ class AuthService(
 
     private fun issueTokens(user: User): TokenResponse {
         val userId = requireNotNull(user.id)
-        val accessToken = tokenProvider.createAccessToken(userId, user.email)
+        val accessToken = tokenProvider.createAccessToken(userId, user.email ?: "")
         val rawRefresh = generateRefreshToken()
         refreshTokenRepository.save(
             RefreshToken(

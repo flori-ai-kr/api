@@ -17,7 +17,7 @@ Flori(꽃집 어드민)의 모바일 앱 백엔드. Spring Boot(Kotlin) REST API
 | 데이터 접근 | **Spring Data JPA + Hibernate** (jsonb/배열은 hypersistence-utils), 통계 집계는 네이티브 SQL |
 | DB | **AWS RDS PostgreSQL** |
 | 스키마 관리 | **Flyway** (마이그레이션 버전 관리) |
-| 인증 | **Spring Security + 자체 JWT** (access + refresh rotation), BCrypt |
+| 인증 | **Spring Security + 자체 JWT** (access + refresh rotation), BCrypt, **카카오 OAuth** (소셜 로그인, RestClient) |
 | 검증 | **Jakarta Bean Validation** + 커스텀 validator |
 | 스토리지 | **AWS S3 + CloudFront** (presigned PUT URL 발급) |
 | 푸시 | **FCM** (Firebase Admin SDK) |

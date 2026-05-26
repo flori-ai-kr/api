@@ -65,7 +65,8 @@ kr.ai.flori
 - `signup` → users INSERT(BCrypt) + 사용자별 기본 설정 시드(카테고리/결제방식/카드사) → JWT 발급.
 - `login` → access JWT(짧음) + refresh token(회전, 저장/무효화).
 - JWT 서명키·TTL은 환경변수. 위변조/만료 검증.
-- 확장: 카카오/구글 소셜 로그인 자리 마련(인터페이스 분리).
+- **카카오 소셜 로그인** (SPEC-RN-015, 구현 완료): `POST /auth/oauth/kakao` — 인증코드+redirectUri → `KakaoOAuthClient`(인터페이스, 테스트 스텁 가능) → kauth.kakao.com 토큰교환 + kapi.kakao.com 프로필조회(providerId, nickname). 신규면 User(provider=KAKAO, providerId) INSERT + 기본설정 시드, 기존이면 findByProviderAndProviderId → 동일한 JWT 발급. 동시 첫 로그인 경쟁은 DataIntegrityViolationException 캐치 후 재조회로 멱등 처리. 소셜 사용자는 email/passwordHash가 null. 설정: `KAKAO_REST_API_KEY`, `KAKAO_CLIENT_SECRET` 환경변수.
+- 구글 소셜 로그인: 미구현(인터페이스 분리로 향후 동일 패턴 추가 가능).
 
 ## 7. 도메인 매핑 (원본 Server Actions → API)
 

@@ -39,6 +39,8 @@ class TenantIsolationGuardTest {
             // 인증: 사용자(테넌트 루트)·자격증명 조회 — 테넌트 데이터가 아님
             "UserRepository#findByEmail",
             "UserRepository#existsByEmail",
+            // 인증: 소셜 신원(provider+providerId) 조회 — 자격증명 조회, 테넌트 데이터 아님 (SPEC-RN-015)
+            "UserRepository#findByProviderAndProviderId",
             "RefreshTokenRepository#findByTokenHash",
             // 스케줄러: 전체 테넌트 대상 시스템 작업(@Scheduled)
             "RecurringExpenseRepository#findByIsActiveTrue",
