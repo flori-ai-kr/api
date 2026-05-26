@@ -11,6 +11,7 @@ import org.springframework.web.client.RestClient
 /**
  * 카카오 OAuth 실연동: 인증코드 → 토큰 교환 → 프로필 조회.
  * RestClient.Builder를 주입받아(테스트에서 MockRestServiceServer 바인딩 가능) 절대 URL로 호출한다.
+ * client_secret은 '사용함'일 때만 전송한다('사용 안 함'이면 빈 값 → 생략).
  */
 @Component
 class KakaoOAuthClientImpl(
@@ -32,7 +33,9 @@ class KakaoOAuthClientImpl(
             LinkedMultiValueMap<String, String>().apply {
                 add("grant_type", "authorization_code")
                 add("client_id", properties.restApiKey)
-                add("client_secret", properties.clientSecret)
+                if (properties.clientSecret.isNotBlank()) {
+                    add("client_secret", properties.clientSecret)
+                }
                 add("redirect_uri", redirectUri)
                 add("code", code)
             }
