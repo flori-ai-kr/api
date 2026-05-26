@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!--
+      Flori 서버 로깅 구성.
+      - local        : 색상 텍스트 콘솔(traceId 포함). 프로필 미지정 시에도 이 동작을 기본값으로 사용.
+      - !local(운영) : LogstashEncoder JSON을 stdout으로만 출력(컨테이너 표준출력 → 플랫폼이 수집).
+                       롤링 파일 appender 없음(컨테이너 환경).
+      로그 레벨은 LOG_LEVEL 환경변수로 조정 가능(기본 INFO).
+    -->
+
+    <springProperty name="APP_NAME" source="spring.application.name" defaultValue="flori-ai-server"/>
+    <property name="LOG_LEVEL" value="${LOG_LEVEL:-INFO}"/>
+
+    <!-- traceId(MDC)를 패턴에 포함 — 한 요청의 모든 로그를 묶어 추적 -->
+    <property name="CONSOLE_PATTERN"
+              value="%d{HH:mm:ss.SSS} %highlight(%-5level) %cyan([%X{traceId:-}]) %yellow(%-40.40logger{39}) : %msg%n"/>
+
+    <!-- ==================== 운영(JSON, stdout) ==================== -->
+    <springProfile name="!local">
+        <appender name="STDOUT_JSON" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <timeZone>Asia/Seoul</timeZone>
+                <includeMdcKeyName>traceId</includeMdcKeyName>
+                <customFields>{"service":"flori-ai-server"}</customFields>
+            </encoder>
+        </appender>
+
+        <root level="${LOG_LEVEL}">
+            <appender-ref ref="STDOUT_JSON"/>
+        </root>
+    </springProfile>
+
+    <!-- ==================== 로컬(텍스트 콘솔) + 프로필 미지정 기본값 ==================== -->
+    <springProfile name="local | default">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>${CONSOLE_PATTERN}</pattern>
+            </encoder>
+        </appender>
+
+        <root level="${LOG_LEVEL}">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- ==================== 공통: 프레임워크 노이즈 로거는 INFO로 억제 ==================== -->
+    <logger name="org.apache.coyote" level="INFO"/>
+    <logger name="org.apache.tomcat" level="INFO"/>
+    <logger name="org.hibernate" level="INFO"/>
+    <logger name="org.springframework.web" level="INFO"/>
+    <logger name="org.springframework.security" level="INFO"/>
+
+</configuration>
