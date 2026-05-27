@@ -14,6 +14,8 @@ import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.ErrorCode
 import kr.ai.flori.common.security.JwtProperties
 import kr.ai.flori.common.security.JwtTokenProvider
+import kr.ai.flori.user.repository.UserProfileRepository
+import kr.ai.flori.user.service.toResponse
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -38,6 +40,7 @@ class AuthService(
     private val tokenProvider: JwtTokenProvider,
     private val jwtProperties: JwtProperties,
     private val seeder: DefaultDataSeeder,
+    private val userProfileRepository: UserProfileRepository,
     // 제공자 일반화: 빈 이름(KAKAO/GOOGLE/NAVER)을 키로 소셜 클라이언트 주입. 새 제공자는 빈 추가만으로 확장.
     private val socialClients: Map<String, SocialOAuthClient>,
 ) {
@@ -118,14 +121,21 @@ class AuthService(
         }
     }
 
-    /** 현재 사용자 조회. TenantContext에서 받은 userId로 격리. */
+    /** 현재 사용자 조회. TenantContext에서 받은 userId로 격리. onboarded·가게 프로필을 함께 반환한다. */
     @Transactional(readOnly = true)
     fun me(userId: Long): UserResponse {
         val user =
             userRepository
                 .findById(userId)
                 .orElseThrow { AppException(ErrorCode.UNAUTHORIZED) }
-        return UserResponse(id = userId, email = user.email, name = user.name)
+        val profile = userProfileRepository.findById(userId).orElse(null)?.toResponse()
+        return UserResponse(
+            id = userId,
+            email = user.email,
+            name = user.name,
+            onboarded = user.onboarded,
+            profile = profile,
+        )
     }
 
     /**
@@ -146,7 +156,14 @@ class AuthService(
         }
         user.email = email
         userRepository.save(user)
-        return UserResponse(id = userId, email = user.email, name = user.name)
+        val profile = userProfileRepository.findById(userId).orElse(null)?.toResponse()
+        return UserResponse(
+            id = userId,
+            email = user.email,
+            name = user.name,
+            onboarded = user.onboarded,
+            profile = profile,
+        )
     }
 
     @Transactional

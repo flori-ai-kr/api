@@ -4,6 +4,7 @@ import jakarta.validation.ConstraintViolationException
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.ResponseEntity
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -40,6 +41,10 @@ class GlobalExceptionHandler(
     @ExceptionHandler(ConstraintViolationException::class)
     fun handleConstraint(ex: ConstraintViolationException): ResponseEntity<ErrorResponse> =
         errorResponse(ErrorCode.VALIDATION, ex.constraintViolations.firstOrNull()?.message)
+
+    // 본문 파싱 실패(필수 필드 누락·타입 불일치·깨진 JSON)는 클라이언트 오류 → 400 (내부 디테일 비노출, Discord 미전송)
+    @ExceptionHandler(HttpMessageNotReadableException::class)
+    fun handleNotReadable(): ResponseEntity<ErrorResponse> = errorResponse(ErrorCode.VALIDATION, "요청 본문을 해석할 수 없습니다")
 
     @ExceptionHandler(DataIntegrityViolationException::class)
     fun handleDataIntegrity(ex: DataIntegrityViolationException): ResponseEntity<ErrorResponse> {
