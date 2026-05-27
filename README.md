@@ -1,10 +1,10 @@
 # flori-server
 
-Flori Server — the Spring REST backend for the Flori florist SaaS. It owns the data and the rules: sales, expenses, customers, reservations, deposits, gallery, and statistics for independent flower shops, exposed as a mobile-callable REST API on its own AWS infrastructure.
+Flori Server — the Spring REST backend for the Flori florist SaaS. It owns the data and the rules: sales, expenses, customers, reservations, gallery, and statistics for independent flower shops, exposed as a mobile-callable REST API on its own AWS infrastructure.
 
 This is the **source of truth** for the whole Flori system. Multi-tenancy and subscription gating are enforced here — every query is isolated by the `user_id` extracted from the caller's JWT. There is no database RLS, so the application is the only line of defense. The AI service (`flori-ai/ai`) holds no direct database access; it calls this API as LangGraph tools, forwarding the user's JWT unchanged.
 
-Server-side calculations are authoritative: card fees (`amount * (1 - fee_rate/100)`), deposit-due business days, and expense totals (`unit_price * quantity`) are computed here, and the client only displays them.
+Server-side calculations are authoritative: expense totals (`unit_price * quantity`) are computed here, and the client only displays them.
 
 Docs:
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — architecture & technology rationale, Mermaid diagrams (Korean)
@@ -20,11 +20,10 @@ Docs:
 | Domain | Responsibility |
 |--------|----------------|
 | **auth** | Sign-up / login, JWT issue, refresh rotation, `/me` |
-| **sales** | Sales records + server-side deposit calculation |
+| **sales** | Sales records · 미수(unpaid) 처리 |
 | **expenses** | Expenses + recurring fixed costs (auto-generated via `@Scheduled`) |
 | **customers** | Customers (find-or-create, real-time stats) |
 | **reservations / calendar** | Reservations (sale conversion, pickup) · calendar (reminder push) |
-| **deposits** | Card deposit reconciliation |
 | **photos** | Gallery (presigned upload) · tags |
 | **insights** | Trend / share reads · scrap · internal ingest |
 | **settings** | Card companies · sales/expense settings · bottom bar · push subscription |
@@ -75,7 +74,7 @@ Tests run against Zonky embedded PostgreSQL, so no local database is required fo
 
 - **Multi-tenancy is the #1 priority.** With no database RLS, the application is the only line of defense — every query is isolated by `TenantContext.currentUserId()` derived from the JWT. A missing `user_id` filter is a data leak.
 - **Custom JWT** — short-lived access token (HS256) + opaque refresh token stored hashed in the DB with rotation. BCrypt for passwords. Signing key from environment only.
-- **Server is the calculation SSOT** — fees, deposit-due dates, and totals are computed server-side; the client only displays.
+- **Server is the calculation SSOT** — expense totals and recurring cost generation are computed server-side; the client only displays.
 - Input validation at the boundary (Jakarta Bean Validation, UUID checks), parameter-bound queries (including native SQL), CORS origin allowlist, and generic error responses (details go only to Discord).
 
 See [docs/PATTERNS.md](docs/PATTERNS.md) and [CLAUDE.md](CLAUDE.md) for the full checklist.

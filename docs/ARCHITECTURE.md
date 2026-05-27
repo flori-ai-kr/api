@@ -59,7 +59,7 @@ flowchart TB
     class FCM,Discord,KakaoAuth,KakaoApi ext
 ```
 
-핵심 원칙: **앱은 표시만 하고, 계산·검증·격리는 서버가 책임진다.** 카드수수료·입금예정일·지출총액 등은 서버가 SSOT로 계산해 응답하고, 멀티테넌시(사용자별 데이터 격리)는 RLS 없이 애플리케이션이 유일한 방어선으로 강제한다. 기존 웹앱은 당분간 Supabase 위에서 그대로 동작하며, 이 백엔드는 독립 인프라로 분리 운영한다.
+핵심 원칙: **앱은 표시만 하고, 계산·검증·격리는 서버가 책임진다.** 지출총액 등은 서버가 SSOT로 계산해 응답하고, 멀티테넌시(사용자별 데이터 격리)는 RLS 없이 애플리케이션이 유일한 방어선으로 강제한다. 기존 웹앱은 당분간 Supabase 위에서 그대로 동작하며, 이 백엔드는 독립 인프라로 분리 운영한다.
 
 ---
 
@@ -74,7 +74,8 @@ flowchart LR
         CErr[error<br/>AppException·Discord]
         CSto[storage<br/>S3 presign]
         CPush[push<br/>FCM 추상화]
-        CCfg[config<br/>CORS·Async·Schedule]
+        CCfg[config<br/>CORS·Async·Schedule·WebConfig]
+        CLog[log<br/>LoggingInterceptor·TraceIdFilter·logback]
     end
 
     subgraph Domain["도메인 패키지 (kr.ai.flori.*)"]
@@ -86,7 +87,7 @@ flowchart LR
 
     classDef common fill:#0277bd,color:#fff,stroke:#01579b
     classDef dom fill:#ef6c00,color:#fff,stroke:#e65100
-    class CSec,CTen,CErr,CSto,CPush,CCfg common
+    class CSec,CTen,CErr,CSto,CPush,CCfg,CLog common
     class D dom
 ```
 
@@ -99,10 +100,9 @@ flowchart LR
 | `expenses` | 지출 + 고정비(this/all 분기·**@Scheduled 자동생성**) |
 | `customers` | 고객 CRUD·findOrCreate·**실시간 구매통계** |
 | `reservations` / `calendar` | 예약(매출 전환·픽업)·캘린더 이벤트·**리마인더/요약 푸시** |
-| `deposits` | 카드 입금대조(확인·되돌리기·요약) |
 | `photos` | 사진카드(presigned 업로드)·태그 |
 | `insights` | 트렌드/인스타 공유 읽기·스크랩·**내부 수집 API** |
-| `settings` | 카드사·매출/지출 설정·하단바·푸시 구독 |
+| `settings` | 매출/지출 설정·하단바·사용자 설정·푸시 구독 |
 | `dashboard` | 오늘/월 집계·**네이티브 SQL 통계** |
 
 ---
@@ -113,7 +113,7 @@ flowchart LR
 
 **왜 이 조합인가:**
 
-원본 웹의 비즈니스 규칙(카드수수료, 고정비 반복, 미수 처리 등)을 **타입 안전하게** 재구현하면서, 엔터프라이즈급 보안·트랜잭션·스케줄링을 표준 방식으로 확보해야 한다.
+원본 웹의 비즈니스 규칙(고정비 반복, 미수 처리 등)을 **타입 안전하게** 재구현하면서, 엔터프라이즈급 보안·트랜잭션·스케줄링을 표준 방식으로 확보해야 한다.
 
 1. **Kotlin null-safety + 데이터 클래스**: 금액/날짜/상태 등 도메인 값의 null 경계를 컴파일 타임에 강제한다. DTO·엔티티가 간결하다.
 2. **Spring Security / Data JPA / @Scheduled / @ControllerAdvice**: 인증·데이터 접근·Cron 대체·표준 에러 응답을 한 프레임워크로 일관되게 처리한다.
@@ -152,7 +152,7 @@ flowchart LR
 
 원본 스키마가 Supabase(PostgreSQL)다. jsonb·배열·`uuid`·`timestamptz`·부분 인덱스·`array_remove` 등 Postgres 고유 기능에 의존하므로 동일 엔진을 유지해 이식 리스크를 최소화한다.
 
-1. **Flyway 마이그레이션**: `V1`(스키마 baseline) → `V2`(공유 시드) → `V3`(refresh_tokens) → `V4`(subscriptions) → `V5`(notification_log) → `V6`(oauth_provider). 버전 관리되는 단방향 마이그레이션으로 재현 가능한 스키마를 보장한다.
+1. **Flyway 마이그레이션**: `V1`(스키마 baseline) → `V2`(공유 시드) → `V3`(refresh_tokens) → `V4`(subscriptions) → `V5`(notification_log) → `V6`(oauth_provider) → `V7`(`card_company_settings`·`app_config` 테이블 삭제, `sales` 입금/수수료/카드사 컬럼 삭제, 미사용 `sales.reservation_id`·`photos`·`customers` 통계 컬럼 삭제). 버전 관리되는 단방향 마이그레이션으로 재현 가능한 스키마를 보장한다.
 2. **이식 시 변환(HARD)**: Supabase **RLS 정책 전부 제거**, `auth.users` FK 제거 → **자체 `users` 테이블** 도입, 모든 `user_id`가 `users(id)`를 `ON DELETE CASCADE`로 참조. jsonb/배열/복합 unique는 그대로 유지.
 
 | 탈락 후보 | 이유 |
@@ -208,6 +208,22 @@ DESIGN은 Testcontainers를 권장하지만, **개발/CI 환경에 Docker 데몬
 | API 문서 | **Spring REST Docs + ePages `restdocs-api-spec` 0.19.2** | 테스트가 OpenAPI 3 스펙을 생성(SSOT). `OpenApiConfig`가 정적 스펙 + JWT bearerAuth를 병합 → `/v3/api-docs`. springdoc swagger-ui가 표시(Authorize 버튼). `packages-to-scan` 더미로 컨트롤러 스캔 억제 |
 | 에러 알림 | **Discord 웹훅** | 예기치 못한 오류만 비동기 전송, PII 새니타이즈 |
 | 품질 게이트 | **ktlint(official) + detekt + JaCoCo line 80%** | 포맷·정적분석·커버리지 게이트를 `build`에 연동 |
+| 구조화 로깅 | **LogstashEncoder + logback-spring.xml** | local 프로필 텍스트 / 운영 프로필 JSON. `logstash-logback-encoder 8.1` |
+
+---
+
+### 접근 로그 & 추적 ID (공통 인프라)
+
+`common/log/` 패키지에 HTTP 접근 로그와 분산 추적 ID 지원이 추가됐다:
+
+| 클래스 | 역할 |
+|---|---|
+| `LoggingInterceptor` | 모든 요청에 대해 method·uri·status·duration_ms를 INFO 레벨로 로깅. 헬스/Swagger 등 노이즈 경로는 `WebConfig`에서 제외 |
+| `TraceIdFilter` | 요청별 UUID `traceId`를 MDC에 주입(`X-Request-Id` 헤더 또는 신규 생성). 응답 헤더에 `X-Request-Id`로 반환. 로그 상관관계 추적에 활용 |
+| `WebConfig` | `LoggingInterceptor`를 `/**`에 등록하고 `/actuator/**`·`/swagger-ui/**`·`/v3/api-docs/**` 등을 제외 |
+| `logback-spring.xml` | `local` 프로필: 사람이 읽는 텍스트. 나머지(운영): LogstashEncoder JSON — ELK/CloudWatch 등 로그 파이프라인 수집에 적합 |
+
+JVM 기본 시간대(`TimeZone.setDefault(UTC)`)는 `main()` 진입 시 HikariCP/Hibernate 초기화 전에 설정한다. `LocalTime` 컬럼(`time without time zone`)이 KST 환경과 UTC 컨테이너 양쪽에서 오프셋 이동 없이 정확히 왕복하도록 보장한다.
 
 ---
 
@@ -238,7 +254,7 @@ flowchart TB
 **격리 강제 지점:**
 1. **필터**: 모든 요청에서 토큰 검증 → `TenantContext`(요청 스코프 ThreadLocal)에 `userId` 주입, 요청 종료 시 `clear()`.
 2. **서비스/리포지토리**: 모든 조회/변경은 `findByIdAndUserId`, `Specification(user_id=?)`, 네이티브 `WHERE user_id=?::uuid`로 격리. 단건 조회 미스는 `NOT_FOUND`(존재 자체를 노출하지 않음).
-3. **교차 참조 검증**: 매출의 `customer_id`, 다건 입금확인의 `ids` 등 외부에서 받은 식별자는 **소유권을 재확인**한 뒤에만 사용.
+3. **교차 참조 검증**: 매출의 `customer_id`, 예약·사진의 `saleId` 등 외부에서 받은 식별자는 **소유권을 재확인**한 뒤에만 사용.
 4. **테스트**: 도메인마다 "다른 user의 데이터 접근 차단" 케이스를 필수로 포함.
 
 > **공유 읽기 예외**: 인사이트 트렌드/인스타 계정·포스트는 테넌트 무관 공유 데이터(인증만 요구). 스크랩(`insight_scraps`)만 `user_id` 격리.
@@ -302,27 +318,24 @@ sequenceDiagram
 
 ## 데이터 흐름
 
-### 매출 생성 — 서버 입금계산(SSOT)
+### 매출 생성 흐름
 
 ```mermaid
 flowchart LR
-    App([앱]) -->|"date, amount,<br/>paymentMethod, cardCompany"| SC[SaleController]
+    App([앱]) -->|"date, amount,<br/>paymentMethod, customerId"| SC[SaleController]
     SC --> SS[SaleService]
-    SS -->|"카드?"| DC[DepositCalculator]
-    DC -->|"card_company_settings 조회"| DB[(PostgreSQL)]
-    DC -->|"fee=round(amount*rate/100)<br/>expected=amount-fee<br/>입금예정일=+N영업일"| SS
-    SS -->|"deposit_status=pending"| DB
-    SS -->|"SaleResponse(계산값 포함)"| App
+    SS -->|"소유권 검증 + 저장"| DB[(PostgreSQL)]
+    SS -->|"SaleResponse"| App
 
     classDef a fill:#1565c0,color:#fff,stroke:#0d47a1
     classDef s fill:#ef6c00,color:#fff,stroke:#e65100
     classDef d fill:#2e7d32,color:#fff,stroke:#1b5e20
     class App a
-    class SC,SS,DC s
+    class SC,SS s
     class DB d
 ```
 
-앱은 금액·결제수단·카드사만 보내고, **수수료·입금예정액·입금예정일·입금상태는 서버가 계산**한다. 비카드 결제는 `not_applicable`, 미수(`unpaid`)는 `is_unpaid` 영구 마커로 표시하고 총매출에서 제외한다.
+앱은 날짜·금액·결제수단을 보내고, 미수(`unpaid`)는 `is_unpaid` 영구 마커로 표시하고 총매출에서 제외한다. 결제수단 `card`는 지출의 `cardCompany`와 별개 — 매출에 카드사/수수료 필드는 없다.
 
 ### 고정비 자동생성 — @Scheduled (KST 00:30)
 
@@ -406,11 +419,6 @@ erDiagram
         date date
         int amount
         string payment_method "card|cash|...|unpaid"
-        string card_company
-        int fee "서버 계산"
-        int expected_deposit "서버 계산"
-        date expected_deposit_date "영업일 N"
-        string deposit_status "pending|completed|not_applicable"
         boolean is_unpaid "미수 영구 마커"
         uuid customer_id FK
     }
@@ -475,11 +483,10 @@ erDiagram
 | 지출·고정비 | `/expenses`, `/recurring-expenses`(+`/toggle`·`/quick-add`·`/instances/{id}?scope=this\|all`) | Auth |
 | 고객 | `/customers`(+`/search`·`/check-phone`·`/{id}/sales`·`/find-or-create`·`/{id}/grade`) | Auth |
 | 예약·캘린더 | `/reservations`(+`/upcoming`·`/reminders`·`/convert-to-sale`·`/add-pickup`), `/calendar-events` | Auth |
-| 입금대조 | `GET /deposits`·`/summary`, `POST /deposits/{id}/confirm`·`/confirm`·`/{id}/revert` | Auth |
 | 사진첩 | `/photo-cards`(+`/upload-targets`·`/photos/reorder`), `/photo-tags` | Auth |
 | 인사이트 | `GET /insights/{trends,accounts,posts}`, `/insights/scraps/*` | Auth |
 | 내부 수집 | `POST /internal/{trends,instagram-posts,instagram-accounts}` | **Internal 키** |
-| 설정 | `/settings/{sale-categories,payment-methods,expense-*,card-companies,preferences}`, `/push/*` | Auth |
+| 설정 | `/settings/{sale-categories,payment-methods,expense-*,preferences}`, `/push/*` | Auth |
 | 대시보드 | `GET /dashboard/today`·`/dashboard/month` | Auth |
 
 전체 계약은 `/swagger-ui.html`에서 확인한다(RestDocs 테스트가 생성한 스펙 + JWT bearerAuth 병합 → `/v3/api-docs`) — **flori-ai/mobile이 읽는 계약의 출처**.
@@ -538,7 +545,7 @@ AppException(errorCode, message)
 
 ```mermaid
 flowchart LR
-    Unit["순수 단위 테스트<br/>입금계산·발생판정·스택 새니타이즈·JWT"] --> Gate
+    Unit["순수 단위 테스트<br/>발생판정·스택 새니타이즈·JWT"] --> Gate
     Slice["슬라이스<br/>@WebMvcTest 헬스/에러핸들러"] --> Gate
     Integ["통합 (Zonky 임베디드 PG)<br/>도메인 서비스 + HTTP 흐름 + 멀티테넌시 격리"] --> Gate
     Gate["./gradlew build test<br/>ktlint + detekt + JaCoCo 80% + 전체 테스트"]
@@ -552,7 +559,7 @@ flowchart LR
 - **게이트**: `./gradlew build test` — ktlint(official) + detekt + 전체 테스트 + **JaCoCo line 80% 커버리지**가 모두 통과해야 커밋. (현재 **89.4% ≥ 80%**, 전체 테스트 0 스킵.)
 - **실 DB 검증**: Zonky 임베디드 PostgreSQL로 Flyway 마이그레이션·jsonb/배열·통계 집계를 실제 엔진에서 실행.
 - **멀티테넌시 필수 케이스**: 모든 도메인에 "다른 user 데이터 접근 차단" 테스트 포함(서비스·HTTP 양 레벨).
-- **계산/규칙 단위 테스트**: 카드수수료 반올림, 영업일 가산, 고정비 발생 판정(격주·말일 클램핑), 멱등 자동생성.
+- **계산/규칙 단위 테스트**: 고정비 발생 판정(격주·말일 클램핑), 멱등 자동생성.
 
 ---
 
@@ -600,6 +607,7 @@ flowchart LR
 | JJWT | 0.12.6 | 자체 JWT |
 | AWS SDK v2 (s3) | 2.29.20 | presigned URL |
 | Firebase Admin | 9.4.1 | FCM |
+| logstash-logback-encoder | 8.1 | 운영 프로필 JSON 구조화 로깅 |
 | springdoc-openapi | 2.8.17 | Swagger UI (뷰어) |
 | ePages restdocs-api-spec | 0.19.2 | RestDocs → OpenAPI 3 생성 |
 | spring-restdocs-mockmvc | (Spring Boot BOM) | RestDocs MockMvc 통합 |

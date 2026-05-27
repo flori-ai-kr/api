@@ -69,7 +69,6 @@ class SaleController(
 @Service
 class SaleService(
     private val saleRepository: SaleRepository,
-    private val depositCalculator: DepositCalculator,   // 계산은 별도 협력자로 분리
     private val customerRepository: CustomerRepository,
 ) {
     @Transactional
@@ -77,7 +76,6 @@ class SaleService(
         val userId = TenantContext.currentUserId()      // ← 테넌트 격리 (§2)
         request.customerId?.let { verifyCustomerOwnership(userId, it) }  // ← 소유권 검증
         val sale = Sale(userId = userId, /* ... */)
-        applyDeposit(sale, isUnpaid)                     // ← 서버 계산 (§6)
         return SaleResponse.from(saleRepository.save(sale))  // ← 엔티티→DTO
     }
 }
@@ -252,17 +250,16 @@ fun handleUnexpected(ex: Exception, request: WebRequest): ResponseEntity<ErrorRe
 
 금액·날짜 계산은 **서버가 단일 진실 공급원(SSOT)**. 앱은 표시만 한다. 계산 로직은 서비스 본체가 아니라 **전용 계산기/순수 함수**로 분리해 단위 테스트한다.
 
-- 카드수수료: `amount * (1 - fee_rate/100)`
-- 입금예정일: 영업일 N일 후
 - 지출총액: `unit_price * quantity`
+- 고정비 발생 판정: 주/월/연·격주·말일 클램핑 — `RecurringScheduleEvaluator`(순수 로직)가 `RecurringExpenseGenerator`에서 분리
 
-예: `DepositCalculator`(수수료·입금예정일·입금상태)와 `DepositMath`(영업일 계산 순수 함수)가 `SaleService`에서 분리되어 있다. 서비스는 "언제 계산할지", 계산기는 "어떻게 계산할지"를 담당.
+예: `RecurringScheduleEvaluator`(발생 판정 순수 함수)와 `RecurringExpenseGenerator`(@Scheduled 진입점)가 역할을 나눈다. 서비스는 "언제 생성할지", 계산기는 "어떻게 판정할지"를 담당.
 
 ```kotlin
-class SaleService(
-    private val depositCalculator: DepositCalculator,  // 협력자로 주입
+class RecurringExpenseGenerator(
+    private val evaluator: RecurringScheduleEvaluator,  // 협력자로 주입
 ) {
-    private fun applyDeposit(sale: Sale, isUnpaid: Boolean) { /* depositCalculator 호출 */ }
+    fun generateForDate(date: LocalDate) { /* evaluator.shouldGenerate() 호출 */ }
 }
 ```
 
@@ -283,7 +280,7 @@ class SaleService(
 
 | 위치 | 내용 |
 |---|---|
-| [`common/domain/PaymentMethods.kt`](../src/main/kotlin/com/flori/common/domain/PaymentMethods.kt) | `PaymentMethods.SALE/EXPENSE/UNPAID`, `DepositStatuses.PENDING/COMPLETED/NOT_APPLICABLE` |
+| [`common/domain/PaymentMethods.kt`](../src/main/kotlin/com/flori/common/domain/PaymentMethods.kt) | `PaymentMethods.SALE/EXPENSE/UNPAID` |
 | [`common/domain/ReservationStatuses.kt`](../src/main/kotlin/com/flori/common/domain/ReservationStatuses.kt) | `ReservationStatuses.PENDING/CONFIRMED/COMPLETED/CANCELLED` + `ALL` |
 | [`common/util/DateRanges.kt`](../src/main/kotlin/com/flori/common/util/DateRanges.kt) | `KST`(=`ZoneId.of("Asia/Seoul")`), `monthRange(month)` (YYYY/YYYY-MM/YYYY-MM-DD → 시작·끝 날짜, 잘못된 형식은 400 VALIDATION) |
 
@@ -355,7 +352,7 @@ class Coupon(
 ```
 > `data class`가 아니라 `class` + `var`를 쓰는 이유는 [KOTLIN.md §엔티티](KOTLIN.md) 참고.
 > 생성 시각만 필요한 append-only/이력 엔티티는 `BaseCreatedEntity`를 상속한다. `updated_at`이 없거나(예: `UserPreferences`) 타임스탬프가 아예 없는 엔티티만 베이스를 쓰지 않는다.
-> **다중 필드 상태 전이**(예: 입금 완료 = status+시각 동시 변경)는 서비스가 흩뿌리지 말고 엔티티 도메인 메서드(`sale.markDepositCompleted()`)로 캡슐화한다.
+> **다중 필드 상태 전이**(예: 미수 완료 = `is_unpaid=false` + 결제수단 교체 동시 변경)는 서비스가 흩뿌리지 말고 엔티티 도메인 메서드(`sale.completeUnpaid(paymentMethod)`)로 캡슐화한다.
 
 **2. 리포지토리** — `coupons/repository/CouponRepository.kt`. **반드시 `...AndUserId` 메서드로** 격리.
 ```kotlin

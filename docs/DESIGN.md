@@ -44,10 +44,9 @@ kr.ai.flori
 ├── expenses/        (지출 + 고정비)
 ├── customers/
 ├── reservations/    (예약 + 캘린더)
-├── deposits/
 ├── photos/          (사진카드 + 태그)
 ├── insights/        (트렌드/인스타/스크랩 + 내부 API)
-├── settings/        (카드사/매출설정/지출설정/사용자설정/푸시구독)
+├── settings/        (매출설정/지출설정/사용자설정/푸시구독)
 └── dashboard/       (대시보드 + 통계)
 ```
 
@@ -62,7 +61,7 @@ kr.ai.flori
 
 ## 6. 인증
 
-- `signup` → users INSERT(BCrypt) + 사용자별 기본 설정 시드(카테고리/결제방식/카드사) → JWT 발급.
+- `signup` → users INSERT(BCrypt) + 사용자별 기본 설정 시드(카테고리/결제방식) → JWT 발급.
 - `login` → access JWT(짧음) + refresh token(회전, 저장/무효화).
 - JWT 서명키·TTL은 환경변수. 위변조/만료 검증.
 - **카카오 소셜 로그인** (SPEC-RN-015, 구현 완료): `POST /auth/oauth/kakao` — 인증코드+redirectUri → `KakaoOAuthClient`(인터페이스, 테스트 스텁 가능) → kauth.kakao.com 토큰교환 + kapi.kakao.com 프로필조회(providerId, nickname). 신규면 User(provider=KAKAO, providerId) INSERT + 기본설정 시드, 기존이면 findByProviderAndProviderId → 동일한 JWT 발급. 동시 첫 로그인 경쟁은 DataIntegrityViolationException 캐치 후 재조회로 멱등 처리. 소셜 사용자는 email/passwordHash가 null. 설정: `KAKAO_REST_API_KEY`, `KAKAO_CLIENT_SECRET` 환경변수.
@@ -71,7 +70,6 @@ kr.ai.flori
 ## 7. 도메인 매핑 (원본 Server Actions → API)
 
 원본 `~/Desktop/flori-ai/web/src/lib/actions/`의 함수들을 REST 리소스로 옮긴다. 비즈니스 규칙은 원본 그대로:
-- 카드수수료 `expected_deposit = amount * (1 - fee_rate/100)`, 입금예정일 영업일 N일
 - 지출 총액 `unit_price * quantity`
 - 고정비: 주/월/연 + 다중 일자, recurring_skips, `(recurring_id,date)` unique, this/future/all 분기
 - 미수: `payment_method='unpaid' + is_unpaid=true`, 완료/되돌리기
@@ -99,7 +97,7 @@ kr.ai.flori
 
 ## 11. 테스트 / 품질
 
-- 단위: 서비스 로직(수수료·고정비·스킵·통계). 통합: Testcontainers(PostgreSQL)로 리포지토리/Flyway.
+- 단위: 서비스 로직(고정비 발생 판정·스킵·통계). 통합: Testcontainers(PostgreSQL)로 리포지토리/Flyway.
 - 게이트: `./gradlew build test`. ktlint/detekt.
 - 멀티테넌시 격리 테스트(다른 user의 데이터 접근 차단)는 필수 케이스.
 
