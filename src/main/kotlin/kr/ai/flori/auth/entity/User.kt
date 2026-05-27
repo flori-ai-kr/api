@@ -1,13 +1,7 @@
 package kr.ai.flori.auth.entity
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.Table
+import jakarta.persistence.*
 import kr.ai.flori.common.entity.BaseEntity
-import java.util.UUID
 
 /**
  * 자체 인증 사용자. (원본 Supabase auth 테이블 대체 — V1 users 테이블에 매핑)
@@ -28,9 +22,9 @@ class User(
     var providerId: String? = null,
 ) : BaseEntity() {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id: UUID? = null
+    var id: Long? = null
 
     @Column(name = "is_active", nullable = false)
     var isActive: Boolean = true

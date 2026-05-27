@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @SpringBootTest
@@ -36,7 +36,7 @@ class ScrapServiceIntegrationTest {
     @AfterEach
     fun tearDown() = TenantContext.clear()
 
-    private fun newTenant(): UUID {
+    private fun newTenant(): Long {
         val email = "scrap-${UUID.randomUUID()}@flori.dev"
         authService.signup(SignupRequest(email, "password123", null))
         val userId = requireNotNull(userRepository.findByEmail(email)).id!!
@@ -44,7 +44,7 @@ class ScrapServiceIntegrationTest {
         return userId
     }
 
-    private fun newTrend(): UUID {
+    private fun newTrend(): Long {
         val t = TrendArticle("flower", "트렌드", "요약", "https://ex.com/${UUID.randomUUID()}", LocalDate.now())
         return requireNotNull(trendRepository.save(t).id)
     }
@@ -62,7 +62,7 @@ class ScrapServiceIntegrationTest {
     @Test
     fun `존재하지 않는 대상은 스크랩할 수 없다`() {
         newTenant()
-        assertThatThrownBy { scrapService.toggle("trend", UUID.randomUUID()) }
+        assertThatThrownBy { scrapService.toggle("trend", 999_999_999L) }
             .isInstanceOf(AppException::class.java)
     }
 

@@ -5,11 +5,7 @@ import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.ErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.common.util.KST
-import kr.ai.flori.reservations.dto.AddPickupRequest
-import kr.ai.flori.reservations.dto.ReservationCreateRequest
-import kr.ai.flori.reservations.dto.ReservationResponse
-import kr.ai.flori.reservations.dto.ReservationSuggestionsResponse
-import kr.ai.flori.reservations.dto.ReservationUpdateRequest
+import kr.ai.flori.reservations.dto.*
 import kr.ai.flori.reservations.entity.Reservation
 import kr.ai.flori.reservations.repository.ReservationRepository
 import kr.ai.flori.sales.dto.SaleCreateRequest
@@ -21,7 +17,6 @@ import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
-import java.util.UUID
 
 /**
  * 예약(픽업) 서비스. 모든 쿼리 TenantContext userId 격리(HARD).
@@ -41,7 +36,7 @@ class ReservationService(
     }
 
     @Transactional(readOnly = true)
-    fun get(id: UUID): ReservationResponse = ReservationResponse.from(load(id))
+    fun get(id: Long): ReservationResponse = ReservationResponse.from(load(id))
 
     @Transactional(readOnly = true)
     fun upcoming(): List<ReservationResponse> =
@@ -61,7 +56,7 @@ class ReservationService(
     }
 
     @Transactional(readOnly = true)
-    fun forSale(saleId: UUID): List<ReservationResponse> =
+    fun forSale(saleId: Long): List<ReservationResponse> =
         reservationRepository
             .findByUserIdAndSaleIdOrderByDateAsc(TenantContext.currentUserId(), saleId)
             .map(ReservationResponse::from)
@@ -91,7 +86,7 @@ class ReservationService(
 
     @Transactional
     fun update(
-        id: UUID,
+        id: Long,
         request: ReservationUpdateRequest,
     ): ReservationResponse {
         val reservation = load(id)
@@ -117,7 +112,7 @@ class ReservationService(
 
     @Transactional
     fun markPickupCompleted(
-        id: UUID,
+        id: Long,
         completed: Boolean,
     ): ReservationResponse {
         val reservation = load(id)
@@ -126,14 +121,14 @@ class ReservationService(
     }
 
     @Transactional
-    fun delete(id: UUID) {
+    fun delete(id: Long) {
         reservationRepository.delete(load(id))
     }
 
     /** 예약 → 매출 전환: 매출 생성 후 예약에 sale_id 연결. */
     @Transactional
     fun convertToSale(
-        reservationId: UUID,
+        reservationId: Long,
         saleRequest: SaleCreateRequest,
     ): SaleResponse {
         val reservation = load(reservationId)
@@ -146,7 +141,7 @@ class ReservationService(
     /** 기존 매출에 픽업(예약) 추가: 고객 정보는 매출에서 상속. */
     @Transactional
     fun addPickupToSale(
-        saleId: UUID,
+        saleId: Long,
         request: AddPickupRequest,
     ): ReservationResponse {
         val userId = TenantContext.currentUserId()
@@ -162,7 +157,7 @@ class ReservationService(
         return ReservationResponse.from(reservationRepository.save(reservation))
     }
 
-    private fun load(id: UUID): Reservation =
+    private fun load(id: Long): Reservation =
         reservationRepository.findByIdAndUserId(id, TenantContext.currentUserId())
             ?: throw AppException(ErrorCode.NOT_FOUND, "예약을 찾을 수 없습니다")
 

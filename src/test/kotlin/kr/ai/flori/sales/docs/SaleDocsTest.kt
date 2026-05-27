@@ -21,7 +21,7 @@ class SaleDocsTest : RestDocsSupport() {
     /** SaleResponse 공통 응답 필드 — 단건 조회/생성/수정/미수 처리에서 재사용 */
     private val saleResponseFields =
         listOf(
-            fieldWithPath("id").type(JsonFieldType.STRING).description("매출 UUID"),
+            fieldWithPath("id").type(JsonFieldType.NUMBER).description("매출 ID"),
             fieldWithPath("date").type(JsonFieldType.STRING).description("매출 발생일 (yyyy-MM-dd)"),
             fieldWithPath("productName").type(JsonFieldType.STRING).description("상품명"),
             fieldWithPath("productCategory")
@@ -40,9 +40,9 @@ class SaleDocsTest : RestDocsSupport() {
                 .optional()
                 .description("고객 전화번호 (미입력이면 null)"),
             fieldWithPath("customerId")
-                .type(JsonFieldType.STRING)
+                .type(JsonFieldType.NUMBER)
                 .optional()
-                .description("연결된 고객 UUID (미연결이면 null)"),
+                .description("연결된 고객 ID (미연결이면 null)"),
             fieldWithPath("note").type(JsonFieldType.STRING).optional().description("비고"),
             fieldWithPath("isUnpaid")
                 .type(JsonFieldType.BOOLEAN)
@@ -56,7 +56,7 @@ class SaleDocsTest : RestDocsSupport() {
     private val salesPageResponseFields =
         listOf(
             fieldWithPath("sales").type(JsonFieldType.ARRAY).description("매출 목록"),
-            fieldWithPath("sales[].id").type(JsonFieldType.STRING).description("매출 UUID"),
+            fieldWithPath("sales[].id").type(JsonFieldType.NUMBER).description("매출 ID"),
             fieldWithPath("sales[].date").type(JsonFieldType.STRING).description("매출 발생일 (yyyy-MM-dd)"),
             fieldWithPath("sales[].productName").type(JsonFieldType.STRING).description("상품명"),
             fieldWithPath("sales[].productCategory")
@@ -77,9 +77,9 @@ class SaleDocsTest : RestDocsSupport() {
                 .optional()
                 .description("고객 전화번호"),
             fieldWithPath("sales[].customerId")
-                .type(JsonFieldType.STRING)
+                .type(JsonFieldType.NUMBER)
                 .optional()
-                .description("연결된 고객 UUID"),
+                .description("연결된 고객 ID"),
             fieldWithPath("sales[].note").type(JsonFieldType.STRING).optional().description("비고"),
             fieldWithPath("sales[].isUnpaid").type(JsonFieldType.BOOLEAN).description("미수 여부"),
             fieldWithPath("sales[].hasReview").type(JsonFieldType.BOOLEAN).description("리뷰 보유 여부"),
@@ -167,9 +167,9 @@ class SaleDocsTest : RestDocsSupport() {
                                     .optional()
                                     .description("고객 전화번호"),
                                 fieldWithPath("customerId")
-                                    .type(JsonFieldType.STRING)
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
-                                    .description("연결할 고객 UUID (본인 소유 검증)"),
+                                    .description("연결할 고객 ID (본인 소유 검증)"),
                                 fieldWithPath("note")
                                     .type(JsonFieldType.STRING)
                                     .optional()
@@ -225,7 +225,7 @@ class SaleDocsTest : RestDocsSupport() {
                         identifier = "sale-get",
                         tag = "Sales",
                         summary = "매출 단건 조회",
-                        pathParameters = listOf(parameterWithName("id").description("매출 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("매출 ID")),
                         responseFields = saleResponseFields,
                     ),
                 )
@@ -258,7 +258,7 @@ class SaleDocsTest : RestDocsSupport() {
                         identifier = "sale-update",
                         tag = "Sales",
                         summary = "매출 수정 (제공된 필드만 반영)",
-                        pathParameters = listOf(parameterWithName("id").description("매출 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("매출 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("date")
@@ -290,9 +290,9 @@ class SaleDocsTest : RestDocsSupport() {
                                     .optional()
                                     .description("고객 전화번호 변경"),
                                 fieldWithPath("customerId")
-                                    .type(JsonFieldType.STRING)
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
-                                    .description("연결 고객 UUID 변경"),
+                                    .description("연결 고객 ID 변경"),
                                 fieldWithPath("note")
                                     .type(JsonFieldType.STRING)
                                     .optional()
@@ -346,7 +346,7 @@ class SaleDocsTest : RestDocsSupport() {
                         identifier = "sale-complete-unpaid",
                         tag = "Sales",
                         summary = "미수 완료 (미수 매출의 결제방식 확정)",
-                        pathParameters = listOf(parameterWithName("id").description("매출 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("매출 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("paymentMethod")
@@ -404,7 +404,7 @@ class SaleDocsTest : RestDocsSupport() {
                         identifier = "sale-revert-unpaid",
                         tag = "Sales",
                         summary = "미수 되돌리기 (결제방식을 다시 미수로)",
-                        pathParameters = listOf(parameterWithName("id").description("매출 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("매출 ID")),
                         responseFields = saleResponseFields,
                     ),
                 )
@@ -456,7 +456,7 @@ class SaleDocsTest : RestDocsSupport() {
                         identifier = "sale-delete",
                         tag = "Sales",
                         summary = "매출 삭제",
-                        pathParameters = listOf(parameterWithName("id").description("매출 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("매출 ID")),
                     ),
                 )
             }

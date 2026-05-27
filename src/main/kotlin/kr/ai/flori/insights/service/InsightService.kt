@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.UUID
 
 /**
  * 인사이트 공유 읽기(트렌드/계정/포스트). 테넌트 무관(인증만 필요) — user_id 격리 예외.
@@ -62,7 +61,7 @@ class InsightService(
 
     @Transactional(readOnly = true)
     fun posts(
-        accountId: UUID?,
+        accountId: Long?,
         region: String?,
         sortBy: String?,
         daysAgo: Int?,

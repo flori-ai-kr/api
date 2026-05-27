@@ -6,8 +6,7 @@ import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.time.Instant
-import java.util.Date
-import java.util.UUID
+import java.util.*
 import javax.crypto.SecretKey
 
 /**
@@ -31,7 +30,7 @@ class JwtTokenProvider(
     private val key: SecretKey = Keys.hmacShaKeyFor(properties.secret.toByteArray())
 
     fun createAccessToken(
-        userId: UUID,
+        userId: Long,
         email: String,
     ): String {
         val now = Instant.now()
@@ -56,12 +55,12 @@ class JwtTokenProvider(
                     .parseSignedClaims(token)
                     .payload
             UserPrincipal(
-                userId = UUID.fromString(claims.subject),
+                userId = claims.subject.toLong(),
                 email = claims["email"] as? String ?: "",
             )
         } catch (_: JwtException) {
             null
-        } catch (_: IllegalArgumentException) {
+        } catch (_: NumberFormatException) {
             null
         }
 

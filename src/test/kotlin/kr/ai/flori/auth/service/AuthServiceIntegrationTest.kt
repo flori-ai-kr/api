@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.JdbcTemplate
-import java.util.UUID
+import java.util.*
 
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @SpringBootTest
@@ -51,7 +51,7 @@ class AuthServiceIntegrationTest {
 
         fun count(table: String) =
             jdbcTemplate.queryForObject(
-                "SELECT count(*) FROM $table WHERE user_id = ?::uuid",
+                "SELECT count(*) FROM $table WHERE user_id = ?::bigint",
                 Long::class.java,
                 userId,
             )

@@ -71,17 +71,17 @@ class SchemaMigrationIntegrationTest {
         val userId =
             jdbcTemplate.queryForObject(
                 "INSERT INTO users(email, password_hash) VALUES ('tenant@flori.dev', 'x') RETURNING id",
-                String::class.java,
+                Long::class.java,
             )
 
         jdbcTemplate.update(
-            "INSERT INTO customers(user_id, name, phone) VALUES (?::uuid, '홍길동', '01000000000')",
+            "INSERT INTO customers(user_id, name, phone) VALUES (?, '홍길동', '01000000000')",
             userId,
         )
 
         val count =
             jdbcTemplate.queryForObject(
-                "SELECT count(*) FROM customers WHERE user_id = ?::uuid",
+                "SELECT count(*) FROM customers WHERE user_id = ?",
                 Long::class.java,
                 userId,
             )
@@ -92,7 +92,7 @@ class SchemaMigrationIntegrationTest {
     fun `존재하지 않는 user_id로는 행을 넣을 수 없다`() {
         val insert = {
             jdbcTemplate.update(
-                "INSERT INTO customers(user_id, name, phone) VALUES (gen_random_uuid(), '없음', '01099999999')",
+                "INSERT INTO customers(user_id, name, phone) VALUES (999999999, '없음', '01099999999')",
             )
         }
         assertThat(runCatching { insert() }.isFailure).isTrue()

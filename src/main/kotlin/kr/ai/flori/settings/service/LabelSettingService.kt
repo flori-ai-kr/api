@@ -4,20 +4,11 @@ import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.ErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.settings.dto.LabelSettingResponse
-import kr.ai.flori.settings.entity.ExpenseCategory
-import kr.ai.flori.settings.entity.ExpensePaymentMethod
-import kr.ai.flori.settings.entity.LabelSetting
-import kr.ai.flori.settings.entity.SaleCategory
-import kr.ai.flori.settings.entity.SalePaymentMethod
-import kr.ai.flori.settings.repository.ExpenseCategoryRepository
-import kr.ai.flori.settings.repository.ExpensePaymentMethodRepository
-import kr.ai.flori.settings.repository.LabelSettingRepository
-import kr.ai.flori.settings.repository.SaleCategoryRepository
-import kr.ai.flori.settings.repository.SalePaymentMethodRepository
+import kr.ai.flori.settings.entity.*
+import kr.ai.flori.settings.repository.*
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
 
 /**
  * value/label 설정 공통 CRUD. 모든 쿼리 TenantContext 격리(HARD).
@@ -26,7 +17,7 @@ import java.util.UUID
 abstract class LabelSettingService<T : LabelSetting>(
     private val repository: LabelSettingRepository<T>,
 ) {
-    protected abstract fun instantiate(userId: UUID): T
+    protected abstract fun instantiate(userId: Long): T
 
     protected abstract val defaultColor: String
 
@@ -52,7 +43,7 @@ abstract class LabelSettingService<T : LabelSetting>(
 
     @Transactional
     open fun update(
-        id: UUID,
+        id: Long,
         label: String,
         color: String,
     ): LabelSettingResponse {
@@ -63,11 +54,11 @@ abstract class LabelSettingService<T : LabelSetting>(
     }
 
     @Transactional
-    open fun delete(id: UUID) {
+    open fun delete(id: Long) {
         repository.delete(load(id))
     }
 
-    private fun load(id: UUID): T =
+    private fun load(id: Long): T =
         repository.findByIdAndUserId(id, TenantContext.currentUserId())
             ?: throw AppException(ErrorCode.NOT_FOUND, "설정을 찾을 수 없습니다")
 
@@ -93,7 +84,7 @@ abstract class LabelSettingService<T : LabelSetting>(
 class SaleCategorySettingService(
     repository: SaleCategoryRepository,
 ) : LabelSettingService<SaleCategory>(repository) {
-    override fun instantiate(userId: UUID) = SaleCategory(userId)
+    override fun instantiate(userId: Long) = SaleCategory(userId)
 
     override val defaultColor = "#f43f5e"
 }
@@ -102,7 +93,7 @@ class SaleCategorySettingService(
 class SalePaymentMethodSettingService(
     repository: SalePaymentMethodRepository,
 ) : LabelSettingService<SalePaymentMethod>(repository) {
-    override fun instantiate(userId: UUID) = SalePaymentMethod(userId)
+    override fun instantiate(userId: Long) = SalePaymentMethod(userId)
 
     override val defaultColor = "#3b82f6"
 }
@@ -111,7 +102,7 @@ class SalePaymentMethodSettingService(
 class ExpenseCategorySettingService(
     repository: ExpenseCategoryRepository,
 ) : LabelSettingService<ExpenseCategory>(repository) {
-    override fun instantiate(userId: UUID) = ExpenseCategory(userId)
+    override fun instantiate(userId: Long) = ExpenseCategory(userId)
 
     override val defaultColor = "#6b7280"
 }
@@ -120,7 +111,7 @@ class ExpenseCategorySettingService(
 class ExpensePaymentMethodSettingService(
     repository: ExpensePaymentMethodRepository,
 ) : LabelSettingService<ExpensePaymentMethod>(repository) {
-    override fun instantiate(userId: UUID) = ExpensePaymentMethod(userId)
+    override fun instantiate(userId: Long) = ExpensePaymentMethod(userId)
 
     override val defaultColor = "#3b82f6"
 }

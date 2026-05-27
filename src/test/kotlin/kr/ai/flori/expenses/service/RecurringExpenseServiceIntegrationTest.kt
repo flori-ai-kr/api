@@ -21,7 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.JdbcTemplate
 import java.sql.Date
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @SpringBootTest
@@ -53,7 +53,7 @@ class RecurringExpenseServiceIntegrationTest {
     @AfterEach
     fun tearDown() = TenantContext.clear()
 
-    private fun newTenant(): UUID {
+    private fun newTenant(): Long {
         val email = "rec-${UUID.randomUUID()}@flori.dev"
         authService.signup(SignupRequest(email, "password123", null))
         val userId = requireNotNull(userRepository.findByEmail(email)).id!!
@@ -76,18 +76,16 @@ class RecurringExpenseServiceIntegrationTest {
         )
 
     private fun generateInstance(
-        ruleId: UUID,
+        ruleId: Long,
         date: LocalDate,
-    ): UUID {
+    ): Long {
         generator.generateForDate(date)
-        val id =
-            jdbcTemplate.queryForObject(
-                "SELECT id FROM expenses WHERE recurring_id = ?::uuid AND date = ?",
-                String::class.java,
-                ruleId,
-                Date.valueOf(date),
-            )
-        return UUID.fromString(id)
+        return jdbcTemplate.queryForObject(
+            "SELECT id FROM expenses WHERE recurring_id = ?::bigint AND date = ?",
+            Long::class.java,
+            ruleId,
+            Date.valueOf(date),
+        )!!
     }
 
     @Test

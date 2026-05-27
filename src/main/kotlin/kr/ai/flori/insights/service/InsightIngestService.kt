@@ -3,12 +3,7 @@ package kr.ai.flori.insights.service
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.ErrorCode
 import kr.ai.flori.common.util.KST
-import kr.ai.flori.insights.dto.IngestResultResponse
-import kr.ai.flori.insights.dto.InstagramAccountCreateRequest
-import kr.ai.flori.insights.dto.InstagramAccountResponse
-import kr.ai.flori.insights.dto.InstagramAccountUpdateRequest
-import kr.ai.flori.insights.dto.InstagramPostIngest
-import kr.ai.flori.insights.dto.TrendArticleIngest
+import kr.ai.flori.insights.dto.*
 import kr.ai.flori.insights.entity.InstagramAccount
 import kr.ai.flori.insights.entity.InstagramPost
 import kr.ai.flori.insights.entity.TrendArticle
@@ -20,7 +15,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
 
 /**
  * 내부 수집/관리(Bearer 인증 후 호출). 트렌드·포스트 멱등 수집, 인스타 계정 관리.
@@ -97,7 +91,7 @@ class InsightIngestService(
 
     @Transactional
     fun updateAccount(
-        id: UUID,
+        id: Long,
         request: InstagramAccountUpdateRequest,
     ): InstagramAccountResponse {
         val account =
@@ -115,7 +109,7 @@ class InsightIngestService(
     }
 
     @Transactional
-    fun deleteAccount(id: UUID) {
+    fun deleteAccount(id: Long) {
         if (!accountRepository.existsById(id)) throw AppException(ErrorCode.NOT_FOUND, "계정을 찾을 수 없습니다")
         accountRepository.deleteById(id)
     }

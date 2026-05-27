@@ -10,7 +10,6 @@ import kr.ai.flori.photos.repository.PhotoTagRepository
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
 import kotlin.random.Random
 
 /**
@@ -42,7 +41,7 @@ class PhotoTagService(
 
     @Transactional
     fun update(
-        id: UUID,
+        id: Long,
         name: String,
         color: String,
     ): PhotoTagResponse {
@@ -55,7 +54,7 @@ class PhotoTagService(
     }
 
     @Transactional
-    fun delete(id: UUID) {
+    fun delete(id: Long) {
         val tag = load(id)
         photoCardRepository.removeTagFromCards(tag.userId, tag.name)
         photoTagRepository.delete(tag)
@@ -69,7 +68,7 @@ class PhotoTagService(
             throw AppException(ErrorCode.DUPLICATE, "이미 존재하는 태그입니다")
         }
 
-    private fun load(id: UUID): PhotoTag =
+    private fun load(id: Long): PhotoTag =
         photoTagRepository.findByIdAndUserId(id, TenantContext.currentUserId())
             ?: throw AppException(ErrorCode.NOT_FOUND, "태그를 찾을 수 없습니다")
 

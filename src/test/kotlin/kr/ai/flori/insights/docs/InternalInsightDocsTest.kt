@@ -20,13 +20,9 @@ import org.springframework.restdocs.payload.JsonFieldType
 import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
 import org.springframework.restdocs.request.ParameterDescriptor
 import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.ResultHandler
-import org.springframework.test.web.servlet.delete
-import org.springframework.test.web.servlet.post
-import org.springframework.test.web.servlet.put
+import org.springframework.test.web.servlet.*
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 /**
  * InternalInsightController RestDocs 문서화.
@@ -72,7 +68,7 @@ class InternalInsightDocsTest {
     /** InstagramAccountResponse 공통 응답 필드 */
     private val accountResponseFields =
         listOf(
-            fieldWithPath("id").type(JsonFieldType.STRING).description("계정 UUID"),
+            fieldWithPath("id").type(JsonFieldType.NUMBER).description("계정 ID"),
             fieldWithPath("username").type(JsonFieldType.STRING).description("인스타그램 유저네임"),
             fieldWithPath("displayName").type(JsonFieldType.STRING).optional().description("표시명 (null 가능)"),
             fieldWithPath("profileUrl").type(JsonFieldType.STRING).description("프로필 URL"),
@@ -89,8 +85,8 @@ class InternalInsightDocsTest {
             fieldWithPath("skipped").type(JsonFieldType.NUMBER).description("중복으로 스킵된 건수"),
         )
 
-    /** 계정 생성 후 UUID 반환 (다른 테스트에서 업데이트·삭제 대상으로 활용) */
-    private fun createAccount(username: String): UUID {
+    /** 계정 생성 후 id 반환 (다른 테스트에서 업데이트·삭제 대상으로 활용) */
+    private fun createAccount(username: String): Long {
         val res =
             mockMvc
                 .post("/internal/instagram-accounts") {
@@ -108,7 +104,7 @@ class InternalInsightDocsTest {
                         )
                 }.andReturn()
                 .response.contentAsString
-        return UUID.fromString(objectMapper.readTree(res).get("id").asText())
+        return objectMapper.readTree(res).get("id").asLong()
     }
 
     // ── 1. 트렌드 수집 ─────────────────────────────────────────────────────────
@@ -197,7 +193,7 @@ class InternalInsightDocsTest {
                             "posts" to
                                 listOf(
                                     mapOf(
-                                        "accountId" to accountId.toString(),
+                                        "accountId" to accountId,
                                         "shortcode" to "DOCS${UUID.randomUUID().toString().take(8)}",
                                         "permalink" to "https://www.instagram.com/p/docs_post/",
                                         "imageUrls" to listOf("https://cdn.example.com/img1.jpg"),
@@ -221,8 +217,8 @@ class InternalInsightDocsTest {
                                     .type(JsonFieldType.ARRAY)
                                     .description("수집할 포스트 목록 (1개 이상, 필수)"),
                                 fieldWithPath("posts[].accountId")
-                                    .type(JsonFieldType.STRING)
-                                    .description("계정 UUID (필수)"),
+                                    .type(JsonFieldType.NUMBER)
+                                    .description("계정 ID (필수)"),
                                 fieldWithPath("posts[].shortcode")
                                     .type(JsonFieldType.STRING)
                                     .description("인스타그램 shortcode — 멱등 키 (필수)"),
@@ -340,7 +336,7 @@ class InternalInsightDocsTest {
                         identifier = "internal-update-instagram-account",
                         tag = "Internal",
                         summary = "[내부 API] 인스타 계정 수정 (제공된 필드만 반영)",
-                        pathParameters = listOf(parameterWithName("id").description("수정할 계정 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("수정할 계정 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("username")
@@ -394,7 +390,7 @@ class InternalInsightDocsTest {
                         identifier = "internal-delete-instagram-account",
                         tag = "Internal",
                         summary = "[내부 API] 인스타 계정 삭제 (204 No Content)",
-                        pathParameters = listOf(parameterWithName("id").description("삭제할 계정 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("삭제할 계정 ID")),
                     ),
                 )
             }

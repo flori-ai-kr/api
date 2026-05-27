@@ -22,7 +22,7 @@ class CalendarEventDocsTest : RestDocsSupport() {
     /** CalendarEventResponse 공통 응답 필드 — 단건 조회/생성/수정에서 재사용 */
     private val calendarEventResponseFields =
         listOf(
-            fieldWithPath("id").type(JsonFieldType.STRING).description("이벤트 UUID"),
+            fieldWithPath("id").type(JsonFieldType.NUMBER).description("이벤트 ID"),
             fieldWithPath("title").type(JsonFieldType.STRING).description("이벤트 제목"),
             fieldWithPath("startDate").type(JsonFieldType.STRING).description("시작일 (yyyy-MM-dd)"),
             fieldWithPath("endDate").type(JsonFieldType.STRING).description("종료일 (yyyy-MM-dd)"),
@@ -131,7 +131,7 @@ class CalendarEventDocsTest : RestDocsSupport() {
                         responseFields =
                             listOf(
                                 fieldWithPath("[]").type(JsonFieldType.ARRAY).description("이벤트 목록"),
-                                fieldWithPath("[].id").type(JsonFieldType.STRING).description("이벤트 UUID"),
+                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("이벤트 ID"),
                                 fieldWithPath("[].title").type(JsonFieldType.STRING).description("이벤트 제목"),
                                 fieldWithPath("[].startDate")
                                     .type(JsonFieldType.STRING)
@@ -176,7 +176,7 @@ class CalendarEventDocsTest : RestDocsSupport() {
                         identifier = "calendar-event-get",
                         tag = "CalendarEvents",
                         summary = "캘린더 이벤트 단건 조회",
-                        pathParameters = listOf(parameterWithName("id").description("이벤트 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("이벤트 ID")),
                         responseFields = calendarEventResponseFields,
                     ),
                 )
@@ -209,7 +209,7 @@ class CalendarEventDocsTest : RestDocsSupport() {
                         identifier = "calendar-event-update",
                         tag = "CalendarEvents",
                         summary = "캘린더 이벤트 수정 (제공된 필드만 반영)",
-                        pathParameters = listOf(parameterWithName("id").description("이벤트 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("이벤트 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("title")
@@ -257,7 +257,7 @@ class CalendarEventDocsTest : RestDocsSupport() {
                         identifier = "calendar-event-delete",
                         tag = "CalendarEvents",
                         summary = "캘린더 이벤트 삭제",
-                        pathParameters = listOf(parameterWithName("id").description("이벤트 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("이벤트 ID")),
                     ),
                 )
             }

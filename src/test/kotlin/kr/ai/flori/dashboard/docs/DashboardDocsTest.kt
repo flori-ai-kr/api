@@ -31,7 +31,7 @@ class DashboardDocsTest : RestDocsSupport() {
     /** SaleResponse 인라인 필드 — 배열 항목은 모두 optional() (빈 배열 대응) */
     private fun saleFields(prefix: String) =
         listOf(
-            fieldWithPath("$prefix.id").type(JsonFieldType.STRING).optional().description("매출 UUID"),
+            fieldWithPath("$prefix.id").type(JsonFieldType.NUMBER).optional().description("매출 ID"),
             fieldWithPath("$prefix.date").type(JsonFieldType.STRING).optional().description("매출 발생일 (yyyy-MM-dd)"),
             fieldWithPath("$prefix.productName").type(JsonFieldType.STRING).optional().description("상품명"),
             fieldWithPath("$prefix.productCategory").type(JsonFieldType.STRING).optional().description("상품 카테고리 (null 가능)"),
@@ -40,7 +40,7 @@ class DashboardDocsTest : RestDocsSupport() {
             fieldWithPath("$prefix.reservationChannel").type(JsonFieldType.STRING).optional().description("예약 채널"),
             fieldWithPath("$prefix.customerName").type(JsonFieldType.STRING).optional().description("고객명"),
             fieldWithPath("$prefix.customerPhone").type(JsonFieldType.STRING).optional().description("고객 전화번호"),
-            fieldWithPath("$prefix.customerId").type(JsonFieldType.STRING).optional().description("연결된 고객 UUID"),
+            fieldWithPath("$prefix.customerId").type(JsonFieldType.NUMBER).optional().description("연결된 고객 ID"),
             fieldWithPath("$prefix.note").type(JsonFieldType.STRING).optional().description("비고"),
             fieldWithPath("$prefix.isUnpaid").type(JsonFieldType.BOOLEAN).optional().description("미수 여부"),
             fieldWithPath("$prefix.hasReview").type(JsonFieldType.BOOLEAN).optional().description("리뷰 보유 여부"),
@@ -51,7 +51,7 @@ class DashboardDocsTest : RestDocsSupport() {
     /** ReservationResponse 인라인 필드 — 배열 항목은 모두 optional() (빈 배열 대응) */
     private fun reservationFields(prefix: String) =
         listOf(
-            fieldWithPath("$prefix.id").type(JsonFieldType.STRING).optional().description("예약 UUID"),
+            fieldWithPath("$prefix.id").type(JsonFieldType.NUMBER).optional().description("예약 ID"),
             fieldWithPath("$prefix.date").type(JsonFieldType.STRING).optional().description("예약 날짜 (yyyy-MM-dd)"),
             fieldWithPath("$prefix.time").type(JsonFieldType.STRING).optional().description("예약 시간 (HH:mm:ss, null 가능)"),
             fieldWithPath("$prefix.customerName").type(JsonFieldType.STRING).optional().description("고객명"),
@@ -59,7 +59,7 @@ class DashboardDocsTest : RestDocsSupport() {
             fieldWithPath("$prefix.title").type(JsonFieldType.STRING).optional().description("예약 제목"),
             fieldWithPath("$prefix.description").type(JsonFieldType.STRING).optional().description("상세 설명 (null 가능)"),
             fieldWithPath("$prefix.status").type(JsonFieldType.STRING).optional().description("예약 상태"),
-            fieldWithPath("$prefix.saleId").type(JsonFieldType.STRING).optional().description("연결된 매출 UUID (null 가능)"),
+            fieldWithPath("$prefix.saleId").type(JsonFieldType.NUMBER).optional().description("연결된 매출 ID (null 가능)"),
             fieldWithPath("$prefix.amount").type(JsonFieldType.NUMBER).optional().description("예약 금액(원)"),
             fieldWithPath("$prefix.reminderAt").type(JsonFieldType.STRING).optional().description("리마인더 시각 (ISO-8601, null 가능)"),
             fieldWithPath("$prefix.reminderSent").type(JsonFieldType.BOOLEAN).optional().description("리마인더 전송 여부"),

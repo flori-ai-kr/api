@@ -22,7 +22,7 @@ class ReservationDocsTest : RestDocsSupport() {
     /** ReservationResponse 공통 응답 필드 — 단건/목록/액션 응답에서 재사용 */
     private val reservationResponseFields =
         listOf(
-            fieldWithPath("id").type(JsonFieldType.STRING).description("예약 UUID"),
+            fieldWithPath("id").type(JsonFieldType.NUMBER).description("예약 ID"),
             fieldWithPath("date").type(JsonFieldType.STRING).description("예약일 (yyyy-MM-dd)"),
             fieldWithPath("time")
                 .type(JsonFieldType.STRING)
@@ -42,9 +42,9 @@ class ReservationDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.STRING)
                 .description("예약 상태. pending | confirmed | completed | cancelled"),
             fieldWithPath("saleId")
-                .type(JsonFieldType.STRING)
+                .type(JsonFieldType.NUMBER)
                 .optional()
-                .description("연결된 매출 UUID (매출 전환 전이면 null)"),
+                .description("연결된 매출 ID (매출 전환 전이면 null)"),
             fieldWithPath("amount").type(JsonFieldType.NUMBER).description("예약 금액(원)"),
             fieldWithPath("reminderAt")
                 .type(JsonFieldType.STRING)
@@ -61,7 +61,7 @@ class ReservationDocsTest : RestDocsSupport() {
     /** SaleResponse 공통 응답 필드 — convertToSale 응답에서 사용 */
     private val saleResponseFields =
         listOf(
-            fieldWithPath("id").type(JsonFieldType.STRING).description("매출 UUID"),
+            fieldWithPath("id").type(JsonFieldType.NUMBER).description("매출 ID"),
             fieldWithPath("date").type(JsonFieldType.STRING).description("매출 발생일 (yyyy-MM-dd)"),
             fieldWithPath("productName").type(JsonFieldType.STRING).description("상품명"),
             fieldWithPath("productCategory")
@@ -80,9 +80,9 @@ class ReservationDocsTest : RestDocsSupport() {
                 .optional()
                 .description("고객 전화번호 (미입력이면 null)"),
             fieldWithPath("customerId")
-                .type(JsonFieldType.STRING)
+                .type(JsonFieldType.NUMBER)
                 .optional()
-                .description("연결된 고객 UUID (미연결이면 null)"),
+                .description("연결된 고객 ID (미연결이면 null)"),
             fieldWithPath("note").type(JsonFieldType.STRING).optional().description("비고"),
             fieldWithPath("isUnpaid").type(JsonFieldType.BOOLEAN).description("미수 여부"),
             fieldWithPath("hasReview").type(JsonFieldType.BOOLEAN).description("리뷰 보유 여부"),
@@ -205,7 +205,7 @@ class ReservationDocsTest : RestDocsSupport() {
                         responseFields =
                             listOf(
                                 fieldWithPath("[]").type(JsonFieldType.ARRAY).description("예약 목록"),
-                                fieldWithPath("[].id").type(JsonFieldType.STRING).description("예약 UUID"),
+                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("예약 ID"),
                                 fieldWithPath("[].date").type(JsonFieldType.STRING).description("예약일 (yyyy-MM-dd)"),
                                 fieldWithPath("[].time")
                                     .type(JsonFieldType.STRING)
@@ -225,9 +225,9 @@ class ReservationDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .description("예약 상태. pending | confirmed | completed | cancelled"),
                                 fieldWithPath("[].saleId")
-                                    .type(JsonFieldType.STRING)
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
-                                    .description("연결된 매출 UUID"),
+                                    .description("연결된 매출 ID"),
                                 fieldWithPath("[].amount").type(JsonFieldType.NUMBER).description("예약 금액(원)"),
                                 fieldWithPath("[].reminderAt")
                                     .type(JsonFieldType.STRING)
@@ -284,7 +284,7 @@ class ReservationDocsTest : RestDocsSupport() {
                         responseFields =
                             listOf(
                                 fieldWithPath("[]").type(JsonFieldType.ARRAY).description("다가오는 예약 목록"),
-                                fieldWithPath("[].id").type(JsonFieldType.STRING).description("예약 UUID"),
+                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("예약 ID"),
                                 fieldWithPath("[].date").type(JsonFieldType.STRING).description("예약일 (yyyy-MM-dd)"),
                                 fieldWithPath("[].time")
                                     .type(JsonFieldType.STRING)
@@ -304,9 +304,9 @@ class ReservationDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .description("예약 상태. pending | confirmed | completed | cancelled"),
                                 fieldWithPath("[].saleId")
-                                    .type(JsonFieldType.STRING)
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
-                                    .description("연결된 매출 UUID"),
+                                    .description("연결된 매출 ID"),
                                 fieldWithPath("[].amount").type(JsonFieldType.NUMBER).description("예약 금액(원)"),
                                 fieldWithPath("[].reminderAt")
                                     .type(JsonFieldType.STRING)
@@ -362,7 +362,7 @@ class ReservationDocsTest : RestDocsSupport() {
                         responseFields =
                             listOf(
                                 fieldWithPath("[]").type(JsonFieldType.ARRAY).description("리마인더 발동 예약 목록"),
-                                fieldWithPath("[].id").type(JsonFieldType.STRING).description("예약 UUID"),
+                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("예약 ID"),
                                 fieldWithPath("[].date").type(JsonFieldType.STRING).description("예약일 (yyyy-MM-dd)"),
                                 fieldWithPath("[].time")
                                     .type(JsonFieldType.STRING)
@@ -382,9 +382,9 @@ class ReservationDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .description("예약 상태. pending | confirmed | completed | cancelled"),
                                 fieldWithPath("[].saleId")
-                                    .type(JsonFieldType.STRING)
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
-                                    .description("연결된 매출 UUID"),
+                                    .description("연결된 매출 ID"),
                                 fieldWithPath("[].amount").type(JsonFieldType.NUMBER).description("예약 금액(원)"),
                                 fieldWithPath("[].reminderAt")
                                     .type(JsonFieldType.STRING)
@@ -483,11 +483,11 @@ class ReservationDocsTest : RestDocsSupport() {
                         identifier = "reservation-by-sale",
                         tag = "Reservations",
                         summary = "매출 연결 예약 목록",
-                        pathParameters = listOf(parameterWithName("saleId").description("매출 UUID")),
+                        pathParameters = listOf(parameterWithName("saleId").description("매출 ID")),
                         responseFields =
                             listOf(
                                 fieldWithPath("[]").type(JsonFieldType.ARRAY).description("매출에 연결된 예약 목록"),
-                                fieldWithPath("[].id").type(JsonFieldType.STRING).description("예약 UUID"),
+                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("예약 ID"),
                                 fieldWithPath("[].date").type(JsonFieldType.STRING).description("예약일 (yyyy-MM-dd)"),
                                 fieldWithPath("[].time")
                                     .type(JsonFieldType.STRING)
@@ -507,9 +507,9 @@ class ReservationDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .description("예약 상태. pending | confirmed | completed | cancelled"),
                                 fieldWithPath("[].saleId")
-                                    .type(JsonFieldType.STRING)
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
-                                    .description("연결된 매출 UUID"),
+                                    .description("연결된 매출 ID"),
                                 fieldWithPath("[].amount").type(JsonFieldType.NUMBER).description("예약 금액(원)"),
                                 fieldWithPath("[].reminderAt")
                                     .type(JsonFieldType.STRING)
@@ -551,7 +551,7 @@ class ReservationDocsTest : RestDocsSupport() {
                         identifier = "reservation-get",
                         tag = "Reservations",
                         summary = "예약 단건 조회",
-                        pathParameters = listOf(parameterWithName("id").description("예약 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("예약 ID")),
                         responseFields = reservationResponseFields,
                     ),
                 )
@@ -584,7 +584,7 @@ class ReservationDocsTest : RestDocsSupport() {
                         identifier = "reservation-update",
                         tag = "Reservations",
                         summary = "예약 수정 (제공된 필드만 반영, reminderAt 변경 시 reminderSent 리셋)",
-                        pathParameters = listOf(parameterWithName("id").description("예약 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("예약 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("date")
@@ -620,9 +620,9 @@ class ReservationDocsTest : RestDocsSupport() {
                                     .optional()
                                     .description("상태 변경. pending | confirmed | completed | cancelled"),
                                 fieldWithPath("saleId")
-                                    .type(JsonFieldType.STRING)
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
-                                    .description("연결 매출 UUID 변경"),
+                                    .description("연결 매출 ID 변경"),
                                 fieldWithPath("reminderAt")
                                     .type(JsonFieldType.STRING)
                                     .optional()
@@ -658,7 +658,7 @@ class ReservationDocsTest : RestDocsSupport() {
                         identifier = "reservation-complete-pickup",
                         tag = "Reservations",
                         summary = "픽업 완료 처리",
-                        pathParameters = listOf(parameterWithName("id").description("예약 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("예약 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("completed")
@@ -699,7 +699,7 @@ class ReservationDocsTest : RestDocsSupport() {
                         identifier = "reservation-convert-to-sale",
                         tag = "Reservations",
                         summary = "예약 → 매출 전환 (매출 생성 후 예약에 saleId 연결)",
-                        pathParameters = listOf(parameterWithName("id").description("예약 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("예약 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("date")
@@ -727,9 +727,9 @@ class ReservationDocsTest : RestDocsSupport() {
                                     .optional()
                                     .description("고객 전화번호"),
                                 fieldWithPath("customerId")
-                                    .type(JsonFieldType.STRING)
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
-                                    .description("연결할 고객 UUID (본인 소유 검증)"),
+                                    .description("연결할 고객 ID (본인 소유 검증)"),
                                 fieldWithPath("note")
                                     .type(JsonFieldType.STRING)
                                     .optional()
@@ -788,7 +788,7 @@ class ReservationDocsTest : RestDocsSupport() {
                         identifier = "reservation-add-pickup",
                         tag = "Reservations",
                         summary = "매출에 픽업 추가 (고객 정보는 매출에서 상속)",
-                        pathParameters = listOf(parameterWithName("saleId").description("매출 UUID")),
+                        pathParameters = listOf(parameterWithName("saleId").description("매출 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("date")
@@ -834,7 +834,7 @@ class ReservationDocsTest : RestDocsSupport() {
                         identifier = "reservation-delete",
                         tag = "Reservations",
                         summary = "예약 삭제",
-                        pathParameters = listOf(parameterWithName("id").description("예약 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("예약 ID")),
                     ),
                 )
             }

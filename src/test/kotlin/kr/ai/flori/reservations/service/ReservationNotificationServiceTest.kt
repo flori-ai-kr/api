@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @SpringBootTest
@@ -39,7 +39,7 @@ class ReservationNotificationServiceTest {
     @AfterEach
     fun tearDown() = TenantContext.clear()
 
-    private fun newTenant(): UUID {
+    private fun newTenant(): Long {
         val email = "notif-${UUID.randomUUID()}@flori.dev"
         authService.signup(SignupRequest(email, "password123", null))
         val userId = requireNotNull(userRepository.findByEmail(email)).id!!

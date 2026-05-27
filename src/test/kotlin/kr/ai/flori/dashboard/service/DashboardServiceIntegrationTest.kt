@@ -19,7 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.UUID
+import java.util.*
 
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @SpringBootTest
@@ -47,7 +47,7 @@ class DashboardServiceIntegrationTest {
     @AfterEach
     fun tearDown() = TenantContext.clear()
 
-    private fun newTenant(): UUID {
+    private fun newTenant(): Long {
         val email = "dash-${UUID.randomUUID()}@flori.dev"
         authService.signup(SignupRequest(email, "password123", null))
         val userId = requireNotNull(userRepository.findByEmail(email)).id!!

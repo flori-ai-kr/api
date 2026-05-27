@@ -1,18 +1,9 @@
 package kr.ai.flori.insights.entity
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
-import jakarta.persistence.Table
+import jakarta.persistence.*
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 import java.time.Instant
-import java.util.UUID
 
 /**
  * 인스타그램 포스트. 공유 데이터. 쓰기는 내부 API만. account는 읽기 전용 연관.
@@ -21,7 +12,7 @@ import java.util.UUID
 @Table(name = "instagram_posts")
 class InstagramPost(
     @Column(name = "account_id", nullable = false)
-    var accountId: UUID,
+    var accountId: Long,
     @Column(name = "shortcode", nullable = false)
     var shortcode: String,
     @Column(name = "permalink", nullable = false)
@@ -30,9 +21,9 @@ class InstagramPost(
     var postedAt: Instant,
 ) {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id: UUID? = null
+    var id: Long? = null
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "image_urls", columnDefinition = "jsonb")

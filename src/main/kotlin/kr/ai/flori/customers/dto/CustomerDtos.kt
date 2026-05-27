@@ -4,7 +4,6 @@ import jakarta.validation.constraints.NotBlank
 import kr.ai.flori.customers.entity.Customer
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
 
 data class CustomerCreateRequest(
     @field:NotBlank(message = "이름은 필수입니다")
@@ -38,7 +37,7 @@ data class FindOrCreateCustomerRequest(
 
 /** 구매 통계는 sales에서 실시간 집계한 값. */
 data class CustomerResponse(
-    val id: UUID,
+    val id: Long,
     val name: String,
     val phone: String,
     val grade: String,
@@ -85,7 +84,7 @@ data class CustomerStats(
 }
 
 data class CustomerSearchResult(
-    val id: UUID,
+    val id: Long,
     val name: String,
     val phone: String,
     val grade: String,

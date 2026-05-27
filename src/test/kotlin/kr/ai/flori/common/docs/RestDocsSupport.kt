@@ -16,7 +16,7 @@ import org.springframework.restdocs.request.ParameterDescriptor
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.ResultHandler
 import org.springframework.test.web.servlet.post
-import java.util.UUID
+import java.util.*
 
 /**
  * RestDocs 문서화 통합테스트 공용 베이스.
@@ -60,10 +60,10 @@ abstract class RestDocsSupport {
      *   mockMvc.get("/customers/$id") {
      *       requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/customers/{id}")
      *       header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-     *   }.andDo { handle(docs(..., pathParameters = listOf(parameterWithName("id").description("고객 UUID")))) }
+     *   }.andDo { handle(docs(..., pathParameters = listOf(parameterWithName("id").description("고객 ID")))) }
      *
      * (RequestPostProcessor(`with{}`)로 세팅하면 @AutoConfigureRestDocs의 ConfigurerApplyingRequestPostProcessor가
-     *  그보다 먼저 템플릿을 캡처해 null이 되므로, 반드시 `requestAttr`로 빌더에 직접 넣어 UUID가 박히지 않게 한다.)
+     *  그보다 먼저 템플릿을 캡처해 null이 되므로, 반드시 `requestAttr`로 빌더에 직접 넣어 ID가 박히지 않게 한다.)
      */
     protected fun docs(
         identifier: String,

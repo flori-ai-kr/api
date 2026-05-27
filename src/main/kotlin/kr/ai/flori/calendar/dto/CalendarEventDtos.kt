@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotNull
 import kr.ai.flori.calendar.entity.CalendarEvent
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
 
 data class CalendarEventCreateRequest(
     @field:NotBlank(message = "제목은 필수입니다")
@@ -27,7 +26,7 @@ data class CalendarEventUpdateRequest(
 )
 
 data class CalendarEventResponse(
-    val id: UUID,
+    val id: Long,
     val title: String,
     val startDate: LocalDate,
     val endDate: LocalDate,

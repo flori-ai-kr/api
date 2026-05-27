@@ -1,14 +1,7 @@
 package kr.ai.flori.settings.entity
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.MappedSuperclass
-import jakarta.persistence.Table
+import jakarta.persistence.*
 import kr.ai.flori.common.entity.BaseCreatedEntity
-import java.util.UUID
 
 /**
  * value/label/color/sort_order 구조를 공유하는 설정(매출/지출 카테고리·결제방식) 공통 베이스.
@@ -17,12 +10,12 @@ import java.util.UUID
 @MappedSuperclass
 abstract class LabelSetting(
     @Column(name = "user_id", nullable = false)
-    var userId: UUID,
+    var userId: Long,
 ) : BaseCreatedEntity() {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id: UUID? = null
+    var id: Long? = null
 
     @Column(name = "value", nullable = false)
     var value: String = ""
@@ -40,23 +33,23 @@ abstract class LabelSetting(
 @Entity
 @Table(name = "sale_categories")
 class SaleCategory(
-    userId: UUID,
+    userId: Long,
 ) : LabelSetting(userId)
 
 @Entity
 @Table(name = "payment_methods")
 class SalePaymentMethod(
-    userId: UUID,
+    userId: Long,
 ) : LabelSetting(userId)
 
 @Entity
 @Table(name = "expense_categories")
 class ExpenseCategory(
-    userId: UUID,
+    userId: Long,
 ) : LabelSetting(userId)
 
 @Entity
 @Table(name = "expense_payment_methods")
 class ExpensePaymentMethod(
-    userId: UUID,
+    userId: Long,
 ) : LabelSetting(userId)

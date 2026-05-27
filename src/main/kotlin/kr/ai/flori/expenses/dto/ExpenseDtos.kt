@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull
 import kr.ai.flori.expenses.entity.Expense
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
 
 data class ExpenseCreateRequest(
     @field:NotNull(message = "날짜는 필수입니다")
@@ -41,7 +40,7 @@ data class ExpenseUpdateRequest(
 )
 
 data class ExpenseResponse(
-    val id: UUID,
+    val id: Long,
     val date: LocalDate,
     val itemName: String,
     val category: String,
@@ -52,7 +51,7 @@ data class ExpenseResponse(
     val cardCompany: String?,
     val vendor: String?,
     val note: String?,
-    val recurringId: UUID?,
+    val recurringId: Long?,
     val isRecurringModified: Boolean,
     val createdAt: Instant,
     val updatedAt: Instant,

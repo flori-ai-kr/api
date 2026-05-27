@@ -24,7 +24,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
-import java.util.UUID
+import java.util.*
 
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @SpringBootTest
@@ -63,7 +63,7 @@ class PhotoCardServiceIntegrationTest {
     @AfterEach
     fun tearDown() = TenantContext.clear()
 
-    private fun newTenant(): UUID {
+    private fun newTenant(): Long {
         val email = "photo-${UUID.randomUUID()}@flori.dev"
         authService.signup(SignupRequest(email, "password123", null))
         val userId = requireNotNull(userRepository.findByEmail(email)).id!!

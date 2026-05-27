@@ -8,10 +8,9 @@ import kr.ai.flori.insights.entity.InstagramPost
 import kr.ai.flori.insights.entity.TrendArticle
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
 
 data class TrendArticleResponse(
-    val id: UUID,
+    val id: Long,
     val category: String,
     val title: String,
     val summary: String,
@@ -40,7 +39,7 @@ data class TrendArticleResponse(
 }
 
 data class InstagramAccountResponse(
-    val id: UUID,
+    val id: Long,
     val username: String,
     val displayName: String?,
     val profileUrl: String,
@@ -65,8 +64,8 @@ data class InstagramAccountResponse(
 }
 
 data class InstagramPostResponse(
-    val id: UUID,
-    val accountId: UUID,
+    val id: Long,
+    val accountId: Long,
     val shortcode: String,
     val permalink: String,
     val imageUrls: List<String>,
@@ -92,9 +91,9 @@ data class InstagramPostResponse(
 }
 
 data class InsightScrapResponse(
-    val id: UUID,
+    val id: Long,
     val targetType: String,
-    val targetId: UUID,
+    val targetId: Long,
     val memo: String?,
     val createdAt: Instant,
     val updatedAt: Instant,
@@ -114,12 +113,12 @@ data class InsightScrapResponse(
 
 data class ScrapToggleRequest(
     @field:NotBlank val targetType: String?,
-    @field:NotNull val targetId: UUID?,
+    @field:NotNull val targetId: Long?,
 )
 
 data class ScrapMemoRequest(
     @field:NotBlank val targetType: String?,
-    @field:NotNull val targetId: UUID?,
+    @field:NotNull val targetId: Long?,
     val memo: String? = null,
 )
 
@@ -133,7 +132,7 @@ data class ScrapCountsResponse(
 )
 
 data class ScrapInfo(
-    val id: UUID,
+    val id: Long,
     val memo: String?,
 )
 

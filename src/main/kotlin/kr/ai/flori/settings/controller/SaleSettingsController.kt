@@ -7,16 +7,7 @@ import kr.ai.flori.settings.dto.LabelSettingUpdateRequest
 import kr.ai.flori.settings.service.SaleCategorySettingService
 import kr.ai.flori.settings.service.SalePaymentMethodSettingService
 import org.springframework.http.HttpStatus
-import org.springframework.web.bind.annotation.DeleteMapping
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.ResponseStatus
-import org.springframework.web.bind.annotation.RestController
-import java.util.UUID
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/settings")
@@ -35,14 +26,14 @@ class SaleSettingsController(
 
     @PutMapping("/sale-categories/{id}")
     fun updateCategory(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: LabelSettingUpdateRequest,
     ): LabelSettingResponse = categoryService.update(id, requireNotNull(request.label), requireNotNull(request.color))
 
     @DeleteMapping("/sale-categories/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteCategory(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
     ) {
         categoryService.delete(id)
     }
@@ -58,14 +49,14 @@ class SaleSettingsController(
 
     @PutMapping("/payment-methods/{id}")
     fun updatePayment(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: LabelSettingUpdateRequest,
     ): LabelSettingResponse = paymentService.update(id, requireNotNull(request.label), requireNotNull(request.color))
 
     @DeleteMapping("/payment-methods/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deletePayment(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
     ) {
         paymentService.delete(id)
     }

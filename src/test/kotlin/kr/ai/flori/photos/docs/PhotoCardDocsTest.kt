@@ -24,7 +24,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
     /** PhotoCardResponse 공통 응답 필드 — 단건/생성/수정에서 재사용 */
     private val photoCardResponseFields =
         listOf(
-            fieldWithPath("id").type(JsonFieldType.STRING).description("사진 카드 UUID"),
+            fieldWithPath("id").type(JsonFieldType.NUMBER).description("사진 카드 ID"),
             fieldWithPath("title").type(JsonFieldType.STRING).description("카드 제목"),
             fieldWithPath("description")
                 .type(JsonFieldType.STRING)
@@ -45,9 +45,9 @@ class PhotoCardDocsTest : RestDocsSupport() {
                 .optional()
                 .description("원본 파일명"),
             fieldWithPath("saleId")
-                .type(JsonFieldType.STRING)
+                .type(JsonFieldType.NUMBER)
                 .optional()
-                .description("연결된 매출 UUID (미연결이면 null)"),
+                .description("연결된 매출 ID (미연결이면 null)"),
             fieldWithPath("createdAt").type(JsonFieldType.STRING).description("생성 시각 (ISO-8601)"),
             fieldWithPath("updatedAt").type(JsonFieldType.STRING).description("최종 수정 시각 (ISO-8601)"),
         )
@@ -96,8 +96,8 @@ class PhotoCardDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.ARRAY)
                                     .description("사진 카드 목록"),
                                 fieldWithPath("cards[].id")
-                                    .type(JsonFieldType.STRING)
-                                    .description("사진 카드 UUID"),
+                                    .type(JsonFieldType.NUMBER)
+                                    .description("사진 카드 ID"),
                                 fieldWithPath("cards[].title")
                                     .type(JsonFieldType.STRING)
                                     .description("카드 제목"),
@@ -112,9 +112,9 @@ class PhotoCardDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.ARRAY)
                                     .description("사진 목록"),
                                 fieldWithPath("cards[].saleId")
-                                    .type(JsonFieldType.STRING)
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
-                                    .description("연결된 매출 UUID"),
+                                    .description("연결된 매출 ID"),
                                 fieldWithPath("cards[].createdAt")
                                     .type(JsonFieldType.STRING)
                                     .description("생성 시각 (ISO-8601)"),
@@ -189,9 +189,9 @@ class PhotoCardDocsTest : RestDocsSupport() {
                                     .optional()
                                     .description("원본 파일명"),
                                 fieldWithPath("saleId")
-                                    .type(JsonFieldType.STRING)
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
-                                    .description("연결할 매출 UUID (본인 소유 검증)"),
+                                    .description("연결할 매출 ID (본인 소유 검증)"),
                             ),
                         responseFields = photoCardResponseFields,
                     ),
@@ -217,7 +217,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                         identifier = "photo-card-get",
                         tag = "PhotoCards",
                         summary = "사진 카드 단건 조회",
-                        pathParameters = listOf(parameterWithName("id").description("사진 카드 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("사진 카드 ID")),
                         responseFields = photoCardResponseFields,
                     ),
                 )
@@ -261,7 +261,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                         identifier = "photo-card-by-sale-not-found",
                         tag = "PhotoCards",
                         summary = "매출별 사진 카드 조회 — 없음 (204 No Content)",
-                        pathParameters = listOf(parameterWithName("saleId").description("매출 UUID")),
+                        pathParameters = listOf(parameterWithName("saleId").description("매출 ID")),
                     ),
                 )
             }
@@ -309,7 +309,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                         identifier = "photo-card-by-sale-found",
                         tag = "PhotoCards",
                         summary = "매출별 사진 카드 조회 — 있음 (200 + 카드 반환)",
-                        pathParameters = listOf(parameterWithName("saleId").description("매출 UUID")),
+                        pathParameters = listOf(parameterWithName("saleId").description("매출 ID")),
                         responseFields = photoCardResponseFields,
                     ),
                 )
@@ -342,7 +342,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                         identifier = "photo-card-update",
                         tag = "PhotoCards",
                         summary = "사진 카드 수정 (제공된 필드만 반영)",
-                        pathParameters = listOf(parameterWithName("id").description("사진 카드 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("사진 카드 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("title")
@@ -362,9 +362,9 @@ class PhotoCardDocsTest : RestDocsSupport() {
                                     .optional()
                                     .description("사진 목록 변경 (최대 10장, 전체 교체)"),
                                 fieldWithPath("saleId")
-                                    .type(JsonFieldType.STRING)
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
-                                    .description("연결 매출 UUID 변경"),
+                                    .description("연결 매출 ID 변경"),
                             ),
                         responseFields = photoCardResponseFields,
                     ),
@@ -424,7 +424,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                         identifier = "photo-card-reorder",
                         tag = "PhotoCards",
                         summary = "사진 순서 변경 (photos 배열 전체를 원하는 순서로 전달)",
-                        pathParameters = listOf(parameterWithName("id").description("사진 카드 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("사진 카드 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("photos")
@@ -482,7 +482,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                         identifier = "photo-card-delete-photo",
                         tag = "PhotoCards",
                         summary = "사진 1장 삭제 (url 쿼리 파라미터로 대상 지정)",
-                        pathParameters = listOf(parameterWithName("id").description("사진 카드 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("사진 카드 ID")),
                         responseFields = photoCardResponseFields,
                     ),
                 )
@@ -507,7 +507,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                         identifier = "photo-card-delete",
                         tag = "PhotoCards",
                         summary = "사진 카드 삭제 (정리 대상 사진 목록 반환)",
-                        pathParameters = listOf(parameterWithName("id").description("사진 카드 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("사진 카드 ID")),
                         responseFields =
                             listOf(
                                 fieldWithPath("[]")

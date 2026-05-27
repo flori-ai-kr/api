@@ -1,0 +1,30 @@
+# 로컬 개발용 PostgreSQL. 운영은 AWS RDS를 사용하며 이 파일은 로컬 전용이다.
+# 기동:  docker compose up -d
+# 중지:  docker compose down          (데이터 유지 — 볼륨 보존)
+# 초기화: docker compose down -v       (볼륨까지 삭제 → 다음 기동 시 빈 DB, 앱 부팅하면 Flyway가 V1·V2 재적용)
+#
+# 자격증명/포트/타임존은 src/main/resources/application.yml 의 로컬 기본값과 일치한다
+# (DB_URL=localhost:5432/flori, DB_USER=flori, DB_PASSWORD=flori, hibernate.jdbc.time_zone=UTC).
+services:
+  flori-pg:
+    image: postgres:16-alpine   # RDS PostgreSQL 메이저 버전에 맞춰 조정 (현재 16)
+    container_name: flori-pg
+    environment:
+      POSTGRES_DB: flori
+      POSTGRES_USER: flori
+      POSTGRES_PASSWORD: flori
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      - flori-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flori -d flori"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  flori-pg-data:

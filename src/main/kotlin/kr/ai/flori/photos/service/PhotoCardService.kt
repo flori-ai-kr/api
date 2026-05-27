@@ -4,19 +4,14 @@ import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.ErrorCode
 import kr.ai.flori.common.storage.S3PresignService
 import kr.ai.flori.common.tenant.TenantContext
-import kr.ai.flori.photos.dto.FileMetaRequest
-import kr.ai.flori.photos.dto.PhotoCardCreateRequest
-import kr.ai.flori.photos.dto.PhotoCardResponse
-import kr.ai.flori.photos.dto.PhotoCardUpdateRequest
-import kr.ai.flori.photos.dto.PhotoCardsPageResponse
-import kr.ai.flori.photos.dto.UploadTargetResponse
+import kr.ai.flori.photos.dto.*
 import kr.ai.flori.photos.entity.PhotoCard
 import kr.ai.flori.photos.entity.PhotoFile
 import kr.ai.flori.photos.repository.PhotoCardRepository
 import kr.ai.flori.sales.repository.SaleRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
+import java.util.*
 
 /**
  * 사진 카드 서비스. tags/photos는 jsonb·배열, 매출(sale_id) 연동.
@@ -43,10 +38,10 @@ class PhotoCardService(
     }
 
     @Transactional(readOnly = true)
-    fun get(id: UUID): PhotoCardResponse = PhotoCardResponse.from(load(id))
+    fun get(id: Long): PhotoCardResponse = PhotoCardResponse.from(load(id))
 
     @Transactional(readOnly = true)
-    fun getBySaleId(saleId: UUID): PhotoCardResponse? =
+    fun getBySaleId(saleId: Long): PhotoCardResponse? =
         photoCardRepository
             .findFirstByUserIdAndSaleId(TenantContext.currentUserId(), saleId)
             ?.let(PhotoCardResponse::from)
@@ -64,7 +59,7 @@ class PhotoCardService(
 
     @Transactional
     fun update(
-        id: UUID,
+        id: Long,
         request: PhotoCardUpdateRequest,
     ): PhotoCardResponse {
         val card = load(id)
@@ -84,7 +79,7 @@ class PhotoCardService(
 
     /** 삭제 후 정리 대상 사진 목록을 반환(스토리지 클린업은 호출측/후속 처리). */
     @Transactional
-    fun delete(id: UUID): List<PhotoFile> {
+    fun delete(id: Long): List<PhotoFile> {
         val card = load(id)
         val photos = card.photos
         photoCardRepository.delete(card)
@@ -93,7 +88,7 @@ class PhotoCardService(
 
     @Transactional
     fun reorderPhotos(
-        id: UUID,
+        id: Long,
         photos: List<PhotoFile>,
     ): PhotoCardResponse {
         val card = load(id)
@@ -103,7 +98,7 @@ class PhotoCardService(
 
     @Transactional
     fun deletePhoto(
-        id: UUID,
+        id: Long,
         photoUrl: String,
     ): PhotoCardResponse {
         val card = load(id)
@@ -114,7 +109,7 @@ class PhotoCardService(
     /** presigned PUT 발급: 소유권 확인 + 카드당 최대 장수 + 이미지 메타 검증. */
     @Transactional(readOnly = true)
     fun createUploadTargets(
-        cardId: UUID,
+        cardId: Long,
         files: List<FileMetaRequest>,
     ): List<UploadTargetResponse> {
         val card = load(cardId)
@@ -142,7 +137,7 @@ class PhotoCardService(
     }
 
     private fun buildKey(
-        cardId: UUID,
+        cardId: Long,
         name: String,
     ): String {
         val safeName = name.replace(Regex("[^A-Za-z0-9._-]"), "_")
@@ -155,12 +150,12 @@ class PhotoCardService(
         }
     }
 
-    private fun load(id: UUID): PhotoCard =
+    private fun load(id: Long): PhotoCard =
         photoCardRepository.findByIdAndUserId(id, TenantContext.currentUserId())
             ?: throw AppException(ErrorCode.NOT_FOUND, "사진 카드를 찾을 수 없습니다")
 
     /** 매출 연동(sale_id) 소유권 검증 — 타 테넌트 매출 연결 차단. */
-    private fun verifySaleOwnership(saleId: UUID) {
+    private fun verifySaleOwnership(saleId: Long) {
         if (saleRepository.findByIdAndUserId(saleId, TenantContext.currentUserId()) == null) {
             throw AppException(ErrorCode.VALIDATION, "유효하지 않은 매출입니다")
         }

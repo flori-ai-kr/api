@@ -6,27 +6,26 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
 
-interface ReservationRepository : JpaRepository<Reservation, UUID> {
+interface ReservationRepository : JpaRepository<Reservation, Long> {
     fun findByIdAndUserId(
-        id: UUID,
-        userId: UUID,
+        id: Long,
+        userId: Long,
     ): Reservation?
 
     fun findByUserIdAndDateBetweenOrderByDateAscTimeAsc(
-        userId: UUID,
+        userId: Long,
         start: LocalDate,
         end: LocalDate,
     ): List<Reservation>
 
     fun findByUserIdAndSaleIdOrderByDateAsc(
-        userId: UUID,
-        saleId: UUID,
+        userId: Long,
+        saleId: Long,
     ): List<Reservation>
 
     fun findByUserIdAndStatusNotAndDateGreaterThanEqualOrderByDateAscTimeAsc(
-        userId: UUID,
+        userId: Long,
         status: String,
         date: LocalDate,
     ): List<Reservation>
@@ -38,7 +37,7 @@ interface ReservationRepository : JpaRepository<Reservation, UUID> {
             "ORDER BY r.reminderAt DESC",
     )
     fun findTriggeredReminders(
-        @Param("userId") userId: UUID,
+        @Param("userId") userId: Long,
         @Param("now") now: Instant,
         @Param("cutoff") cutoff: Instant,
     ): List<Reservation>
@@ -63,7 +62,7 @@ interface ReservationRepository : JpaRepository<Reservation, UUID> {
             "GROUP BY r.title ORDER BY COUNT(r.title) DESC",
     )
     fun findTitlesByFrequency(
-        @Param("userId") userId: UUID,
+        @Param("userId") userId: Long,
     ): List<String>
 
     @Query(
@@ -72,6 +71,6 @@ interface ReservationRepository : JpaRepository<Reservation, UUID> {
             "GROUP BY r.description ORDER BY COUNT(r.description) DESC",
     )
     fun findDescriptionsByFrequency(
-        @Param("userId") userId: UUID,
+        @Param("userId") userId: Long,
     ): List<String>
 }

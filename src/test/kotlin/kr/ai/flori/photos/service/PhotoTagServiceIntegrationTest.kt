@@ -10,14 +10,13 @@ import kr.ai.flori.common.error.ErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.photos.dto.PhotoCardCreateRequest
 import kr.ai.flori.photos.repository.PhotoCardRepository
-import kr.ai.flori.photos.service.PhotoCardService
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import java.util.UUID
+import java.util.*
 
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @SpringBootTest
@@ -40,7 +39,7 @@ class PhotoTagServiceIntegrationTest {
     @AfterEach
     fun tearDown() = TenantContext.clear()
 
-    private fun newTenant(): UUID {
+    private fun newTenant(): Long {
         val email = "ptag-${UUID.randomUUID()}@flori.dev"
         authService.signup(SignupRequest(email, "password123", null))
         val userId = requireNotNull(userRepository.findByEmail(email)).id!!

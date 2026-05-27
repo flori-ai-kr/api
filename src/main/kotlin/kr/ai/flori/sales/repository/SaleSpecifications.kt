@@ -4,7 +4,6 @@ import jakarta.persistence.criteria.Predicate
 import kr.ai.flori.common.util.monthRange
 import kr.ai.flori.sales.entity.Sale
 import org.springframework.data.jpa.domain.Specification
-import java.util.UUID
 
 /**
  * 매출 목록 동적 필터. 항상 user_id로 격리(멀티테넌시 HARD).
@@ -12,7 +11,7 @@ import java.util.UUID
  */
 object SaleSpecifications {
     fun filter(
-        userId: UUID,
+        userId: Long,
         month: String?,
         categories: List<String>?,
         payments: List<String>?,
@@ -21,7 +20,7 @@ object SaleSpecifications {
     ): Specification<Sale> =
         Specification { root, _, cb ->
             val predicates = mutableListOf<Predicate>()
-            predicates += cb.equal(root.get<UUID>("userId"), userId)
+            predicates += cb.equal(root.get<Long>("userId"), userId)
 
             monthRange(month)?.let { (start, end) ->
                 predicates += cb.greaterThanOrEqualTo(root.get("date"), start)

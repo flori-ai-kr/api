@@ -20,7 +20,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.ResultHandler
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
-import java.util.UUID
+import java.util.*
 
 /**
  * RevenueCatWebhookController RestDocs 문서화.
@@ -133,7 +133,7 @@ class RevenueCatWebhookDocsTest {
                                 fieldWithPath("event.app_user_id")
                                     .type(JsonFieldType.STRING)
                                     .optional()
-                                    .description("앱 사용자 UUID (앱이 RevenueCat에 설정한 식별자, user_id)"),
+                                    .description("앱 사용자 ID (앱이 RevenueCat에 설정한 식별자, user_id)"),
                                 fieldWithPath("event.product_id")
                                     .type(JsonFieldType.STRING)
                                     .optional()

@@ -3,13 +3,7 @@ package kr.ai.flori.insights.service
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.ErrorCode
 import kr.ai.flori.common.tenant.TenantContext
-import kr.ai.flori.insights.dto.InsightScrapResponse
-import kr.ai.flori.insights.dto.InstagramPostResponse
-import kr.ai.flori.insights.dto.PostScrapResponse
-import kr.ai.flori.insights.dto.ScrapCountsResponse
-import kr.ai.flori.insights.dto.ScrapInfo
-import kr.ai.flori.insights.dto.TrendArticleResponse
-import kr.ai.flori.insights.dto.TrendScrapResponse
+import kr.ai.flori.insights.dto.*
 import kr.ai.flori.insights.entity.InsightScrap
 import kr.ai.flori.insights.repository.InsightScrapRepository
 import kr.ai.flori.insights.repository.InstagramPostRepository
@@ -18,7 +12,6 @@ import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
 
 /**
  * 인사이트 스크랩(polymorphic). 멀티테넌시: user_id 격리(HARD).
@@ -32,7 +25,7 @@ class ScrapService(
     @Transactional
     fun toggle(
         targetType: String,
-        targetId: UUID,
+        targetId: Long,
     ): Boolean {
         val userId = TenantContext.currentUserId()
         val type = validType(targetType)
@@ -53,7 +46,7 @@ class ScrapService(
     @Transactional
     fun updateMemo(
         targetType: String,
-        targetId: UUID,
+        targetId: Long,
         memo: String?,
     ): InsightScrapResponse {
         val userId = TenantContext.currentUserId()
@@ -65,7 +58,7 @@ class ScrapService(
     }
 
     @Transactional(readOnly = true)
-    fun scrapMap(targetType: String): Map<UUID, ScrapInfo> =
+    fun scrapMap(targetType: String): Map<Long, ScrapInfo> =
         scrapRepository
             .findByUserIdAndTargetType(TenantContext.currentUserId(), validType(targetType))
             .associate { it.targetId to ScrapInfo(requireNotNull(it.id), it.memo) }
@@ -115,7 +108,7 @@ class ScrapService(
 
     private fun requireTargetExists(
         type: String,
-        targetId: UUID,
+        targetId: Long,
     ) {
         val exists = if (type == TYPE_TREND) trendRepository.existsById(targetId) else postRepository.existsById(targetId)
         if (!exists) {

@@ -16,7 +16,6 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
 
 /**
  * 매출 서비스. 모든 조회/변경은 TenantContext의 userId로 격리(멀티테넌시 HARD).
@@ -45,7 +44,7 @@ class SaleService(
     }
 
     @Transactional(readOnly = true)
-    fun get(id: UUID): SaleResponse = SaleResponse.from(load(id))
+    fun get(id: Long): SaleResponse = SaleResponse.from(load(id))
 
     @Transactional(readOnly = true)
     fun suggestions(): List<String> = saleRepository.findNotesByFrequency(TenantContext.currentUserId())
@@ -80,7 +79,7 @@ class SaleService(
 
     @Transactional
     fun update(
-        id: UUID,
+        id: Long,
         request: SaleUpdateRequest,
     ): SaleResponse {
         val userId = TenantContext.currentUserId()
@@ -107,7 +106,7 @@ class SaleService(
 
     @Transactional
     fun completeUnpaid(
-        id: UUID,
+        id: Long,
         paymentMethod: String,
     ): SaleResponse {
         val sale = load(id)
@@ -117,7 +116,7 @@ class SaleService(
     }
 
     @Transactional
-    fun revertUnpaid(id: UUID): SaleResponse {
+    fun revertUnpaid(id: Long): SaleResponse {
         val sale = load(id)
         if (!sale.isUnpaid) throw AppException(ErrorCode.VALIDATION, "미수 매출이 아닙니다")
         sale.paymentMethod = PaymentMethods.UNPAID
@@ -125,18 +124,18 @@ class SaleService(
     }
 
     @Transactional
-    fun delete(id: UUID) {
+    fun delete(id: Long) {
         saleRepository.delete(load(id))
     }
 
-    private fun load(id: UUID): Sale =
+    private fun load(id: Long): Sale =
         saleRepository.findByIdAndUserId(id, TenantContext.currentUserId())
             ?: throw AppException(ErrorCode.NOT_FOUND, "매출을 찾을 수 없습니다")
 
     // 고객 도메인 리포지토리를 통해 소유권 검증(raw SQL 대신 도메인 경계 준수)
     private fun verifyCustomerOwnership(
-        userId: UUID,
-        customerId: UUID,
+        userId: Long,
+        customerId: Long,
     ) {
         if (customerRepository.findByIdAndUserId(customerId, userId) == null) {
             throw AppException(ErrorCode.VALIDATION, "유효하지 않은 고객입니다")

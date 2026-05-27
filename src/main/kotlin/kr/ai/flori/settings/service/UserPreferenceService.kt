@@ -12,7 +12,7 @@ import java.time.Instant
  * 유저 설정(하단바). 없으면 기본값 반환, 변경은 upsert.
  *
  * 멀티테넌시: UserPreferences의 PK가 user_id이므로 항상 [TenantContext.currentUserId]를 키로 조회한다
- * (임의 UUID를 키로 넘기지 말 것 — 격리가 호출부 규약에 의존한다).
+ * (임의 Long를 키로 넘기지 말 것 — 격리가 호출부 규약에 의존한다).
  */
 @Service
 class UserPreferenceService(

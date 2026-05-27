@@ -1,21 +1,16 @@
 package kr.ai.flori.settings.repository
 
-import kr.ai.flori.settings.entity.ExpenseCategory
-import kr.ai.flori.settings.entity.ExpensePaymentMethod
-import kr.ai.flori.settings.entity.LabelSetting
-import kr.ai.flori.settings.entity.SaleCategory
-import kr.ai.flori.settings.entity.SalePaymentMethod
+import kr.ai.flori.settings.entity.*
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.repository.NoRepositoryBean
-import java.util.UUID
 
 @NoRepositoryBean
-interface LabelSettingRepository<T : LabelSetting> : JpaRepository<T, UUID> {
-    fun findByUserIdOrderBySortOrderAsc(userId: UUID): List<T>
+interface LabelSettingRepository<T : LabelSetting> : JpaRepository<T, Long> {
+    fun findByUserIdOrderBySortOrderAsc(userId: Long): List<T>
 
     fun findByIdAndUserId(
-        id: UUID,
-        userId: UUID,
+        id: Long,
+        userId: Long,
     ): T?
 }
 

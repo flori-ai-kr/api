@@ -5,7 +5,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
-import java.util.UUID
 
 class TenantContextTest {
     @AfterEach
@@ -15,7 +14,7 @@ class TenantContextTest {
 
     @Test
     fun `set 후 currentUserId가 동일 값을 반환한다`() {
-        val id = UUID.randomUUID()
+        val id = 42L
         TenantContext.set(id)
         assertThat(TenantContext.currentUserId()).isEqualTo(id)
     }

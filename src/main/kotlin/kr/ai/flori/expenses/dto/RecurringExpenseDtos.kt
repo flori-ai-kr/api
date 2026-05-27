@@ -7,7 +7,6 @@ import kr.ai.flori.expenses.entity.RecurringExpense
 import kr.ai.flori.expenses.entity.YearlyDate
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
 
 /** 고정비 생성/수정 공통 입력(전체 교체). */
 data class RecurringExpenseRequest(
@@ -56,7 +55,7 @@ data class RecurringInstanceUpdateRequest(
 )
 
 data class RecurringExpenseResponse(
-    val id: UUID,
+    val id: Long,
     val itemName: String,
     val category: String,
     val unitPrice: Int,

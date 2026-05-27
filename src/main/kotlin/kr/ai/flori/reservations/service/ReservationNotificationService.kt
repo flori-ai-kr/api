@@ -11,7 +11,6 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
 
 /**
  * 예약 푸시 스케줄러(Vercel Cron 대체).
@@ -87,12 +86,12 @@ class ReservationNotificationService(
 
     /** 알림 멱등성 claim: 처음이면 true(발송 진행), 이미 발송됐으면 false. */
     private fun claimOnce(
-        userId: UUID,
+        userId: Long,
         type: String,
         dedupKey: String,
     ): Boolean =
         jdbcTemplate.update(
-            "INSERT INTO notification_log (user_id, notification_type, dedup_key) VALUES (?::uuid, ?, ?) " +
+            "INSERT INTO notification_log (user_id, notification_type, dedup_key) VALUES (?::bigint, ?, ?) " +
                 "ON CONFLICT (user_id, notification_type, dedup_key) DO NOTHING",
             userId,
             type,
@@ -100,13 +99,13 @@ class ReservationNotificationService(
         ) == 1
 
     private fun notify(
-        userId: UUID,
+        userId: Long,
         title: String,
         body: String,
     ) {
         val tokens =
             jdbcTemplate.queryForList(
-                "SELECT endpoint FROM push_subscriptions WHERE user_id = ?::uuid AND is_active = TRUE",
+                "SELECT endpoint FROM push_subscriptions WHERE user_id = ?::bigint AND is_active = TRUE",
                 String::class.java,
                 userId,
             )

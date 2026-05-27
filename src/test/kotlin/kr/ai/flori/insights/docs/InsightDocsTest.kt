@@ -14,7 +14,7 @@ import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
 import org.springframework.test.web.servlet.get
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 
 /**
  * InsightController RestDocs 문서화.
@@ -31,8 +31,8 @@ class InsightDocsTest : RestDocsSupport() {
     @Autowired
     private lateinit var postRepository: InstagramPostRepository
 
-    /** 트렌드 기사 시드 → 저장된 UUID 반환 */
-    private fun seedTrend(category: String = "flower"): UUID {
+    /** 트렌드 기사 시드 → 저장된 ID 반환 */
+    private fun seedTrend(category: String = "flower"): Long {
         val article =
             TrendArticle(
                 category = category,
@@ -49,7 +49,7 @@ class InsightDocsTest : RestDocsSupport() {
     }
 
     /** 인스타 포스트 시드 — Flyway에서 계정이 이미 시드되어 있으므로 첫 번째 계정을 사용 */
-    private fun seedPost(): UUID {
+    private fun seedPost(): Long {
         val account = accountRepository.findByActiveTrueOrderBySortOrderAscUsernameAsc().first()
         val post =
             InstagramPost(
@@ -68,7 +68,7 @@ class InsightDocsTest : RestDocsSupport() {
     /** TrendArticleResponse 항목 필드 — 단건 목록용 prefix 없이 */
     private val trendItemFields =
         listOf(
-            fieldWithPath("id").type(JsonFieldType.STRING).description("트렌드 UUID"),
+            fieldWithPath("id").type(JsonFieldType.NUMBER).description("트렌드 ID"),
             fieldWithPath("category").type(JsonFieldType.STRING).description("카테고리"),
             fieldWithPath("title").type(JsonFieldType.STRING).description("제목"),
             fieldWithPath("summary").type(JsonFieldType.STRING).description("요약"),
@@ -83,7 +83,7 @@ class InsightDocsTest : RestDocsSupport() {
     /** InstagramAccountResponse 필드 */
     private val accountItemFields =
         listOf(
-            fieldWithPath("id").type(JsonFieldType.STRING).description("계정 UUID"),
+            fieldWithPath("id").type(JsonFieldType.NUMBER).description("계정 ID"),
             fieldWithPath("username").type(JsonFieldType.STRING).description("인스타그램 유저네임"),
             fieldWithPath("displayName").type(JsonFieldType.STRING).optional().description("표시명 (null 가능)"),
             fieldWithPath("profileUrl").type(JsonFieldType.STRING).description("프로필 URL"),
@@ -228,8 +228,8 @@ class InsightDocsTest : RestDocsSupport() {
                         responseFields =
                             listOf(
                                 fieldWithPath("[]").type(JsonFieldType.ARRAY).description("포스트 목록"),
-                                fieldWithPath("[].id").type(JsonFieldType.STRING).description("포스트 UUID"),
-                                fieldWithPath("[].accountId").type(JsonFieldType.STRING).description("계정 UUID"),
+                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("포스트 ID"),
+                                fieldWithPath("[].accountId").type(JsonFieldType.NUMBER).description("계정 ID"),
                                 fieldWithPath("[].shortcode").type(JsonFieldType.STRING).description("인스타그램 shortcode"),
                                 fieldWithPath("[].permalink").type(JsonFieldType.STRING).description("퍼머링크 URL"),
                                 fieldWithPath("[].imageUrls").type(JsonFieldType.ARRAY).description("이미지 URL 목록"),
@@ -237,7 +237,7 @@ class InsightDocsTest : RestDocsSupport() {
                                 fieldWithPath("[].likeCount").type(JsonFieldType.NUMBER).description("좋아요 수"),
                                 fieldWithPath("[].postedAt").type(JsonFieldType.STRING).description("게시 시각 (ISO-8601)"),
                                 fieldWithPath("[].account").type(JsonFieldType.OBJECT).optional().description("계정 정보 (null 가능)"),
-                                fieldWithPath("[].account.id").type(JsonFieldType.STRING).optional().description("계정 UUID"),
+                                fieldWithPath("[].account.id").type(JsonFieldType.NUMBER).optional().description("계정 ID"),
                                 fieldWithPath("[].account.username").type(JsonFieldType.STRING).optional().description("유저네임"),
                                 fieldWithPath("[].account.displayName").type(JsonFieldType.STRING).optional().description("표시명 (null 가능)"),
                                 fieldWithPath("[].account.profileUrl").type(JsonFieldType.STRING).optional().description("프로필 URL"),

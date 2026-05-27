@@ -2,13 +2,12 @@ package kr.ai.flori.photos.repository
 
 import kr.ai.flori.photos.entity.PhotoTag
 import org.springframework.data.jpa.repository.JpaRepository
-import java.util.UUID
 
-interface PhotoTagRepository : JpaRepository<PhotoTag, UUID> {
+interface PhotoTagRepository : JpaRepository<PhotoTag, Long> {
     fun findByIdAndUserId(
-        id: UUID,
-        userId: UUID,
+        id: Long,
+        userId: Long,
     ): PhotoTag?
 
-    fun findByUserIdOrderByName(userId: UUID): List<PhotoTag>
+    fun findByUserIdOrderByName(userId: Long): List<PhotoTag>
 }

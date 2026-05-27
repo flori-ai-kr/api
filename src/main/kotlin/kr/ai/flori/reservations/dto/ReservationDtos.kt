@@ -6,7 +6,6 @@ import kr.ai.flori.reservations.entity.Reservation
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
-import java.util.UUID
 
 data class ReservationCreateRequest(
     @field:NotNull(message = "날짜는 필수입니다")
@@ -32,7 +31,7 @@ data class ReservationUpdateRequest(
     val description: String? = null,
     val amount: Int? = null,
     val status: String? = null,
-    val saleId: UUID? = null,
+    val saleId: Long? = null,
     val reminderAt: Instant? = null,
     val pickupCompleted: Boolean? = null,
 )
@@ -53,7 +52,7 @@ data class PickupCompleteRequest(
 )
 
 data class ReservationResponse(
-    val id: UUID,
+    val id: Long,
     val date: LocalDate,
     val time: LocalTime?,
     val customerName: String,
@@ -61,7 +60,7 @@ data class ReservationResponse(
     val title: String,
     val description: String?,
     val status: String,
-    val saleId: UUID?,
+    val saleId: Long?,
     val amount: Int,
     val reminderAt: Instant?,
     val reminderSent: Boolean,

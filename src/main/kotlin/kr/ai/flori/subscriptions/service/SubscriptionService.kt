@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
-import java.util.UUID
 
 /**
  * 구독 상태 서비스. 서버가 구독 상태의 SSOT.
@@ -41,7 +40,7 @@ class SubscriptionService(
 
     /** 게이팅 헬퍼: 활성(active/in_grace) 구독 보유 여부. */
     @Transactional(readOnly = true)
-    fun hasActiveSubscription(userId: UUID): Boolean =
+    fun hasActiveSubscription(userId: Long): Boolean =
         subscriptionRepository.findByUserId(userId)?.status in SubscriptionResponse.ACTIVE_STATES
 
     /** 게이팅 가드: 현재 사용자가 활성 구독이 없으면 403. */
@@ -70,7 +69,7 @@ class SubscriptionService(
     }
 
     private fun upsert(
-        userId: UUID,
+        userId: Long,
         event: RevenueCatEvent,
         newStatus: String,
     ) {
@@ -92,7 +91,7 @@ class SubscriptionService(
 
     private fun recordEvent(
         event: RevenueCatEvent,
-        userId: UUID?,
+        userId: Long?,
     ) {
         val entity =
             SubscriptionEvent(
@@ -107,8 +106,8 @@ class SubscriptionService(
         eventRepository.save(entity)
     }
 
-    private fun resolveUserId(appUserId: String?): UUID? {
-        val userId = appUserId?.let { runCatching { UUID.fromString(it) }.getOrNull() } ?: return null
+    private fun resolveUserId(appUserId: String?): Long? {
+        val userId = appUserId?.let { it.toLongOrNull() } ?: return null
         return if (userRepository.existsById(userId)) userId else null
     }
 

@@ -27,7 +27,7 @@ class MeDocsTest : RestDocsSupport() {
                         summary = "내 프로필 조회",
                         responseFields =
                             listOf(
-                                fieldWithPath("id").type(JsonFieldType.STRING).description("사용자 UUID"),
+                                fieldWithPath("id").type(JsonFieldType.NUMBER).description("사용자 ID"),
                                 fieldWithPath("email").type(JsonFieldType.STRING).description("로그인 이메일"),
                                 fieldWithPath("name").type(JsonFieldType.STRING).optional().description("표시 이름(미설정 시 null)"),
                             ),

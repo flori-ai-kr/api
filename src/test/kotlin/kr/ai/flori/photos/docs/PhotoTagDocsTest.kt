@@ -22,7 +22,7 @@ class PhotoTagDocsTest : RestDocsSupport() {
     /** PhotoTagResponse 공통 응답 필드 — 단건/목록에서 재사용 */
     private val photoTagResponseFields =
         listOf(
-            fieldWithPath("id").type(JsonFieldType.STRING).description("태그 UUID"),
+            fieldWithPath("id").type(JsonFieldType.NUMBER).description("태그 ID"),
             fieldWithPath("name").type(JsonFieldType.STRING).description("태그 이름"),
             fieldWithPath("color").type(JsonFieldType.STRING).description("태그 색상 (hex 코드, 예: #ff0000)"),
             fieldWithPath("createdAt").type(JsonFieldType.STRING).description("생성 시각 (ISO-8601)"),
@@ -66,7 +66,7 @@ class PhotoTagDocsTest : RestDocsSupport() {
                         responseFields =
                             listOf(
                                 fieldWithPath("[]").type(JsonFieldType.ARRAY).description("태그 목록"),
-                                fieldWithPath("[].id").type(JsonFieldType.STRING).description("태그 UUID"),
+                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("태그 ID"),
                                 fieldWithPath("[].name").type(JsonFieldType.STRING).description("태그 이름"),
                                 fieldWithPath("[].color")
                                     .type(JsonFieldType.STRING)
@@ -146,7 +146,7 @@ class PhotoTagDocsTest : RestDocsSupport() {
                         identifier = "photo-tag-update",
                         tag = "PhotoTags",
                         summary = "태그 수정 (이름·색상 전체 교체)",
-                        pathParameters = listOf(parameterWithName("id").description("태그 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("태그 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("name")
@@ -180,7 +180,7 @@ class PhotoTagDocsTest : RestDocsSupport() {
                         identifier = "photo-tag-delete",
                         tag = "PhotoTags",
                         summary = "태그 삭제 (사용 중인 모든 사진 카드에서도 자동 제거)",
-                        pathParameters = listOf(parameterWithName("id").description("태그 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("태그 ID")),
                     ),
                 )
             }

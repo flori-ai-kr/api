@@ -23,7 +23,7 @@ class CustomerDocsTest : RestDocsSupport() {
     /** CustomerResponse 공통 응답 필드 — 단건 조회/생성/수정/등급변경에서 재사용 */
     private val customerResponseFields =
         listOf(
-            fieldWithPath("id").type(JsonFieldType.STRING).description("고객 UUID"),
+            fieldWithPath("id").type(JsonFieldType.NUMBER).description("고객 ID"),
             fieldWithPath("name").type(JsonFieldType.STRING).description("고객 이름"),
             fieldWithPath("phone").type(JsonFieldType.STRING).description("전화번호"),
             fieldWithPath("grade")
@@ -58,7 +58,7 @@ class CustomerDocsTest : RestDocsSupport() {
     /** CustomerSearchResult 공통 응답 필드 — search / check-phone에서 재사용 */
     private val customerSearchResultFields =
         listOf(
-            fieldWithPath("id").type(JsonFieldType.STRING).description("고객 UUID"),
+            fieldWithPath("id").type(JsonFieldType.NUMBER).description("고객 ID"),
             fieldWithPath("name").type(JsonFieldType.STRING).description("고객 이름"),
             fieldWithPath("phone").type(JsonFieldType.STRING).description("전화번호"),
             fieldWithPath("grade")
@@ -70,7 +70,7 @@ class CustomerDocsTest : RestDocsSupport() {
     private val salesPageResponseFields =
         listOf(
             fieldWithPath("sales").type(JsonFieldType.ARRAY).description("매출 목록"),
-            fieldWithPath("sales[].id").type(JsonFieldType.STRING).description("매출 UUID"),
+            fieldWithPath("sales[].id").type(JsonFieldType.NUMBER).description("매출 ID"),
             fieldWithPath("sales[].date").type(JsonFieldType.STRING).description("매출 발생일 (yyyy-MM-dd)"),
             fieldWithPath("sales[].productName")
                 .type(JsonFieldType.STRING)
@@ -95,9 +95,9 @@ class CustomerDocsTest : RestDocsSupport() {
                 .optional()
                 .description("고객 전화번호"),
             fieldWithPath("sales[].customerId")
-                .type(JsonFieldType.STRING)
+                .type(JsonFieldType.NUMBER)
                 .optional()
-                .description("연결된 고객 UUID"),
+                .description("연결된 고객 ID"),
             fieldWithPath("sales[].note").type(JsonFieldType.STRING).optional().description("비고"),
             fieldWithPath("sales[].isUnpaid").type(JsonFieldType.BOOLEAN).description("미수 여부"),
             fieldWithPath("sales[].hasReview")
@@ -171,8 +171,8 @@ class CustomerDocsTest : RestDocsSupport() {
                             listOf(
                                 fieldWithPath("[]").type(JsonFieldType.ARRAY).description("고객 목록"),
                                 fieldWithPath("[].id")
-                                    .type(JsonFieldType.STRING)
-                                    .description("고객 UUID"),
+                                    .type(JsonFieldType.NUMBER)
+                                    .description("고객 ID"),
                                 fieldWithPath("[].name")
                                     .type(JsonFieldType.STRING)
                                     .description("고객 이름"),
@@ -238,8 +238,8 @@ class CustomerDocsTest : RestDocsSupport() {
                             listOf(
                                 fieldWithPath("[]").type(JsonFieldType.ARRAY).description("검색 결과 목록"),
                                 fieldWithPath("[].id")
-                                    .type(JsonFieldType.STRING)
-                                    .description("고객 UUID"),
+                                    .type(JsonFieldType.NUMBER)
+                                    .description("고객 ID"),
                                 fieldWithPath("[].name")
                                     .type(JsonFieldType.STRING)
                                     .description("고객 이름"),
@@ -328,7 +328,7 @@ class CustomerDocsTest : RestDocsSupport() {
                         identifier = "customer-get",
                         tag = "Customers",
                         summary = "고객 단건 조회 (구매 통계 포함)",
-                        pathParameters = listOf(parameterWithName("id").description("고객 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("고객 ID")),
                         responseFields = customerResponseFields,
                     ),
                 )
@@ -356,7 +356,7 @@ class CustomerDocsTest : RestDocsSupport() {
                         identifier = "customer-sales",
                         tag = "Customers",
                         summary = "고객별 매출 조회 (페이지네이션)",
-                        pathParameters = listOf(parameterWithName("id").description("고객 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("고객 ID")),
                         responseFields = salesPageResponseFields,
                     ),
                 )
@@ -482,7 +482,7 @@ class CustomerDocsTest : RestDocsSupport() {
                         identifier = "customer-update",
                         tag = "Customers",
                         summary = "고객 수정 (제공된 필드만 반영)",
-                        pathParameters = listOf(parameterWithName("id").description("고객 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("고객 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("name")
@@ -532,7 +532,7 @@ class CustomerDocsTest : RestDocsSupport() {
                         identifier = "customer-update-grade",
                         tag = "Customers",
                         summary = "고객 등급 변경",
-                        pathParameters = listOf(parameterWithName("id").description("고객 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("고객 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("grade")
@@ -563,7 +563,7 @@ class CustomerDocsTest : RestDocsSupport() {
                         identifier = "customer-delete",
                         tag = "Customers",
                         summary = "고객 삭제",
-                        pathParameters = listOf(parameterWithName("id").description("고객 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("고객 ID")),
                     ),
                 )
             }

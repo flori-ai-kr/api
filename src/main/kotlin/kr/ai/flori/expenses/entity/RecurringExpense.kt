@@ -1,16 +1,10 @@
 package kr.ai.flori.expenses.entity
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.Table
+import jakarta.persistence.*
 import kr.ai.flori.common.entity.BaseEntity
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 import java.time.LocalDate
-import java.util.UUID
 
 /** 매년 반복 일자(월/일). yearly_dates jsonb 요소. */
 data class YearlyDate(
@@ -26,7 +20,7 @@ data class YearlyDate(
 @Table(name = "recurring_expenses")
 class RecurringExpense(
     @Column(name = "user_id", nullable = false)
-    var userId: UUID,
+    var userId: Long,
     @Column(name = "item_name", nullable = false)
     var itemName: String,
     @Column(name = "category", nullable = false)
@@ -43,9 +37,9 @@ class RecurringExpense(
     var startDate: LocalDate,
 ) : BaseEntity() {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id: UUID? = null
+    var id: Long? = null
 
     @Column(name = "interval_count", nullable = false)
     var intervalCount: Int = 1

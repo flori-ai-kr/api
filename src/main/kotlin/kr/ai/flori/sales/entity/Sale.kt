@@ -1,14 +1,8 @@
 package kr.ai.flori.sales.entity
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.Table
+import jakarta.persistence.*
 import kr.ai.flori.common.entity.BaseEntity
 import java.time.LocalDate
-import java.util.UUID
 
 /**
  * 매출. 멀티테넌시: 모든 조회/변경은 user_id로 격리한다(서비스/리포지토리에서 강제).
@@ -17,7 +11,7 @@ import java.util.UUID
 @Table(name = "sales")
 class Sale(
     @Column(name = "user_id", nullable = false)
-    var userId: UUID,
+    var userId: Long,
     @Column(name = "date", nullable = false)
     var date: LocalDate,
     @Column(name = "product_name", nullable = false)
@@ -30,9 +24,9 @@ class Sale(
     var paymentMethod: String,
 ) : BaseEntity() {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id: UUID? = null
+    var id: Long? = null
 
     @Column(name = "reservation_channel")
     var reservationChannel: String = "other"
@@ -47,7 +41,7 @@ class Sale(
     var customerPhone: String? = null
 
     @Column(name = "customer_id")
-    var customerId: UUID? = null
+    var customerId: Long? = null
 
     @Column(name = "note")
     var note: String? = null

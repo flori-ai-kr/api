@@ -115,7 +115,7 @@ class PhotoUploadTargetsDocsTest : RestDocsSupport() {
                         identifier = "photo-card-upload-targets",
                         tag = "PhotoCards",
                         summary = "사진 업로드 타깃 발급 (S3 presigned PUT URL + CloudFront 파일 URL)",
-                        pathParameters = listOf(parameterWithName("id").description("사진 카드 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("사진 카드 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("files")
