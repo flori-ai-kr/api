@@ -80,16 +80,15 @@ class InsightService(
         // region 필터는 fetch 후 적용하므로 버퍼를 더 가져온다.
         val fetchLimit = if (region != null) safeLimit * REGION_BUFFER else safeLimit
         val pageable = PageRequest.of(0, fetchLimit, sort)
-        var posts =
+        val fetched =
             if (accountId != null) {
                 postRepository.findFeedByAccount(accountId, since, pageable)
             } else {
                 postRepository.findFeed(since, pageable)
             }
-        if (region != null) {
-            posts = posts.filter { it.account?.region == region }
-        }
-        return posts.take(safeLimit).map(InstagramPostResponse::from)
+        val filtered =
+            if (region != null) fetched.filter { it.account?.region == region } else fetched
+        return filtered.take(safeLimit).map(InstagramPostResponse::from)
     }
 
     private companion object {

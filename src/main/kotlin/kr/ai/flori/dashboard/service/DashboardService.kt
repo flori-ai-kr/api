@@ -21,6 +21,7 @@ import java.sql.Date
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.UUID
+import kotlin.math.roundToInt
 
 /**
  * 대시보드/통계. 집계는 네이티브 SQL(JdbcTemplate), 모든 쿼리 user_id 바인딩(테넌트 격리·인젝션 방지).
@@ -217,7 +218,7 @@ class DashboardService(
     private fun percentage(
         amount: Long,
         total: Long,
-    ): Int = if (total > 0) Math.round(amount.toDouble() / total * PERCENT).toInt() else 0
+    ): Int = if (total > 0) (amount.toDouble() / total * PERCENT).roundToInt() else 0
 
     private companion object {
         const val RECENT_LIMIT = 5
