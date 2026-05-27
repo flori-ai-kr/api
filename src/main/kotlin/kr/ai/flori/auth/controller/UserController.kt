@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
  * 현재 로그인 사용자 조회 · 이메일 보완. 보호 엔드포인트(인증 필요) — JWT 필터 + TenantContext 격리를 활용.
  */
 @RestController
-class MeController(
+class UserController(
     private val authService: AuthService,
 ) {
     @GetMapping("/me")
