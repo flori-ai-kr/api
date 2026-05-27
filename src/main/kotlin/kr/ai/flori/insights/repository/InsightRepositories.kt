@@ -28,8 +28,6 @@ interface InstagramAccountRepository : JpaRepository<InstagramAccount, UUID> {
     fun findByActiveTrueOrderBySortOrderAscUsernameAsc(): List<InstagramAccount>
 
     fun findAllByOrderBySortOrderAscUsernameAsc(): List<InstagramAccount>
-
-    fun findByUsername(username: String): InstagramAccount?
 }
 
 interface InstagramPostRepository : JpaRepository<InstagramPost, UUID> {

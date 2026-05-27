@@ -56,7 +56,6 @@ class TenantIsolationGuardTest {
             "TrendArticleRepository#countByCategory",
             "InstagramAccountRepository#findByActiveTrueOrderBySortOrderAscUsernameAsc",
             "InstagramAccountRepository#findAllByOrderBySortOrderAscUsernameAsc",
-            "InstagramAccountRepository#findByUsername",
             "InstagramPostRepository#findFeed",
             "InstagramPostRepository#findFeedByAccount",
             "InstagramPostRepository#findWithAccountByIdIn",
