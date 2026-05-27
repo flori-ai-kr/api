@@ -13,7 +13,8 @@ import java.util.UUID
 /**
  * 요청마다 짧은 추적 ID(traceId)를 MDC에 넣어, 한 요청에서 발생한 모든 로그를 묶을 수 있게 한다.
  *
- * - 들어온 X-Request-Id 헤더가 있으면 그대로(정규화 후) 쓰고, 없으면 UUID 앞 8자리를 생성한다.
+ * - 들어온 X-Request-Id 헤더가 안전 패턴(영숫자+하이픈)이면 그대로 쓰고, 아니면 UUID 앞 8자리를 생성한다.
+ *   (헤더를 그대로 MDC/응답헤더에 넣으면 CRLF 등으로 로그 인젝션·헤더 분리가 가능하므로 화이트리스트 검증.)
  * - 응답 헤더에도 X-Request-Id를 실어 클라이언트/프록시가 동일 ID로 상호 추적할 수 있게 한다.
  * - finally에서 반드시 MDC를 비운다(스레드풀 재사용 시 이전 요청 ID 누수 방지).
  *
@@ -38,9 +39,9 @@ class TraceIdFilter : OncePerRequestFilter() {
     }
 
     private fun resolveTraceId(request: HttpServletRequest): String {
-        val incoming = request.getHeader(REQUEST_ID_HEADER)?.trim()
-        if (!incoming.isNullOrEmpty()) {
-            return incoming.take(MAX_TRACE_ID_LENGTH)
+        val incoming = request.getHeader(REQUEST_ID_HEADER)?.trim()?.take(MAX_TRACE_ID_LENGTH)
+        if (!incoming.isNullOrEmpty() && SAFE_TRACE_ID.matches(incoming)) {
+            return incoming
         }
         return UUID.randomUUID().toString().substring(0, GENERATED_TRACE_ID_LENGTH)
     }
@@ -50,5 +51,6 @@ class TraceIdFilter : OncePerRequestFilter() {
         const val REQUEST_ID_HEADER = "X-Request-Id"
         const val GENERATED_TRACE_ID_LENGTH = 8
         const val MAX_TRACE_ID_LENGTH = 64
+        val SAFE_TRACE_ID = Regex("^[A-Za-z0-9-]+\$")
     }
 }

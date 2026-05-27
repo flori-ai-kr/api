@@ -1,5 +1,7 @@
 package kr.ai.flori.settings.controller
 
+import jakarta.validation.Valid
+import kr.ai.flori.settings.dto.UpdateBottomNavRequest
 import kr.ai.flori.settings.dto.UserPreferencesResponse
 import kr.ai.flori.settings.service.UserPreferenceService
 import org.springframework.web.bind.annotation.GetMapping
@@ -23,10 +25,6 @@ class UserPreferenceController(
 
     @PutMapping("/preferences/bottom-nav")
     fun updateBottomNav(
-        @RequestBody request: BottomNavUpdateRequest,
-    ): UserPreferencesResponse = service.updateBottomNav(request.items)
+        @Valid @RequestBody request: UpdateBottomNavRequest,
+    ): UserPreferencesResponse = service.updateBottomNav(requireNotNull(request.items))
 }
-
-data class BottomNavUpdateRequest(
-    val items: List<String>,
-)
