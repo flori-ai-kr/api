@@ -70,7 +70,8 @@ class SchemaMigrationIntegrationTest {
     fun `user_id 외래키는 users 테이블을 참조한다`() {
         val userId =
             jdbcTemplate.queryForObject(
-                "INSERT INTO users(email, password_hash) VALUES ('tenant@flori.dev', 'x') RETURNING id",
+                "INSERT INTO users(email, provider, provider_id) " +
+                    "VALUES ('tenant@flori.dev', 'GOOGLE', 'tenant-fk-1') RETURNING id",
                 Long::class.java,
             )
 

@@ -9,15 +9,15 @@ import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
 import org.springframework.test.web.servlet.post
 
 /**
- * 온보딩 API RestDocs 문서화. 실제 보안 체인 + Zonky PG에서 POST /me/onboarding을 1회 호출하며 OpenAPI를 생성한다.
+ * 가게 프로필 편집 API RestDocs 문서화. 실제 보안 체인 + Zonky PG에서 POST /me/profile을 1회 호출하며 OpenAPI를 생성한다.
  */
 class OnboardingDocsTest : RestDocsSupport() {
     @Test
-    fun `온보딩 제출 문서화`() {
+    fun `가게 프로필 편집 문서화`() {
         val token = signupAndToken()
 
         mockMvc
-            .post("/me/onboarding") {
+            .post("/me/profile") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -35,9 +35,9 @@ class OnboardingDocsTest : RestDocsSupport() {
             .andDo {
                 handle(
                     docs(
-                        identifier = "me-onboarding",
+                        identifier = "me-profile-update",
                         tag = "Me",
-                        summary = "온보딩 제출(가게 프로필 저장)",
+                        summary = "가게 프로필 편집(upsert)",
                         requestFields =
                             listOf(
                                 fieldWithPath("name").type(JsonFieldType.STRING).description("가게명(필수)"),

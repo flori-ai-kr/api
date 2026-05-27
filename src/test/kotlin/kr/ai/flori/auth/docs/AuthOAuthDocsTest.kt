@@ -15,7 +15,10 @@ import org.springframework.test.web.servlet.post
 
 /**
  * 소셜 OAuth 로그인(카카오/구글/네이버) RestDocs 문서화.
+ *
  * 실제 제공자 호출 대신 SocialOAuthClient 스텁 빈(KAKAO/GOOGLE/NAVER)으로 실제 구현 빈을 오버라이드한다.
+ * 스텁은 고정 신원을 반환하지만, oauth 경로는 User를 생성하지 않으므로(가입은 register/complete에서만)
+ * 매 호출이 항상 신규 신원으로 처리되어 OAuthResult(registered=false)를 문서화한다.
  */
 @Import(AuthOAuthDocsTest.StubSocialConfig::class)
 @TestPropertySource(properties = ["spring.main.allow-bean-definition-overriding=true"])
@@ -52,23 +55,23 @@ class AuthOAuthDocsTest : RestDocsSupport() {
             }
     }
 
-    private val tokenResponseFields =
+    private val oauthResultFields =
         listOf(
-            fieldWithPath("accessToken").type(JsonFieldType.STRING).description("access 토큰"),
-            fieldWithPath("refreshToken").type(JsonFieldType.STRING).description("refresh 토큰"),
-            fieldWithPath("expiresIn").type(JsonFieldType.NUMBER).description("access 만료까지 남은 초"),
-            fieldWithPath("tokenType").type(JsonFieldType.STRING).description("토큰 타입(Bearer)"),
+            fieldWithPath("registered").type(JsonFieldType.BOOLEAN).description("기존 사용자 여부(true=로그인, false=가입 필요)"),
+            fieldWithPath("token").type(JsonFieldType.OBJECT).optional().description("로그인 토큰(registered=true일 때만)"),
+            fieldWithPath("registerToken").type(JsonFieldType.STRING).optional().description("가입 대기 토큰(registered=false, 5분 TTL)"),
+            fieldWithPath("socialEmail").type(JsonFieldType.STRING).optional().description("소셜 이메일(온보딩 기본값, 없으면 null)"),
+            fieldWithPath("socialNickname").type(JsonFieldType.STRING).optional().description("소셜 닉네임(온보딩 기본값, 없으면 null)"),
         )
 
     @Test
-    fun `카카오 로그인 문서화 — 신규 생성 후 동일 신원 재로그인`() {
-        val body = json(mapOf("code" to "auth-code", "redirectUri" to "flori://oauth/kakao"))
-
+    fun `카카오 로그인 문서화 — 신규 신원이라 registerToken 반환`() {
         mockMvc
             .post("/auth/oauth/kakao") {
                 contentType = MediaType.APPLICATION_JSON
-                content = body
+                content = json(mapOf("code" to "auth-code", "redirectUri" to "flori://oauth/kakao"))
             }.andExpect { status { isOk() } }
+            .andExpect { jsonPath("$.registered") { value(false) } }
             .andDo {
                 handle(
                     docs(
@@ -80,28 +83,20 @@ class AuthOAuthDocsTest : RestDocsSupport() {
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("카카오 authorization code"),
                                 fieldWithPath("redirectUri").type(JsonFieldType.STRING).description("앱에서 사용한 redirect URI"),
                             ),
-                        responseFields = tokenResponseFields,
+                        responseFields = oauthResultFields,
                     ),
                 )
             }
-
-        // 동일 신원 재로그인 → 생성 없이 200 (find-existing 경로 커버)
-        mockMvc
-            .post("/auth/oauth/kakao") {
-                contentType = MediaType.APPLICATION_JSON
-                content = body
-            }.andExpect { status { isOk() } }
     }
 
     @Test
-    fun `구글 로그인 문서화 — 신규 생성 후 동일 신원 재로그인`() {
-        val body = json(mapOf("code" to "auth-code", "redirectUri" to "https://flori.kr/auth/callback/google"))
-
+    fun `구글 로그인 문서화 — 신규 신원이라 registerToken 반환`() {
         mockMvc
             .post("/auth/oauth/google") {
                 contentType = MediaType.APPLICATION_JSON
-                content = body
+                content = json(mapOf("code" to "auth-code", "redirectUri" to "https://flori.kr/auth/callback/google"))
             }.andExpect { status { isOk() } }
+            .andExpect { jsonPath("$.registered") { value(false) } }
             .andDo {
                 handle(
                     docs(
@@ -113,34 +108,27 @@ class AuthOAuthDocsTest : RestDocsSupport() {
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("구글 authorization code"),
                                 fieldWithPath("redirectUri").type(JsonFieldType.STRING).description("앱에서 사용한 redirect URI"),
                             ),
-                        responseFields = tokenResponseFields,
+                        responseFields = oauthResultFields,
                     ),
                 )
             }
-
-        mockMvc
-            .post("/auth/oauth/google") {
-                contentType = MediaType.APPLICATION_JSON
-                content = body
-            }.andExpect { status { isOk() } }
     }
 
     @Test
-    fun `네이버 로그인 문서화 — 신규 생성 후 동일 신원 재로그인`() {
-        val body =
-            json(
-                mapOf(
-                    "code" to "auth-code",
-                    "redirectUri" to "https://flori.kr/auth/callback/naver",
-                    "state" to "state-123",
-                ),
-            )
-
+    fun `네이버 로그인 문서화 — 신규 신원이라 registerToken 반환`() {
         mockMvc
             .post("/auth/oauth/naver") {
                 contentType = MediaType.APPLICATION_JSON
-                content = body
+                content =
+                    json(
+                        mapOf(
+                            "code" to "auth-code",
+                            "redirectUri" to "https://flori.kr/auth/callback/naver",
+                            "state" to "state-123",
+                        ),
+                    )
             }.andExpect { status { isOk() } }
+            .andExpect { jsonPath("$.registered") { value(false) } }
             .andDo {
                 handle(
                     docs(
@@ -153,15 +141,9 @@ class AuthOAuthDocsTest : RestDocsSupport() {
                                 fieldWithPath("redirectUri").type(JsonFieldType.STRING).description("앱에서 사용한 redirect URI"),
                                 fieldWithPath("state").type(JsonFieldType.STRING).description("CSRF 방지용 state"),
                             ),
-                        responseFields = tokenResponseFields,
+                        responseFields = oauthResultFields,
                     ),
                 )
             }
-
-        mockMvc
-            .post("/auth/oauth/naver") {
-                contentType = MediaType.APPLICATION_JSON
-                content = body
-            }.andExpect { status { isOk() } }
     }
 }

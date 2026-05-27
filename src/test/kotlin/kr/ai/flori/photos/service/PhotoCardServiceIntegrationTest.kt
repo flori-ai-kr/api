@@ -2,10 +2,10 @@ package kr.ai.flori.photos.service
 
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
-import kr.ai.flori.auth.dto.SignupRequest
 import kr.ai.flori.auth.repository.UserRepository
 import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.error.AppException
+import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.common.storage.S3PresignService
 import kr.ai.flori.common.storage.StorageProperties
 import kr.ai.flori.common.tenant.TenantContext
@@ -14,6 +14,7 @@ import kr.ai.flori.photos.dto.PhotoCardCreateRequest
 import kr.ai.flori.photos.dto.PhotoCardUpdateRequest
 import kr.ai.flori.photos.entity.PhotoFile
 import kr.ai.flori.photos.repository.PhotoCardRepository
+import kr.ai.flori.support.TestAccounts
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
@@ -42,6 +43,9 @@ class PhotoCardServiceIntegrationTest {
     lateinit var authService: AuthService
 
     @Autowired
+    lateinit var tokenProvider: JwtTokenProvider
+
+    @Autowired
     lateinit var userRepository: UserRepository
 
     // 자격증명이 있는 presigner로 업로드 타깃 성공경로 검증(로컬 서명, 네트워크 불요)
@@ -65,7 +69,7 @@ class PhotoCardServiceIntegrationTest {
 
     private fun newTenant(): Long {
         val email = "photo-${UUID.randomUUID()}@flori.dev"
-        authService.signup(SignupRequest(email, "password123", null))
+        TestAccounts.register(authService, tokenProvider, email)
         val userId = requireNotNull(userRepository.findByEmail(email)).id!!
         TenantContext.set(userId)
         return userId

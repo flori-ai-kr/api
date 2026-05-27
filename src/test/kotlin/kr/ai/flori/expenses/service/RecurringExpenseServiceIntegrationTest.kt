@@ -2,16 +2,17 @@ package kr.ai.flori.expenses.service
 
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
-import kr.ai.flori.auth.dto.SignupRequest
 import kr.ai.flori.auth.repository.UserRepository
 import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.error.AppException
+import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.expenses.dto.RecurringExpenseRequest
 import kr.ai.flori.expenses.dto.RecurringInstanceUpdateRequest
 import kr.ai.flori.expenses.repository.ExpenseRepository
 import kr.ai.flori.expenses.repository.RecurringExpenseRepository
 import kr.ai.flori.expenses.repository.RecurringSkipRepository
+import kr.ai.flori.support.TestAccounts
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
@@ -45,6 +46,9 @@ class RecurringExpenseServiceIntegrationTest {
     lateinit var authService: AuthService
 
     @Autowired
+    lateinit var tokenProvider: JwtTokenProvider
+
+    @Autowired
     lateinit var userRepository: UserRepository
 
     @Autowired
@@ -55,7 +59,7 @@ class RecurringExpenseServiceIntegrationTest {
 
     private fun newTenant(): Long {
         val email = "rec-${UUID.randomUUID()}@flori.dev"
-        authService.signup(SignupRequest(email, "password123", null))
+        TestAccounts.register(authService, tokenProvider, email)
         val userId = requireNotNull(userRepository.findByEmail(email)).id!!
         TenantContext.set(userId)
         return userId

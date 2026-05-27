@@ -39,7 +39,13 @@ class MeDocsTest : RestDocsSupport() {
                                 fieldWithPath("profile")
                                     .type(JsonFieldType.OBJECT)
                                     .optional()
-                                    .description("가게 프로필(온보딩 전이면 null)"),
+                                    .description("가게 프로필"),
+                                fieldWithPath("profile.storeName").type(JsonFieldType.STRING).description("가게명"),
+                                fieldWithPath("profile.regionSido").type(JsonFieldType.STRING).description("시/도"),
+                                fieldWithPath("profile.regionSigungu").type(JsonFieldType.STRING).optional().description("시군구(미설정 시 null)"),
+                                fieldWithPath("profile.ownerAgeRange").type(JsonFieldType.STRING).optional().description("나이대(미설정 시 null)"),
+                                fieldWithPath("profile.interests").type(JsonFieldType.ARRAY).description("관심사 목록"),
+                                fieldWithPath("profile.specialties").type(JsonFieldType.ARRAY).description("가게 주력 목록"),
                             ),
                     ),
                 )
@@ -76,7 +82,13 @@ class MeDocsTest : RestDocsSupport() {
                                 fieldWithPath("profile")
                                     .type(JsonFieldType.OBJECT)
                                     .optional()
-                                    .description("가게 프로필(온보딩 전이면 null)"),
+                                    .description("가게 프로필"),
+                                fieldWithPath("profile.storeName").type(JsonFieldType.STRING).description("가게명"),
+                                fieldWithPath("profile.regionSido").type(JsonFieldType.STRING).description("시/도"),
+                                fieldWithPath("profile.regionSigungu").type(JsonFieldType.STRING).optional().description("시군구(미설정 시 null)"),
+                                fieldWithPath("profile.ownerAgeRange").type(JsonFieldType.STRING).optional().description("나이대(미설정 시 null)"),
+                                fieldWithPath("profile.interests").type(JsonFieldType.ARRAY).description("관심사 목록"),
+                                fieldWithPath("profile.specialties").type(JsonFieldType.ARRAY).description("가게 주력 목록"),
                             ),
                     ),
                 )

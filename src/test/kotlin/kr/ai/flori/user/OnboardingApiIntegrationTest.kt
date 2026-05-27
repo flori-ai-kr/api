@@ -3,6 +3,9 @@ package kr.ai.flori.user
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
+import kr.ai.flori.auth.service.AuthService
+import kr.ai.flori.common.security.JwtTokenProvider
+import kr.ai.flori.support.TestAccounts
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -12,11 +15,13 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
-import java.util.UUID
 
 /**
- * 온보딩 API 통합테스트. 실제 보안 체인 + Zonky PG에서 전체/최소(건너뛰기) 제출, 멱등 재제출,
- * onboarded 전환, /me 프로필 노출, 멀티테넌시 격리를 검증한다.
+ * 가게 프로필 편집 API(POST /me/profile) 통합테스트.
+ *
+ * 소셜 전용 전환 후 가입은 register/complete에서 끝나므로(항상 onboarded=true), 이 엔드포인트는
+ * 기존 사용자의 프로필 편집(upsert) 용도다. 실제 보안 체인 + Zonky PG에서 전체/최소 제출, 멱등 재제출,
+ * /me 프로필 노출, 멀티테넌시 격리를 검증한다.
  */
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @SpringBootTest
@@ -28,37 +33,32 @@ class OnboardingApiIntegrationTest {
     @Autowired
     lateinit var objectMapper: ObjectMapper
 
-    private fun token(): String {
-        val response =
-            mockMvc
-                .post("/auth/signup") {
-                    contentType = MediaType.APPLICATION_JSON
-                    content =
-                        objectMapper.writeValueAsString(
-                            mapOf("email" to "onb-${UUID.randomUUID()}@flori.dev", "password" to "password123"),
-                        )
-                }.andReturn()
-                .response.contentAsString
-        return objectMapper.readTree(response).get("accessToken").asText()
-    }
+    @Autowired
+    lateinit var authService: AuthService
+
+    @Autowired
+    lateinit var tokenProvider: JwtTokenProvider
+
+    /** 신규 가입 사용자 토큰(가입 시 기본 프로필이 이미 생성된 상태). */
+    private fun token(): String = TestAccounts.register(authService, tokenProvider).accessToken
 
     @Test
-    fun `가입 직후 me는 onboarded=false, profile=null`() {
+    fun `가입 직후 me는 onboarded=true이며 가입 시 입력한 프로필이 보인다`() {
         val token = token()
         mockMvc
             .get("/me") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") }
             .andExpect {
                 status { isOk() }
-                jsonPath("$.onboarded") { value(false) }
-                jsonPath("$.profile") { doesNotExist() }
+                jsonPath("$.onboarded") { value(true) }
+                jsonPath("$.profile.storeName") { value("테스트 가게") }
             }
     }
 
     @Test
-    fun `전체 온보딩 제출 후 onboarded=true + 프로필 노출`() {
+    fun `전체 프로필 편집 후 갱신된 프로필이 노출된다`() {
         val token = token()
         mockMvc
-            .post("/me/onboarding") {
+            .post("/me/profile") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -87,17 +87,16 @@ class OnboardingApiIntegrationTest {
             .get("/me") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") }
             .andExpect {
                 status { isOk() }
-                jsonPath("$.onboarded") { value(true) }
                 jsonPath("$.profile.storeName") { value("헤이즐 플라워") }
                 jsonPath("$.profile.interests.length()") { value(2) }
             }
     }
 
     @Test
-    fun `건너뛰기(최소) 제출 - name+regionSido만으로 성공하고 선택 필드는 비어있다`() {
+    fun `최소 편집 - name+regionSido만으로 성공하고 선택 필드는 비워진다`() {
         val token = token()
         mockMvc
-            .post("/me/onboarding") {
+            .post("/me/profile") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -106,7 +105,6 @@ class OnboardingApiIntegrationTest {
                     )
             }.andExpect {
                 status { isOk() }
-                jsonPath("$.onboarded") { value(true) }
                 jsonPath("$.profile.storeName") { value("미니 플라워") }
                 jsonPath("$.profile.regionSigungu") { doesNotExist() }
                 jsonPath("$.profile.ownerAgeRange") { doesNotExist() }
@@ -116,12 +114,12 @@ class OnboardingApiIntegrationTest {
     }
 
     @Test
-    fun `재제출은 멱등 - 프로필을 덮어쓰고 중복 행을 만들지 않는다`() {
+    fun `재편집은 멱등 - 프로필을 덮어쓰고 중복 행을 만들지 않는다`() {
         val token = token()
 
         fun submit(name: String) =
             mockMvc
-                .post("/me/onboarding") {
+                .post("/me/profile") {
                     header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                     contentType = MediaType.APPLICATION_JSON
                     content =
@@ -148,7 +146,7 @@ class OnboardingApiIntegrationTest {
     fun `name 누락 시 400`() {
         val token = token()
         mockMvc
-            .post("/me/onboarding") {
+            .post("/me/profile") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(mapOf("regionSido" to "서울특별시"))
@@ -159,7 +157,7 @@ class OnboardingApiIntegrationTest {
     fun `regionSido 공백 시 400`() {
         val token = token()
         mockMvc
-            .post("/me/onboarding") {
+            .post("/me/profile") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(mapOf("name" to "가게", "regionSido" to "   "))
@@ -167,27 +165,26 @@ class OnboardingApiIntegrationTest {
     }
 
     @Test
-    fun `멀티테넌시 - 사용자 A의 온보딩이 사용자 B에게 노출되지 않는다`() {
+    fun `멀티테넌시 - 사용자 A의 프로필 편집이 사용자 B에게 노출되지 않는다`() {
         val tokenA = token()
         val tokenB = token()
 
         mockMvc
-            .post("/me/onboarding") {
+            .post("/me/profile") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $tokenA")
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(mapOf("name" to "A의 가게", "regionSido" to "서울특별시"))
             }.andExpect { status { isOk() } }
 
-        // B는 여전히 미온보딩 상태이며 A의 프로필을 볼 수 없다
+        // B는 자신의 기본 프로필만 본다(A의 변경이 보이지 않음)
         mockMvc
             .get("/me") { header(HttpHeaders.AUTHORIZATION, "Bearer $tokenB") }
             .andExpect {
                 status { isOk() }
-                jsonPath("$.onboarded") { value(false) }
-                jsonPath("$.profile") { doesNotExist() }
+                jsonPath("$.profile.storeName") { value("테스트 가게") }
             }
 
-        // A는 자신의 프로필을 본다
+        // A는 자신의 변경을 본다
         mockMvc
             .get("/me") { header(HttpHeaders.AUTHORIZATION, "Bearer $tokenA") }
             .andExpect {
@@ -197,9 +194,9 @@ class OnboardingApiIntegrationTest {
     }
 
     @Test
-    fun `토큰 없이 온보딩 제출은 401`() {
+    fun `토큰 없이 프로필 편집은 401`() {
         mockMvc
-            .post("/me/onboarding") {
+            .post("/me/profile") {
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(mapOf("name" to "가게", "regionSido" to "서울특별시"))
             }.andExpect { status { isUnauthorized() } }
