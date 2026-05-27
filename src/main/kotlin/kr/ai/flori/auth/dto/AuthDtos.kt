@@ -65,3 +65,34 @@ data class KakaoOAuthRequest(
     @field:Schema(description = "앱에서 사용한 redirect URI(코드 교환 시 일치 필요)")
     val redirectUri: String,
 )
+
+@Schema(description = "구글 OAuth 로그인 요청(인증코드 교환).")
+data class GoogleOAuthRequest(
+    @field:NotBlank(message = "인증코드는 필수입니다")
+    @field:Schema(description = "구글 authorize에서 받은 authorization code")
+    val code: String,
+    @field:NotBlank(message = "redirectUri는 필수입니다")
+    @field:Schema(description = "앱에서 사용한 redirect URI(코드 교환 시 일치 필요)")
+    val redirectUri: String,
+)
+
+@Schema(description = "네이버 OAuth 로그인 요청(인증코드 교환). state 필수.")
+data class NaverOAuthRequest(
+    @field:NotBlank(message = "인증코드는 필수입니다")
+    @field:Schema(description = "네이버 authorize에서 받은 authorization code")
+    val code: String,
+    @field:NotBlank(message = "redirectUri는 필수입니다")
+    @field:Schema(description = "앱에서 사용한 redirect URI(코드 교환 시 일치 필요)")
+    val redirectUri: String,
+    @field:NotBlank(message = "state는 필수입니다")
+    @field:Schema(description = "CSRF 방지용 state(authorize 시 전달한 값과 동일)")
+    val state: String,
+)
+
+@Schema(description = "소셜 가입 후 이메일 보완 요청. 형식 검증 + 중복 검사 후 저장한다.")
+data class UpdateEmailRequest(
+    @field:Email(message = "이메일 형식이 올바르지 않습니다")
+    @field:NotBlank(message = "이메일은 필수입니다")
+    @field:Schema(description = "설정할 이메일", example = "florist@flori.kr")
+    val email: String,
+)

@@ -17,7 +17,7 @@ import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
 import java.time.Instant
 import java.time.LocalDate
-import java.util.*
+import java.util.UUID
 
 /**
  * ScrapController RestDocs 문서화.

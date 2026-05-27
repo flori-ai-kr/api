@@ -3,7 +3,12 @@ package kr.ai.flori.insights.service
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.ErrorCode
 import kr.ai.flori.common.util.KST
-import kr.ai.flori.insights.dto.*
+import kr.ai.flori.insights.dto.IngestResultResponse
+import kr.ai.flori.insights.dto.InstagramAccountCreateRequest
+import kr.ai.flori.insights.dto.InstagramAccountResponse
+import kr.ai.flori.insights.dto.InstagramAccountUpdateRequest
+import kr.ai.flori.insights.dto.InstagramPostIngest
+import kr.ai.flori.insights.dto.TrendArticleIngest
 import kr.ai.flori.insights.entity.InstagramAccount
 import kr.ai.flori.insights.entity.InstagramPost
 import kr.ai.flori.insights.entity.TrendArticle

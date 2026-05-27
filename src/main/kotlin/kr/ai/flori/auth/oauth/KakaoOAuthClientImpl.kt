@@ -14,13 +14,32 @@ import org.springframework.web.client.RestClientException
  * RestClient.Builder를 주입받아(테스트에서 MockRestServiceServer 바인딩 가능) 절대 URL로 호출한다.
  * 카카오 4xx/5xx·네트워크 오류는 RestClientException → AppException(INVALID_TOKEN)으로 변환(원인 체이닝, 500 노출 방지).
  * client_secret은 '사용함'일 때만 전송한다('사용 안 함'이면 빈 값 → 생략).
+ *
+ * 제공자 일반화: [SocialOAuthClient]를 구현해 빈 이름 "KAKAO"로 AuthService의 Map 주입에 참여한다.
+ * 기존 [KakaoOAuthClient] 계약도 유지(이메일 미수집 MVP 동작 회귀 방지).
  */
-@Component
+@Component("KAKAO")
 class KakaoOAuthClientImpl(
     builder: RestClient.Builder,
     private val properties: KakaoProperties,
-) : KakaoOAuthClient {
+) : KakaoOAuthClient,
+    SocialOAuthClient {
     private val client = builder.build()
+
+    /** 제공자 일반화 진입점. 카카오는 이메일 미수집이므로 email=null, provider="KAKAO". state 미사용. */
+    override fun authenticate(
+        code: String,
+        redirectUri: String,
+        state: String?,
+    ): SocialUserInfo {
+        val info = authenticate(code, redirectUri)
+        return SocialUserInfo(
+            provider = "KAKAO",
+            providerId = info.providerId,
+            email = null,
+            nickname = info.nickname,
+        )
+    }
 
     override fun authenticate(
         code: String,

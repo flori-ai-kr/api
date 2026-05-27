@@ -3,7 +3,11 @@ package kr.ai.flori.customers.service
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.ErrorCode
 import kr.ai.flori.common.tenant.TenantContext
-import kr.ai.flori.customers.dto.*
+import kr.ai.flori.customers.dto.CustomerCreateRequest
+import kr.ai.flori.customers.dto.CustomerResponse
+import kr.ai.flori.customers.dto.CustomerSearchResult
+import kr.ai.flori.customers.dto.CustomerStats
+import kr.ai.flori.customers.dto.CustomerUpdateRequest
 import kr.ai.flori.customers.entity.Customer
 import kr.ai.flori.customers.repository.CustomerRepository
 import kr.ai.flori.sales.dto.SaleResponse

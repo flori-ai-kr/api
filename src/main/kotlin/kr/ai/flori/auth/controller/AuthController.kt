@@ -3,9 +3,11 @@ package kr.ai.flori.auth.controller
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import kr.ai.flori.auth.dto.GoogleOAuthRequest
 import kr.ai.flori.auth.dto.KakaoOAuthRequest
 import kr.ai.flori.auth.dto.LoginRequest
 import kr.ai.flori.auth.dto.LogoutRequest
+import kr.ai.flori.auth.dto.NaverOAuthRequest
 import kr.ai.flori.auth.dto.RefreshRequest
 import kr.ai.flori.auth.dto.SignupRequest
 import kr.ai.flori.auth.dto.TokenResponse
@@ -40,7 +42,19 @@ class AuthController(
     @PostMapping("/oauth/kakao")
     fun kakaoLogin(
         @Valid @RequestBody request: KakaoOAuthRequest,
-    ): TokenResponse = authService.oauthLogin(request.code, request.redirectUri)
+    ): TokenResponse = authService.oauthLogin("KAKAO", request.code, request.redirectUri, null)
+
+    @Operation(summary = "구글 로그인", description = "구글 인증코드 검증 후 우리 토큰 발급(없으면 가입)")
+    @PostMapping("/oauth/google")
+    fun googleLogin(
+        @Valid @RequestBody request: GoogleOAuthRequest,
+    ): TokenResponse = authService.oauthLogin("GOOGLE", request.code, request.redirectUri, null)
+
+    @Operation(summary = "네이버 로그인", description = "네이버 인증코드 검증 후 우리 토큰 발급(없으면 가입). state 필수.")
+    @PostMapping("/oauth/naver")
+    fun naverLogin(
+        @Valid @RequestBody request: NaverOAuthRequest,
+    ): TokenResponse = authService.oauthLogin("NAVER", request.code, request.redirectUri, request.state)
 
     @Operation(summary = "토큰 갱신", description = "refresh 회전 — 기존 refresh 무효화 후 신규 발급")
     @PostMapping("/refresh")

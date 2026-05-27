@@ -20,7 +20,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.ResultHandler
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
-import java.util.*
+import java.util.UUID
 
 /**
  * RevenueCatWebhookController RestDocs 문서화.

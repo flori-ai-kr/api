@@ -14,7 +14,7 @@ import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
 import org.springframework.test.web.servlet.get
 import java.time.Instant
 import java.time.LocalDate
-import java.util.*
+import java.util.UUID
 
 /**
  * InsightController RestDocs 문서화.

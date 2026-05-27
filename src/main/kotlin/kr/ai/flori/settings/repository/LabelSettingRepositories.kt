@@ -1,6 +1,10 @@
 package kr.ai.flori.settings.repository
 
-import kr.ai.flori.settings.entity.*
+import kr.ai.flori.settings.entity.ExpenseCategory
+import kr.ai.flori.settings.entity.ExpensePaymentMethod
+import kr.ai.flori.settings.entity.LabelSetting
+import kr.ai.flori.settings.entity.SaleCategory
+import kr.ai.flori.settings.entity.SalePaymentMethod
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.repository.NoRepositoryBean
 

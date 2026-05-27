@@ -4,14 +4,19 @@ import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.ErrorCode
 import kr.ai.flori.common.storage.S3PresignService
 import kr.ai.flori.common.tenant.TenantContext
-import kr.ai.flori.photos.dto.*
+import kr.ai.flori.photos.dto.FileMetaRequest
+import kr.ai.flori.photos.dto.PhotoCardCreateRequest
+import kr.ai.flori.photos.dto.PhotoCardResponse
+import kr.ai.flori.photos.dto.PhotoCardUpdateRequest
+import kr.ai.flori.photos.dto.PhotoCardsPageResponse
+import kr.ai.flori.photos.dto.UploadTargetResponse
 import kr.ai.flori.photos.entity.PhotoCard
 import kr.ai.flori.photos.entity.PhotoFile
 import kr.ai.flori.photos.repository.PhotoCardRepository
 import kr.ai.flori.sales.repository.SaleRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.*
+import java.util.UUID
 
 /**
  * 사진 카드 서비스. tags/photos는 jsonb·배열, 매출(sale_id) 연동.

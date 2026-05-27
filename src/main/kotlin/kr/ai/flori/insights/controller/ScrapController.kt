@@ -1,9 +1,22 @@
 package kr.ai.flori.insights.controller
 
 import jakarta.validation.Valid
-import kr.ai.flori.insights.dto.*
+import kr.ai.flori.insights.dto.InsightScrapResponse
+import kr.ai.flori.insights.dto.PostScrapResponse
+import kr.ai.flori.insights.dto.ScrapCountsResponse
+import kr.ai.flori.insights.dto.ScrapInfo
+import kr.ai.flori.insights.dto.ScrapMemoRequest
+import kr.ai.flori.insights.dto.ScrapToggleRequest
+import kr.ai.flori.insights.dto.ScrapToggleResponse
+import kr.ai.flori.insights.dto.TrendScrapResponse
 import kr.ai.flori.insights.service.ScrapService
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/insights/scraps")

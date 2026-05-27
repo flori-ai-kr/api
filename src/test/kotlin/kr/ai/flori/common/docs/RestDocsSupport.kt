@@ -16,7 +16,7 @@ import org.springframework.restdocs.request.ParameterDescriptor
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.ResultHandler
 import org.springframework.test.web.servlet.post
-import java.util.*
+import java.util.UUID
 
 /**
  * RestDocs 문서화 통합테스트 공용 베이스.

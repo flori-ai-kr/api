@@ -3,7 +3,13 @@ package kr.ai.flori.insights.service
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.ErrorCode
 import kr.ai.flori.common.tenant.TenantContext
-import kr.ai.flori.insights.dto.*
+import kr.ai.flori.insights.dto.InsightScrapResponse
+import kr.ai.flori.insights.dto.InstagramPostResponse
+import kr.ai.flori.insights.dto.PostScrapResponse
+import kr.ai.flori.insights.dto.ScrapCountsResponse
+import kr.ai.flori.insights.dto.ScrapInfo
+import kr.ai.flori.insights.dto.TrendArticleResponse
+import kr.ai.flori.insights.dto.TrendScrapResponse
 import kr.ai.flori.insights.entity.InsightScrap
 import kr.ai.flori.insights.repository.InsightScrapRepository
 import kr.ai.flori.insights.repository.InstagramPostRepository
