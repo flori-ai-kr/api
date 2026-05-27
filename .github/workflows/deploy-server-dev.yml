@@ -1,0 +1,90 @@
+# ==============================================================================
+# flori server (Spring Boot/Kotlin) CI/CD — DEV
+# ==============================================================================
+# 배치: flori-ai-kr/server 리포 .github/workflows/deploy-server-dev.yml (별도 레포, 코드 루트)
+# 흐름: gradle build(+test) → ARM64 네이티브 빌드 → ECR(flori-dev/server) → SSH deploy.app.sh
+# 패턴: aws-infra/.github/workflows/api/deploy-optigen-dev.yml 과 동일 (ubuntu-24.04-arm, QEMU 불필요)
+#
+# GitHub Secrets (org 또는 repo dev Environment):
+#   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY  (flori-gha-ecr)
+#   SSH_HOST (= flori-dev-app EIP 3.35.191.16) / SSH_USER (ec2-user) / SSH_PRIVATE_KEY (flori-key.pem)
+# ==============================================================================
+
+name: 🚀 Deploy server (DEV)
+
+on:
+  push:
+    branches: [dev, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: flori-dev/server
+
+jobs:
+  build-and-push:
+    name: 빌드 및 ECR Push
+    runs-on: ubuntu-latest # flori-ai-kr org 는 ARM 러너 미가용 → x64 + QEMU 로 arm64 크로스빌드
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+      - name: Java 21 설정
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: gradle
+      - name: Gradle 빌드
+        run: ./gradlew clean build
+      - name: AWS 인증 설정
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: ECR 로그인
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: 이미지 태그 생성
+        id: meta
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          TIMESTAMP=$(TZ='Asia/Seoul' date +'%Y%m%d%H%M%S')
+          echo "tags=${TIMESTAMP}-${SHORT_SHA}" >> $GITHUB_OUTPUT
+      - name: QEMU 설정 (arm64 에뮬레이션)
+        uses: docker/setup-qemu-action@v3
+      - name: Docker Buildx 설정
+        uses: docker/setup-buildx-action@v3
+      - name: Docker 이미지 빌드 및 Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.meta.outputs.tags }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+          platforms: linux/arm64
+          provenance: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: EC2 배포
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: SSH 배포
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            /home/ec2-user/scripts/deploy.app.sh ${{ needs.build-and-push.outputs.image_tag }}
