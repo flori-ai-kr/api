@@ -62,7 +62,6 @@ class DashboardServiceIntegrationTest {
                 "basic_bouquet",
                 100_000,
                 "card",
-                cardCompany = "신한카드",
                 reservationChannel = "phone",
                 customerPhone = "01010001000",
             ),
@@ -84,7 +83,6 @@ class DashboardServiceIntegrationTest {
         assertThat(result.summary.totalAmount).isEqualTo(150_000) // 미수 30000 제외
         assertThat(result.summary.cardAmount).isEqualTo(100_000)
         assertThat(result.summary.cashAmount).isEqualTo(50_000)
-        assertThat(result.summary.pendingCount).isEqualTo(1) // 카드 1건 입금대기
         assertThat(result.recentSales).hasSize(3)
         assertThat(result.saleCategories).hasSize(11) // 가입 시드
         assertThat(result.upcomingReservations).isNotEmpty()

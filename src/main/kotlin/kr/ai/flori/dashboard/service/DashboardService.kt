@@ -75,9 +75,7 @@ class DashboardService(
               COALESCE(SUM(amount) FILTER (WHERE payment_method = 'cash'), 0) AS cash,
               COALESCE(SUM(amount) FILTER (WHERE payment_method = 'transfer'), 0) AS transfer,
               COALESCE(SUM(amount) FILTER (WHERE payment_method = 'naverpay'), 0) AS naverpay,
-              COALESCE(SUM(amount) FILTER (WHERE payment_method = 'kakaopay'), 0) AS kakaopay,
-              COUNT(*) FILTER (WHERE deposit_status = 'pending') AS pending_count,
-              COALESCE(SUM(amount) FILTER (WHERE deposit_status = 'pending'), 0) AS pending_amount
+              COALESCE(SUM(amount) FILTER (WHERE payment_method = 'kakaopay'), 0) AS kakaopay
             FROM sales WHERE user_id = ?::uuid AND date BETWEEN ? AND ?
             """.trimIndent(),
             { rs, _ ->
@@ -88,8 +86,6 @@ class DashboardService(
                     rs.getLong("transfer"),
                     rs.getLong("naverpay"),
                     rs.getLong("kakaopay"),
-                    rs.getLong("pending_count"),
-                    rs.getLong("pending_amount"),
                 )
             },
             userId,
@@ -226,7 +222,7 @@ class DashboardService(
     private companion object {
         const val RECENT_LIMIT = 5
         const val PERCENT = 100
-        val EMPTY_SUMMARY = DashboardSummary(0, 0, 0, 0, 0, 0, 0, 0)
+        val EMPTY_SUMMARY = DashboardSummary(0, 0, 0, 0, 0, 0)
         val PAYMENT_LABELS =
             mapOf("card" to "카드", "cash" to "현금", "transfer" to "계좌이체", "naverpay" to "네이버페이", "kakaopay" to "카카오페이")
         val CHANNEL_LABELS =

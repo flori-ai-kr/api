@@ -60,7 +60,6 @@ class AuthServiceIntegrationTest {
         assertThat(count("payment_methods")).isEqualTo(4)
         assertThat(count("expense_categories")).isEqualTo(7)
         assertThat(count("expense_payment_methods")).isEqualTo(3)
-        assertThat(count("card_company_settings")).isEqualTo(9)
     }
 
     @Test

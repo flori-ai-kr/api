@@ -3,7 +3,6 @@ package kr.ai.flori.settings.dto
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
-import java.math.BigDecimal
 import java.util.UUID
 
 data class LabelSettingCreateRequest(
@@ -26,26 +25,6 @@ data class LabelSettingResponse(
     val label: String,
     val color: String,
     val sortOrder: Int,
-)
-
-data class CardCompanyCreateRequest(
-    @field:NotBlank(message = "카드사명은 필수입니다")
-    val name: String?,
-    val feeRate: BigDecimal = BigDecimal("2.0"),
-    val depositDays: Int = 3,
-)
-
-data class CardCompanyUpdateRequest(
-    val feeRate: BigDecimal? = null,
-    val depositDays: Int? = null,
-)
-
-data class CardCompanyResponse(
-    val id: UUID,
-    val name: String,
-    val feeRate: BigDecimal,
-    val depositDays: Int,
-    val isActive: Boolean,
 )
 
 data class UserPreferencesResponse(

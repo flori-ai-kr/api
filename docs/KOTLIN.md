@@ -37,7 +37,7 @@ Kotlin이 처음이라면 이 문서를 읽고 코드를 보면 된다. **이 re
 
 ```kotlin
 val userId = TenantContext.currentUserId()   // 다시 대입 안 함 → val
-var depositStatus: String = "not_applicable" // 엔티티 필드는 갱신되므로 var
+var reminderSent: Boolean = false            // 엔티티 필드는 갱신되므로 var
 ```
 
 ### ② Null 안전성 — repo의 핵심 습관
@@ -109,7 +109,6 @@ fun get(id: UUID): SaleResponse = SaleResponse.from(load(id))
 @Service
 class SaleService(
     private val saleRepository: SaleRepository,       // ← 주입됨 + 필드
-    private val depositCalculator: DepositCalculator,
     private val customerRepository: CustomerRepository,
 )
 ```
@@ -198,9 +197,9 @@ object PaymentMethods {                       // 상수 묶음
 
 ```kotlin
 val label = when (status) {
-    "pending" -> "입금대기"
-    "completed" -> "입금완료"
-    else -> "해당없음"
+    "pending" -> "예약대기"
+    "confirmed" -> "예약확정"
+    else -> "기타"
 }
 ```
 

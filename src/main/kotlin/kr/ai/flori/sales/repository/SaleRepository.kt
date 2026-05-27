@@ -24,12 +24,6 @@ interface SaleRepository :
         pageable: Pageable,
     ): Page<Sale>
 
-    /** 다건 입금확인(테넌트 격리). 입금대조 도메인(SPEC-009)에서 사용. */
-    fun findByUserIdAndIdIn(
-        userId: UUID,
-        ids: Collection<UUID>,
-    ): List<Sale>
-
     /** 비고 자동완성: 빈도(사용 횟수) 내림차순. */
     @Query(
         "SELECT s.note FROM Sale s " +

@@ -30,6 +30,7 @@ val embeddedDbTestVersion = "2.5.1"
 val jjwtVersion = "0.12.6"
 val awsSdkVersion = "2.29.20"
 val firebaseAdminVersion = "9.4.1"
+val logstashEncoderVersion = "8.1"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -57,6 +58,8 @@ dependencies {
     implementation("software.amazon.awssdk:s3")
     // FCM 푸시
     implementation("com.google.firebase:firebase-admin:$firebaseAdminVersion")
+    // 운영 프로필 JSON 구조화 로깅(LogstashEncoder + StructuredArguments.kv) — logback 1.5.x / Jackson 2.x 호환 8.x 라인
+    implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")

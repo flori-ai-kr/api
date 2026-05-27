@@ -9,8 +9,7 @@ import java.time.LocalDate
 import java.util.UUID
 
 /**
- * 매출 생성. fee/expected_deposit/expected_deposit_date/deposit_status/is_unpaid는
- * 서버가 계산하므로 요청에 포함하지 않는다(앱은 표시만).
+ * 매출 생성. is_unpaid는 결제방식(unpaid)으로 서버가 결정하므로 요청에 포함하지 않는다.
  */
 data class SaleCreateRequest(
     @field:NotNull(message = "날짜는 필수입니다")
@@ -22,7 +21,6 @@ data class SaleCreateRequest(
     val amount: Int?,
     @field:NotBlank(message = "결제방식은 필수입니다")
     val paymentMethod: String?,
-    val cardCompany: String? = null,
     val reservationChannel: String? = null,
     val customerName: String? = null,
     val customerPhone: String? = null,
@@ -37,7 +35,6 @@ data class SaleUpdateRequest(
     @field:Min(value = 0, message = "금액은 0 이상이어야 합니다")
     val amount: Int? = null,
     val paymentMethod: String? = null,
-    val cardCompany: String? = null,
     val reservationChannel: String? = null,
     val customerName: String? = null,
     val customerPhone: String? = null,
@@ -58,12 +55,6 @@ data class SaleResponse(
     val productCategory: String?,
     val amount: Int,
     val paymentMethod: String,
-    val cardCompany: String?,
-    val fee: Int?,
-    val expectedDeposit: Int?,
-    val expectedDepositDate: LocalDate?,
-    val depositStatus: String,
-    val depositedAt: Instant?,
     val reservationChannel: String,
     val customerName: String?,
     val customerPhone: String?,
@@ -83,12 +74,6 @@ data class SaleResponse(
                 productCategory = sale.productCategory,
                 amount = sale.amount,
                 paymentMethod = sale.paymentMethod,
-                cardCompany = sale.cardCompany,
-                fee = sale.fee,
-                expectedDeposit = sale.expectedDeposit,
-                expectedDepositDate = sale.expectedDepositDate,
-                depositStatus = sale.depositStatus,
-                depositedAt = sale.depositedAt,
                 reservationChannel = sale.reservationChannel,
                 customerName = sale.customerName,
                 customerPhone = sale.customerPhone,

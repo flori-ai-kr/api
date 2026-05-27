@@ -1,6 +1,5 @@
 package kr.ai.flori.sales.service
 
-import kr.ai.flori.common.domain.DepositStatuses
 import kr.ai.flori.common.domain.PaymentMethods
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.ErrorCode
@@ -21,12 +20,10 @@ import java.util.UUID
 
 /**
  * 매출 서비스. 모든 조회/변경은 TenantContext의 userId로 격리(멀티테넌시 HARD).
- * 카드수수료/입금예정일/입금상태는 DepositCalculator로 서버가 계산(SSOT).
  */
 @Service
 class SaleService(
     private val saleRepository: SaleRepository,
-    private val depositCalculator: DepositCalculator,
     private val customerRepository: CustomerRepository,
 ) {
     @Transactional(readOnly = true)
@@ -74,12 +71,10 @@ class SaleService(
             )
         sale.reservationChannel = request.reservationChannel ?: DEFAULT_CHANNEL
         sale.isUnpaid = isUnpaid
-        sale.cardCompany = request.cardCompany
         sale.customerName = request.customerName
         sale.customerPhone = request.customerPhone
         sale.customerId = request.customerId
         sale.note = request.note
-        applyDeposit(sale, isUnpaid)
         return SaleResponse.from(saleRepository.save(sale))
     }
 
@@ -97,7 +92,6 @@ class SaleService(
             sale.productCategory = it
             sale.productName = it
         }
-        request.cardCompany?.let { sale.cardCompany = it }
         request.reservationChannel?.let { sale.reservationChannel = it }
         request.customerName?.let { sale.customerName = it }
         request.customerPhone?.let { sale.customerPhone = it }
@@ -108,7 +102,6 @@ class SaleService(
         request.note?.let { sale.note = it }
         request.hasReview?.let { sale.hasReview = it }
         // is_unpaid 마커는 수정에서 변경하지 않음(생성 시 결정, complete/revert로만 전이)
-        applyDeposit(sale, sale.isUnpaid)
         return SaleResponse.from(saleRepository.save(sale))
     }
 
@@ -120,7 +113,6 @@ class SaleService(
         val sale = load(id)
         if (!sale.isUnpaid) throw AppException(ErrorCode.VALIDATION, "미수 매출이 아닙니다")
         sale.paymentMethod = requireValidPaymentMethod(paymentMethod, allowUnpaid = false)
-        applyDeposit(sale, isUnpaid = false)
         return SaleResponse.from(saleRepository.save(sale))
     }
 
@@ -129,7 +121,6 @@ class SaleService(
         val sale = load(id)
         if (!sale.isUnpaid) throw AppException(ErrorCode.VALIDATION, "미수 매출이 아닙니다")
         sale.paymentMethod = PaymentMethods.UNPAID
-        applyDeposit(sale, isUnpaid = true)
         return SaleResponse.from(saleRepository.save(sale))
     }
 
@@ -141,22 +132,6 @@ class SaleService(
     private fun load(id: UUID): Sale =
         saleRepository.findByIdAndUserId(id, TenantContext.currentUserId())
             ?: throw AppException(ErrorCode.NOT_FOUND, "매출을 찾을 수 없습니다")
-
-    private fun applyDeposit(
-        sale: Sale,
-        isUnpaid: Boolean,
-    ) {
-        val deposit =
-            if (isUnpaid) {
-                DepositCalculator.Deposit(null, null, null, DepositStatuses.NOT_APPLICABLE)
-            } else {
-                depositCalculator.calculate(sale.userId, sale.date, sale.amount, sale.paymentMethod, sale.cardCompany)
-            }
-        sale.fee = deposit.fee
-        sale.expectedDeposit = deposit.expectedDeposit
-        sale.expectedDepositDate = deposit.expectedDepositDate
-        sale.depositStatus = deposit.depositStatus
-    }
 
     // 고객 도메인 리포지토리를 통해 소유권 검증(raw SQL 대신 도메인 경계 준수)
     private fun verifyCustomerOwnership(

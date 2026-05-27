@@ -36,7 +36,7 @@ class SaleServiceIntegrationTest {
         TenantContext.clear()
     }
 
-    /** 가입(기본 카드사 시드 포함) 후 해당 user를 TenantContext에 설정. */
+    /** 가입 후 해당 user를 TenantContext에 설정. */
     private fun newTenant(): UUID {
         val email = "sale-${UUID.randomUUID()}@flori.dev"
         authService.signup(SignupRequest(email, "password123", null))
@@ -51,31 +51,27 @@ class SaleServiceIntegrationTest {
             productCategory = "basic_bouquet",
             amount = 100_000,
             paymentMethod = "card",
-            cardCompany = "신한카드",
         )
 
     @Test
-    fun `카드 매출은 수수료·입금예정액·입금예정일을 서버가 계산한다`() {
+    fun `카드 매출을 생성한다`() {
         newTenant()
         val sale = saleService.create(cardSale())
 
-        // 신한카드 기본값: 수수료율 2.0%, 입금 3영업일
-        assertThat(sale.fee).isEqualTo(2_000)
-        assertThat(sale.expectedDeposit).isEqualTo(98_000)
-        assertThat(sale.expectedDepositDate).isEqualTo(LocalDate.of(2026, 5, 27))
-        assertThat(sale.depositStatus).isEqualTo("pending")
+        assertThat(sale.paymentMethod).isEqualTo("card")
+        assertThat(sale.amount).isEqualTo(100_000)
         assertThat(sale.isUnpaid).isFalse()
     }
 
     @Test
-    fun `현금 매출은 입금대조 대상이 아니다`() {
+    fun `현금 매출을 생성한다`() {
         newTenant()
         val sale =
             saleService.create(
                 SaleCreateRequest(LocalDate.of(2026, 5, 22), "vase", 30_000, "cash"),
             )
-        assertThat(sale.fee).isNull()
-        assertThat(sale.depositStatus).isEqualTo("not_applicable")
+        assertThat(sale.paymentMethod).isEqualTo("cash")
+        assertThat(sale.isUnpaid).isFalse()
     }
 
     @Test
@@ -107,7 +103,7 @@ class SaleServiceIntegrationTest {
     fun `목록은 다중선택 필터와 무한스크롤을 지원한다`() {
         newTenant()
         saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 1), "vase", 1_000, "cash"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 2), "basket", 2_000, "card", cardCompany = "신한카드"))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 2), "basket", 2_000, "card"))
         saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 3), "vase", 3_000, "transfer"))
 
         val cashOnly = saleService.list(null, 0, 100, null, listOf("cash"), null, null)
