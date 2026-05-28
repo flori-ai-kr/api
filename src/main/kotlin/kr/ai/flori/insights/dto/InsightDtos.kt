@@ -75,18 +75,20 @@ data class InstagramPostResponse(
     val account: InstagramAccountResponse?,
 ) {
     companion object {
-        fun from(p: InstagramPost) =
-            InstagramPostResponse(
-                requireNotNull(p.id),
-                p.accountId,
-                p.shortcode,
-                p.permalink,
-                p.imageUrls,
-                p.caption,
-                p.likeCount,
-                p.postedAt,
-                p.account?.let(InstagramAccountResponse::from),
-            )
+        fun from(
+            p: InstagramPost,
+            account: InstagramAccount?,
+        ) = InstagramPostResponse(
+            requireNotNull(p.id),
+            p.accountId,
+            p.shortcode,
+            p.permalink,
+            p.imageUrls,
+            p.caption,
+            p.likeCount,
+            p.postedAt,
+            account?.let(InstagramAccountResponse::from),
+        )
     }
 }
 
@@ -110,6 +112,11 @@ data class InsightScrapResponse(
             )
     }
 }
+
+/** 인사이트 인스타 "마지막 업데이트" — 가장 최근 수집 시각(없으면 null). */
+data class InstagramLatestResponse(
+    val latest: Instant?,
+)
 
 data class ScrapToggleRequest(
     @field:NotBlank val targetType: String?,

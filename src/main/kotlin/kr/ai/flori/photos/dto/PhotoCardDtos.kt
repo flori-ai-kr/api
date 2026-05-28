@@ -46,6 +46,11 @@ data class UploadTargetResponse(
     val originalName: String,
 )
 
+/** 원본 다운로드용 presigned GET URL. */
+data class PhotoDownloadResponse(
+    val downloadUrl: String,
+)
+
 data class PhotoCardResponse(
     val id: Long,
     val title: String,

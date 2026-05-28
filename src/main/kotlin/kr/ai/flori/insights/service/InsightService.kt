@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 /**
@@ -49,6 +50,23 @@ class InsightService(
         }
     }
 
+    /**
+     * 카테고리별 트렌드 개수. since(수집일) 이후만 카운트(옵션). 모든 카테고리 키를 포함(0 포함).
+     */
+    @Transactional(readOnly = true)
+    fun trendCounts(since: LocalDate?): Map<String, Long> =
+        TREND_CATEGORIES.associateWith { category ->
+            if (since == null) {
+                trendRepository.countByCategory(category)
+            } else {
+                trendRepository.countByCategoryAndCollectedAtGreaterThanEqual(category, since)
+            }
+        }
+
+    /** 가장 최근 instagram_posts 수집 시각(없으면 null). "마지막 업데이트" 표시용. */
+    @Transactional(readOnly = true)
+    fun latestInstagramCollectedAt(): Instant? = postRepository.findLatestScrapedAt()
+
     @Transactional(readOnly = true)
     fun accounts(activeOnly: Boolean): List<InstagramAccountResponse> =
         (
@@ -85,9 +103,15 @@ class InsightService(
             } else {
                 postRepository.findFeed(since, pageable)
             }
+        // FK 연관관계 대신 accountId로 계정을 별도 조회해 합친다(간접참조).
+        val accountsById = accountRepository.findAllById(fetched.map { it.accountId }.toSet()).associateBy { it.id }
         val filtered =
-            if (region != null) fetched.filter { it.account?.region == region } else fetched
-        return filtered.take(safeLimit).map(InstagramPostResponse::from)
+            if (region != null) {
+                fetched.filter { accountsById[it.accountId]?.region == region }
+            } else {
+                fetched
+            }
+        return filtered.take(safeLimit).map { InstagramPostResponse.from(it, accountsById[it.accountId]) }
     }
 
     private companion object {

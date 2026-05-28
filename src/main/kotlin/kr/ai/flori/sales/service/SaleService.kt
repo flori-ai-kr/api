@@ -5,10 +5,13 @@ import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.customers.repository.CustomerRepository
+import kr.ai.flori.photos.repository.PhotoCardRepository
+import kr.ai.flori.reservations.repository.ReservationRepository
 import kr.ai.flori.sales.dto.SaleCreateRequest
 import kr.ai.flori.sales.dto.SaleResponse
 import kr.ai.flori.sales.dto.SaleUpdateRequest
 import kr.ai.flori.sales.dto.SalesPageResponse
+import kr.ai.flori.sales.dto.SalesSummaryResponse
 import kr.ai.flori.sales.entity.Sale
 import kr.ai.flori.sales.repository.SaleRepository
 import kr.ai.flori.sales.repository.SaleSpecifications
@@ -24,6 +27,8 @@ import org.springframework.transaction.annotation.Transactional
 class SaleService(
     private val saleRepository: SaleRepository,
     private val customerRepository: CustomerRepository,
+    private val reservationRepository: ReservationRepository,
+    private val photoCardRepository: PhotoCardRepository,
 ) {
     @Transactional(readOnly = true)
     fun list(
@@ -41,6 +46,39 @@ class SaleService(
         val pageable = PageRequest.of(offset / limit, limit, sort)
         val page = saleRepository.findAll(spec, pageable)
         return SalesPageResponse(page.content.map(SaleResponse::from), page.hasNext())
+    }
+
+    /**
+     * 매출 요약(페이지네이션 무관 전체 합산). list와 동일한 Specification으로 필터해 결제수단별 합산.
+     * total/count는 전체(미수·kakaopay 포함), 명세 버킷(card/naverpay/transfer/cash)은 해당 결제수단만.
+     */
+    @Transactional(readOnly = true)
+    fun summary(
+        month: String?,
+        categories: List<String>?,
+        payments: List<String>?,
+        channels: List<String>?,
+        search: String?,
+    ): SalesSummaryResponse {
+        val userId = TenantContext.currentUserId()
+        val spec = SaleSpecifications.filter(userId, month, categories, payments, channels, search)
+        val rows = saleRepository.findAll(spec)
+        var total = 0L
+        var card = 0L
+        var naverpay = 0L
+        var transfer = 0L
+        var cash = 0L
+        rows.forEach { sale ->
+            val amount = sale.amount.toLong()
+            total += amount
+            when (sale.paymentMethod) {
+                "card" -> card += amount
+                "naverpay" -> naverpay += amount
+                "transfer" -> transfer += amount
+                "cash" -> cash += amount
+            }
+        }
+        return SalesSummaryResponse(total, card, naverpay, transfer, cash, rows.size.toLong())
     }
 
     @Transactional(readOnly = true)
@@ -125,7 +163,11 @@ class SaleService(
 
     @Transactional
     fun delete(id: Long) {
-        saleRepository.delete(load(id))
+        val sale = load(id)
+        // FK 미사용: 이 매출을 참조하던 예약·사진 카드의 sale_id를 직접 NULL 처리(둘 다 보존).
+        reservationRepository.clearSaleReference(sale.userId, id)
+        photoCardRepository.clearSaleReference(sale.userId, id)
+        saleRepository.delete(sale)
     }
 
     private fun load(id: Long): Sale =

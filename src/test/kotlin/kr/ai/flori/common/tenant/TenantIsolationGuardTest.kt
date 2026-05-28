@@ -61,8 +61,18 @@ class TenantIsolationGuardTest {
             "InstagramAccountRepository#findAllByOrderBySortOrderAscUsernameAsc",
             "InstagramPostRepository#findFeed",
             "InstagramPostRepository#findFeedByAccount",
-            "InstagramPostRepository#findWithAccountByIdIn",
+            "InstagramPostRepository#findByIdIn",
             "InstagramPostRepository#existsByShortcode",
+            "InstagramPostRepository#findLatestScrapedAt",
+            "TrendArticleRepository#countByCategoryAndCollectedAtGreaterThanEqual",
+            // 커뮤니티: 단일 커뮤니티(테넌트 간 공유) — 엔티티에 user_id 격리가 없고,
+            // 비밀글/소유권/마스킹은 서비스가 뷰어(JWT)+author_user_id로 계산한다(설계상 전역 읽기/쓰기).
+            "CommunityPostRepository#findByIdAndDeletedAtIsNull",
+            "CommunityPostRepository#findFeed",
+            "CommunityPostRepository#adjustLikeCount",
+            "CommunityPostRepository#adjustCommentCount",
+            "CommunityCommentRepository#findByIdAndDeletedAtIsNull",
+            "CommunityCommentRepository#findByPostIdOrderByCreatedAtAsc",
         )
 
     @Test

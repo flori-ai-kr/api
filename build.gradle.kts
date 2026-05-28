@@ -31,6 +31,8 @@ val jjwtVersion = "0.12.6"
 val awsSdkVersion = "2.29.20"
 val firebaseAdminVersion = "9.4.1"
 val logstashEncoderVersion = "8.1"
+val webPushVersion = "5.1.1"
+val bouncyCastleVersion = "1.78.1"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -54,8 +56,11 @@ dependencies {
     // S3 presigned URL 발급
     implementation(platform("software.amazon.awssdk:bom:$awsSdkVersion"))
     implementation("software.amazon.awssdk:s3")
-    // FCM 푸시
+    // FCM 푸시(모바일)
     implementation("com.google.firebase:firebase-admin:$firebaseAdminVersion")
+    // Web Push(VAPID) — 브라우저(PWA) 푸시. BouncyCastle로 VAPID 서명.
+    implementation("nl.martijndwars:web-push:$webPushVersion")
+    implementation("org.bouncycastle:bcprov-jdk18on:$bouncyCastleVersion")
     // 운영 프로필 JSON 구조화 로깅(LogstashEncoder + StructuredArguments.kv) — logback 1.5.x / Jackson 2.x 호환 8.x 라인
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 

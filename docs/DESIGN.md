@@ -87,8 +87,8 @@ kr.ai.flori
 
 ## 9. 스토리지 / 푸시
 
-- S3: presigned PUT URL(짧은 만료) 발급, 소유권 검증 후. CloudFront로 서빙. (원본 R2 → S3 전환)
-- 푸시: 원본 Web Push(VAPID) → **FCM**. 토큰은 push 구독 테이블에 저장. 영구실패 토큰만 비활성화.
+- S3: presigned PUT URL(짧은 만료) 발급, 소유권 검증 후. CloudFront로 서빙. presigned GET으로 원본 다운로드. 삭제 시 S3 객체도 best-effort 정리. (원본 R2 → S3 전환)
+- 푸시: **FCM**(모바일) + **Web Push/VAPID**(브라우저 PWA). `PushDispatcher`가 구독의 p256dh/auth 유무로 전송 경로를 분기. 영구실패 구독만 비활성화.
 
 ## 10. API 계약 (앱 연동)
 

@@ -74,7 +74,11 @@ class RecurringExpenseService(
 
     @Transactional
     fun delete(id: Long) {
-        recurringRepository.delete(loadRule(id))
+        val rule = loadRule(id)
+        // FK 미사용: skip 기록은 삭제(CASCADE 대체), 자동생성된 지출은 recurring_id만 NULL(지출 보존).
+        skipRepository.deleteByUserIdAndRecurringId(rule.userId, id)
+        expenseRepository.clearRecurringReference(rule.userId, id)
+        recurringRepository.delete(rule)
     }
 
     @Transactional

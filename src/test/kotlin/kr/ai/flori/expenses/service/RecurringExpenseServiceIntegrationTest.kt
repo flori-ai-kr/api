@@ -164,6 +164,28 @@ class RecurringExpenseServiceIntegrationTest {
     }
 
     @Test
+    fun `템플릿 삭제 시 skip은 지워지고 자동생성 지출은 recurring_id만 NULL로 보존된다`() {
+        newTenant()
+        val rule = monthlyRule()
+        val keepDate = LocalDate.of(2026, 6, 15)
+        val skipDate = LocalDate.of(2026, 7, 15)
+        val survivingExpenseId = generateInstance(rule.id, keepDate)
+        val toSkipExpenseId = generateInstance(rule.id, skipDate)
+        // "이것만 삭제"로 skip 기록 생성
+        service.deleteInstanceOnly(toSkipExpenseId)
+        assertThat(skipRepository.existsByRecurringIdAndSkipDate(rule.id, skipDate)).isTrue()
+
+        service.delete(rule.id)
+
+        // 템플릿 삭제 + skip 기록 제거(CASCADE 대체)
+        assertThat(recurringRepository.findById(rule.id)).isEmpty
+        assertThat(skipRepository.existsByRecurringIdAndSkipDate(rule.id, skipDate)).isFalse()
+        // 자동생성 지출은 보존되고 recurring_id만 NULL
+        val survivor = requireNotNull(expenseRepository.findById(survivingExpenseId).orElse(null))
+        assertThat(survivor.recurringId).isNull()
+    }
+
+    @Test
     fun `다른 테넌트의 고정비는 조회할 수 없다`() {
         newTenant()
         val rule = monthlyRule()

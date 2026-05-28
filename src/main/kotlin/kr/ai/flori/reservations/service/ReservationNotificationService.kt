@@ -1,7 +1,6 @@
 package kr.ai.flori.reservations.service
 
-import kr.ai.flori.common.push.PushMessage
-import kr.ai.flori.common.push.PushService
+import kr.ai.flori.common.push.PushDispatcher
 import kr.ai.flori.common.util.KST
 import kr.ai.flori.reservations.repository.ReservationRepository
 import org.slf4j.LoggerFactory
@@ -27,7 +26,7 @@ import java.time.LocalDate
 @Service
 class ReservationNotificationService(
     private val reservationRepository: ReservationRepository,
-    private val pushService: PushService,
+    private val pushDispatcher: PushDispatcher,
     private val jdbcTemplate: JdbcTemplate,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -98,23 +97,13 @@ class ReservationNotificationService(
             dedupKey,
         ) == 1
 
+    /** FCM(모바일)·Web Push(브라우저) 양쪽 활성 구독에 발송한다(PushDispatcher가 경로 분기). */
     private fun notify(
         userId: Long,
         title: String,
         body: String,
     ) {
-        val tokens =
-            jdbcTemplate.queryForList(
-                "SELECT endpoint FROM push_subscriptions WHERE user_id = ?::bigint AND is_active = TRUE",
-                String::class.java,
-                userId,
-            )
-        tokens.forEach { token ->
-            val result = pushService.send(PushMessage(token = token, title = title, body = body))
-            if (result.tokenInvalid) {
-                jdbcTemplate.update("UPDATE push_subscriptions SET is_active = FALSE WHERE endpoint = ?", token)
-            }
-        }
+        pushDispatcher.sendToUser(userId, title, body)
     }
 
     private companion object {

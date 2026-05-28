@@ -94,3 +94,16 @@ data class SalesPageResponse(
 data class SaleSuggestionsResponse(
     val notes: List<String>,
 )
+
+/**
+ * 매출 요약(페이지네이션 무관 전체 합산). GET /sales 와 동일 필터 규약.
+ * total/count는 모든 결제수단(미수·kakaopay 포함) 합산, 명세 버킷은 해당 결제수단만.
+ */
+data class SalesSummaryResponse(
+    val total: Long,
+    val card: Long,
+    val naverpay: Long,
+    val transfer: Long,
+    val cash: Long,
+    val count: Long,
+)

@@ -24,6 +24,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import java.util.UUID
 
@@ -52,6 +53,11 @@ class PhotoCardServiceIntegrationTest {
     private val presignService =
         S3PresignService(
             S3Presigner
+                .builder()
+                .region(Region.AP_NORTHEAST_2)
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("AKIA", "secret")))
+                .build(),
+            S3Client
                 .builder()
                 .region(Region.AP_NORTHEAST_2)
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("AKIA", "secret")))

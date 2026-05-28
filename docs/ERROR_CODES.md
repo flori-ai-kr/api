@@ -68,3 +68,16 @@
 | 동시성 경쟁(unique 제약) 폴백: `uq_users_provider_identity` | `E-AUTH-001` |
 | 동시성 경쟁(unique 제약) 폴백: email | `E-AUTH-002` |
 | 동시성 경쟁(unique 제약) 폴백: `uq_users_nickname` | `E-AUTH-003` |
+
+## E-CMNT-* (커뮤니티)
+
+> `community/error/CommunityErrorCode`. 단일 커뮤니티(공유) — 권한/마스킹은 서버가 뷰어(JWT)+`author_user_id`로 계산한다.
+
+| 코드 | 의미 | HTTP | 발생 지점 |
+|------|------|------|-----------|
+| `E-CMNT-001` | POST_NOT_FOUND (게시글 없음) | 404 | 미존재/삭제된(soft) 게시글 조회·수정·삭제·좋아요·댓글 |
+| `E-CMNT-002` | COMMENT_NOT_FOUND (댓글 없음) | 404 | 미존재/삭제된 댓글 삭제 |
+| `E-CMNT-003` | INVALID_CATEGORY (카테고리 오류) | 400 | 허용되지 않은 카테고리(notice/daily/question/knowledge/review/etc 외) |
+| `E-CMNT-004` | NOTICE_ADMIN_ONLY (공지 권한) | 403 | 비관리자가 `notice` 작성 시도 |
+| `E-CMNT-005` | FORBIDDEN (권한 없음) | 403 | 타인 글 수정(작성자만)·타인 글/댓글 삭제(작성자+관리자 외) |
+| `E-CMNT-006` | INVALID_PARENT (부모 댓글 오류) | 400 | 다른 글의 댓글·이미 대댓글인 댓글에 대댓글 시도 |

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.time.Instant
+import java.time.LocalDate
 
 interface TrendArticleRepository : JpaRepository<TrendArticle, Long> {
     fun findByOrderByCollectedAtDescCreatedAtDesc(pageable: Pageable): List<TrendArticle>
@@ -21,6 +22,12 @@ interface TrendArticleRepository : JpaRepository<TrendArticle, Long> {
     fun existsBySourceUrl(sourceUrl: String): Boolean
 
     fun countByCategory(category: String): Long
+
+    /** since(수집일) 이후로 수집된 해당 카테고리 기사 개수. */
+    fun countByCategoryAndCollectedAtGreaterThanEqual(
+        category: String,
+        collectedAt: LocalDate,
+    ): Long
 }
 
 interface InstagramAccountRepository : JpaRepository<InstagramAccount, Long> {
@@ -30,25 +37,26 @@ interface InstagramAccountRepository : JpaRepository<InstagramAccount, Long> {
 }
 
 interface InstagramPostRepository : JpaRepository<InstagramPost, Long> {
-    @Query("SELECT p FROM InstagramPost p JOIN FETCH p.account WHERE p.postedAt >= :since")
+    @Query("SELECT p FROM InstagramPost p WHERE p.postedAt >= :since")
     fun findFeed(
         @Param("since") since: Instant,
         pageable: Pageable,
     ): List<InstagramPost>
 
-    @Query("SELECT p FROM InstagramPost p JOIN FETCH p.account WHERE p.accountId = :accountId AND p.postedAt >= :since")
+    @Query("SELECT p FROM InstagramPost p WHERE p.accountId = :accountId AND p.postedAt >= :since")
     fun findFeedByAccount(
         @Param("accountId") accountId: Long,
         @Param("since") since: Instant,
         pageable: Pageable,
     ): List<InstagramPost>
 
-    @Query("SELECT p FROM InstagramPost p JOIN FETCH p.account WHERE p.id IN :ids")
-    fun findWithAccountByIdIn(
-        @Param("ids") ids: Collection<Long>,
-    ): List<InstagramPost>
+    fun findByIdIn(ids: Collection<Long>): List<InstagramPost>
 
     fun existsByShortcode(shortcode: String): Boolean
+
+    /** 가장 최근 수집(scraped_at) 시각. 포스트가 없으면 null. */
+    @Query("SELECT MAX(p.scrapedAt) FROM InstagramPost p")
+    fun findLatestScrapedAt(): Instant?
 }
 
 interface InsightScrapRepository : JpaRepository<InsightScrap, Long> {

@@ -67,7 +67,7 @@ class SchemaMigrationIntegrationTest {
     }
 
     @Test
-    fun `user_id 외래키는 users 테이블을 참조한다`() {
+    fun `user_id로 자식 행을 삽입하고 조회할 수 있다`() {
         val userId =
             jdbcTemplate.queryForObject(
                 "INSERT INTO users(email, nickname, provider, provider_id) " +
@@ -90,13 +90,15 @@ class SchemaMigrationIntegrationTest {
     }
 
     @Test
-    fun `존재하지 않는 user_id로는 행을 넣을 수 없다`() {
+    fun `FK 제약이 없으므로 존재하지 않는 user_id도 삽입된다 - 무결성은 애플리케이션 책임`() {
+        // 외래키(FK) 제약을 전면 제거(간접참조)했으므로 DB는 참조 무결성을 강제하지 않는다.
+        // orphan user_id 삽입이 성공한다 — 무결성/연쇄삭제는 애플리케이션이 책임진다.
         val insert = {
             jdbcTemplate.update(
                 "INSERT INTO customers(user_id, name, phone) VALUES (999999999, '없음', '01099999999')",
             )
         }
-        assertThat(runCatching { insert() }.isFailure).isTrue()
+        assertThat(runCatching { insert() }.isSuccess).isTrue()
     }
 
     @Test

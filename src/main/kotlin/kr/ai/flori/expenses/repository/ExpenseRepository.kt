@@ -2,6 +2,7 @@ package kr.ai.flori.expenses.repository
 
 import kr.ai.flori.expenses.entity.Expense
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.time.LocalDate
@@ -43,4 +44,12 @@ interface ExpenseRepository : JpaRepository<Expense, Long> {
     fun findNotesByFrequency(
         @Param("userId") userId: Long,
     ): List<String>
+
+    /** 고정비 템플릿 삭제 시 자동생성된 지출의 recurring_id를 NULL로(지출 자체는 보존). */
+    @Modifying
+    @Query("UPDATE Expense e SET e.recurringId = null WHERE e.userId = :userId AND e.recurringId = :recurringId")
+    fun clearRecurringReference(
+        @Param("userId") userId: Long,
+        @Param("recurringId") recurringId: Long,
+    ): Int
 }

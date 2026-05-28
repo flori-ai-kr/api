@@ -1,6 +1,6 @@
 # Flori Server — 아키텍처 & 기술 선정 이유
 
-> 최종 업데이트: 2026-05-26
+> 최종 업데이트: 2026-05-29
 
 이 문서는 Flori(꽃집 어드민) **모바일 앱 백엔드 API**의 기술 스택과 아키텍처를 설명한다. 단순히 "무엇을 쓰는가"가 아니라 **"왜 이것을 골랐는가"**에 초점을 맞춘다. 모든 선택에는 *기존 Next.js+Supabase 웹앱의 비즈니스 로직을 네이티브 앱이 호출 가능한 REST API로 재구현하고, 자체 AWS 인프라 위에 올린다*는 도메인 맥락이 반영되어 있다.
 
@@ -31,7 +31,8 @@ flowchart TB
     end
 
     subgraph External["외부 서비스"]
-        FCM[FCM<br/>푸시]
+        FCM[FCM<br/>모바일 푸시]
+        VAPID[Web Push/VAPID<br/>브라우저(PWA) 푸시]
         Discord[Discord<br/>에러 웹훅]
         KakaoAuth[kauth.kakao.com<br/>카카오 토큰교환]
         KakaoApi[kapi.kakao.com<br/>카카오 프로필조회]
@@ -40,10 +41,11 @@ flowchart TB
     App -->|"REST + Bearer JWT"| Sec
     Collector -->|"/internal · Bearer 키"| Sec
     Sec --> Ctrl --> Svc --> Repo --> RDS
-    Svc -->|"presigned PUT"| S3
+    Svc -->|"presigned PUT/GET"| S3
     App -.->|"직접 업로드"| S3
     Sched --> Svc
-    Svc -->|"토큰 발송"| FCM
+    Svc -->|"PushDispatcher<br/>(FCM or VAPID)"| FCM
+    Svc -->|"PushDispatcher<br/>(p256dh/auth 있으면)"| VAPID
     Adv -.->|"예기치 못한 오류"| Discord
     Svc -->|"인증코드 교환"| KakaoAuth
     Svc -->|"프로필 조회"| KakaoApi
@@ -56,7 +58,7 @@ flowchart TB
     class App,Collector client
     class Sec,Ctrl,Svc,Repo,Sched,Adv server
     class RDS,S3 store
-    class FCM,Discord,KakaoAuth,KakaoApi ext
+    class FCM,VAPID,Discord,KakaoAuth,KakaoApi ext
 ```
 
 핵심 원칙: **앱은 표시만 하고, 계산·검증·격리는 서버가 책임진다.** 지출총액 등은 서버가 SSOT로 계산해 응답하고, 멀티테넌시(사용자별 데이터 격리)는 RLS 없이 애플리케이션이 유일한 방어선으로 강제한다. 기존 웹앱은 당분간 Supabase 위에서 그대로 동작하며, 이 백엔드는 독립 인프라로 분리 운영한다.
@@ -72,8 +74,8 @@ flowchart LR
         CSec[security<br/>JWT·필터·SecurityConfig]
         CTen[tenant<br/>TenantContext]
         CErr[error<br/>AppException·Discord]
-        CSto[storage<br/>S3 presign]
-        CPush[push<br/>FCM 추상화]
+        CSto[storage<br/>S3 presign/delete]
+        CPush[push<br/>FCM + Web Push/VAPID<br/>PushDispatcher 라우팅]
         CCfg[config<br/>CORS·Async·Schedule·WebConfig]
         CLog[log<br/>LoggingInterceptor·TraceIdFilter·logback]
     end
@@ -96,13 +98,14 @@ flowchart LR
 | 도메인 패키지 | 책임 |
 |---|---|
 | `auth` | 회원가입(기본 설정 시드)·로그인·**카카오 소셜 로그인**·refresh 회전·로그아웃·`/me` |
-| `sales` | 매출 CRUD·무한스크롤·필터·미수·**서버 입금계산** |
+| `sales` | 매출 CRUD·무한스크롤·필터·**요약(GET /sales/summary)**·미수·**서버 입금계산** |
 | `expenses` | 지출 + 고정비(this/all 분기·**@Scheduled 자동생성**) |
 | `customers` | 고객 CRUD·findOrCreate·**실시간 구매통계** |
 | `reservations` / `calendar` | 예약(매출 전환·픽업)·캘린더 이벤트·**리마인더/요약 푸시** |
-| `photos` | 사진카드(presigned 업로드)·태그 |
-| `insights` | 트렌드/인스타 공유 읽기·스크랩·**내부 수집 API** |
-| `settings` | 매출/지출 설정·하단바·사용자 설정·푸시 구독 |
+| `photos` | 사진카드(presigned 업로드·삭제·**다운로드**)·태그 |
+| `insights` | 트렌드/인스타 공유 읽기(**카테고리별 개수·최근 수집 시각**)·스크랩·**내부 수집 API** |
+| `community` | 단일 커뮤니티 게시판(게시글·댓글·대댓글·좋아요·비밀글·soft delete)·이미지 업로드 |
+| `settings` | 매출/지출 설정·하단바·사용자 설정·푸시 구독·**테스트 발송** |
 | `dashboard` | 오늘/월 집계·**네이티브 SQL 통계** |
 
 ---
@@ -153,7 +156,7 @@ flowchart LR
 원본 스키마가 Supabase(PostgreSQL)다. jsonb·배열·`timestamptz`·부분 인덱스·`array_remove` 등 Postgres 고유 기능에 의존하므로 동일 엔진을 유지해 이식 리스크를 최소화한다. PK는 BIGINT IDENTITY(시퀀스 기반)로, FK도 BIGINT로 정렬한다(구 UUID 전략에서 전환 — 인덱스 크기·조인 비용 절감).
 
 1. **DDL 직접 관리(Flyway 미사용)**: 스키마 정본은 `docs/sql/all-tables-ddl.sql`(전체 스냅샷) + `docs/sql/seed.sql`(공유 시드)다. 운영(RDS)·로컬에는 이 DDL을 수동 적용하고, 앱은 부팅 시 `ddl-auto: validate`로 정합성만 검증한다(생성/변경 안 함). 테스트는 임베디드 PG에 `spring.sql.init`로 적용한다. **전체 테이블·컬럼 명세는 [DATABASE.md](DATABASE.md)가 SSOT.**
-2. **이식 시 변환(HARD)**: Supabase **RLS 정책 전부 제거**, `auth.users` FK 제거 → **자체 `users` 테이블** 도입, 모든 `user_id`가 `users(id)`를 `ON DELETE CASCADE`로 참조. jsonb/배열/복합 unique는 그대로 유지.
+2. **이식 시 변환(HARD)**: Supabase **RLS 정책 전부 제거**, `auth.users` FK 제거 → **자체 `users` 테이블** 도입. 모든 `user_id`는 `users(id)`를 **논리 참조**하며, **DB FK 제약은 없다**(간접참조 방식 — `docs/sql/migration/26-05-29-drop-foreign-keys.sql`). 참조 무결성·연쇄삭제는 애플리케이션이 명시적으로 처리. jsonb/배열/복합 unique는 그대로 유지.
 
 | 탈락 후보 | 이유 |
 |---|---|
@@ -202,8 +205,8 @@ DESIGN은 Testcontainers를 권장하지만, **개발/CI 환경에 Docker 데몬
 
 | 영역 | 선택 | 이유 |
 |---|---|---|
-| 스토리지 | **AWS S3 + CloudFront** (presigned PUT) | 앱이 서버를 거치지 않고 직접 업로드. 발급 시 소유권/메타 검증. 원본 R2 → S3 전환 |
-| 푸시 | **FCM** (Firebase Admin) | 원본 Web Push(VAPID) → 네이티브 FCM. 미설정 시 로깅 폴백으로 graceful |
+| 스토리지 | **AWS S3 + CloudFront** (presigned PUT·GET, 삭제) | 앱이 서버를 거치지 않고 직접 업로드(PUT). 다운로드는 presigned GET. 카드 삭제 시 S3 객체도 best-effort 정리 |
+| 푸시 | **FCM** (Firebase Admin, 모바일) + **Web Push/VAPID** (`nl.martijndwars:web-push 5.1.1`, `bcprov-jdk18on 1.78.1`, 브라우저 PWA) | `PushDispatcher`가 구독의 p256dh/auth 유무로 경로를 분기. 미설정 시 각각 로깅 폴백 |
 | 스케줄 | **Spring `@Scheduled`** | Vercel Cron 대체. KST 타임존 cron |
 | jsonb/배열 | **Hibernate 네이티브 + hypersistence-utils** | validate 친화적 매핑 |
 | API 문서 | **Spring REST Docs + ePages `restdocs-api-spec` 0.19.2** | 테스트가 OpenAPI 3 스펙을 생성(SSOT). `OpenApiConfig`가 정적 스펙 + JWT bearerAuth를 병합 → `/v3/api-docs`. springdoc swagger-ui가 표시(Authorize 버튼). `packages-to-scan` 더미로 컨트롤러 스캔 억제 |
@@ -258,7 +261,7 @@ flowchart TB
 3. **교차 참조 검증**: 매출의 `customer_id`, 예약·사진의 `saleId` 등 외부에서 받은 식별자는 **소유권을 재확인**한 뒤에만 사용.
 4. **테스트**: 도메인마다 "다른 user의 데이터 접근 차단" 케이스를 필수로 포함.
 
-> **공유 읽기 예외**: 인사이트 트렌드/인스타 계정·포스트는 테넌트 무관 공유 데이터(인증만 요구). 스크랩(`insight_scraps`)만 `user_id` 격리.
+> **공유 읽기 예외**: 인사이트 트렌드/인스타 계정·포스트는 테넌트 무관 공유 데이터(인증만 요구). 스크랩(`insight_scraps`)만 `user_id` 격리. **커뮤니티**(`community_posts`/`community_comments`/`community_likes`)도 공유 데이터 — `user_id` 행 격리 대상이 아니며, 비밀글·소유권·마스킹은 서비스가 뷰어(JWT) + `author_user_id`로 계산한다.
 
 ---
 
@@ -360,20 +363,21 @@ flowchart LR
 flowchart LR
     R[["@Scheduled<br/>리마인더 5분 / 요약 08:00 KST"]] --> NS[ReservationNotificationService]
     NS -->|"도달·미발송 리마인더"| DB[(PostgreSQL)]
-    NS -->|"push_subscriptions 토큰 조회"| DB
-    NS -->|"PushMessage"| PS[PushService]
-    PS -->|"운영"| FCM[FCM]
-    PS -.->|"미구성/로컬"| Log[LoggingPushService]
-    NS -->|"reminder_sent=true<br/>영구실패 토큰 비활성"| DB
+    NS -->|"push_subscriptions 구독 조회"| DB
+    NS -->|"sendToUser"| PD[PushDispatcher]
+    PD -->|"p256dh/auth 없으면<br/>FCM(모바일)"| FCM[FCM]
+    PD -->|"p256dh/auth 있으면<br/>VAPID(브라우저)"| VAPID[Web Push/VAPID]
+    PD -.->|"미구성/로컬"| Log[LoggingFallback]
+    NS -->|"reminder_sent=true<br/>영구실패 구독 비활성"| DB
 
     classDef s fill:#ef6c00,color:#fff,stroke:#e65100
     classDef d fill:#2e7d32,color:#fff,stroke:#1b5e20
     classDef ext fill:#6a1b9a,color:#fff,stroke:#4a148c
     classDef c fill:#f57f17,color:#fff,stroke:#e65100
     class R c
-    class NS,PS s
+    class NS,PD s
     class DB d
-    class FCM,Log ext
+    class FCM,VAPID,Log ext
 ```
 
 ---
@@ -381,6 +385,8 @@ flowchart LR
 ## DB 스키마
 
 도메인 테이블. 아래는 핵심 관계만 요약(공유 테이블은 `user_id` 없음). **전체 컬럼·제약·인덱스 명세는 [DATABASE.md](DATABASE.md)가 SSOT.**
+
+> **간접참조**: 다이어그램의 `FK` 레이블은 논리적 관계를 표현한다. DB에 FOREIGN KEY 제약은 없으며, 참조 무결성·연쇄삭제는 애플리케이션이 담당한다(`docs/sql/migration/26-05-29-drop-foreign-keys.sql`).
 
 ```mermaid
 erDiagram
@@ -394,6 +400,9 @@ erDiagram
     USERS ||--o{ INSIGHT_SCRAPS : "user_id"
     USERS ||--o{ REFRESH_TOKENS : "user_id"
     USERS ||--o{ PUSH_SUBSCRIPTIONS : "user_id"
+    USERS ||--o{ COMMUNITY_POSTS : "author_user_id"
+    USERS ||--o{ COMMUNITY_COMMENTS : "author_user_id"
+    USERS ||--o{ COMMUNITY_LIKES : "user_id"
 
     CUSTOMERS ||--o{ SALES : "customer_id"
     SALES ||--o| RESERVATIONS : "reservations.sale_id"
@@ -401,6 +410,9 @@ erDiagram
     RECURRING_EXPENSES ||--o{ EXPENSES : "recurring_id"
     RECURRING_EXPENSES ||--o{ RECURRING_SKIPS : "recurring_id"
     INSTAGRAM_ACCOUNTS ||--o{ INSTAGRAM_POSTS : "account_id"
+    COMMUNITY_POSTS ||--o{ COMMUNITY_COMMENTS : "post_id"
+    COMMUNITY_POSTS ||--o{ COMMUNITY_LIKES : "post_id"
+    COMMUNITY_COMMENTS ||--o{ COMMUNITY_COMMENTS : "parent_id(대댓글)"
 
     USERS {
         bigint id PK
@@ -409,6 +421,7 @@ erDiagram
         string provider "KAKAO|GOOGLE|NAVER, NOT NULL"
         string provider_id "소셜 고유 ID, nullable"
         boolean is_active
+        boolean is_admin "커뮤니티 관리자 권한"
     }
     SALES {
         bigint id PK
@@ -461,10 +474,36 @@ erDiagram
         string target_type "trend|post"
         bigint target_id "polymorphic"
     }
+    COMMUNITY_POSTS {
+        bigint id PK
+        bigint author_user_id FK
+        string category "notice|daily|question|knowledge|review|etc"
+        string title
+        jsonb content "Tiptap JSON"
+        boolean is_secret
+        boolean is_pinned
+        int like_count "비정규화"
+        int comment_count "비정규화"
+        timestamptz deleted_at "soft delete"
+    }
+    COMMUNITY_COMMENTS {
+        bigint id PK
+        bigint post_id FK
+        bigint parent_id FK "대댓글(1단계)"
+        bigint author_user_id FK
+        boolean is_secret
+        timestamptz deleted_at "soft delete"
+    }
+    COMMUNITY_LIKES {
+        bigint id PK
+        bigint post_id FK
+        bigint user_id FK
+        "%unique(post_id,user_id)" unique
+    }
 ```
 
 핵심 설계 결정:
-- **예약 → 매출 FK**: `reservations.sale_id`가 `sales`를 참조(예약→매출 전환). 순환 참조 해소를 위해 baseline에서 `sales` 생성 후 `ALTER`로 FK 추가. (`sales.reservation_id`는 보유하지 않음 — 통계는 sales에서 집계.)
+- **예약 → 매출 논리참조**: `reservations.sale_id`가 `sales`를 논리 참조(예약→매출 전환). DB FK 제약 없음 — 매출 삭제 시 앱이 `sale_id`를 NULL 처리. (`sales.reservation_id`는 보유하지 않음 — 통계는 sales에서 집계.)
 - **고정비 멱등 자동생성**: `expenses(recurring_id, date)` UNIQUE + `recurring_skips`("이것만 삭제" 시 재발 방지).
 - **polymorphic 스크랩**: `(user_id, target_type, target_id)` 복합 unique. FK 없이 트렌드/포스트 공용.
 - **드리프트 반영**: 원본 `schema.sql`이 누락했던 `sales.is_unpaid`, `reservations.reminder_sent/pickup_completed`, `calendar_events`까지 실제 운영 스키마 기준으로 이식.
@@ -476,14 +515,15 @@ erDiagram
 | 도메인 | 대표 엔드포인트 | 권한 |
 |---|---|---|
 | 인증 | `POST /auth/oauth/{kakao,google,naver}`, `POST /auth/register/complete`, `POST /auth/{refresh,logout}`, `GET /me` | Public / Auth |
-| 매출 | `GET/POST/PATCH/DELETE /sales`, `/sales/{id}/complete-unpaid`·`/revert-unpaid`, `/sales/suggestions` | Auth |
+| 매출 | `GET/POST/PATCH/DELETE /sales`, `GET /sales/summary`, `/sales/{id}/complete-unpaid`·`/revert-unpaid`, `/sales/suggestions` | Auth |
 | 지출·고정비 | `/expenses`, `/recurring-expenses`(+`/toggle`·`/quick-add`·`/instances/{id}?scope=this\|all`) | Auth |
 | 고객 | `/customers`(+`/search`·`/check-phone`·`/{id}/sales`·`/find-or-create`·`/{id}/grade`) | Auth |
 | 예약·캘린더 | `/reservations`(+`/upcoming`·`/reminders`·`/convert-to-sale`·`/add-pickup`), `/calendar-events` | Auth |
-| 사진첩 | `/photo-cards`(+`/upload-targets`·`/photos/reorder`), `/photo-tags` | Auth |
-| 인사이트 | `GET /insights/{trends,accounts,posts}`, `/insights/scraps/*` | Auth |
+| 사진첩 | `GET/POST/PATCH/DELETE /photo-cards`, `POST /photo-cards/upload-targets`(신규 카드용), `POST /photo-cards/{id}/upload-targets`, `GET /photo-cards/{id}/photos/download`, `/photos/reorder`, `/photo-tags` | Auth |
+| 인사이트 | `GET /insights/{trends,accounts,posts}`, `GET /insights/trends/counts`, `GET /insights/instagram/latest`, `/insights/scraps/*` | Auth |
 | 내부 수집 | `POST /internal/{trends,instagram-posts,instagram-accounts}` | **Internal 키** |
-| 설정 | `/settings/{sale-categories,payment-methods,expense-*,preferences}`, `/push/*` | Auth |
+| 커뮤니티 | `GET/POST /community/posts`, `GET/PATCH/DELETE /community/posts/{id}`, `POST /community/posts/{id}/like`, `GET/POST /community/posts/{id}/comments`, `DELETE /community/comments/{id}`, `POST /community/upload-targets` | Auth |
+| 설정 | `/settings/{sale-categories,payment-methods,expense-*,preferences}`, `/push/{subscribe,unsubscribe,status,test}` | Auth |
 | 대시보드 | `GET /dashboard/today`·`/dashboard/month` | Auth |
 
 전체 계약은 `/swagger-ui.html`에서 확인한다(RestDocs 테스트가 생성한 스펙 + JWT bearerAuth 병합 → `/v3/api-docs`) — **flori-ai/mobile이 읽는 계약의 출처**.
@@ -515,7 +555,8 @@ erDiagram
 | **내부 API** | `InternalAuthVerifier` — `MessageDigest.isEqual` 타이밍-세이프, 키 미설정 시 전면 차단 | 수집 API 무단 호출 |
 | **입력 검증** | Jakarta Validation `@Valid`, 결제수단/등급/상태 화이트리스트 | 잘못된 입력 |
 | **SQL 인젝션** | JPA 파라미터 바인딩, 네이티브도 `?`/`:param` 바인딩 전용 | 인젝션 |
-| **S3** | presigned PUT 짧은 만료, 소유권/이미지 메타·최대 장수 검증 후 발급 | 무단 업로드 |
+| **S3** | presigned PUT/GET 짧은 만료, 소유권/이미지 메타·최대 장수 검증 후 발급; 삭제는 best-effort(DB 정리 우선) | 무단 업로드·비인가 다운로드 |
+| **커뮤니티 권한** | `users.is_admin`으로 공지(notice) 작성·비밀글/댓글 열람·타인 글 삭제 판정. 수정은 작성자만 | 권한 없는 콘텐츠 수정·열람 |
 | **CORS / 헤더** | origin 화이트리스트, `X-Frame-Options: DENY`·`nosniff`·`Referrer-Policy` | XSS/클릭재킹/크로스사이트 |
 | **에러 응답** | 표준 `{code, message}`, 내부 디테일·시크릿 비노출 | 정보 노출 |
 | **시크릿** | 전부 `${ENV}` 참조, 코드/깃에 시크릿 없음 | 시크릿 유출 |
@@ -527,8 +568,9 @@ erDiagram
 ```
 AppException(errorCode: ErrorCode, message)
 └── ErrorCode (인터페이스: code·status·defaultMessage)
-    ├── CommonErrorCode  (common/error)         — 횡단 코드  E-CMN-*
-    └── AuthErrorCode    (auth/error)           — 도메인 코드 E-AUTH-*
+    ├── CommonErrorCode    (common/error)       — 횡단 코드  E-CMN-*
+    ├── AuthErrorCode      (auth/error)         — 도메인 코드 E-AUTH-*
+    └── CommunityErrorCode (community/error)   — 도메인 코드 E-CMNT-*
         (새 도메인은 <domain>/error 에 enum 추가)
 ```
 
@@ -584,7 +626,8 @@ flowchart LR
 | `DB_URL` / `DB_USER` / `DB_PASSWORD` | RDS PostgreSQL |
 | `JWT_SECRET` / `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL` | 토큰 서명·만료 |
 | `AWS_REGION` / `S3_BUCKET` / `CLOUDFRONT_DOMAIN` (+ AWS 자격증명) | presigned 업로드·서빙 |
-| `FCM_ENABLED` / `FCM_CREDENTIALS` | 푸시 |
+| `FCM_ENABLED` / `FCM_CREDENTIALS` | 모바일 FCM 푸시 |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | Web Push/VAPID(브라우저 PWA 푸시). 미설정 시 로깅 폴백 |
 | `DISCORD_WEBHOOK_URL` | 에러 알림 |
 | `INTERNAL_API_KEY` | 내부 수집 API |
 | `CORS_ALLOWED_ORIGINS` | 앱/웹 origin 화이트리스트 |
@@ -608,7 +651,9 @@ flowchart LR
 | hypersistence-utils-hibernate-63 | 3.9.0 | jsonb/배열 매핑 |
 | JJWT | 0.12.6 | 자체 JWT |
 | AWS SDK v2 (s3) | 2.29.20 | presigned URL |
-| Firebase Admin | 9.4.1 | FCM |
+| Firebase Admin | 9.4.1 | FCM(모바일 푸시) |
+| nl.martijndwars:web-push | 5.1.1 | Web Push/VAPID(브라우저 PWA 푸시) |
+| org.bouncycastle:bcprov-jdk18on | 1.78.1 | VAPID 서명(EC 키 연산) |
 | logstash-logback-encoder | 8.1 | 운영 프로필 JSON 구조화 로깅 |
 | springdoc-openapi | 2.8.17 | Swagger UI (뷰어) |
 | ePages restdocs-api-spec | 0.19.2 | RestDocs → OpenAPI 3 생성 |

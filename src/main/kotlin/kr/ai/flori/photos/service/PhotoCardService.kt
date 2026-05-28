@@ -82,13 +82,25 @@ class PhotoCardService(
         return PhotoCardResponse.from(photoCardRepository.save(card))
     }
 
-    /** 삭제 후 정리 대상 사진 목록을 반환(스토리지 클린업은 호출측/후속 처리). */
+    /** 카드 삭제 + 연결된 S3 객체 정리(best-effort). */
     @Transactional
-    fun delete(id: Long): List<PhotoFile> {
+    fun delete(id: Long) {
         val card = load(id)
-        val photos = card.photos
+        card.photos.forEach { s3PresignService.deleteByUrl(it.url) }
         photoCardRepository.delete(card)
-        return photos
+    }
+
+    /** 원본 다운로드용 presigned GET URL. 카드 소유권 + 해당 사진이 이 카드에 속하는지 검증 후 발급. */
+    @Transactional(readOnly = true)
+    fun downloadUrl(
+        id: Long,
+        photoUrl: String,
+    ): String {
+        val card = load(id)
+        val photo =
+            card.photos.firstOrNull { it.url == photoUrl }
+                ?: throw AppException(CommonErrorCode.NOT_FOUND, "사진을 찾을 수 없습니다")
+        return s3PresignService.presignDownload(photoUrl, photo.originalName)
     }
 
     @Transactional
@@ -107,8 +119,26 @@ class PhotoCardService(
         photoUrl: String,
     ): PhotoCardResponse {
         val card = load(id)
+        // 단건 삭제도 S3 객체까지 정리(전체 카드 삭제와 동일) — 안 그러면 CloudFront에 고아 객체가 공개로 남는다.
+        if (card.photos.any { it.url == photoUrl }) s3PresignService.deleteByUrl(photoUrl)
         card.photos = card.photos.filterNot { it.url == photoUrl }
         return PhotoCardResponse.from(photoCardRepository.save(card))
+    }
+
+    /**
+     * 카드 생성 전(신규) presigned PUT 발급. 카드가 아직 없으므로 userId 기준 키로 발급한다.
+     * 업로드 성공 후 imageUrls를 담아 카드를 생성하면, 업로드 실패 시 DB에 카드가 남지 않는다.
+     */
+    fun createUploadTargets(files: List<FileMetaRequest>): List<UploadTargetResponse> {
+        val userId = TenantContext.currentUserId()
+        requirePhotoLimit(files.size)
+        return files.map { file ->
+            val contentType = requireNotNull(file.type)
+            validateImageMeta(contentType, file.size)
+            val name = requireNotNull(file.name)
+            val presigned = s3PresignService.presignUpload(buildUserKey(userId, name), contentType)
+            UploadTargetResponse(presigned.uploadUrl, presigned.fileUrl, name)
+        }
     }
 
     /** presigned PUT 발급: 소유권 확인 + 카드당 최대 장수 + 이미지 메타 검증. */
@@ -137,7 +167,10 @@ class PhotoCardService(
         contentType: String,
         size: Long,
     ) {
-        if (!contentType.startsWith("image/")) throw AppException(CommonErrorCode.VALIDATION, "이미지 파일만 업로드할 수 있습니다")
+        // SVG 등 스크립트 내장 가능 타입을 막기 위해 prefix가 아닌 명시 허용 목록으로 검증.
+        if (contentType.lowercase() !in ALLOWED_IMAGE_TYPES) {
+            throw AppException(CommonErrorCode.VALIDATION, "지원하지 않는 이미지 형식입니다")
+        }
         if (size > MAX_FILE_SIZE_BYTES) throw AppException(CommonErrorCode.VALIDATION, "파일 크기가 너무 큽니다")
     }
 
@@ -147,6 +180,14 @@ class PhotoCardService(
     ): String {
         val safeName = name.replace(Regex("[^A-Za-z0-9._-]"), "_")
         return "photo-cards/$cardId/${UUID.randomUUID()}-$safeName"
+    }
+
+    private fun buildUserKey(
+        userId: Long,
+        name: String,
+    ): String {
+        val safeName = name.replace(Regex("[^A-Za-z0-9._-]"), "_")
+        return "photo-cards/u$userId/${UUID.randomUUID()}-$safeName"
     }
 
     private fun requirePhotoLimit(count: Int) {
@@ -170,5 +211,6 @@ class PhotoCardService(
         const val PAGE_SIZE = 8
         const val MAX_PHOTOS_PER_CARD = 10
         const val MAX_FILE_SIZE_BYTES = 10L * 1024 * 1024
+        val ALLOWED_IMAGE_TYPES = setOf("image/jpeg", "image/png", "image/gif", "image/webp", "image/avif", "image/heic")
     }
 }

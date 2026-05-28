@@ -34,11 +34,11 @@ class InfraSecurityIntegrationTest {
     fun `허용 origin의 CORS 프리플라이트가 통과한다`() {
         mockMvc
             .options("/auth/oauth/kakao") {
-                header("Origin", "http://localhost:3000")
+                header("Origin", "http://localhost:3100")
                 header("Access-Control-Request-Method", "POST")
             }.andExpect {
                 status { isOk() }
-                header { string("Access-Control-Allow-Origin", "http://localhost:3000") }
+                header { string("Access-Control-Allow-Origin", "http://localhost:3100") }
             }
     }
 }

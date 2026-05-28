@@ -12,6 +12,7 @@ import kr.ai.flori.insights.dto.TrendArticleResponse
 import kr.ai.flori.insights.dto.TrendScrapResponse
 import kr.ai.flori.insights.entity.InsightScrap
 import kr.ai.flori.insights.repository.InsightScrapRepository
+import kr.ai.flori.insights.repository.InstagramAccountRepository
 import kr.ai.flori.insights.repository.InstagramPostRepository
 import kr.ai.flori.insights.repository.TrendArticleRepository
 import org.springframework.dao.DataIntegrityViolationException
@@ -27,6 +28,7 @@ class ScrapService(
     private val scrapRepository: InsightScrapRepository,
     private val trendRepository: TrendArticleRepository,
     private val postRepository: InstagramPostRepository,
+    private val accountRepository: InstagramAccountRepository,
 ) {
     @Transactional
     fun toggle(
@@ -94,10 +96,15 @@ class ScrapService(
     fun postScraps(limit: Int): List<PostScrapResponse> {
         val scraps = loadScraps(TYPE_POST, limit)
         if (scraps.isEmpty()) return emptyList()
-        val posts = postRepository.findWithAccountByIdIn(scraps.map { it.targetId }).associateBy { it.id }
+        val posts = postRepository.findByIdIn(scraps.map { it.targetId }).associateBy { it.id }
+        // FK 연관관계 대신 accountId로 계정을 별도 조회해 합친다(간접참조).
+        val accountsById = accountRepository.findAllById(posts.values.map { it.accountId }.toSet()).associateBy { it.id }
         return scraps.mapNotNull { scrap ->
             posts[scrap.targetId]?.let {
-                PostScrapResponse(InsightScrapResponse.from(scrap), InstagramPostResponse.from(it))
+                PostScrapResponse(
+                    InsightScrapResponse.from(scrap),
+                    InstagramPostResponse.from(it, accountsById[it.accountId]),
+                )
             }
         }
     }

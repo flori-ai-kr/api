@@ -36,4 +36,8 @@ class User(
 
     @Column(name = "is_active", nullable = false)
     var isActive: Boolean = true
+
+    /** 운영 관리자 여부. 커뮤니티 공지(notice) 작성·비밀글/댓글 열람·타인 글 삭제 권한 판정에 사용. */
+    @Column(name = "is_admin", nullable = false)
+    var isAdmin: Boolean = false
 }

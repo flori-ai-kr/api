@@ -17,6 +17,7 @@ import org.springframework.restdocs.generate.RestDocumentationGenerator
 import org.springframework.restdocs.payload.JsonFieldType
 import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
 import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
+import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
@@ -78,6 +79,26 @@ class PhotoUploadTargetsDocsTest : RestDocsSupport() {
                 }.andReturn()
                 .response.contentAsString
         return objectMapper.readTree(res).get("id").asText()
+    }
+
+    /** 사진 1장이 포함된 카드 생성 → (id, photoUrl) 반환 */
+    private fun createPhotoCardWithPhoto(token: String): Pair<String, String> {
+        val photoUrl = "https://cdn.flori.dev/photo-cards/dl/${java.util.UUID.randomUUID()}.jpg"
+        val res =
+            mockMvc
+                .post("/photo-cards") {
+                    header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                    contentType = MediaType.APPLICATION_JSON
+                    content =
+                        json(
+                            mapOf(
+                                "title" to "다운로드 테스트 카드",
+                                "photos" to listOf(mapOf("url" to photoUrl, "originalName" to "flower.jpg")),
+                            ),
+                        )
+                }.andReturn()
+                .response.contentAsString
+        return objectMapper.readTree(res).get("id").asText() to photoUrl
     }
 
     // ── 사진 업로드 타깃(presigned URL) 발급 ──────────────────────────────────
@@ -145,6 +166,85 @@ class PhotoUploadTargetsDocsTest : RestDocsSupport() {
                                 fieldWithPath("[].originalName")
                                     .type(JsonFieldType.STRING)
                                     .description("원본 파일명"),
+                            ),
+                    ),
+                )
+            }
+    }
+
+    // ── 신규 카드용 업로드 타깃(카드 생성 전) ─────────────────────────────────
+
+    @Test
+    fun `신규 카드 업로드 타깃 발급 문서화`() {
+        val token = signupAndToken()
+
+        mockMvc
+            .post("/photo-cards/upload-targets") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    json(
+                        mapOf(
+                            "files" to
+                                listOf(
+                                    mapOf("name" to "flower.jpg", "type" to "image/jpeg", "size" to 102400),
+                                ),
+                        ),
+                    )
+            }.andExpect { status { isOk() } }
+            .andDo {
+                handle(
+                    docs(
+                        identifier = "photo-card-upload-targets-new",
+                        tag = "PhotoCards",
+                        summary = "신규 카드용 업로드 타깃 발급 (카드 생성 전 — 업로드 성공 후 카드 생성). presigned PUT URL",
+                        requestFields =
+                            listOf(
+                                fieldWithPath("files").type(JsonFieldType.ARRAY).description("업로드할 파일 메타 목록(필수, 1개 이상)"),
+                                fieldWithPath("files[].name").type(JsonFieldType.STRING).description("원본 파일명"),
+                                fieldWithPath("files[].type").type(JsonFieldType.STRING).description("MIME 타입(이미지만 허용)"),
+                                fieldWithPath("files[].size").type(JsonFieldType.NUMBER).description("파일 크기(byte)"),
+                            ),
+                        responseFields =
+                            listOf(
+                                fieldWithPath("[]").type(JsonFieldType.ARRAY).description("업로드 타깃 목록"),
+                                fieldWithPath("[].uploadUrl").type(JsonFieldType.STRING).description("S3 presigned PUT URL"),
+                                fieldWithPath("[].fileUrl").type(JsonFieldType.STRING).description("업로드 후 조회용 CloudFront URL"),
+                                fieldWithPath("[].originalName").type(JsonFieldType.STRING).description("원본 파일명"),
+                            ),
+                    ),
+                )
+            }
+    }
+
+    // ── 사진 원본 다운로드 (presigned GET) ────────────────────────────────────
+
+    @Test
+    fun `사진 다운로드 URL 발급 문서화`() {
+        val token = signupAndToken()
+        val (id, photoUrl) = createPhotoCardWithPhoto(token)
+
+        mockMvc
+            .get("/photo-cards/$id/photos/download") {
+                requestAttr(
+                    RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE,
+                    "/photo-cards/{id}/photos/download",
+                )
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                param("url", photoUrl)
+            }.andExpect { status { isOk() } }
+            .andDo {
+                handle(
+                    docs(
+                        identifier = "photo-card-download",
+                        tag = "PhotoCards",
+                        summary = "사진 원본 다운로드 URL 발급 (presigned GET, 소유권 검증)",
+                        pathParameters = listOf(parameterWithName("id").description("사진 카드 ID")),
+                        responseFields =
+                            listOf(
+                                fieldWithPath("downloadUrl")
+                                    .type(JsonFieldType.STRING)
+                                    .description("원본 다운로드용 presigned GET URL (짧은 만료)"),
                             ),
                     ),
                 )
