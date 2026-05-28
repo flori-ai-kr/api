@@ -101,7 +101,7 @@ data class OAuthResult(
  * 가입 완료(= 온보딩) 요청. registerToken을 자격증명으로 사용하며(아직 User 없음, 인증 불필요),
  * 온보딩 입력으로 User + 가게 프로필을 한 번에 생성한다.
  *
- * 매핑: nickname → users.name(계정 표시명), storeName → user_profiles.store_name(가게명),
+ * 매핑: nickname → users.nickname(계정 표시명), storeName → user_profiles.store_name(가게명),
  *      email → users.email(수정 가능). regionSido 필수, 그 외 지역/나이대/관심사/주력은 선택.
  */
 @Schema(description = "가입 완료(온보딩) 요청. registerToken으로 신원을 검증하고 User+프로필을 생성한다.")

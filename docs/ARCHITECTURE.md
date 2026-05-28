@@ -133,7 +133,7 @@ flowchart LR
 
 도메인 CRUD는 객체지향으로, 통계 집계는 SQL로 다루는 게 각각 자연스럽다.
 
-1. **JPA + Hibernate**: 엔티티 CRUD·연관관계·Dirty Checking. `ddl-auto=validate`로 **엔티티-스키마 정합성을 부팅 시 강제**(스키마 SSOT는 Flyway).
+1. **JPA + Hibernate**: 엔티티 CRUD·연관관계·Dirty Checking. `ddl-auto=validate`로 **엔티티-스키마 정합성을 부팅 시 강제**(스키마 SSOT는 `docs/sql` DDL 직접 관리).
 2. **네이티브 SQL(JdbcTemplate)**: 대시보드/통계의 `GROUP BY`·`FILTER`·`EXISTS`, 고객 실시간 구매통계, 고정비 멱등 INSERT(`ON CONFLICT`). 모든 네이티브 쿼리는 `user_id` 파라미터 바인딩으로 격리·인젝션을 방지한다.
 
 **jsonb/배열 매핑**: Hibernate 6 네이티브 `@JdbcTypeCode(SqlTypes.ARRAY / JSON)`을 우선 사용한다(`days_of_week INT[]`, `yearly_dates jsonb`, `photos jsonb`). 단, `List<String>`을 ARRAY·JSON 양쪽으로 매핑하면 Hibernate 전역 타입 해석이 충돌하므로, **text[] 배열 컬럼은 `Array<String>`로, jsonb 문자열 배열은 `List<String>`로** 분리한다(예: `photo_cards.tags`는 `Array<String>`).
@@ -146,13 +146,13 @@ flowchart LR
 
 ---
 
-### AWS RDS PostgreSQL + Flyway
+### AWS RDS PostgreSQL + DDL 직접 관리
 
 **왜 PostgreSQL인가:**
 
 원본 스키마가 Supabase(PostgreSQL)다. jsonb·배열·`timestamptz`·부분 인덱스·`array_remove` 등 Postgres 고유 기능에 의존하므로 동일 엔진을 유지해 이식 리스크를 최소화한다. PK는 BIGINT IDENTITY(시퀀스 기반)로, FK도 BIGINT로 정렬한다(구 UUID 전략에서 전환 — 인덱스 크기·조인 비용 절감).
 
-1. **Flyway 마이그레이션**: `V1`(통합 스키마 baseline) → `V2`(인스타 계정 공유 시드) → `V3`(온보딩 — `user_profiles` + 당시 `users.onboarded`) → `V4`(소셜 전용 전환 — `password_hash` 제거, `email` NOT NULL) → `V5`(`users.onboarded` 컬럼 제거 — User 존재 자체가 온보딩 완료를 의미하므로 죽은 컬럼 정리). 버전 관리되는 단방향 마이그레이션으로 재현 가능한 스키마를 보장한다. **전체 테이블·컬럼 명세는 [DATABASE.md](DATABASE.md)가 SSOT.**
+1. **DDL 직접 관리(Flyway 미사용)**: 스키마 정본은 `docs/sql/all-tables-ddl.sql`(전체 스냅샷) + `docs/sql/seed.sql`(공유 시드)다. 운영(RDS)·로컬에는 이 DDL을 수동 적용하고, 앱은 부팅 시 `ddl-auto: validate`로 정합성만 검증한다(생성/변경 안 함). 테스트는 임베디드 PG에 `spring.sql.init`로 적용한다. **전체 테이블·컬럼 명세는 [DATABASE.md](DATABASE.md)가 SSOT.**
 2. **이식 시 변환(HARD)**: Supabase **RLS 정책 전부 제거**, `auth.users` FK 제거 → **자체 `users` 테이블** 도입, 모든 `user_id`가 `users(id)`를 `ON DELETE CASCADE`로 참조. jsonb/배열/복합 unique는 그대로 유지.
 
 | 탈락 후보 | 이유 |
@@ -187,9 +187,9 @@ flowchart LR
 
 **왜 Testcontainers가 아닌가:**
 
-DESIGN은 Testcontainers를 권장하지만, **개발/CI 환경에 Docker 데몬이 없을 수 있다**. Zonky `embedded-postgres`는 실제 PostgreSQL 바이너리를 Docker 없이 구동하므로, Flyway 마이그레이션·jsonb/배열·`FILTER`·partial index 등 Postgres 고유 기능을 **진짜 DB에서** 검증할 수 있다(H2 호환 모드로는 불가능).
+DESIGN은 Testcontainers를 권장하지만, **개발/CI 환경에 Docker 데몬이 없을 수 있다**. Zonky `embedded-postgres`는 실제 PostgreSQL 바이너리를 Docker 없이 구동하므로, jsonb/배열·`FILTER`·partial index·plpgsql 트리거 등 Postgres 고유 기능을 **진짜 DB에서** 검증할 수 있다(H2 호환 모드로는 불가능).
 
-`@AutoConfigureEmbeddedDatabase(provider = ZONKY)` + `@SpringBootTest`로 컨텍스트 부팅 시 임베디드 PG에 Flyway가 실제 적용된다. 모든 도메인의 **멀티테넌시 격리 테스트**가 실 DB에서 수행된다.
+`@AutoConfigureEmbeddedDatabase(provider = ZONKY)` + `@SpringBootTest`로 컨텍스트 부팅 시 임베디드 PG에 `spring.sql.init`가 `docs/sql` DDL을 실제 적용한다. 모든 도메인의 **멀티테넌시 격리 테스트**가 실 DB에서 수행된다.
 
 | 탈락 후보 | 이유 |
 |---|---|
@@ -380,7 +380,7 @@ flowchart LR
 
 ## DB 스키마
 
-도메인 **25 테이블**(+ Flyway 이력). 아래는 핵심 관계만 요약(공유 테이블은 `user_id` 없음). **전체 컬럼·제약·인덱스 명세는 [DATABASE.md](DATABASE.md)가 SSOT.**
+도메인 테이블. 아래는 핵심 관계만 요약(공유 테이블은 `user_id` 없음). **전체 컬럼·제약·인덱스 명세는 [DATABASE.md](DATABASE.md)가 SSOT.**
 
 ```mermaid
 erDiagram
@@ -405,7 +405,7 @@ erDiagram
     USERS {
         bigint id PK
         string email UK "NOT NULL (소셜에서 채움)"
-        string name "표시명/소셜 닉네임"
+        string nickname "표시명/소셜 닉네임, NOT NULL UNIQUE"
         string provider "KAKAO|GOOGLE|NAVER, NOT NULL"
         string provider_id "소셜 고유 ID, nullable"
         boolean is_active
@@ -559,7 +559,7 @@ flowchart LR
 ```
 
 - **게이트**: `./gradlew build test` — ktlint(official) + detekt + 전체 테스트 + **JaCoCo line 80% 커버리지**가 모두 통과해야 커밋. (현재 **89.4% ≥ 80%**, 전체 테스트 0 스킵.)
-- **실 DB 검증**: Zonky 임베디드 PostgreSQL로 Flyway 마이그레이션·jsonb/배열·통계 집계를 실제 엔진에서 실행.
+- **실 DB 검증**: Zonky 임베디드 PostgreSQL로 `docs/sql` DDL 적용·jsonb/배열·통계 집계를 실제 엔진에서 실행.
 - **멀티테넌시 필수 케이스**: 모든 도메인에 "다른 user 데이터 접근 차단" 테스트 포함(서비스·HTTP 양 레벨).
 - **계산/규칙 단위 테스트**: 고정비 발생 판정(격주·말일 클램핑), 멱등 자동생성.
 
@@ -604,7 +604,6 @@ flowchart LR
 | Gradle (wrapper) | 8.11.1 | 빌드 |
 | Spring Security | 6.x (BOM) | 인증/인가 |
 | Spring Data JPA / Hibernate | 6.6 (BOM) | ORM·validate |
-| Flyway (core + postgresql) | (BOM) | 마이그레이션 |
 | PostgreSQL Driver | (BOM) | DB 드라이버 |
 | hypersistence-utils-hibernate-63 | 3.9.0 | jsonb/배열 매핑 |
 | JJWT | 0.12.6 | 자체 JWT |

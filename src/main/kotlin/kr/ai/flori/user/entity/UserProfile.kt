@@ -11,7 +11,7 @@ import org.hibernate.type.SqlTypes
 /**
  * 사용자 프로필(users와 1:1). PK이자 FK인 user_id를 공유한다(IDENTITY 생성 아님).
  *
- * - storeName(가게명)은 users.name(계정 표시명/소셜 닉네임)과 분리해 저장한다.
+ * - storeName(가게명)은 users.nickname(계정 표시명/소셜 닉네임)과 분리해 저장한다.
  * - interests/specialties는 PhotoCard.tags와 동일한 네이티브 TEXT[] 매핑.
  * - 옵션 값(시도/나이대/관심사/주력)의 enum 검증은 웹이 소유 — 서버는 자유 문자열로 저장한다.
  * - 멀티테넌시: PK가 user_id이므로 임의 user_id 주입이 불가능하다(본질적 격리).

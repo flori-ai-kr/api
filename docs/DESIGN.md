@@ -26,7 +26,7 @@
 
 ## 3. 기술 스택
 
-Kotlin + Gradle(KTS) / Spring Boot 3.x(Java 21) / Spring Data JPA + Hibernate(jsonb·배열은 hypersistence-utils, 통계는 네이티브 SQL) / AWS RDS PostgreSQL / Flyway / Spring Security + 자체 JWT / Jakarta Validation / AWS SDK v2(S3) / Firebase Admin(FCM) / springdoc-openapi.
+Kotlin + Gradle(KTS) / Spring Boot 3.x(Java 21) / Spring Data JPA + Hibernate(jsonb·배열은 hypersistence-utils, 통계는 네이티브 SQL) / AWS RDS PostgreSQL(DDL 직접 관리 `docs/sql`, Flyway 미사용) / Spring Security + 자체 JWT / Jakarta Validation / AWS SDK v2(S3) / Firebase Admin(FCM) / springdoc-openapi.
 
 ## 4. 레이어 / 패키지 구조
 
@@ -97,7 +97,7 @@ kr.ai.flori
 
 ## 11. 테스트 / 품질
 
-- 단위: 서비스 로직(고정비 발생 판정·스킵·통계). 통합: Testcontainers(PostgreSQL)로 리포지토리/Flyway.
+- 단위: 서비스 로직(고정비 발생 판정·스킵·통계). 통합: Zonky 임베디드 PostgreSQL(`spring.sql.init`로 `docs/sql` DDL 적용)로 리포지토리.
 - 게이트: `./gradlew build test`. ktlint/detekt.
 - 멀티테넌시 격리 테스트(다른 user의 데이터 접근 차단)는 필수 케이스.
 

@@ -6,10 +6,10 @@ import kr.ai.flori.auth.dto.RegisterCompleteRequest
 import kr.ai.flori.auth.error.AuthErrorCode
 import kr.ai.flori.auth.oauth.SocialOAuthClient
 import kr.ai.flori.auth.oauth.SocialUserInfo
-import kr.ai.flori.auth.repository.UserRepository
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.security.JwtTokenProvider
+import kr.ai.flori.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -89,7 +89,7 @@ class AuthServiceIntegrationTest {
         registerToken: String,
         email: String,
         storeName: String = "헤이즐 플라워",
-        // 닉네임은 전역 유일(uq_users_name)이므로 기본값을 호출마다 고유하게 생성한다.
+        // 닉네임은 전역 유일(uq_users_nickname)이므로 기본값을 호출마다 고유하게 생성한다.
         nickname: String = "헤이즐-${UUID.randomUUID()}",
     ) = RegisterCompleteRequest(
         registerToken = registerToken,
@@ -132,7 +132,7 @@ class AuthServiceIntegrationTest {
         assertThat(tokens.refreshToken).isNotBlank()
         val user = userRepository.findByProviderAndProviderId("GOOGLE", pid)!!
         assertThat(user.email).isEqualTo(email)
-        assertThat(user.name).isEqualTo("닉네임")
+        assertThat(user.nickname).isEqualTo("닉네임")
     }
 
     @Test

@@ -184,7 +184,7 @@ class InternalInsightDocsTest {
 
     @Test
     fun `인스타 포스트 수집 문서화`() {
-        // Flyway 시드 계정 사용 (V2__seed_instagram_accounts.sql)
+        // 공유 시드 계정 사용 (docs/sql/seed.sql)
         val account = accountRepository.findByActiveTrueOrderBySortOrderAscUsernameAsc().first()
         val accountId = requireNotNull(account.id)
 

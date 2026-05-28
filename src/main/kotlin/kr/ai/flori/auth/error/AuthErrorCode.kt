@@ -19,6 +19,6 @@ enum class AuthErrorCode(
     /** 이메일이 타 계정에서 사용 중. */
     DUPLICATE_EMAIL("E-AUTH-002", HttpStatus.CONFLICT, "이미 사용 중인 이메일입니다"),
 
-    /** 닉네임(users.name 전역 유일)이 타 계정에서 사용 중. */
+    /** 닉네임(users.nickname 전역 유일)이 타 계정에서 사용 중. */
     DUPLICATE_NICKNAME("E-AUTH-003", HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다"),
 }

@@ -1,11 +1,9 @@
-package kr.ai.flori.auth.dto
-
-import kr.ai.flori.user.dto.ProfileResponse
+package kr.ai.flori.user.dto
 
 data class UserResponse(
     val id: Long,
     val email: String?,
-    val name: String?,
+    val nickname: String?,
     /** 가게 프로필. 온보딩 전이면 null. */
     val profile: ProfileResponse?,
 )

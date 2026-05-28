@@ -2,7 +2,6 @@ package kr.ai.flori.expenses.service
 
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
-import kr.ai.flori.auth.repository.UserRepository
 import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.security.JwtTokenProvider
@@ -13,6 +12,7 @@ import kr.ai.flori.expenses.repository.ExpenseRepository
 import kr.ai.flori.expenses.repository.RecurringExpenseRepository
 import kr.ai.flori.expenses.repository.RecurringSkipRepository
 import kr.ai.flori.support.TestAccounts
+import kr.ai.flori.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach

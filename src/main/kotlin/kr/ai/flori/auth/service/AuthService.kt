@@ -3,19 +3,19 @@ package kr.ai.flori.auth.service
 import kr.ai.flori.auth.dto.OAuthResult
 import kr.ai.flori.auth.dto.RegisterCompleteRequest
 import kr.ai.flori.auth.dto.TokenResponse
-import kr.ai.flori.auth.dto.UserResponse
 import kr.ai.flori.auth.entity.RefreshToken
-import kr.ai.flori.auth.entity.User
 import kr.ai.flori.auth.error.AuthErrorCode
 import kr.ai.flori.auth.oauth.SocialOAuthClient
 import kr.ai.flori.auth.repository.RefreshTokenRepository
-import kr.ai.flori.auth.repository.UserRepository
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.security.JwtProperties
 import kr.ai.flori.common.security.JwtTokenProvider
+import kr.ai.flori.user.dto.UserResponse
+import kr.ai.flori.user.entity.User
 import kr.ai.flori.user.entity.UserProfile
 import kr.ai.flori.user.repository.UserProfileRepository
+import kr.ai.flori.user.repository.UserRepository
 import kr.ai.flori.user.service.toResponse
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
@@ -113,7 +113,7 @@ class AuthService(
                 userRepository.saveAndFlush(
                     User(
                         email = request.email,
-                        name = request.nickname,
+                        nickname = request.nickname,
                         provider = principal.provider,
                         providerId = principal.providerId,
                     ),
@@ -145,7 +145,7 @@ class AuthService(
      * 가입 가능 여부 검증(자동 병합 금지 정책). 충돌 시 신원/이메일/닉네임을 구분한 DUPLICATE 메시지로 던진다.
      * - 같은 (provider, providerId)가 이미 가입 → registerToken 재사용 차단.
      * - 이메일이 타 계정 사용 중 → 이메일 선점 공격 시 다른 계정에 붙이지 않는다.
-     * - 닉네임이 타 계정 사용 중 → 전역 유일(uq_users_name) 위반 선검사.
+     * - 닉네임이 타 계정 사용 중 → 전역 유일(uq_users_nickname) 위반 선검사.
      */
     private fun verifyRegisterable(
         provider: String,
@@ -159,7 +159,7 @@ class AuthService(
                     AppException(AuthErrorCode.ALREADY_REGISTERED, DUP_IDENTITY)
                 userRepository.existsByEmail(email) ->
                     AppException(AuthErrorCode.DUPLICATE_EMAIL, DUP_EMAIL)
-                userRepository.existsByName(nickname) ->
+                userRepository.existsByNickname(nickname) ->
                     AppException(AuthErrorCode.DUPLICATE_NICKNAME, DUP_NICKNAME)
                 else -> null
             }
@@ -175,7 +175,7 @@ class AuthService(
     private fun duplicateFromConstraint(e: DataIntegrityViolationException): AppException {
         val detail = (e.mostSpecificCause.message ?: e.message ?: "").lowercase()
         return when {
-            detail.contains("uq_users_name") -> AppException(AuthErrorCode.DUPLICATE_NICKNAME, DUP_NICKNAME)
+            detail.contains("uq_users_nickname") -> AppException(AuthErrorCode.DUPLICATE_NICKNAME, DUP_NICKNAME)
             detail.contains("uq_users_provider_identity") -> AppException(AuthErrorCode.ALREADY_REGISTERED, DUP_IDENTITY)
             detail.contains("email") -> AppException(AuthErrorCode.DUPLICATE_EMAIL, DUP_EMAIL)
             else -> AppException(CommonErrorCode.CONFLICT, "중복 충돌이 발생했습니다. 다시 시도해 주세요")
@@ -185,7 +185,7 @@ class AuthService(
     /** 닉네임 사용 가능 여부 사전 확인(가입 화면 중복확인 버튼). 이미 사용 중이면 DUPLICATE_NICKNAME(409). */
     @Transactional(readOnly = true)
     fun ensureNicknameAvailable(nickname: String) {
-        if (userRepository.existsByName(nickname)) {
+        if (userRepository.existsByNickname(nickname)) {
             throw AppException(AuthErrorCode.DUPLICATE_NICKNAME, DUP_NICKNAME)
         }
     }
@@ -201,7 +201,7 @@ class AuthService(
         return UserResponse(
             id = userId,
             email = user.email,
-            name = user.name,
+            nickname = user.nickname,
             profile = profile,
         )
     }
@@ -228,7 +228,7 @@ class AuthService(
         return UserResponse(
             id = userId,
             email = user.email,
-            name = user.name,
+            nickname = user.nickname,
             profile = profile,
         )
     }

@@ -1,7 +1,6 @@
 package kr.ai.flori.subscriptions.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import kr.ai.flori.auth.repository.UserRepository
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
@@ -11,6 +10,7 @@ import kr.ai.flori.subscriptions.entity.Subscription
 import kr.ai.flori.subscriptions.entity.SubscriptionEvent
 import kr.ai.flori.subscriptions.repository.SubscriptionEventRepository
 import kr.ai.flori.subscriptions.repository.SubscriptionRepository
+import kr.ai.flori.user.repository.UserRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
