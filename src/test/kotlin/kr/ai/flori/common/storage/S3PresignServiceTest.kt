@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 
 /**
@@ -21,11 +22,20 @@ class S3PresignServiceTest {
                 StaticCredentialsProvider.create(AwsBasicCredentials.create("AKIATEST", "test-secret-key")),
             ).build()
 
+    private val s3Client: S3Client =
+        S3Client
+            .builder()
+            .region(Region.AP_NORTHEAST_2)
+            .credentialsProvider(
+                StaticCredentialsProvider.create(AwsBasicCredentials.create("AKIATEST", "test-secret-key")),
+            ).build()
+
     private fun service(
         bucket: String = "flori-test-bucket",
         cloudfront: String = "cdn.flori.dev",
     ) = S3PresignService(
         presigner,
+        s3Client,
         StorageProperties(
             region = "ap-northeast-2",
             s3 = StorageProperties.S3(bucket = bucket, presignExpirySeconds = 300),
@@ -54,5 +64,19 @@ class S3PresignServiceTest {
     fun `버킷 미설정 시 예외를 던진다`() {
         assertThatThrownBy { service(bucket = "").presignUpload("k.png", "image/png") }
             .isInstanceOf(AppException::class.java)
+    }
+
+    @Test
+    fun `presigned GET URL을 발급한다(공개 URL에서 키 역산)`() {
+        val url = service().presignDownload("https://cdn.flori.dev/photo-cards/1/abc.jpg", "abc.jpg")
+
+        assertThat(url).contains("flori-test-bucket")
+        assertThat(url).contains("photo-cards/1/abc.jpg")
+        assertThat(url).contains("X-Amz-Signature")
+    }
+
+    @Test
+    fun `버킷 미설정 시 삭제는 no-op(예외 없음)`() {
+        service(bucket = "").deleteByUrl("https://cdn.flori.dev/photo-cards/1/abc.jpg")
     }
 }

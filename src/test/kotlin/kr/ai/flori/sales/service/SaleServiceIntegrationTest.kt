@@ -7,6 +7,10 @@ import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.common.tenant.TenantContext
+import kr.ai.flori.photos.entity.PhotoCard
+import kr.ai.flori.photos.repository.PhotoCardRepository
+import kr.ai.flori.reservations.entity.Reservation
+import kr.ai.flori.reservations.repository.ReservationRepository
 import kr.ai.flori.sales.dto.SaleCreateRequest
 import kr.ai.flori.sales.dto.SaleUpdateRequest
 import kr.ai.flori.support.TestAccounts
@@ -34,6 +38,12 @@ class SaleServiceIntegrationTest {
 
     @Autowired
     lateinit var userRepository: UserRepository
+
+    @Autowired
+    lateinit var reservationRepository: ReservationRepository
+
+    @Autowired
+    lateinit var photoCardRepository: PhotoCardRepository
 
     @AfterEach
     fun tearDown() {
@@ -132,6 +142,29 @@ class SaleServiceIntegrationTest {
 
         val notes = saleService.suggestions()
         assertThat(notes).containsExactly("리본 포장", "당일 픽업")
+    }
+
+    @Test
+    fun `매출을 삭제하면 예약·사진카드는 보존되고 sale_id만 NULL이 된다`() {
+        val userId = newTenant()
+        val sale = saleService.create(cardSale())
+
+        val reservation =
+            reservationRepository.saveAndFlush(
+                Reservation(userId, LocalDate.of(2026, 5, 22)).apply { saleId = sale.id },
+            )
+        val photoCard =
+            photoCardRepository.saveAndFlush(
+                PhotoCard(userId, "졸업식 부케").apply { saleId = sale.id },
+            )
+
+        saleService.delete(sale.id)
+
+        // FK 미사용: 예약·사진카드는 보존되고 sale_id만 NULL(앱 레벨 참조 정리).
+        val resAfter = requireNotNull(reservationRepository.findById(reservation.id!!).orElse(null))
+        val cardAfter = requireNotNull(photoCardRepository.findById(photoCard.id!!).orElse(null))
+        assertThat(resAfter.saleId).isNull()
+        assertThat(cardAfter.saleId).isNull()
     }
 
     @Test

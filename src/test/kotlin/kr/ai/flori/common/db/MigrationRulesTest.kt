@@ -22,10 +22,18 @@ class MigrationRulesTest {
     }
 
     @Test
-    fun `auth 스키마 FK가 없고 자체 users 테이블을 참조한다`() {
+    fun `auth 스키마 의존이 없고 자체 users 테이블을 둔다`() {
         assertThat(sql).doesNotContain("auth.users")
         assertThat(sql).contains("CREATE TABLE users")
-        assertThat(sql).contains("REFERENCES users(id)")
+    }
+
+    @Test
+    fun `외래키 제약을 전혀 사용하지 않는다 - 간접참조`() {
+        // FK 전면 제거: 참조 무결성·연쇄삭제는 애플리케이션이 책임진다.
+        assertThat(sql).doesNotContain("REFERENCES")
+        assertThat(sql).doesNotContain("FOREIGN KEY")
+        // 참조 컬럼(user_id 등)은 그대로 유지(간접참조).
+        assertThat(sql).contains("user_id BIGINT")
     }
 
     @Test

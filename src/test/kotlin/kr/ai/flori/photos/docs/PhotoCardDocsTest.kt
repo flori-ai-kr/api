@@ -500,20 +500,14 @@ class PhotoCardDocsTest : RestDocsSupport() {
             .delete("/photo-cards/$id") {
                 requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/photo-cards/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-            }.andExpect { status { isOk() } }
+            }.andExpect { status { isNoContent() } }
             .andDo {
                 handle(
                     docs(
                         identifier = "photo-card-delete",
                         tag = "PhotoCards",
-                        summary = "사진 카드 삭제 (정리 대상 사진 목록 반환)",
+                        summary = "사진 카드 삭제 (DB + 연결된 S3 객체까지 삭제)",
                         pathParameters = listOf(parameterWithName("id").description("사진 카드 ID")),
-                        responseFields =
-                            listOf(
-                                fieldWithPath("[]")
-                                    .type(JsonFieldType.ARRAY)
-                                    .description("삭제된 카드에 포함됐던 사진 목록 (스토리지 정리용)"),
-                            ),
                     ),
                 )
             }

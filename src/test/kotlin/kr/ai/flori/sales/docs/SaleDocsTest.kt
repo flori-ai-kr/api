@@ -207,6 +207,38 @@ class SaleDocsTest : RestDocsSupport() {
             }
     }
 
+    // ── 2-1. 매출 요약 ─────────────────────────────────────────────────────────
+
+    @Test
+    fun `매출 요약 문서화`() {
+        val token = signupAndToken()
+        createSale(token)
+
+        mockMvc
+            .get("/sales/summary") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                param("month", "2026-05")
+            }.andExpect { status { isOk() } }
+            .andDo {
+                handle(
+                    docs(
+                        identifier = "sale-summary",
+                        tag = "Sales",
+                        summary = "매출 요약 (페이지네이션 무관 전체 합산, /sales 와 동일 필터)",
+                        responseFields =
+                            listOf(
+                                fieldWithPath("total").type(JsonFieldType.NUMBER).description("전체 매출 합계(원, 미수·kakaopay 포함)"),
+                                fieldWithPath("card").type(JsonFieldType.NUMBER).description("카드 합계(원)"),
+                                fieldWithPath("naverpay").type(JsonFieldType.NUMBER).description("네이버페이 합계(원)"),
+                                fieldWithPath("transfer").type(JsonFieldType.NUMBER).description("계좌이체 합계(원)"),
+                                fieldWithPath("cash").type(JsonFieldType.NUMBER).description("현금 합계(원)"),
+                                fieldWithPath("count").type(JsonFieldType.NUMBER).description("매출 건수(전체)"),
+                            ),
+                    ),
+                )
+            }
+    }
+
     // ── 3. 매출 단건 조회 ──────────────────────────────────────────────────────
 
     @Test

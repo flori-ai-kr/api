@@ -133,6 +133,21 @@ class CustomerServiceIntegrationTest {
         assertThat(customerService.list()).isEmpty()
     }
 
+    @Test
+    fun `고객을 삭제하면 매출은 보존되고 customer_id만 NULL이 된다`() {
+        newTenant()
+        val customer = create()
+        val sale = saleService.create(saleFor(customer.id, LocalDate.of(2026, 5, 1), 10_000))
+        assertThat(sale.customerId).isEqualTo(customer.id)
+
+        customerService.delete(customer.id)
+
+        // FK 미사용: 매출 기록은 보존되고 customer_id만 NULL(앱 레벨 참조 정리).
+        val after = saleService.get(sale.id)
+        assertThat(after.customerId).isNull()
+        assertThat(after.amount).isEqualTo(10_000)
+    }
+
     private fun saleFor(
         customerId: Long,
         date: LocalDate,

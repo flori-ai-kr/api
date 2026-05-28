@@ -172,6 +172,67 @@ class InsightDocsTest : RestDocsSupport() {
             }
     }
 
+    // ── 2-1. 카테고리별 트렌드 개수 ───────────────────────────────────────────
+
+    @Test
+    fun `카테고리별 트렌드 개수 문서화`() {
+        seedTrend("flower")
+        seedTrend("flower")
+        seedTrend("industry")
+        val token = signupAndToken()
+
+        mockMvc
+            .get("/insights/trends/counts") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                param("since", LocalDate.now().minusDays(1).toString())
+            }.andExpect { status { isOk() } }
+            .andDo {
+                handle(
+                    docs(
+                        identifier = "insight-trends-counts",
+                        tag = "Insights",
+                        summary = "카테고리별 트렌드 개수 (since 이후 수집분만, 옵션). 모든 카테고리 키 포함(0 포함)",
+                        responseFields =
+                            listOf(
+                                fieldWithPath("flower").type(JsonFieldType.NUMBER).description("flower 카테고리 개수"),
+                                fieldWithPath("inspiration").type(JsonFieldType.NUMBER).description("inspiration 카테고리 개수"),
+                                fieldWithPath("business").type(JsonFieldType.NUMBER).description("business 카테고리 개수"),
+                                fieldWithPath("industry").type(JsonFieldType.NUMBER).description("industry 카테고리 개수"),
+                            ),
+                    ),
+                )
+            }
+    }
+
+    // ── 2-2. 인스타 마지막 업데이트 ───────────────────────────────────────────
+
+    @Test
+    fun `인스타 마지막 업데이트 문서화`() {
+        seedPost()
+        val token = signupAndToken()
+
+        mockMvc
+            .get("/insights/instagram/latest") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+            }.andExpect { status { isOk() } }
+            .andDo {
+                handle(
+                    docs(
+                        identifier = "insight-instagram-latest",
+                        tag = "Insights",
+                        summary = "인스타 마지막 업데이트 (가장 최근 수집 시각, 없으면 null)",
+                        responseFields =
+                            listOf(
+                                fieldWithPath("latest")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("가장 최근 instagram_posts 수집 시각 (ISO-8601, 없으면 null)"),
+                            ),
+                    ),
+                )
+            }
+    }
+
     // ── 3. 인스타 계정 목록 ────────────────────────────────────────────────────
 
     @Test

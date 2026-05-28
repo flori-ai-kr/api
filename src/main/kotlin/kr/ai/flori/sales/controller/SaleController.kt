@@ -7,6 +7,7 @@ import kr.ai.flori.sales.dto.SaleResponse
 import kr.ai.flori.sales.dto.SaleSuggestionsResponse
 import kr.ai.flori.sales.dto.SaleUpdateRequest
 import kr.ai.flori.sales.dto.SalesPageResponse
+import kr.ai.flori.sales.dto.SalesSummaryResponse
 import kr.ai.flori.sales.service.SaleService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -39,6 +40,15 @@ class SaleController(
         val safeOffset = offset.coerceAtLeast(0)
         return saleService.list(month, safeOffset, safeLimit, category, payment, channel, search)
     }
+
+    @GetMapping("/summary")
+    fun summary(
+        @RequestParam(required = false) month: String?,
+        @RequestParam(required = false) category: List<String>?,
+        @RequestParam(required = false) payment: List<String>?,
+        @RequestParam(required = false) channel: List<String>?,
+        @RequestParam(required = false) search: String?,
+    ): SalesSummaryResponse = saleService.summary(month, category, payment, channel, search)
 
     @GetMapping("/suggestions")
     fun suggestions(): SaleSuggestionsResponse = SaleSuggestionsResponse(saleService.suggestions())

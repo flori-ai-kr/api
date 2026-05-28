@@ -99,6 +99,48 @@ class PushSubscriptionDocsTest : RestDocsSupport() {
             }
     }
 
+    // ── 2-1. 테스트 알림 발송 ─────────────────────────────────────────────────
+
+    @Test
+    fun `테스트 알림 발송 문서화`() {
+        val token = signupAndToken()
+
+        // 웹푸시 구독(p256dh/auth 포함)을 등록한 뒤 테스트 발송
+        mockMvc
+            .post("/push/subscribe") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    json(
+                        mapOf(
+                            "endpoint" to "https://fcm.googleapis.com/wp/test-${System.nanoTime()}",
+                            "p256dh" to "BNcRdreALRFXTkOOUHK1EtK2wtZ",
+                            "auth" to "tBHItJI5svbpez7KI4CCXg",
+                        ),
+                    )
+            }.andReturn()
+
+        mockMvc
+            .post("/push/test") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+            }.andExpect { status { isOk() } }
+            .andDo {
+                handle(
+                    docs(
+                        identifier = "push-test",
+                        tag = "Push",
+                        summary = "테스트 알림 발송 (현재 사용자 활성 구독에 발송, 영구 실패 구독 자동 비활성화)",
+                        responseFields =
+                            listOf(
+                                fieldWithPath("sent")
+                                    .type(JsonFieldType.NUMBER)
+                                    .description("성공 발송 건수"),
+                            ),
+                    ),
+                )
+            }
+    }
+
     // ── 3. 푸시 구독 해지 ─────────────────────────────────────────────────────
 
     @Test

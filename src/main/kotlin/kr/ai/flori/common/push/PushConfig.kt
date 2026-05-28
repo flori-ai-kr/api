@@ -1,5 +1,6 @@
 package kr.ai.flori.common.push
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
@@ -44,6 +45,23 @@ class PushConfig {
     @Bean
     @ConditionalOnMissingBean(PushService::class)
     fun loggingPushService(): PushService = LoggingPushService()
+
+    /**
+     * Web Push(VAPID) 발송기. public/private 키가 모두 설정되면 실제 VAPID 발송,
+     * 아니면 로깅 폴백(로컬/테스트에서 컨텍스트가 항상 부팅되도록).
+     */
+    @Bean
+    fun webPushSender(
+        @Value("\${vapid.public-key:}") publicKey: String,
+        @Value("\${vapid.private-key:}") privateKey: String,
+        @Value("\${vapid.subject:mailto:admin@flori.ai.kr}") subject: String,
+        objectMapper: ObjectMapper,
+    ): WebPushSender =
+        if (publicKey.isNotBlank() && privateKey.isNotBlank()) {
+            VapidWebPushSender(publicKey, privateKey, subject, objectMapper)
+        } else {
+            LoggingWebPushSender()
+        }
 
     /** credentials가 JSON 본문이면 그대로, 아니면 파일 경로로 해석. */
     private fun openCredentials(credentials: String): InputStream =

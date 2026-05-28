@@ -1,5 +1,6 @@
 package kr.ai.flori.settings.service
 
+import kr.ai.flori.common.push.PushDispatcher
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.settings.dto.PushStatusResponse
 import kr.ai.flori.settings.entity.PushSubscription
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class PushSubscriptionService(
     private val repository: PushSubscriptionRepository,
+    private val pushDispatcher: PushDispatcher,
 ) {
     @Transactional
     fun subscribe(
@@ -43,4 +45,13 @@ class PushSubscriptionService(
 
     @Transactional(readOnly = true)
     fun status(): PushStatusResponse = PushStatusResponse(repository.existsByUserIdAndIsActiveTrue(TenantContext.currentUserId()))
+
+    /** 현재 사용자의 활성 구독에 테스트 페이로드를 발송한다. 영구 실패 구독은 자동 비활성화. */
+    fun testPush(): Int =
+        pushDispatcher.sendToUser(
+            userId = TenantContext.currentUserId(),
+            title = "테스트 알림",
+            body = "푸시 알림이 정상적으로 동작합니다",
+            url = "/",
+        )
 }

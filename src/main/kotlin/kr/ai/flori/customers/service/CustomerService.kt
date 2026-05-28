@@ -122,7 +122,10 @@ class CustomerService(
 
     @Transactional
     fun delete(id: Long) {
-        customerRepository.delete(load(id))
+        val customer = load(id)
+        // FK 미사용: 이 고객을 참조하던 매출의 customer_id를 직접 NULL 처리(매출 기록은 보존).
+        saleRepository.clearCustomerReference(customer.userId, id)
+        customerRepository.delete(customer)
     }
 
     /** 전화번호+user_id 복합 unique 기반 찾기/생성(매출 등록 시 연결용). */

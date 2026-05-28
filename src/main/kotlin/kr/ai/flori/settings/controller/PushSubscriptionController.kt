@@ -3,6 +3,7 @@ package kr.ai.flori.settings.controller
 import jakarta.validation.Valid
 import kr.ai.flori.settings.dto.PushStatusResponse
 import kr.ai.flori.settings.dto.PushSubscribeRequest
+import kr.ai.flori.settings.dto.PushTestResponse
 import kr.ai.flori.settings.service.PushSubscriptionService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
@@ -41,4 +42,7 @@ class PushSubscriptionController(
 
     @GetMapping("/status")
     fun status(): PushStatusResponse = pushSubscriptionService.status()
+
+    @PostMapping("/test")
+    fun test(): PushTestResponse = PushTestResponse(pushSubscriptionService.testPush())
 }

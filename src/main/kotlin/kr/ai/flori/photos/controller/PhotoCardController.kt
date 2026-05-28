@@ -5,10 +5,10 @@ import kr.ai.flori.photos.dto.PhotoCardCreateRequest
 import kr.ai.flori.photos.dto.PhotoCardResponse
 import kr.ai.flori.photos.dto.PhotoCardUpdateRequest
 import kr.ai.flori.photos.dto.PhotoCardsPageResponse
+import kr.ai.flori.photos.dto.PhotoDownloadResponse
 import kr.ai.flori.photos.dto.ReorderPhotosRequest
 import kr.ai.flori.photos.dto.UploadTargetResponse
 import kr.ai.flori.photos.dto.UploadTargetsRequest
-import kr.ai.flori.photos.entity.PhotoFile
 import kr.ai.flori.photos.service.PhotoCardService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -59,9 +59,17 @@ class PhotoCardController(
     ): PhotoCardResponse = photoCardService.update(id, request)
 
     @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     fun delete(
         @PathVariable id: Long,
-    ): List<PhotoFile> = photoCardService.delete(id)
+    ) {
+        photoCardService.delete(id)
+    }
+
+    @PostMapping("/upload-targets")
+    fun prepareUploadTargets(
+        @Valid @RequestBody request: UploadTargetsRequest,
+    ): List<UploadTargetResponse> = photoCardService.createUploadTargets(requireNotNull(request.files))
 
     @PostMapping("/{id}/upload-targets")
     fun uploadTargets(
@@ -80,4 +88,10 @@ class PhotoCardController(
         @PathVariable id: Long,
         @RequestParam url: String,
     ): PhotoCardResponse = photoCardService.deletePhoto(id, url)
+
+    @GetMapping("/{id}/photos/download")
+    fun download(
+        @PathVariable id: Long,
+        @RequestParam url: String,
+    ): PhotoDownloadResponse = PhotoDownloadResponse(photoCardService.downloadUrl(id, url))
 }

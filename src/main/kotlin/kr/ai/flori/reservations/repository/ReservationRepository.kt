@@ -2,6 +2,7 @@ package kr.ai.flori.reservations.repository
 
 import kr.ai.flori.reservations.entity.Reservation
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.time.Instant
@@ -73,4 +74,12 @@ interface ReservationRepository : JpaRepository<Reservation, Long> {
     fun findDescriptionsByFrequency(
         @Param("userId") userId: Long,
     ): List<String>
+
+    /** 매출 삭제 시 해당 매출에 연결된 예약의 sale_id를 NULL로(예약 자체는 보존). */
+    @Modifying
+    @Query("UPDATE Reservation r SET r.saleId = null WHERE r.userId = :userId AND r.saleId = :saleId")
+    fun clearSaleReference(
+        @Param("userId") userId: Long,
+        @Param("saleId") saleId: Long,
+    ): Int
 }

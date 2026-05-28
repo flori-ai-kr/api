@@ -47,3 +47,8 @@ data class PushSubscribeRequest(
 data class PushStatusResponse(
     val subscribed: Boolean,
 )
+
+/** 테스트 알림 발송 결과 — 성공 발송 건수. */
+data class PushTestResponse(
+    val sent: Int,
+)

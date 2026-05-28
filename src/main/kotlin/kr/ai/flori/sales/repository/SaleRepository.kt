@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 
@@ -32,4 +33,12 @@ interface SaleRepository :
     fun findNotesByFrequency(
         @Param("userId") userId: Long,
     ): List<String>
+
+    /** 고객 삭제 시 해당 고객을 참조하던 매출의 customer_id를 NULL로(FK 미사용 — 앱이 참조 정리). */
+    @Modifying
+    @Query("UPDATE Sale s SET s.customerId = null WHERE s.userId = :userId AND s.customerId = :customerId")
+    fun clearCustomerReference(
+        @Param("userId") userId: Long,
+        @Param("customerId") customerId: Long,
+    ): Int
 }

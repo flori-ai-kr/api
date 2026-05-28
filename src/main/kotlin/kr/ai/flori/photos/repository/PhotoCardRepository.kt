@@ -49,4 +49,12 @@ interface PhotoCardRepository : JpaRepository<PhotoCard, Long> {
         @Param("userId") userId: Long,
         @Param("tagName") tagName: String,
     ): Int
+
+    /** 매출 삭제 시 해당 매출에 연결된 사진 카드의 sale_id를 NULL로(카드 자체는 보존). */
+    @Modifying
+    @Query("UPDATE PhotoCard p SET p.saleId = null WHERE p.userId = :userId AND p.saleId = :saleId")
+    fun clearSaleReference(
+        @Param("userId") userId: Long,
+        @Param("saleId") saleId: Long,
+    ): Int
 }

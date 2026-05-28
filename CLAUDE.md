@@ -22,7 +22,7 @@
 | 인증 | Spring Security + 자체 JWT(access + refresh rotation) + **registerToken**(가입 대기, 5분). **소셜 전용**(카카오·구글·네이버 OAuth), 비밀번호 없음 |
 | 검증 | Jakarta Bean Validation |
 | 스토리지 | AWS S3 + CloudFront (presigned PUT URL 발급) |
-| 푸시 | FCM (Firebase Admin SDK) |
+| 푸시 | FCM (Firebase Admin SDK, 모바일) + Web Push/VAPID (브라우저 PWA). 구독의 p256dh/auth 유무로 전송 경로 분기(`PushDispatcher`) |
 | 스케줄 | Spring `@Scheduled` (KST) |
 | 에러 | `@ControllerAdvice` 표준 응답(`E-{DOMAIN}-{NNN}` 코드 체계) + Discord 웹훅 |
 | API 문서 | Spring REST Docs → OpenAPI 3 (springdoc swagger-ui) — 테스트가 문서의 단일 출처 |
@@ -64,6 +64,7 @@ src/main/kotlin/kr/ai/flori/
 ├── insights/              # 트렌드/공유 조회 · 스크랩 · 내부 ingest
 ├── settings/              # 카드사 · 매출/지출 설정 · 하단바 · 푸시 구독
 ├── subscriptions/         # 구독 + 게이팅(gating/) · 구독 보안(security/)
+├── community/             # 커뮤니티 게시판(단일 공유) · 비밀글/댓글·대댓글·좋아요·soft delete
 ├── dashboard/             # 오늘/월 집계 · 네이티브 SQL 통계
 └── common/                # 횡단 관심사
     ├── config/            # CORS, OpenAPI, Async, Schedule, Web
