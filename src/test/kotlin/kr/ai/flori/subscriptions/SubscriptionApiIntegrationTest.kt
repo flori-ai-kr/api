@@ -3,7 +3,10 @@ package kr.ai.flori.subscriptions
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
+import kr.ai.flori.auth.service.AuthService
+import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.subscriptions.gating.RequiresSubscription
+import kr.ai.flori.support.TestAccounts
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -18,7 +21,6 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
-import java.util.UUID
 
 private const val SECRET = "test-webhook-secret-xyz"
 
@@ -41,23 +43,19 @@ class SubscriptionApiIntegrationTest {
     @Autowired
     lateinit var objectMapper: ObjectMapper
 
+    @Autowired
+    lateinit var authService: AuthService
+
+    @Autowired
+    lateinit var tokenProvider: JwtTokenProvider
+
     private data class Account(
         val token: String,
         val userId: String,
     )
 
     private fun signup(): Account {
-        val signupBody =
-            mockMvc
-                .post("/auth/signup") {
-                    contentType = MediaType.APPLICATION_JSON
-                    content =
-                        objectMapper.writeValueAsString(
-                            mapOf("email" to "sub-${UUID.randomUUID()}@flori.dev", "password" to "password123"),
-                        )
-                }.andReturn()
-                .response.contentAsString
-        val token = objectMapper.readTree(signupBody).get("accessToken").asText()
+        val token = TestAccounts.register(authService, tokenProvider).accessToken
         val meBody =
             mockMvc
                 .get("/me") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") }

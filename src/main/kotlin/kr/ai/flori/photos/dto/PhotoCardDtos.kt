@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull
 import kr.ai.flori.photos.entity.PhotoCard
 import kr.ai.flori.photos.entity.PhotoFile
 import java.time.Instant
-import java.util.UUID
 
 data class PhotoCardCreateRequest(
     @field:NotBlank(message = "제목은 필수입니다")
@@ -14,7 +13,7 @@ data class PhotoCardCreateRequest(
     val description: String? = null,
     val tags: List<String> = emptyList(),
     val photos: List<PhotoFile> = emptyList(),
-    val saleId: UUID? = null,
+    val saleId: Long? = null,
 )
 
 data class PhotoCardUpdateRequest(
@@ -22,7 +21,7 @@ data class PhotoCardUpdateRequest(
     val description: String? = null,
     val tags: List<String>? = null,
     val photos: List<PhotoFile>? = null,
-    val saleId: UUID? = null,
+    val saleId: Long? = null,
 )
 
 data class ReorderPhotosRequest(
@@ -48,12 +47,12 @@ data class UploadTargetResponse(
 )
 
 data class PhotoCardResponse(
-    val id: UUID,
+    val id: Long,
     val title: String,
     val description: String?,
     val tags: List<String>,
     val photos: List<PhotoFile>,
-    val saleId: UUID?,
+    val saleId: Long?,
     val createdAt: Instant,
     val updatedAt: Instant,
 ) {

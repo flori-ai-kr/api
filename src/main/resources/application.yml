@@ -86,3 +86,13 @@ management:
 kakao:
   rest-api-key: ${KAKAO_REST_API_KEY:}
   client-secret: ${KAKAO_CLIENT_SECRET:}
+
+# 구글 OAuth (소셜 로그인). 자격증명은 운영에서 env 주입(커밋 금지).
+google:
+  client-id: ${GOOGLE_CLIENT_ID:}
+  client-secret: ${GOOGLE_CLIENT_SECRET:}
+
+# 네이버 OAuth (소셜 로그인). 자격증명은 운영에서 env 주입(커밋 금지).
+naver:
+  client-id: ${NAVER_CLIENT_ID:}
+  client-secret: ${NAVER_CLIENT_SECRET:}

@@ -1,7 +1,7 @@
 package kr.ai.flori.photos.service
 
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.photos.dto.PhotoTagResponse
 import kr.ai.flori.photos.entity.PhotoTag
@@ -10,7 +10,6 @@ import kr.ai.flori.photos.repository.PhotoTagRepository
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
 import kotlin.random.Random
 
 /**
@@ -34,7 +33,7 @@ class PhotoTagService(
         color: String?,
     ): PhotoTagResponse {
         val trimmed = name.trim()
-        if (trimmed.isEmpty()) throw AppException(ErrorCode.VALIDATION, "태그 이름을 입력해주세요")
+        if (trimmed.isEmpty()) throw AppException(CommonErrorCode.VALIDATION, "태그 이름을 입력해주세요")
         val tag = PhotoTag(TenantContext.currentUserId(), trimmed)
         tag.color = color ?: randomColor()
         return PhotoTagResponse.from(saveUnique(tag))
@@ -42,20 +41,20 @@ class PhotoTagService(
 
     @Transactional
     fun update(
-        id: UUID,
+        id: Long,
         name: String,
         color: String,
     ): PhotoTagResponse {
         val tag = load(id)
         val trimmed = name.trim()
-        if (trimmed.isEmpty()) throw AppException(ErrorCode.VALIDATION, "태그 이름을 입력해주세요")
+        if (trimmed.isEmpty()) throw AppException(CommonErrorCode.VALIDATION, "태그 이름을 입력해주세요")
         tag.name = trimmed
         tag.color = color
         return PhotoTagResponse.from(saveUnique(tag))
     }
 
     @Transactional
-    fun delete(id: UUID) {
+    fun delete(id: Long) {
         val tag = load(id)
         photoCardRepository.removeTagFromCards(tag.userId, tag.name)
         photoTagRepository.delete(tag)
@@ -66,12 +65,12 @@ class PhotoTagService(
             // saveAndFlush: unique 위반을 같은 트랜잭션 내에서 즉시 표면화해 포착
             photoTagRepository.saveAndFlush(tag)
         } catch (_: DataIntegrityViolationException) {
-            throw AppException(ErrorCode.DUPLICATE, "이미 존재하는 태그입니다")
+            throw AppException(CommonErrorCode.CONFLICT, "이미 존재하는 태그입니다")
         }
 
-    private fun load(id: UUID): PhotoTag =
+    private fun load(id: Long): PhotoTag =
         photoTagRepository.findByIdAndUserId(id, TenantContext.currentUserId())
-            ?: throw AppException(ErrorCode.NOT_FOUND, "태그를 찾을 수 없습니다")
+            ?: throw AppException(CommonErrorCode.NOT_FOUND, "태그를 찾을 수 없습니다")
 
     private fun randomColor(): String = TAG_COLORS[Random.nextInt(TAG_COLORS.size)]
 

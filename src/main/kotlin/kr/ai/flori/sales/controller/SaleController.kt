@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import java.util.UUID
 
 @RestController
 @RequestMapping("/sales")
@@ -46,7 +45,7 @@ class SaleController(
 
     @GetMapping("/{id}")
     fun get(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
     ): SaleResponse = saleService.get(id)
 
     @PostMapping
@@ -57,25 +56,25 @@ class SaleController(
 
     @PatchMapping("/{id}")
     fun update(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: SaleUpdateRequest,
     ): SaleResponse = saleService.update(id, request)
 
     @PostMapping("/{id}/complete-unpaid")
     fun completeUnpaid(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: CompleteUnpaidRequest,
     ): SaleResponse = saleService.completeUnpaid(id, requireNotNull(request.paymentMethod))
 
     @PostMapping("/{id}/revert-unpaid")
     fun revertUnpaid(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
     ): SaleResponse = saleService.revertUnpaid(id)
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun delete(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
     ) {
         saleService.delete(id)
     }

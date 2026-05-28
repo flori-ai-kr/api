@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import java.time.Instant
-import java.util.UUID
 
 /** 내부 수집 입력. */
 data class TrendArticleIngest(
@@ -25,7 +24,7 @@ data class TrendArticlesBulkRequest(
 )
 
 data class InstagramPostIngest(
-    @field:NotNull val accountId: UUID?,
+    @field:NotNull val accountId: Long?,
     @field:NotBlank val shortcode: String?,
     @field:NotBlank val permalink: String?,
     val imageUrls: List<String> = emptyList(),

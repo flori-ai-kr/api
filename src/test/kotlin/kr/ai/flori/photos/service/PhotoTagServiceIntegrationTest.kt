@@ -2,15 +2,15 @@ package kr.ai.flori.photos.service
 
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
-import kr.ai.flori.auth.dto.SignupRequest
 import kr.ai.flori.auth.repository.UserRepository
 import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
+import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.photos.dto.PhotoCardCreateRequest
 import kr.ai.flori.photos.repository.PhotoCardRepository
-import kr.ai.flori.photos.service.PhotoCardService
+import kr.ai.flori.support.TestAccounts
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
@@ -35,14 +35,17 @@ class PhotoTagServiceIntegrationTest {
     lateinit var authService: AuthService
 
     @Autowired
+    lateinit var tokenProvider: JwtTokenProvider
+
+    @Autowired
     lateinit var userRepository: UserRepository
 
     @AfterEach
     fun tearDown() = TenantContext.clear()
 
-    private fun newTenant(): UUID {
+    private fun newTenant(): Long {
         val email = "ptag-${UUID.randomUUID()}@flori.dev"
-        authService.signup(SignupRequest(email, "password123", null))
+        TestAccounts.register(authService, tokenProvider, email)
         val userId = requireNotNull(userRepository.findByEmail(email)).id!!
         TenantContext.set(userId)
         return userId
@@ -62,7 +65,7 @@ class PhotoTagServiceIntegrationTest {
         tagService.create("행사", "#ff0000")
         assertThatThrownBy { tagService.create("행사", "#00ff00") }
             .isInstanceOfSatisfying(AppException::class.java) {
-                assertThat(it.errorCode).isEqualTo(ErrorCode.DUPLICATE)
+                assertThat(it.errorCode).isEqualTo(CommonErrorCode.CONFLICT)
             }
     }
 

@@ -6,17 +6,17 @@ import com.epages.restdocs.apispec.ResourceSnippetParameters
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
+import kr.ai.flori.auth.service.AuthService
+import kr.ai.flori.common.security.JwtTokenProvider
+import kr.ai.flori.support.TestAccounts
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.http.MediaType
 import org.springframework.restdocs.payload.FieldDescriptor
 import org.springframework.restdocs.request.ParameterDescriptor
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.ResultHandler
-import org.springframework.test.web.servlet.post
-import java.util.UUID
 
 /**
  * RestDocs 문서화 통합테스트 공용 베이스.
@@ -35,21 +35,19 @@ abstract class RestDocsSupport {
     @Autowired
     protected lateinit var objectMapper: ObjectMapper
 
+    @Autowired
+    protected lateinit var authService: AuthService
+
+    @Autowired
+    protected lateinit var tokenProvider: JwtTokenProvider
+
     protected fun json(value: Any): String = objectMapper.writeValueAsString(value)
 
-    /** 가입 후 access 토큰 발급(보호 엔드포인트 문서화용). */
-    protected fun signupAndToken(): String {
-        val res =
-            mockMvc
-                .post("/auth/signup") {
-                    contentType = MediaType.APPLICATION_JSON
-                    content = json(mapOf("email" to "docs-${UUID.randomUUID()}@flori.dev", "password" to "password123"))
-                }.andReturn()
-                .response.contentAsString
-        val node = objectMapper.readTree(res)
-        check(node.hasNonNull("accessToken")) { "signupAndToken 실패: 응답에 accessToken 없음. 응답=$res" }
-        return node.get("accessToken").asText()
-    }
+    /**
+     * 신규 소셜 가입을 완료하고 access 토큰을 발급한다(보호 엔드포인트 문서화용).
+     * 실제 신규 경로(registerToken → register/complete)를 그대로 태워 User+프로필+기본 시드를 생성한다.
+     */
+    protected fun signupAndToken(): String = TestAccounts.register(authService, tokenProvider).accessToken
 
     /**
      * Kotlin MockMvc DSL의 `andDo { handle(...) }`에 넣을 RestDocs 핸들러를 만든다.
@@ -60,10 +58,10 @@ abstract class RestDocsSupport {
      *   mockMvc.get("/customers/$id") {
      *       requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/customers/{id}")
      *       header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-     *   }.andDo { handle(docs(..., pathParameters = listOf(parameterWithName("id").description("고객 UUID")))) }
+     *   }.andDo { handle(docs(..., pathParameters = listOf(parameterWithName("id").description("고객 ID")))) }
      *
      * (RequestPostProcessor(`with{}`)로 세팅하면 @AutoConfigureRestDocs의 ConfigurerApplyingRequestPostProcessor가
-     *  그보다 먼저 템플릿을 캡처해 null이 되므로, 반드시 `requestAttr`로 빌더에 직접 넣어 UUID가 박히지 않게 한다.)
+     *  그보다 먼저 템플릿을 캡처해 null이 되므로, 반드시 `requestAttr`로 빌더에 직접 넣어 ID가 박히지 않게 한다.)
      */
     protected fun docs(
         identifier: String,

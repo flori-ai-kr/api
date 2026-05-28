@@ -7,20 +7,19 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
-import java.util.UUID
 
 interface SaleRepository :
-    JpaRepository<Sale, UUID>,
+    JpaRepository<Sale, Long>,
     JpaSpecificationExecutor<Sale> {
     fun findByIdAndUserId(
-        id: UUID,
-        userId: UUID,
+        id: Long,
+        userId: Long,
     ): Sale?
 
     /** 고객별 매출(테넌트 격리). 고객 도메인(SPEC-007)에서 사용. */
     fun findByUserIdAndCustomerId(
-        userId: UUID,
-        customerId: UUID,
+        userId: Long,
+        customerId: Long,
         pageable: Pageable,
     ): Page<Sale>
 
@@ -31,6 +30,6 @@ interface SaleRepository :
             "GROUP BY s.note ORDER BY COUNT(s.note) DESC",
     )
     fun findNotesByFrequency(
-        @Param("userId") userId: UUID,
+        @Param("userId") userId: Long,
     ): List<String>
 }

@@ -1,7 +1,7 @@
 package kr.ai.flori.customers.service
 
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.customers.dto.CustomerCreateRequest
 import kr.ai.flori.customers.dto.CustomerResponse
@@ -19,7 +19,6 @@ import org.springframework.data.domain.Sort
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
 
 /**
  * 고객 서비스. 모든 쿼리 TenantContext userId 격리(HARD).
@@ -42,7 +41,7 @@ class CustomerService(
     }
 
     @Transactional(readOnly = true)
-    fun get(id: UUID): CustomerResponse {
+    fun get(id: Long): CustomerResponse {
         val customer = load(id)
         return CustomerResponse.from(customer, statsFor(customer.userId, id))
     }
@@ -58,7 +57,7 @@ class CustomerService(
     @Transactional(readOnly = true)
     fun checkPhoneDuplicate(
         phone: String,
-        excludeId: UUID?,
+        excludeId: Long?,
     ): CustomerSearchResult? {
         val userId = TenantContext.currentUserId()
         val found =
@@ -72,7 +71,7 @@ class CustomerService(
 
     @Transactional(readOnly = true)
     fun getCustomerSales(
-        customerId: UUID,
+        customerId: Long,
         page: Int,
         size: Int,
     ): SalesPageResponse {
@@ -88,7 +87,7 @@ class CustomerService(
         val userId = TenantContext.currentUserId()
         val phone = requireNotNull(request.phone)
         if (customerRepository.findByUserIdAndPhone(userId, phone) != null) {
-            throw AppException(ErrorCode.DUPLICATE, "이미 등록된 전화번호입니다")
+            throw AppException(CommonErrorCode.CONFLICT, "이미 등록된 전화번호입니다")
         }
         val customer = Customer(userId, requireNotNull(request.name), phone)
         customer.grade = validGrade(request.grade ?: DEFAULT_GRADE)
@@ -99,7 +98,7 @@ class CustomerService(
 
     @Transactional
     fun update(
-        id: UUID,
+        id: Long,
         request: CustomerUpdateRequest,
     ): CustomerResponse {
         val customer = load(id)
@@ -113,7 +112,7 @@ class CustomerService(
 
     @Transactional
     fun updateGrade(
-        id: UUID,
+        id: Long,
         grade: String,
     ): CustomerResponse {
         val customer = load(id)
@@ -122,7 +121,7 @@ class CustomerService(
     }
 
     @Transactional
-    fun delete(id: UUID) {
+    fun delete(id: Long) {
         customerRepository.delete(load(id))
     }
 
@@ -149,21 +148,21 @@ class CustomerService(
         try {
             customerRepository.save(customer)
         } catch (_: DataIntegrityViolationException) {
-            throw AppException(ErrorCode.DUPLICATE, "이미 등록된 전화번호입니다")
+            throw AppException(CommonErrorCode.CONFLICT, "이미 등록된 전화번호입니다")
         }
 
-    private fun load(id: UUID): Customer =
+    private fun load(id: Long): Customer =
         customerRepository.findByIdAndUserId(id, TenantContext.currentUserId())
-            ?: throw AppException(ErrorCode.NOT_FOUND, "고객을 찾을 수 없습니다")
+            ?: throw AppException(CommonErrorCode.NOT_FOUND, "고객을 찾을 수 없습니다")
 
     private fun statsFor(
-        userId: UUID,
-        customerId: UUID,
+        userId: Long,
+        customerId: Long,
     ): CustomerStats =
         jdbcTemplate
             .query(
                 "SELECT count(*) AS cnt, COALESCE(SUM(amount), 0) AS total, MIN(date) AS first_date, MAX(date) AS last_date " +
-                    "FROM sales WHERE user_id = ?::uuid AND customer_id = ?::uuid",
+                    "FROM sales WHERE user_id = ?::bigint AND customer_id = ?::bigint",
                 { rs, _ ->
                     CustomerStats(
                         rs.getInt("cnt"),
@@ -176,14 +175,14 @@ class CustomerService(
                 customerId,
             ).firstOrNull() ?: CustomerStats.EMPTY
 
-    private fun aggregateStats(userId: UUID): Map<UUID, CustomerStats> =
+    private fun aggregateStats(userId: Long): Map<Long, CustomerStats> =
         jdbcTemplate
             .query(
                 "SELECT customer_id, count(*) AS cnt, COALESCE(SUM(amount), 0) AS total, " +
                     "MIN(date) AS first_date, MAX(date) AS last_date " +
-                    "FROM sales WHERE user_id = ?::uuid AND customer_id IS NOT NULL GROUP BY customer_id",
+                    "FROM sales WHERE user_id = ?::bigint AND customer_id IS NOT NULL GROUP BY customer_id",
                 { rs, _ ->
-                    UUID.fromString(rs.getString("customer_id")) to
+                    rs.getLong("customer_id") to
                         CustomerStats(
                             rs.getInt("cnt"),
                             rs.getLong("total"),
@@ -195,13 +194,13 @@ class CustomerService(
             ).toMap()
 
     private fun validGrade(grade: String): String {
-        if (grade !in GRADES) throw AppException(ErrorCode.VALIDATION, "올바르지 않은 등급입니다")
+        if (grade !in GRADES) throw AppException(CommonErrorCode.VALIDATION, "올바르지 않은 등급입니다")
         return grade
     }
 
     private fun validGender(gender: String?): String? {
         if (gender == null) return null
-        if (gender !in GENDERS) throw AppException(ErrorCode.VALIDATION, "올바르지 않은 성별입니다")
+        if (gender !in GENDERS) throw AppException(CommonErrorCode.VALIDATION, "올바르지 않은 성별입니다")
         return gender
     }
 

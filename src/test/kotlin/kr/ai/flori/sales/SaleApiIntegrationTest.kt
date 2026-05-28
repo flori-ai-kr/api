@@ -3,6 +3,9 @@ package kr.ai.flori.sales
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
+import kr.ai.flori.auth.service.AuthService
+import kr.ai.flori.common.security.JwtTokenProvider
+import kr.ai.flori.support.TestAccounts
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -12,7 +15,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
-import java.util.UUID
 
 /**
  * 매출 API HTTP 흐름 + 멀티테넌시 격리(실제 보안필터·실제 PostgreSQL).
@@ -27,19 +29,13 @@ class SaleApiIntegrationTest {
     @Autowired
     lateinit var objectMapper: ObjectMapper
 
-    private fun signupToken(): String {
-        val response =
-            mockMvc
-                .post("/auth/signup") {
-                    contentType = MediaType.APPLICATION_JSON
-                    content =
-                        objectMapper.writeValueAsString(
-                            mapOf("email" to "sales-${UUID.randomUUID()}@flori.dev", "password" to "password123"),
-                        )
-                }.andReturn()
-                .response.contentAsString
-        return objectMapper.readTree(response).get("accessToken").asText()
-    }
+    @Autowired
+    lateinit var authService: AuthService
+
+    @Autowired
+    lateinit var tokenProvider: JwtTokenProvider
+
+    private fun signupToken(): String = TestAccounts.register(authService, tokenProvider).accessToken
 
     private fun createCardSale(token: String): String {
         val response =

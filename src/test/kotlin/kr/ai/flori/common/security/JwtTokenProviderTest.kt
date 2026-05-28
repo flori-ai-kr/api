@@ -4,7 +4,6 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import java.util.UUID
 
 class JwtTokenProviderTest {
     private val properties =
@@ -17,7 +16,7 @@ class JwtTokenProviderTest {
 
     @Test
     fun `발급한 토큰을 파싱하면 동일한 주체가 나온다`() {
-        val userId = UUID.randomUUID()
+        val userId = 12_345L
         val token = provider.createAccessToken(userId, "a@b.com")
 
         val principal = provider.parse(token)
@@ -29,7 +28,7 @@ class JwtTokenProviderTest {
 
     @Test
     fun `위변조된 토큰은 null을 반환한다`() {
-        val token = provider.createAccessToken(UUID.randomUUID(), "a@b.com")
+        val token = provider.createAccessToken(1L, "a@b.com")
         val tampered = token.dropLast(3) + "abc"
 
         assertThat(provider.parse(tampered)).isNull()
@@ -38,7 +37,7 @@ class JwtTokenProviderTest {
     @Test
     fun `만료된 토큰은 null을 반환한다`() {
         val expiredProvider = JwtTokenProvider(properties.copy(accessTtlSeconds = -1), "test")
-        val token = expiredProvider.createAccessToken(UUID.randomUUID(), "a@b.com")
+        val token = expiredProvider.createAccessToken(1L, "a@b.com")
 
         assertThat(provider.parse(token)).isNull()
     }
@@ -54,7 +53,7 @@ class JwtTokenProviderTest {
         val unsigned =
             Jwts
                 .builder()
-                .subject(UUID.randomUUID().toString())
+                .subject("1")
                 .claim("email", "x@y.com")
                 .compact()
         assertThat(provider.parse(unsigned)).isNull()
@@ -66,7 +65,7 @@ class JwtTokenProviderTest {
         val forged =
             Jwts
                 .builder()
-                .subject(UUID.randomUUID().toString())
+                .subject("1")
                 .signWith(foreignKey)
                 .compact()
         assertThat(provider.parse(forged)).isNull()

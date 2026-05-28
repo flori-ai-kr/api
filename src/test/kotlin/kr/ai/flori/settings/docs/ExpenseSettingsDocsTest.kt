@@ -21,7 +21,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
     /** LabelSettingResponse 공통 응답 필드 */
     private val labelResponseFields =
         listOf(
-            fieldWithPath("id").type(JsonFieldType.STRING).description("설정 항목 UUID"),
+            fieldWithPath("id").type(JsonFieldType.NUMBER).description("설정 항목 ID"),
             fieldWithPath("value")
                 .type(JsonFieldType.STRING)
                 .description("식별 값 (영문 snake_case, 지출 기록 시 참조 키)"),
@@ -91,7 +91,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                         responseFields =
                             listOf(
                                 fieldWithPath("[]").type(JsonFieldType.ARRAY).description("지출 카테고리 목록"),
-                                fieldWithPath("[].id").type(JsonFieldType.STRING).description("설정 항목 UUID"),
+                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("설정 항목 ID"),
                                 fieldWithPath("[].value")
                                     .type(JsonFieldType.STRING)
                                     .description("식별 값 (영문 snake_case)"),
@@ -181,7 +181,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                         identifier = "settings-expense-category-update",
                         tag = "ExpenseSettings",
                         summary = "지출 카테고리 수정 (label·color 전체 교체)",
-                        pathParameters = listOf(parameterWithName("id").description("지출 카테고리 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("지출 카테고리 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("label")
@@ -215,7 +215,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                         identifier = "settings-expense-category-delete",
                         tag = "ExpenseSettings",
                         summary = "지출 카테고리 삭제",
-                        pathParameters = listOf(parameterWithName("id").description("지출 카테고리 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("지출 카테고리 ID")),
                     ),
                 )
             }
@@ -240,7 +240,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                         responseFields =
                             listOf(
                                 fieldWithPath("[]").type(JsonFieldType.ARRAY).description("지출 결제방식 목록"),
-                                fieldWithPath("[].id").type(JsonFieldType.STRING).description("설정 항목 UUID"),
+                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("설정 항목 ID"),
                                 fieldWithPath("[].value")
                                     .type(JsonFieldType.STRING)
                                     .description("식별 값 (영문 snake_case)"),
@@ -330,7 +330,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                         identifier = "settings-expense-payment-method-update",
                         tag = "ExpenseSettings",
                         summary = "지출 결제방식 수정 (label·color 전체 교체)",
-                        pathParameters = listOf(parameterWithName("id").description("지출 결제방식 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("지출 결제방식 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("label")
@@ -364,7 +364,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                         identifier = "settings-expense-payment-method-delete",
                         tag = "ExpenseSettings",
                         summary = "지출 결제방식 삭제",
-                        pathParameters = listOf(parameterWithName("id").description("지출 결제방식 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("지출 결제방식 ID")),
                     ),
                 )
             }

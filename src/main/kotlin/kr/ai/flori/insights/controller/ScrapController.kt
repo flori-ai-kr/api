@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import java.util.UUID
 
 @RestController
 @RequestMapping("/insights/scraps")
@@ -37,7 +36,7 @@ class ScrapController(
     @GetMapping("/map")
     fun map(
         @RequestParam targetType: String,
-    ): Map<UUID, ScrapInfo> = scrapService.scrapMap(targetType)
+    ): Map<Long, ScrapInfo> = scrapService.scrapMap(targetType)
 
     @GetMapping("/counts")
     fun counts(): ScrapCountsResponse = scrapService.counts()

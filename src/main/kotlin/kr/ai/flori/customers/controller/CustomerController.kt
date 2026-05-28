@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import java.util.UUID
 
 @RestController
 @RequestMapping("/customers")
@@ -39,7 +38,7 @@ class CustomerController(
     @GetMapping("/check-phone")
     fun checkPhone(
         @RequestParam phone: String,
-        @RequestParam(required = false) excludeId: UUID?,
+        @RequestParam(required = false) excludeId: Long?,
     ): ResponseEntity<CustomerSearchResult> =
         customerService
             .checkPhoneDuplicate(phone, excludeId)
@@ -48,12 +47,12 @@ class CustomerController(
 
     @GetMapping("/{id}")
     fun get(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
     ): CustomerResponse = customerService.get(id)
 
     @GetMapping("/{id}/sales")
     fun customerSales(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
     ): SalesPageResponse = customerService.getCustomerSales(id, page, size)
@@ -71,20 +70,20 @@ class CustomerController(
 
     @PatchMapping("/{id}")
     fun update(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: CustomerUpdateRequest,
     ): CustomerResponse = customerService.update(id, request)
 
     @PatchMapping("/{id}/grade")
     fun updateGrade(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: UpdateGradeRequest,
     ): CustomerResponse = customerService.updateGrade(id, requireNotNull(request.grade))
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun delete(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
     ) {
         customerService.delete(id)
     }

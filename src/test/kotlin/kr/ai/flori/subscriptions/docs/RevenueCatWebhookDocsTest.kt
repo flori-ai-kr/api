@@ -6,6 +6,9 @@ import com.epages.restdocs.apispec.ResourceSnippetParameters
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
+import kr.ai.flori.auth.service.AuthService
+import kr.ai.flori.common.security.JwtTokenProvider
+import kr.ai.flori.support.TestAccounts
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs
@@ -41,6 +44,12 @@ class RevenueCatWebhookDocsTest {
     @Autowired
     private lateinit var objectMapper: ObjectMapper
 
+    @Autowired
+    private lateinit var authService: AuthService
+
+    @Autowired
+    private lateinit var tokenProvider: JwtTokenProvider
+
     /** 테스트용 웹훅 시크릿 (SpringBootTest properties 주입값과 동일) */
     private val webhookSecret = "test-revenuecat-secret"
 
@@ -60,17 +69,9 @@ class RevenueCatWebhookDocsTest {
         return MockMvcRestDocumentationWrapper.document(identifier, snippets = arrayOf(resource(params.build())))
     }
 
-    /** 회원가입 후 userId 획득 (RevenueCat app_user_id로 사용) */
+    /** 가입 후 userId 획득 (RevenueCat app_user_id로 사용) */
     private fun signupUserId(): String {
-        val signupRes =
-            mockMvc
-                .post("/auth/signup") {
-                    contentType = MediaType.APPLICATION_JSON
-                    content =
-                        json(mapOf("email" to "webhook-docs-${UUID.randomUUID()}@flori.dev", "password" to "password123"))
-                }.andReturn()
-                .response.contentAsString
-        val token = objectMapper.readTree(signupRes).get("accessToken").asText()
+        val token = TestAccounts.register(authService, tokenProvider).accessToken
         val meRes =
             mockMvc
                 .get("/me") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") }
@@ -133,7 +134,7 @@ class RevenueCatWebhookDocsTest {
                                 fieldWithPath("event.app_user_id")
                                     .type(JsonFieldType.STRING)
                                     .optional()
-                                    .description("앱 사용자 UUID (앱이 RevenueCat에 설정한 식별자, user_id)"),
+                                    .description("앱 사용자 ID (앱이 RevenueCat에 설정한 식별자, user_id)"),
                                 fieldWithPath("event.product_id")
                                     .type(JsonFieldType.STRING)
                                     .optional()

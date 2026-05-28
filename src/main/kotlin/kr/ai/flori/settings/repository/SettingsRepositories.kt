@@ -3,15 +3,14 @@ package kr.ai.flori.settings.repository
 import kr.ai.flori.settings.entity.PushSubscription
 import kr.ai.flori.settings.entity.UserPreferences
 import org.springframework.data.jpa.repository.JpaRepository
-import java.util.UUID
 
-interface UserPreferencesRepository : JpaRepository<UserPreferences, UUID>
+interface UserPreferencesRepository : JpaRepository<UserPreferences, Long>
 
-interface PushSubscriptionRepository : JpaRepository<PushSubscription, UUID> {
+interface PushSubscriptionRepository : JpaRepository<PushSubscription, Long> {
     fun findByUserIdAndEndpoint(
-        userId: UUID,
+        userId: Long,
         endpoint: String,
     ): PushSubscription?
 
-    fun existsByUserIdAndIsActiveTrue(userId: UUID): Boolean
+    fun existsByUserIdAndIsActiveTrue(userId: Long): Boolean
 }

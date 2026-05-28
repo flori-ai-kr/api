@@ -7,30 +7,32 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import kr.ai.flori.common.entity.BaseEntity
-import java.util.UUID
 
 /**
- * 자체 인증 사용자. (원본 Supabase auth 테이블 대체 — V1 users 테이블에 매핑)
- * 소셜 사용자는 email/passwordHash가 null이고 provider/providerId로 식별한다.
+ * 소셜 전용 인증 사용자(V1 users 테이블 매핑).
+ *
+ * - 소셜 로그인(KAKAO/GOOGLE/NAVER)으로만 생성된다. 이메일/비밀번호 가입은 없다(비밀번호 컬럼 제거).
+ * - User 행은 온보딩 완료(register/complete) 시점에만 생성된다 — 온보딩 중도 이탈 시 유령 계정이 남지 않는다.
+ * - email은 온보딩에서 항상 채워지며(NOT NULL) 이후 수정 가능하다. name은 계정 표시명(닉네임).
+ * - name(닉네임)은 필수이며 전역 유일하다(V6 `uq_users_name`). register/complete에서 항상 채워진다.
+ * - 신원은 (provider, providerId)로 식별한다.
  */
 @Entity
 @Table(name = "users")
 class User(
-    @Column(name = "email", unique = true)
-    var email: String? = null,
-    @Column(name = "password_hash")
-    var passwordHash: String? = null,
-    @Column(name = "name")
-    var name: String? = null,
+    @Column(name = "email", nullable = false, unique = true)
+    var email: String,
+    @Column(name = "name", nullable = false, unique = true)
+    var name: String,
     @Column(name = "provider", nullable = false)
     var provider: String = "LOCAL",
     @Column(name = "provider_id")
     var providerId: String? = null,
 ) : BaseEntity() {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id: UUID? = null
+    var id: Long? = null
 
     @Column(name = "is_active", nullable = false)
     var isActive: Boolean = true

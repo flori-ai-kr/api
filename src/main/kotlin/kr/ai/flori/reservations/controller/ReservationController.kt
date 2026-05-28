@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import java.util.UUID
 
 @RestController
 @RequestMapping("/reservations")
@@ -44,12 +43,12 @@ class ReservationController(
 
     @GetMapping("/by-sale/{saleId}")
     fun bySale(
-        @PathVariable saleId: UUID,
+        @PathVariable saleId: Long,
     ): List<ReservationResponse> = reservationService.forSale(saleId)
 
     @GetMapping("/{id}")
     fun get(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
     ): ReservationResponse = reservationService.get(id)
 
     @PostMapping
@@ -60,34 +59,34 @@ class ReservationController(
 
     @PatchMapping("/{id}")
     fun update(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: ReservationUpdateRequest,
     ): ReservationResponse = reservationService.update(id, request)
 
     @PostMapping("/{id}/complete-pickup")
     fun completePickup(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: PickupCompleteRequest,
     ): ReservationResponse = reservationService.markPickupCompleted(id, requireNotNull(request.completed))
 
     @PostMapping("/{id}/convert-to-sale")
     @ResponseStatus(HttpStatus.CREATED)
     fun convertToSale(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: SaleCreateRequest,
     ): SaleResponse = reservationService.convertToSale(id, request)
 
     @PostMapping("/add-pickup/{saleId}")
     @ResponseStatus(HttpStatus.CREATED)
     fun addPickup(
-        @PathVariable saleId: UUID,
+        @PathVariable saleId: Long,
         @Valid @RequestBody request: AddPickupRequest,
     ): ReservationResponse = reservationService.addPickupToSale(saleId, request)
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun delete(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
     ) {
         reservationService.delete(id)
     }

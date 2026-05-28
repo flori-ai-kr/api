@@ -37,9 +37,9 @@ class ScrapDocsTest : RestDocsSupport() {
     /** InsightScrapResponse 공통 응답 필드 (prefix 없이) */
     private val scrapResponseFields =
         listOf(
-            fieldWithPath("id").type(JsonFieldType.STRING).description("스크랩 UUID"),
+            fieldWithPath("id").type(JsonFieldType.NUMBER).description("스크랩 ID"),
             fieldWithPath("targetType").type(JsonFieldType.STRING).description("대상 타입 (trend | post)"),
-            fieldWithPath("targetId").type(JsonFieldType.STRING).description("대상 UUID"),
+            fieldWithPath("targetId").type(JsonFieldType.NUMBER).description("대상 ID"),
             fieldWithPath("memo").type(JsonFieldType.STRING).optional().description("메모 (null 가능)"),
             fieldWithPath("createdAt").type(JsonFieldType.STRING).description("스크랩 생성 시각 (ISO-8601)"),
             fieldWithPath("updatedAt").type(JsonFieldType.STRING).description("최종 수정 시각 (ISO-8601)"),
@@ -48,7 +48,7 @@ class ScrapDocsTest : RestDocsSupport() {
     /** TrendArticleResponse 항목 필드 — 접두사 없이 */
     private val trendItemFields =
         listOf(
-            fieldWithPath("id").type(JsonFieldType.STRING).description("트렌드 UUID"),
+            fieldWithPath("id").type(JsonFieldType.NUMBER).description("트렌드 ID"),
             fieldWithPath("category").type(JsonFieldType.STRING).description("카테고리"),
             fieldWithPath("title").type(JsonFieldType.STRING).description("제목"),
             fieldWithPath("summary").type(JsonFieldType.STRING).description("요약"),
@@ -61,7 +61,7 @@ class ScrapDocsTest : RestDocsSupport() {
         )
 
     /** 트렌드 기사 시드 */
-    private fun seedTrend(): UUID {
+    private fun seedTrend(): Long {
         val article =
             TrendArticle(
                 category = "flower",
@@ -74,7 +74,7 @@ class ScrapDocsTest : RestDocsSupport() {
     }
 
     /** 인스타 포스트 시드 — Flyway에서 계정이 이미 시드되어 있으므로 첫 번째 계정을 사용 */
-    private fun seedPost(): UUID {
+    private fun seedPost(): Long {
         val account = accountRepository.findByActiveTrueOrderBySortOrderAscUsernameAsc().first()
         val post =
             InstagramPost(
@@ -115,8 +115,8 @@ class ScrapDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .description("대상 타입 (trend | post, 필수)"),
                                 fieldWithPath("targetId")
-                                    .type(JsonFieldType.STRING)
-                                    .description("대상 UUID (필수)"),
+                                    .type(JsonFieldType.NUMBER)
+                                    .description("대상 ID (필수)"),
                             ),
                         responseFields =
                             listOf(
@@ -162,8 +162,8 @@ class ScrapDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .description("대상 타입 (trend | post, 필수)"),
                                 fieldWithPath("targetId")
-                                    .type(JsonFieldType.STRING)
-                                    .description("대상 UUID (필수)"),
+                                    .type(JsonFieldType.NUMBER)
+                                    .description("대상 ID (필수)"),
                                 fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
@@ -211,8 +211,8 @@ class ScrapDocsTest : RestDocsSupport() {
                         responseFields =
                             listOf(
                                 fieldWithPath("$trendId.id")
-                                    .type(JsonFieldType.STRING)
-                                    .description("스크랩 UUID (키는 targetId)"),
+                                    .type(JsonFieldType.NUMBER)
+                                    .description("스크랩 ID (키는 targetId)"),
                                 fieldWithPath("$trendId.memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
@@ -289,9 +289,9 @@ class ScrapDocsTest : RestDocsSupport() {
                         responseFields =
                             listOf(
                                 fieldWithPath("[]").type(JsonFieldType.ARRAY).description("트렌드 스크랩 목록"),
-                                fieldWithPath("[].scrap.id").type(JsonFieldType.STRING).description("스크랩 UUID"),
+                                fieldWithPath("[].scrap.id").type(JsonFieldType.NUMBER).description("스크랩 ID"),
                                 fieldWithPath("[].scrap.targetType").type(JsonFieldType.STRING).description("대상 타입"),
-                                fieldWithPath("[].scrap.targetId").type(JsonFieldType.STRING).description("대상 UUID"),
+                                fieldWithPath("[].scrap.targetId").type(JsonFieldType.NUMBER).description("대상 ID"),
                                 fieldWithPath("[].scrap.memo").type(JsonFieldType.STRING).optional().description("메모 (null 가능)"),
                                 fieldWithPath("[].scrap.createdAt").type(JsonFieldType.STRING).description("생성 시각 (ISO-8601)"),
                                 fieldWithPath("[].scrap.updatedAt").type(JsonFieldType.STRING).description("최종 수정 시각 (ISO-8601)"),
@@ -337,15 +337,15 @@ class ScrapDocsTest : RestDocsSupport() {
                             listOf(
                                 fieldWithPath("[]").type(JsonFieldType.ARRAY).description("포스트 스크랩 목록"),
                                 // scrap 필드 (InsightScrapResponse)
-                                fieldWithPath("[].scrap.id").type(JsonFieldType.STRING).description("스크랩 UUID"),
+                                fieldWithPath("[].scrap.id").type(JsonFieldType.NUMBER).description("스크랩 ID"),
                                 fieldWithPath("[].scrap.targetType").type(JsonFieldType.STRING).description("대상 타입 (post)"),
-                                fieldWithPath("[].scrap.targetId").type(JsonFieldType.STRING).description("대상 UUID"),
+                                fieldWithPath("[].scrap.targetId").type(JsonFieldType.NUMBER).description("대상 ID"),
                                 fieldWithPath("[].scrap.memo").type(JsonFieldType.STRING).optional().description("메모 (null 가능)"),
                                 fieldWithPath("[].scrap.createdAt").type(JsonFieldType.STRING).description("스크랩 생성 시각 (ISO-8601)"),
                                 fieldWithPath("[].scrap.updatedAt").type(JsonFieldType.STRING).description("최종 수정 시각 (ISO-8601)"),
                                 // post 필드 (InstagramPostResponse)
-                                fieldWithPath("[].post.id").type(JsonFieldType.STRING).description("포스트 UUID"),
-                                fieldWithPath("[].post.accountId").type(JsonFieldType.STRING).description("계정 UUID"),
+                                fieldWithPath("[].post.id").type(JsonFieldType.NUMBER).description("포스트 ID"),
+                                fieldWithPath("[].post.accountId").type(JsonFieldType.NUMBER).description("계정 ID"),
                                 fieldWithPath("[].post.shortcode").type(JsonFieldType.STRING).description("인스타그램 shortcode"),
                                 fieldWithPath("[].post.permalink").type(JsonFieldType.STRING).description("퍼머링크 URL"),
                                 fieldWithPath("[].post.imageUrls").type(JsonFieldType.ARRAY).description("이미지 URL 목록"),
@@ -353,7 +353,7 @@ class ScrapDocsTest : RestDocsSupport() {
                                 fieldWithPath("[].post.likeCount").type(JsonFieldType.NUMBER).description("좋아요 수"),
                                 fieldWithPath("[].post.postedAt").type(JsonFieldType.STRING).description("게시 시각 (ISO-8601)"),
                                 fieldWithPath("[].post.account").type(JsonFieldType.OBJECT).optional().description("계정 정보 (null 가능)"),
-                                fieldWithPath("[].post.account.id").type(JsonFieldType.STRING).optional().description("계정 UUID"),
+                                fieldWithPath("[].post.account.id").type(JsonFieldType.NUMBER).optional().description("계정 ID"),
                                 fieldWithPath("[].post.account.username").type(JsonFieldType.STRING).optional().description("유저네임"),
                                 fieldWithPath(
                                     "[].post.account.displayName",

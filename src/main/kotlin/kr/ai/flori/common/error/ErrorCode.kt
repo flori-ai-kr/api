@@ -3,18 +3,21 @@ package kr.ai.flori.common.error
 import org.springframework.http.HttpStatus
 
 /**
- * 표준 에러 코드. SPEC-004에서 Discord 리포팅·핸들러 확장 예정.
+ * 안정적인 에러 코드 계약. 모든 도메인 에러 코드 enum이 구현한다.
+ *
+ * 코드 체계: `E-{DOMAIN}-{NNN}` (예: `E-CMN-001`, `E-AUTH-002`).
+ * - 횡단(공통) 코드는 [CommonErrorCode] (common/error)에 둔다.
+ * - 도메인 전용 코드는 각 도메인 패키지의 `<domain>/error`에 둔다(예: auth/error/AuthErrorCode).
+ *
+ * `code`는 웹/앱 클라이언트가 분기에 쓰는 안정적 식별자이므로 한 번 공개되면 바꾸지 않는다.
  */
-enum class ErrorCode(
-    val status: HttpStatus,
-    val defaultMessage: String,
-) {
-    VALIDATION(HttpStatus.BAD_REQUEST, "입력값이 올바르지 않습니다"),
-    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다"),
-    INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다"),
-    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다"),
-    FORBIDDEN(HttpStatus.FORBIDDEN, "권한이 없습니다"),
-    NOT_FOUND(HttpStatus.NOT_FOUND, "대상을 찾을 수 없습니다"),
-    DUPLICATE(HttpStatus.CONFLICT, "이미 존재합니다"),
-    INTERNAL(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다"),
+interface ErrorCode {
+    /** 클라이언트 분기용 안정적 코드. 예: "E-CMN-001". */
+    val code: String
+
+    /** 매핑될 HTTP 상태. */
+    val status: HttpStatus
+
+    /** 기본(폴백) 사용자 메시지. 호출부에서 더 구체적 메시지를 줄 수 있다. */
+    val defaultMessage: String
 }

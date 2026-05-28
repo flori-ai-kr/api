@@ -3,7 +3,6 @@ package kr.ai.flori.settings.dto
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
-import java.util.UUID
 
 data class LabelSettingCreateRequest(
     @field:NotBlank(message = "이름(label)은 필수입니다")
@@ -20,7 +19,7 @@ data class LabelSettingUpdateRequest(
 )
 
 data class LabelSettingResponse(
-    val id: UUID,
+    val id: Long,
     val value: String,
     val label: String,
     val color: String,

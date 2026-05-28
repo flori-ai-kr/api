@@ -1,0 +1,9 @@
+root = true
+
+[*.{kt,kts}]
+# ktlint/detekt 정합: wildcard(star) import 금지.
+# detekt WildcardImport 규칙과 충돌하지 않도록 ktlint가 star import를 생성하지 못하게 한다.
+# (ktlintFormat 실행 시 기존 wildcard는 명시 import로 자동 전개된다.)
+ij_kotlin_name_count_to_use_star_imports = 2147483647
+ij_kotlin_name_count_to_use_star_imports_for_members = 2147483647
+ij_kotlin_packages_to_use_import_on_demand = unset

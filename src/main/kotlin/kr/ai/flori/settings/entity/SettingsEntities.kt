@@ -9,7 +9,6 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 import java.time.Instant
-import java.util.UUID
 
 /**
  * 유저 설정(하단바 커스터마이즈). PK는 user_id. bottom_nav_items는 jsonb 문자열 배열.
@@ -19,7 +18,7 @@ import java.util.UUID
 class UserPreferences(
     @Id
     @Column(name = "user_id")
-    var userId: UUID,
+    var userId: Long,
 ) {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "bottom_nav_items", columnDefinition = "jsonb")
@@ -36,14 +35,14 @@ class UserPreferences(
 @Table(name = "push_subscriptions")
 class PushSubscription(
     @Column(name = "user_id", nullable = false)
-    var userId: UUID,
+    var userId: Long,
     @Column(name = "endpoint", nullable = false)
     var endpoint: String,
 ) {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id: UUID? = null
+    var id: Long? = null
 
     @Column(name = "p256dh")
     var p256dh: String? = null

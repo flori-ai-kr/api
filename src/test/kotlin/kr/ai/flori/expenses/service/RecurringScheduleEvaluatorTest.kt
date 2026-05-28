@@ -5,7 +5,6 @@ import kr.ai.flori.expenses.entity.YearlyDate
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
-import java.util.UUID
 
 class RecurringScheduleEvaluatorTest {
     private fun rule(
@@ -17,7 +16,7 @@ class RecurringScheduleEvaluatorTest {
         daysOfMonth: List<Int> = emptyList(),
         yearlyDates: List<YearlyDate> = emptyList(),
     ): RecurringExpense =
-        RecurringExpense(UUID.randomUUID(), "임대료", "rent", 1000, 1, "transfer", frequency, startDate).apply {
+        RecurringExpense(1L, "임대료", "rent", 1000, 1, "transfer", frequency, startDate).apply {
             this.intervalCount = intervalCount
             this.endDate = endDate
             this.daysOfWeek = daysOfWeek

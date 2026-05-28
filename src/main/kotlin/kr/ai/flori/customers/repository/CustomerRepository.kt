@@ -2,34 +2,33 @@ package kr.ai.flori.customers.repository
 
 import kr.ai.flori.customers.entity.Customer
 import org.springframework.data.jpa.repository.JpaRepository
-import java.util.UUID
 
-interface CustomerRepository : JpaRepository<Customer, UUID> {
+interface CustomerRepository : JpaRepository<Customer, Long> {
     fun findByIdAndUserId(
-        id: UUID,
-        userId: UUID,
+        id: Long,
+        userId: Long,
     ): Customer?
 
-    fun findByUserIdOrderByCreatedAtDesc(userId: UUID): List<Customer>
+    fun findByUserIdOrderByCreatedAtDesc(userId: Long): List<Customer>
 
     fun findByUserIdAndPhone(
-        userId: UUID,
+        userId: Long,
         phone: String,
     ): Customer?
 
     fun findTop10ByUserIdAndNameContainingIgnoreCaseOrderByCreatedAtDesc(
-        userId: UUID,
+        userId: Long,
         name: String,
     ): List<Customer>
 
     fun findFirstByUserIdAndPhoneAndIdNot(
-        userId: UUID,
+        userId: Long,
         phone: String,
-        id: UUID,
+        id: Long,
     ): Customer?
 
     fun findFirstByUserIdAndPhone(
-        userId: UUID,
+        userId: Long,
         phone: String,
     ): Customer?
 }

@@ -11,7 +11,6 @@ import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
 
 /**
  * 트렌드 기사. 공유 데이터(테넌트 무관) — 인증 사용자면 누구나 조회. 쓰기는 내부 API만.
@@ -31,9 +30,9 @@ class TrendArticle(
     var collectedAt: LocalDate,
 ) : BaseCreatedEntity() {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id: UUID? = null
+    var id: Long? = null
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "key_points", columnDefinition = "jsonb")

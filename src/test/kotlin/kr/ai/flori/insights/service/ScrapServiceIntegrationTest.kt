@@ -2,13 +2,14 @@ package kr.ai.flori.insights.service
 
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
-import kr.ai.flori.auth.dto.SignupRequest
 import kr.ai.flori.auth.repository.UserRepository
 import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.error.AppException
+import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.insights.entity.TrendArticle
 import kr.ai.flori.insights.repository.TrendArticleRepository
+import kr.ai.flori.support.TestAccounts
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
@@ -31,20 +32,23 @@ class ScrapServiceIntegrationTest {
     lateinit var authService: AuthService
 
     @Autowired
+    lateinit var tokenProvider: JwtTokenProvider
+
+    @Autowired
     lateinit var userRepository: UserRepository
 
     @AfterEach
     fun tearDown() = TenantContext.clear()
 
-    private fun newTenant(): UUID {
+    private fun newTenant(): Long {
         val email = "scrap-${UUID.randomUUID()}@flori.dev"
-        authService.signup(SignupRequest(email, "password123", null))
+        TestAccounts.register(authService, tokenProvider, email)
         val userId = requireNotNull(userRepository.findByEmail(email)).id!!
         TenantContext.set(userId)
         return userId
     }
 
-    private fun newTrend(): UUID {
+    private fun newTrend(): Long {
         val t = TrendArticle("flower", "트렌드", "요약", "https://ex.com/${UUID.randomUUID()}", LocalDate.now())
         return requireNotNull(trendRepository.save(t).id)
     }
@@ -62,7 +66,7 @@ class ScrapServiceIntegrationTest {
     @Test
     fun `존재하지 않는 대상은 스크랩할 수 없다`() {
         newTenant()
-        assertThatThrownBy { scrapService.toggle("trend", UUID.randomUUID()) }
+        assertThatThrownBy { scrapService.toggle("trend", 999_999_999L) }
             .isInstanceOf(AppException::class.java)
     }
 

@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull
 import kr.ai.flori.sales.entity.Sale
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
 
 /**
  * 매출 생성. is_unpaid는 결제방식(unpaid)으로 서버가 결정하므로 요청에 포함하지 않는다.
@@ -24,7 +23,7 @@ data class SaleCreateRequest(
     val reservationChannel: String? = null,
     val customerName: String? = null,
     val customerPhone: String? = null,
-    val customerId: UUID? = null,
+    val customerId: Long? = null,
     val note: String? = null,
 )
 
@@ -38,7 +37,7 @@ data class SaleUpdateRequest(
     val reservationChannel: String? = null,
     val customerName: String? = null,
     val customerPhone: String? = null,
-    val customerId: UUID? = null,
+    val customerId: Long? = null,
     val note: String? = null,
     val hasReview: Boolean? = null,
 )
@@ -49,7 +48,7 @@ data class CompleteUnpaidRequest(
 )
 
 data class SaleResponse(
-    val id: UUID,
+    val id: Long,
     val date: LocalDate,
     val productName: String,
     val productCategory: String?,
@@ -58,7 +57,7 @@ data class SaleResponse(
     val reservationChannel: String,
     val customerName: String?,
     val customerPhone: String?,
-    val customerId: UUID?,
+    val customerId: Long?,
     val note: String?,
     val isUnpaid: Boolean,
     val hasReview: Boolean,

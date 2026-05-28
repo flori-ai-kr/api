@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import java.util.UUID
 
 @RestController
 @RequestMapping("/photo-cards")
@@ -38,13 +37,13 @@ class PhotoCardController(
 
     @GetMapping("/by-sale/{saleId}")
     fun bySale(
-        @PathVariable saleId: UUID,
+        @PathVariable saleId: Long,
     ): ResponseEntity<PhotoCardResponse> =
         photoCardService.getBySaleId(saleId)?.let { ResponseEntity.ok(it) } ?: ResponseEntity.noContent().build()
 
     @GetMapping("/{id}")
     fun get(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
     ): PhotoCardResponse = photoCardService.get(id)
 
     @PostMapping
@@ -55,30 +54,30 @@ class PhotoCardController(
 
     @PatchMapping("/{id}")
     fun update(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: PhotoCardUpdateRequest,
     ): PhotoCardResponse = photoCardService.update(id, request)
 
     @DeleteMapping("/{id}")
     fun delete(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
     ): List<PhotoFile> = photoCardService.delete(id)
 
     @PostMapping("/{id}/upload-targets")
     fun uploadTargets(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: UploadTargetsRequest,
     ): List<UploadTargetResponse> = photoCardService.createUploadTargets(id, requireNotNull(request.files))
 
     @PatchMapping("/{id}/photos/reorder")
     fun reorder(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: ReorderPhotosRequest,
     ): PhotoCardResponse = photoCardService.reorderPhotos(id, requireNotNull(request.photos))
 
     @DeleteMapping("/{id}/photos")
     fun deletePhoto(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @RequestParam url: String,
     ): PhotoCardResponse = photoCardService.deletePhoto(id, url)
 }

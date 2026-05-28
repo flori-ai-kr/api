@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import java.util.UUID
 
 @RestController
 @RequestMapping("/insights")
@@ -34,7 +33,7 @@ class InsightController(
 
     @GetMapping("/posts")
     fun posts(
-        @RequestParam(required = false) accountId: UUID?,
+        @RequestParam(required = false) accountId: Long?,
         @RequestParam(required = false) region: String?,
         @RequestParam(required = false) sortBy: String?,
         @RequestParam(required = false) daysAgo: Int?,

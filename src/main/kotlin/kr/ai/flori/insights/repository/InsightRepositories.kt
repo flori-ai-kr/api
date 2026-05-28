@@ -9,9 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.time.Instant
-import java.util.UUID
 
-interface TrendArticleRepository : JpaRepository<TrendArticle, UUID> {
+interface TrendArticleRepository : JpaRepository<TrendArticle, Long> {
     fun findByOrderByCollectedAtDescCreatedAtDesc(pageable: Pageable): List<TrendArticle>
 
     fun findByCategoryOrderByCollectedAtDescCreatedAtDesc(
@@ -24,13 +23,13 @@ interface TrendArticleRepository : JpaRepository<TrendArticle, UUID> {
     fun countByCategory(category: String): Long
 }
 
-interface InstagramAccountRepository : JpaRepository<InstagramAccount, UUID> {
+interface InstagramAccountRepository : JpaRepository<InstagramAccount, Long> {
     fun findByActiveTrueOrderBySortOrderAscUsernameAsc(): List<InstagramAccount>
 
     fun findAllByOrderBySortOrderAscUsernameAsc(): List<InstagramAccount>
 }
 
-interface InstagramPostRepository : JpaRepository<InstagramPost, UUID> {
+interface InstagramPostRepository : JpaRepository<InstagramPost, Long> {
     @Query("SELECT p FROM InstagramPost p JOIN FETCH p.account WHERE p.postedAt >= :since")
     fun findFeed(
         @Param("since") since: Instant,
@@ -39,39 +38,39 @@ interface InstagramPostRepository : JpaRepository<InstagramPost, UUID> {
 
     @Query("SELECT p FROM InstagramPost p JOIN FETCH p.account WHERE p.accountId = :accountId AND p.postedAt >= :since")
     fun findFeedByAccount(
-        @Param("accountId") accountId: UUID,
+        @Param("accountId") accountId: Long,
         @Param("since") since: Instant,
         pageable: Pageable,
     ): List<InstagramPost>
 
     @Query("SELECT p FROM InstagramPost p JOIN FETCH p.account WHERE p.id IN :ids")
     fun findWithAccountByIdIn(
-        @Param("ids") ids: Collection<UUID>,
+        @Param("ids") ids: Collection<Long>,
     ): List<InstagramPost>
 
     fun existsByShortcode(shortcode: String): Boolean
 }
 
-interface InsightScrapRepository : JpaRepository<InsightScrap, UUID> {
+interface InsightScrapRepository : JpaRepository<InsightScrap, Long> {
     fun findByUserIdAndTargetTypeAndTargetId(
-        userId: UUID,
+        userId: Long,
         targetType: String,
-        targetId: UUID,
+        targetId: Long,
     ): InsightScrap?
 
     fun findByUserIdAndTargetTypeOrderByCreatedAtDesc(
-        userId: UUID,
+        userId: Long,
         targetType: String,
         pageable: Pageable,
     ): List<InsightScrap>
 
     fun findByUserIdAndTargetType(
-        userId: UUID,
+        userId: Long,
         targetType: String,
     ): List<InsightScrap>
 
     fun countByUserIdAndTargetType(
-        userId: UUID,
+        userId: Long,
         targetType: String,
     ): Long
 }

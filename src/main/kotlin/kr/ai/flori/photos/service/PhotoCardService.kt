@@ -1,7 +1,7 @@
 package kr.ai.flori.photos.service
 
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.storage.S3PresignService
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.photos.dto.FileMetaRequest
@@ -43,10 +43,10 @@ class PhotoCardService(
     }
 
     @Transactional(readOnly = true)
-    fun get(id: UUID): PhotoCardResponse = PhotoCardResponse.from(load(id))
+    fun get(id: Long): PhotoCardResponse = PhotoCardResponse.from(load(id))
 
     @Transactional(readOnly = true)
-    fun getBySaleId(saleId: UUID): PhotoCardResponse? =
+    fun getBySaleId(saleId: Long): PhotoCardResponse? =
         photoCardRepository
             .findFirstByUserIdAndSaleId(TenantContext.currentUserId(), saleId)
             ?.let(PhotoCardResponse::from)
@@ -64,7 +64,7 @@ class PhotoCardService(
 
     @Transactional
     fun update(
-        id: UUID,
+        id: Long,
         request: PhotoCardUpdateRequest,
     ): PhotoCardResponse {
         val card = load(id)
@@ -84,7 +84,7 @@ class PhotoCardService(
 
     /** 삭제 후 정리 대상 사진 목록을 반환(스토리지 클린업은 호출측/후속 처리). */
     @Transactional
-    fun delete(id: UUID): List<PhotoFile> {
+    fun delete(id: Long): List<PhotoFile> {
         val card = load(id)
         val photos = card.photos
         photoCardRepository.delete(card)
@@ -93,7 +93,7 @@ class PhotoCardService(
 
     @Transactional
     fun reorderPhotos(
-        id: UUID,
+        id: Long,
         photos: List<PhotoFile>,
     ): PhotoCardResponse {
         val card = load(id)
@@ -103,7 +103,7 @@ class PhotoCardService(
 
     @Transactional
     fun deletePhoto(
-        id: UUID,
+        id: Long,
         photoUrl: String,
     ): PhotoCardResponse {
         val card = load(id)
@@ -114,13 +114,13 @@ class PhotoCardService(
     /** presigned PUT 발급: 소유권 확인 + 카드당 최대 장수 + 이미지 메타 검증. */
     @Transactional(readOnly = true)
     fun createUploadTargets(
-        cardId: UUID,
+        cardId: Long,
         files: List<FileMetaRequest>,
     ): List<UploadTargetResponse> {
         val card = load(cardId)
         if (card.photos.size + files.size > MAX_PHOTOS_PER_CARD) {
             throw AppException(
-                ErrorCode.VALIDATION,
+                CommonErrorCode.VALIDATION,
                 "사진은 최대 ${MAX_PHOTOS_PER_CARD}장까지 등록할 수 있습니다 (현재 ${card.photos.size}장)",
             )
         }
@@ -137,12 +137,12 @@ class PhotoCardService(
         contentType: String,
         size: Long,
     ) {
-        if (!contentType.startsWith("image/")) throw AppException(ErrorCode.VALIDATION, "이미지 파일만 업로드할 수 있습니다")
-        if (size > MAX_FILE_SIZE_BYTES) throw AppException(ErrorCode.VALIDATION, "파일 크기가 너무 큽니다")
+        if (!contentType.startsWith("image/")) throw AppException(CommonErrorCode.VALIDATION, "이미지 파일만 업로드할 수 있습니다")
+        if (size > MAX_FILE_SIZE_BYTES) throw AppException(CommonErrorCode.VALIDATION, "파일 크기가 너무 큽니다")
     }
 
     private fun buildKey(
-        cardId: UUID,
+        cardId: Long,
         name: String,
     ): String {
         val safeName = name.replace(Regex("[^A-Za-z0-9._-]"), "_")
@@ -151,18 +151,18 @@ class PhotoCardService(
 
     private fun requirePhotoLimit(count: Int) {
         if (count > MAX_PHOTOS_PER_CARD) {
-            throw AppException(ErrorCode.VALIDATION, "사진은 최대 ${MAX_PHOTOS_PER_CARD}장까지 등록할 수 있습니다")
+            throw AppException(CommonErrorCode.VALIDATION, "사진은 최대 ${MAX_PHOTOS_PER_CARD}장까지 등록할 수 있습니다")
         }
     }
 
-    private fun load(id: UUID): PhotoCard =
+    private fun load(id: Long): PhotoCard =
         photoCardRepository.findByIdAndUserId(id, TenantContext.currentUserId())
-            ?: throw AppException(ErrorCode.NOT_FOUND, "사진 카드를 찾을 수 없습니다")
+            ?: throw AppException(CommonErrorCode.NOT_FOUND, "사진 카드를 찾을 수 없습니다")
 
     /** 매출 연동(sale_id) 소유권 검증 — 타 테넌트 매출 연결 차단. */
-    private fun verifySaleOwnership(saleId: UUID) {
+    private fun verifySaleOwnership(saleId: Long) {
         if (saleRepository.findByIdAndUserId(saleId, TenantContext.currentUserId()) == null) {
-            throw AppException(ErrorCode.VALIDATION, "유효하지 않은 매출입니다")
+            throw AppException(CommonErrorCode.VALIDATION, "유효하지 않은 매출입니다")
         }
     }
 

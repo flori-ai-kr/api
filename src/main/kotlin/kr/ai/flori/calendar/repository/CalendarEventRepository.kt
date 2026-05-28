@@ -5,12 +5,11 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.time.LocalDate
-import java.util.UUID
 
-interface CalendarEventRepository : JpaRepository<CalendarEvent, UUID> {
+interface CalendarEventRepository : JpaRepository<CalendarEvent, Long> {
     fun findByIdAndUserId(
-        id: UUID,
-        userId: UUID,
+        id: Long,
+        userId: Long,
     ): CalendarEvent?
 
     /** 월 범위와 겹치는 이벤트: start <= 월말 AND end >= 월초. */
@@ -19,7 +18,7 @@ interface CalendarEventRepository : JpaRepository<CalendarEvent, UUID> {
             "AND e.startDate <= :end AND e.endDate >= :start ORDER BY e.startDate, e.id",
     )
     fun findOverlapping(
-        @Param("userId") userId: UUID,
+        @Param("userId") userId: Long,
         @Param("start") start: LocalDate,
         @Param("end") end: LocalDate,
     ): List<CalendarEvent>

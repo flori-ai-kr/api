@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional
 import java.sql.Date
 import java.time.LocalDate
 import java.time.YearMonth
-import java.util.UUID
 import kotlin.math.roundToInt
 
 /**
@@ -64,7 +63,7 @@ class DashboardService(
     }
 
     private fun summary(
-        userId: UUID,
+        userId: Long,
         start: LocalDate,
         end: LocalDate,
     ): DashboardSummary =
@@ -77,7 +76,7 @@ class DashboardService(
               COALESCE(SUM(amount) FILTER (WHERE payment_method = 'transfer'), 0) AS transfer,
               COALESCE(SUM(amount) FILTER (WHERE payment_method = 'naverpay'), 0) AS naverpay,
               COALESCE(SUM(amount) FILTER (WHERE payment_method = 'kakaopay'), 0) AS kakaopay
-            FROM sales WHERE user_id = ?::uuid AND date BETWEEN ? AND ?
+            FROM sales WHERE user_id = ?::bigint AND date BETWEEN ? AND ?
             """.trimIndent(),
             { rs, _ ->
                 DashboardSummary(
@@ -95,12 +94,12 @@ class DashboardService(
         ) ?: EMPTY_SUMMARY
 
     private fun expenseTotal(
-        userId: UUID,
+        userId: Long,
         start: LocalDate,
         end: LocalDate,
     ): Long =
         jdbcTemplate.queryForObject(
-            "SELECT COALESCE(SUM(total_amount), 0) FROM expenses WHERE user_id = ?::uuid AND date BETWEEN ? AND ?",
+            "SELECT COALESCE(SUM(total_amount), 0) FROM expenses WHERE user_id = ?::bigint AND date BETWEEN ? AND ?",
             Long::class.java,
             userId,
             Date.valueOf(start),
@@ -108,14 +107,14 @@ class DashboardService(
         ) ?: 0
 
     private fun categoryStats(
-        userId: UUID,
+        userId: Long,
         start: LocalDate,
         end: LocalDate,
     ): List<CategoryStat> {
         val rows =
             jdbcTemplate.query(
                 "SELECT COALESCE(product_category, '기타') AS name, COUNT(*) AS cnt, SUM(amount) AS amount " +
-                    "FROM sales WHERE user_id = ?::uuid AND date BETWEEN ? AND ? AND payment_method <> 'unpaid' " +
+                    "FROM sales WHERE user_id = ?::bigint AND date BETWEEN ? AND ? AND payment_method <> 'unpaid' " +
                     "GROUP BY COALESCE(product_category, '기타') ORDER BY amount DESC",
                 { rs, _ -> Triple(rs.getString("name"), rs.getLong("cnt"), rs.getLong("amount")) },
                 userId,
@@ -127,14 +126,14 @@ class DashboardService(
     }
 
     private fun paymentStats(
-        userId: UUID,
+        userId: Long,
         start: LocalDate,
         end: LocalDate,
     ): List<PaymentMethodStat> {
         val rows =
             jdbcTemplate.query(
                 "SELECT payment_method AS m, COUNT(*) AS cnt, SUM(amount) AS amount " +
-                    "FROM sales WHERE user_id = ?::uuid AND date BETWEEN ? AND ? AND payment_method <> 'unpaid' " +
+                    "FROM sales WHERE user_id = ?::bigint AND date BETWEEN ? AND ? AND payment_method <> 'unpaid' " +
                     "GROUP BY payment_method ORDER BY amount DESC",
                 { rs, _ -> Triple(rs.getString("m"), rs.getLong("cnt"), rs.getLong("amount")) },
                 userId,
@@ -148,14 +147,14 @@ class DashboardService(
     }
 
     private fun channelStats(
-        userId: UUID,
+        userId: Long,
         start: LocalDate,
         end: LocalDate,
     ): List<ChannelStat> {
         val rows =
             jdbcTemplate.query(
                 "SELECT COALESCE(reservation_channel, 'other') AS ch, COUNT(*) AS cnt, SUM(amount) AS amount " +
-                    "FROM sales WHERE user_id = ?::uuid AND date BETWEEN ? AND ? AND payment_method <> 'unpaid' " +
+                    "FROM sales WHERE user_id = ?::bigint AND date BETWEEN ? AND ? AND payment_method <> 'unpaid' " +
                     "GROUP BY COALESCE(reservation_channel, 'other') ORDER BY amount DESC",
                 { rs, _ -> Triple(rs.getString("ch"), rs.getLong("cnt"), rs.getLong("amount")) },
                 userId,
@@ -169,14 +168,14 @@ class DashboardService(
     }
 
     private fun expenseStats(
-        userId: UUID,
+        userId: Long,
         start: LocalDate,
         end: LocalDate,
     ): List<ExpenseCategoryStat> {
         val rows =
             jdbcTemplate.query(
                 "SELECT category, SUM(total_amount) AS amount FROM expenses " +
-                    "WHERE user_id = ?::uuid AND date BETWEEN ? AND ? GROUP BY category ORDER BY amount DESC",
+                    "WHERE user_id = ?::bigint AND date BETWEEN ? AND ? GROUP BY category ORDER BY amount DESC",
                 { rs, _ -> rs.getString("category") to rs.getLong("amount") },
                 userId,
                 Date.valueOf(start),
@@ -187,14 +186,14 @@ class DashboardService(
     }
 
     private fun customerStats(
-        userId: UUID,
+        userId: Long,
         start: LocalDate,
         end: LocalDate,
     ): CustomerStat {
         val total =
             jdbcTemplate.queryForObject(
                 "SELECT COUNT(DISTINCT customer_phone) FROM sales " +
-                    "WHERE user_id = ?::uuid AND date BETWEEN ? AND ? AND customer_phone IS NOT NULL",
+                    "WHERE user_id = ?::bigint AND date BETWEEN ? AND ? AND customer_phone IS NOT NULL",
                 Long::class.java,
                 userId,
                 Date.valueOf(start),
@@ -203,7 +202,7 @@ class DashboardService(
         val returning =
             jdbcTemplate.queryForObject(
                 "SELECT COUNT(DISTINCT m.customer_phone) FROM sales m " +
-                    "WHERE m.user_id = ?::uuid AND m.date BETWEEN ? AND ? AND m.customer_phone IS NOT NULL " +
+                    "WHERE m.user_id = ?::bigint AND m.date BETWEEN ? AND ? AND m.customer_phone IS NOT NULL " +
                     "AND EXISTS (SELECT 1 FROM sales p WHERE p.user_id = m.user_id " +
                     "AND p.customer_phone = m.customer_phone AND p.date < ?)",
                 Long::class.java,

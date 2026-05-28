@@ -3,7 +3,6 @@ package kr.ai.flori.photos.dto
 import jakarta.validation.constraints.NotBlank
 import kr.ai.flori.photos.entity.PhotoTag
 import java.time.Instant
-import java.util.UUID
 
 data class PhotoTagCreateRequest(
     @field:NotBlank(message = "태그 이름은 필수입니다")
@@ -19,7 +18,7 @@ data class PhotoTagUpdateRequest(
 )
 
 data class PhotoTagResponse(
-    val id: UUID,
+    val id: Long,
     val name: String,
     val color: String,
     val createdAt: Instant,

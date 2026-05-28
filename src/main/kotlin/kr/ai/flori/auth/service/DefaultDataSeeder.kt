@@ -2,7 +2,6 @@ package kr.ai.flori.auth.service
 
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
-import java.util.UUID
 
 /**
  * 가입 시 사용자별 기본 설정 시드(매출 카테고리/결제방식, 지출 카테고리/결제방식).
@@ -20,7 +19,7 @@ class DefaultDataSeeder(
         val color: String,
     )
 
-    fun seedForNewUser(userId: UUID) {
+    fun seedForNewUser(userId: Long) {
         seedValueLabelTable("sale_categories", userId, SALE_CATEGORIES)
         seedValueLabelTable("payment_methods", userId, SALE_PAYMENT_METHODS)
         seedValueLabelTable("expense_categories", userId, EXPENSE_CATEGORIES)
@@ -29,7 +28,7 @@ class DefaultDataSeeder(
 
     private fun seedValueLabelTable(
         table: String,
-        userId: UUID,
+        userId: Long,
         rows: List<Setting>,
     ) {
         // 방어적 가드: 테이블명은 SQL 바인딩 불가하므로 허용 목록으로만 보간(인젝션 차단).

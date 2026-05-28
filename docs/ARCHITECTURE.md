@@ -13,7 +13,7 @@
 ```mermaid
 flowchart TB
     subgraph Clients["클라이언트"]
-        App([Flutter 앱<br/>flori-ai/mobile])
+        App([React Native 앱<br/>flori-ai/mobile])
         Collector([수집 워커<br/>트렌드/인스타])
     end
 
@@ -150,9 +150,9 @@ flowchart LR
 
 **왜 PostgreSQL인가:**
 
-원본 스키마가 Supabase(PostgreSQL)다. jsonb·배열·`uuid`·`timestamptz`·부분 인덱스·`array_remove` 등 Postgres 고유 기능에 의존하므로 동일 엔진을 유지해 이식 리스크를 최소화한다.
+원본 스키마가 Supabase(PostgreSQL)다. jsonb·배열·`timestamptz`·부분 인덱스·`array_remove` 등 Postgres 고유 기능에 의존하므로 동일 엔진을 유지해 이식 리스크를 최소화한다. PK는 BIGINT IDENTITY(시퀀스 기반)로, FK도 BIGINT로 정렬한다(구 UUID 전략에서 전환 — 인덱스 크기·조인 비용 절감).
 
-1. **Flyway 마이그레이션**: `V1`(스키마 baseline) → `V2`(공유 시드) → `V3`(refresh_tokens) → `V4`(subscriptions) → `V5`(notification_log) → `V6`(oauth_provider) → `V7`(`card_company_settings`·`app_config` 테이블 삭제, `sales` 입금/수수료/카드사 컬럼 삭제, 미사용 `sales.reservation_id`·`photos`·`customers` 통계 컬럼 삭제). 버전 관리되는 단방향 마이그레이션으로 재현 가능한 스키마를 보장한다.
+1. **Flyway 마이그레이션**: `V1`(통합 스키마 baseline) → `V2`(인스타 계정 공유 시드) → `V3`(온보딩 — `user_profiles` + 당시 `users.onboarded`) → `V4`(소셜 전용 전환 — `password_hash` 제거, `email` NOT NULL) → `V5`(`users.onboarded` 컬럼 제거 — User 존재 자체가 온보딩 완료를 의미하므로 죽은 컬럼 정리). 버전 관리되는 단방향 마이그레이션으로 재현 가능한 스키마를 보장한다. **전체 테이블·컬럼 명세는 [DATABASE.md](DATABASE.md)가 SSOT.**
 2. **이식 시 변환(HARD)**: Supabase **RLS 정책 전부 제거**, `auth.users` FK 제거 → **자체 `users` 테이블** 도입, 모든 `user_id`가 `users(id)`를 `ON DELETE CASCADE`로 참조. jsonb/배열/복합 unique는 그대로 유지.
 
 | 탈락 후보 | 이유 |
@@ -171,7 +171,7 @@ flowchart LR
 
 1. **access = 자체 JWT(HS256, 짧은 TTL 15분)**: 서명키는 환경변수, 만료/위변조 검증. 필터가 파싱해 `SecurityContext` + `TenantContext`에 주입.
 2. **refresh = 불투명 난수 + DB에 SHA-256 해시 저장**: JWT가 아니라 **회수 가능한 토큰**. 사용 시 회전(기존 무효화 후 신규 발급), 로그아웃 시 무효화.
-3. **BCrypt**: 비밀번호 단방향 해시. 평문 로깅 금지.
+3. **소셜 전용 인증**: 이메일/비밀번호 가입은 폐지(V4에서 `password_hash` 제거). 카카오/구글/네이버 OAuth로만 로그인하며, User는 온보딩 완료(`/auth/register/complete`) 시점에 생성되고 `email`이 항상 채워진다. 따라서 BCrypt 등 비밀번호 저장 로직이 없다.
 4. **내부 API**(`/internal/**`)는 별도 `INTERNAL_API_KEY` Bearer로 **타이밍-세이프** 검증.
 
 | 탈락 후보 | 이유 |
@@ -179,6 +179,7 @@ flowchart LR
 | Supabase Auth | 자체 인프라 분리 목표, 앱-백엔드 직접 제어 필요 |
 | 세션 기반 | 네이티브 앱·무상태 API에 부적합 |
 | refresh도 JWT | 탈취 시 회수 불가. 불투명 토큰 + DB 추적이 안전 |
+| 이메일/비밀번호 가입 | 꽃집 사장 대상 모바일 UX — 소셜 로그인이 마찰 최소. 비밀번호 관리 부담 제거 |
 
 ---
 
@@ -239,7 +240,7 @@ flowchart TB
     Set --> Svc[Service]
     Svc -->|"currentUserId()"| Q1["repository.findByIdAndUserId(...)"]
     Svc -->|"currentUserId()"| Q2["Specification: where user_id = ?"]
-    Svc -->|"currentUserId()"| Q3["native SQL: ... WHERE user_id = ?::uuid"]
+    Svc -->|"currentUserId()"| Q3["native SQL: ... WHERE user_id = ?"]
     Q1 & Q2 & Q3 --> DB[(PostgreSQL)]
     Svc --> Clear["finally: TenantContext.clear()"]
 
@@ -253,7 +254,7 @@ flowchart TB
 
 **격리 강제 지점:**
 1. **필터**: 모든 요청에서 토큰 검증 → `TenantContext`(요청 스코프 ThreadLocal)에 `userId` 주입, 요청 종료 시 `clear()`.
-2. **서비스/리포지토리**: 모든 조회/변경은 `findByIdAndUserId`, `Specification(user_id=?)`, 네이티브 `WHERE user_id=?::uuid`로 격리. 단건 조회 미스는 `NOT_FOUND`(존재 자체를 노출하지 않음).
+2. **서비스/리포지토리**: 모든 조회/변경은 `findByIdAndUserId`, `Specification(user_id=?)`, 네이티브 `WHERE user_id=?`로 격리. 단건 조회 미스는 `NOT_FOUND`(존재 자체를 노출하지 않음).
 3. **교차 참조 검증**: 매출의 `customer_id`, 예약·사진의 `saleId` 등 외부에서 받은 식별자는 **소유권을 재확인**한 뒤에만 사용.
 4. **테스트**: 도메인마다 "다른 user의 데이터 접근 차단" 케이스를 필수로 포함.
 
@@ -272,21 +273,17 @@ sequenceDiagram
     participant AS as AuthService
     participant DB as PostgreSQL
 
-    Note over U,DB: 이메일 로그인
-    U->>AS: POST /auth/login (email, pw)
-    AS->>DB: findByEmail + BCrypt matches
-    AS->>DB: refresh 저장(SHA-256 해시)
-    AS-->>U: { accessToken(JWT), refreshToken(불투명) }
-
-    Note over U,DB: 카카오 소셜 로그인 (POST /auth/oauth/kakao)
+    Note over U,DB: 소셜 로그인 (POST /auth/oauth/{kakao|google|naver})
     U->>AS: code, redirectUri
-    AS->>AS: KakaoOAuthClient.authenticate()
-    AS->>AS: kauth.kakao.com 토큰교환
-    AS->>AS: kapi.kakao.com 프로필조회(providerId, nickname)
-    alt 신규 사용자
-        AS->>DB: User INSERT (provider=KAKAO, providerId) + 기본설정 시드
-    else 기존 사용자
-        AS->>DB: findByProviderAndProviderId
+    AS->>AS: SocialOAuthClient(provider 선택).authenticate()
+    AS->>AS: 제공자 토큰교환 + 프로필조회(providerId, socialEmail, nickname)
+    Note right of AS: 카카오는 kakao_account.email을 읽어 socialEmail로 전달(온보딩 이메일 프리필)
+    alt 기존 사용자
+        AS->>DB: findByProviderAndProviderId → JWT 발급
+    else 신규 사용자(미가입)
+        AS-->>U: registerToken 발급(가입 미완료 — 온보딩 필요, socialEmail 프리필)
+        U->>AS: POST /auth/register/complete (registerToken + 프로필)
+        AS->>DB: User + user_profiles + 기본설정 시드를 한 트랜잭션에 생성 (온보딩 완료 = 가입 완료)
     end
     AS->>DB: refresh 저장(SHA-256 해시)
     AS-->>U: { accessToken(JWT), refreshToken(불투명) }
@@ -312,7 +309,7 @@ sequenceDiagram
     AS-->>U: { 새 access, 새 refresh }
 ```
 
-공개 경로: `/auth/**`, `/health`, `/actuator/**`, Swagger, `/internal/**`(내부 키로 별도 검증). 그 외는 모두 인증 필요.
+공개 경로: `/auth/oauth/**`·`/auth/register/complete`·`/auth/refresh`·`/auth/logout`·`/auth/nickname/check`(비인증 의도 경로만 명시 — `/auth/**` 와일드카드 대신), `/health`, `/actuator/**`, Swagger, `/internal/**`(내부 키로 별도 검증). 그 외(`/me/**` 등)는 모두 인증 필요.
 
 ---
 
@@ -383,7 +380,7 @@ flowchart LR
 
 ## DB 스키마
 
-자체 `users` + 이식 21개 = **22 테이블**. 핵심 관계만 표시(공유 테이블은 `user_id` 없음).
+도메인 **25 테이블**(+ Flyway 이력). 아래는 핵심 관계만 요약(공유 테이블은 `user_id` 없음). **전체 컬럼·제약·인덱스 명세는 [DATABASE.md](DATABASE.md)가 SSOT.**
 
 ```mermaid
 erDiagram
@@ -399,41 +396,41 @@ erDiagram
     USERS ||--o{ PUSH_SUBSCRIPTIONS : "user_id"
 
     CUSTOMERS ||--o{ SALES : "customer_id"
-    SALES ||--o| RESERVATIONS : "sale_id ↔ reservation_id"
+    SALES ||--o| RESERVATIONS : "reservations.sale_id"
     SALES ||--o{ PHOTO_CARDS : "sale_id"
     RECURRING_EXPENSES ||--o{ EXPENSES : "recurring_id"
     RECURRING_EXPENSES ||--o{ RECURRING_SKIPS : "recurring_id"
     INSTAGRAM_ACCOUNTS ||--o{ INSTAGRAM_POSTS : "account_id"
 
     USERS {
-        uuid id PK
-        string email UK "nullable (소셜 사용자)"
-        string password_hash "BCrypt, nullable (소셜 사용자)"
-        string provider "LOCAL|KAKAO, NOT NULL"
+        bigint id PK
+        string email UK "NOT NULL (소셜에서 채움)"
+        string name "표시명/소셜 닉네임"
+        string provider "KAKAO|GOOGLE|NAVER, NOT NULL"
         string provider_id "소셜 고유 ID, nullable"
         boolean is_active
     }
     SALES {
-        uuid id PK
-        uuid user_id FK
+        bigint id PK
+        bigint user_id FK
         date date
         int amount
         string payment_method "card|cash|...|unpaid"
         boolean is_unpaid "미수 영구 마커"
-        uuid customer_id FK
+        bigint customer_id FK
     }
     EXPENSES {
-        uuid id PK
-        uuid user_id FK
+        bigint id PK
+        bigint user_id FK
         int unit_price
         int quantity
         int total_amount "= unit_price*quantity"
-        uuid recurring_id FK
+        bigint recurring_id FK
         date date "UNIQUE(recurring_id,date)"
     }
     RECURRING_EXPENSES {
-        uuid id PK
-        uuid user_id FK
+        bigint id PK
+        bigint user_id FK
         string frequency "weekly|monthly|yearly"
         int_array days_of_week "INT[]"
         int_array days_of_month "INT[]"
@@ -443,31 +440,31 @@ erDiagram
         boolean is_active
     }
     RESERVATIONS {
-        uuid id PK
-        uuid user_id FK
+        bigint id PK
+        bigint user_id FK
         date date
-        uuid sale_id FK
+        bigint sale_id FK
         timestamptz reminder_at
         boolean reminder_sent
         boolean pickup_completed
     }
     PHOTO_CARDS {
-        uuid id PK
-        uuid user_id FK
+        bigint id PK
+        bigint user_id FK
         text_array tags "text[]"
         jsonb photos "[{url,originalName}]"
-        uuid sale_id FK
+        bigint sale_id FK
     }
     INSIGHT_SCRAPS {
-        uuid id PK
-        uuid user_id FK
+        bigint id PK
+        bigint user_id FK
         string target_type "trend|post"
-        uuid target_id "polymorphic"
+        bigint target_id "polymorphic"
     }
 ```
 
 핵심 설계 결정:
-- **예약 ↔ 매출 양방향 FK**: `reservations.sale_id` ↔ `sales.reservation_id`. 순환 참조라 baseline에서 `sales` 생성 후 `ALTER`로 FK 추가.
+- **예약 → 매출 FK**: `reservations.sale_id`가 `sales`를 참조(예약→매출 전환). 순환 참조 해소를 위해 baseline에서 `sales` 생성 후 `ALTER`로 FK 추가. (`sales.reservation_id`는 보유하지 않음 — 통계는 sales에서 집계.)
 - **고정비 멱등 자동생성**: `expenses(recurring_id, date)` UNIQUE + `recurring_skips`("이것만 삭제" 시 재발 방지).
 - **polymorphic 스크랩**: `(user_id, target_type, target_id)` 복합 unique. FK 없이 트렌드/포스트 공용.
 - **드리프트 반영**: 원본 `schema.sql`이 누락했던 `sales.is_unpaid`, `reservations.reminder_sent/pickup_completed`, `calendar_events`까지 실제 운영 스키마 기준으로 이식.
@@ -478,7 +475,7 @@ erDiagram
 
 | 도메인 | 대표 엔드포인트 | 권한 |
 |---|---|---|
-| 인증 | `POST /auth/{signup,login,oauth/kakao,refresh,logout}`, `GET /me` | Public / Auth |
+| 인증 | `POST /auth/oauth/{kakao,google,naver}`, `POST /auth/register/complete`, `POST /auth/{refresh,logout}`, `GET /me` | Public / Auth |
 | 매출 | `GET/POST/PATCH/DELETE /sales`, `/sales/{id}/complete-unpaid`·`/revert-unpaid`, `/sales/suggestions` | Auth |
 | 지출·고정비 | `/expenses`, `/recurring-expenses`(+`/toggle`·`/quick-add`·`/instances/{id}?scope=this\|all`) | Auth |
 | 고객 | `/customers`(+`/search`·`/check-phone`·`/{id}/sales`·`/find-or-create`·`/{id}/grade`) | Auth |
@@ -512,8 +509,8 @@ erDiagram
 | **JWT 필터** | `JwtAuthenticationFilter` — 모든 요청 Bearer 검증, 만료/위변조 시 401 | 비인증 접근 |
 | **멀티테넌시** | `TenantContext`(ThreadLocal) + 전 쿼리 `user_id` 격리 | 테넌트 간 데이터 유출 |
 | **소유권 재검증** | `customer_id`·다건 `ids` 등 외부 식별자 소유 확인 | 교차 테넌트 식별자 주입 |
-| **비밀번호** | BCrypt 해시, 평문 로깅 금지 | 자격증명 노출 |
-| **소셜 로그인** | KakaoOAuthClient 인터페이스 분리 — 4xx/5xx·네트워크 오류를 `AppException(INVALID_TOKEN)`으로 변환(원인 체이닝, 500 노출 방지). client_secret '사용함'일 때만 전송. 동시 첫 로그인 경쟁은 DataIntegrityViolationException 캐치 후 재조회(멱등) | 카카오 API 오류 노출·중복 사용자 생성 |
+| **소셜 전용 인증** | 이메일/비밀번호 가입 폐지(비밀번호 미저장). 신원은 OAuth providerId로만 도출 | 자격증명 노출 |
+| **소셜 로그인** | `SocialOAuthClient` 인터페이스(KAKAO/GOOGLE/NAVER 빈 분리) — 4xx/5xx·네트워크 오류를 `AppException(INVALID_TOKEN)`으로 변환(원인 체이닝, 500 노출 방지). 신규 신원은 User 미생성·registerToken만 발급(신원은 본문이 아닌 토큰에서만 도출). 동시 첫 가입 경쟁은 DataIntegrityViolationException 캐치(멱등) | 제공자 API 오류 노출·중복 사용자 생성·신원 위조 |
 | **refresh 회전** | 불투명 난수 + SHA-256 해시 저장, 사용 시 회전·로그아웃 시 무효 | 토큰 탈취/재사용 |
 | **내부 API** | `InternalAuthVerifier` — `MessageDigest.isEqual` 타이밍-세이프, 키 미설정 시 전면 차단 | 수집 API 무단 호출 |
 | **입력 검증** | Jakarta Validation `@Valid`, 결제수단/등급/상태 화이트리스트 | 잘못된 입력 |
@@ -528,16 +525,21 @@ erDiagram
 ## 에러 처리
 
 ```
-AppException(errorCode, message)
-└── ErrorCode (VALIDATION·UNAUTHORIZED·INVALID_CREDENTIALS·INVALID_TOKEN
-              ·FORBIDDEN·NOT_FOUND·DUPLICATE·INTERNAL)
+AppException(errorCode: ErrorCode, message)
+└── ErrorCode (인터페이스: code·status·defaultMessage)
+    ├── CommonErrorCode  (common/error)         — 횡단 코드  E-CMN-*
+    └── AuthErrorCode    (auth/error)           — 도메인 코드 E-AUTH-*
+        (새 도메인은 <domain>/error 에 enum 추가)
 ```
+
+에러 코드는 안정적인 `E-{DOMAIN}-{NNN}` 식별자다. 공통(횡단) 코드는 `common/error`, 도메인 전용 코드는
+각 도메인 패키지의 `<domain>/error`에 둔다. **전체 코드 표는 [`docs/ERROR_CODES.md`](ERROR_CODES.md) 참조.**
 
 `@RestControllerAdvice GlobalExceptionHandler`가 표준 응답으로 변환한다:
 - **예상된 예외**(AppException·검증·제약위반·DataIntegrity→409)는 그대로 매핑, Discord 전송 안 함.
 - **예기치 못한 예외(5xx)만** `DiscordErrorReporter`로 **비동기**(`@Async`) 리포팅 + 일반 메시지로 교체. 스택의 경로/이메일/토큰/비밀번호/키를 새니타이즈, 5분 중복 제거, 웹훅 미설정 시 콘솔 폴백.
 
-응답 형식: `{ "code": "...", "message": "..." }` 통일.
+응답 형식: `{ "code": "E-…", "message": "..." }` 통일. 클라이언트는 메시지가 아닌 `code`로 분기한다.
 
 ---
 
@@ -586,8 +588,9 @@ flowchart LR
 | `DISCORD_WEBHOOK_URL` | 에러 알림 |
 | `INTERNAL_API_KEY` | 내부 수집 API |
 | `CORS_ALLOWED_ORIGINS` | 앱/웹 origin 화이트리스트 |
-| `KAKAO_REST_API_KEY` | 카카오 OAuth REST API 키 |
-| `KAKAO_CLIENT_SECRET` | 카카오 OAuth 클라이언트 시크릿 ('사용 안 함'이면 빈 값으로 설정) |
+| `KAKAO_REST_API_KEY` / `KAKAO_CLIENT_SECRET` | 카카오 OAuth (시크릿 '사용 안 함'이면 빈 값) |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | 구글 OAuth |
+| `NAVER_CLIENT_ID` / `NAVER_CLIENT_SECRET` | 네이버 OAuth |
 
 ---
 

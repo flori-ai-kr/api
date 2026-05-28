@@ -22,7 +22,7 @@ class ExpenseDocsTest : RestDocsSupport() {
     /** ExpenseResponse 공통 응답 필드 — 단건 조회/생성/수정에서 재사용 */
     private val expenseResponseFields =
         listOf(
-            fieldWithPath("id").type(JsonFieldType.STRING).description("지출 UUID"),
+            fieldWithPath("id").type(JsonFieldType.NUMBER).description("지출 ID"),
             fieldWithPath("date").type(JsonFieldType.STRING).description("지출 발생일 (yyyy-MM-dd)"),
             fieldWithPath("itemName").type(JsonFieldType.STRING).description("물품명"),
             fieldWithPath("category").type(JsonFieldType.STRING).description("지출 카테고리"),
@@ -47,9 +47,9 @@ class ExpenseDocsTest : RestDocsSupport() {
                 .optional()
                 .description("비고 (null 가능)"),
             fieldWithPath("recurringId")
-                .type(JsonFieldType.STRING)
+                .type(JsonFieldType.NUMBER)
                 .optional()
-                .description("고정비 템플릿 UUID (고정비에서 생성된 경우)"),
+                .description("고정비 템플릿 ID (고정비에서 생성된 경우)"),
             fieldWithPath("isRecurringModified")
                 .type(JsonFieldType.BOOLEAN)
                 .description("고정비 인스턴스가 개별 수정되었는지 여부"),
@@ -173,7 +173,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                         summary = "지출 목록 (월 필터 선택, 미입력 시 전체)",
                         responseFields =
                             listOf(
-                                fieldWithPath("[].id").type(JsonFieldType.STRING).description("지출 UUID"),
+                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("지출 ID"),
                                 fieldWithPath("[].date")
                                     .type(JsonFieldType.STRING)
                                     .description("지출 발생일 (yyyy-MM-dd)"),
@@ -200,9 +200,9 @@ class ExpenseDocsTest : RestDocsSupport() {
                                     .optional()
                                     .description("비고"),
                                 fieldWithPath("[].recurringId")
-                                    .type(JsonFieldType.STRING)
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
-                                    .description("고정비 템플릿 UUID"),
+                                    .description("고정비 템플릿 ID"),
                                 fieldWithPath("[].isRecurringModified")
                                     .type(JsonFieldType.BOOLEAN)
                                     .description("고정비 인스턴스 개별 수정 여부"),
@@ -236,7 +236,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                         identifier = "expense-get",
                         tag = "Expenses",
                         summary = "지출 단건 조회",
-                        pathParameters = listOf(parameterWithName("id").description("지출 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("지출 ID")),
                         responseFields = expenseResponseFields,
                     ),
                 )
@@ -270,7 +270,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                         identifier = "expense-update",
                         tag = "Expenses",
                         summary = "지출 수정 (제공된 필드만 반영, 총액 재계산)",
-                        pathParameters = listOf(parameterWithName("id").description("지출 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("지출 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("date")
@@ -368,7 +368,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                         identifier = "expense-delete",
                         tag = "Expenses",
                         summary = "지출 삭제",
-                        pathParameters = listOf(parameterWithName("id").description("지출 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("지출 ID")),
                     ),
                 )
             }

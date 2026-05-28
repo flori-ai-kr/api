@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import java.util.UUID
 
 /**
  * 내부 수집/관리 API. Bearer INTERNAL_API_KEY 인증(InternalAuthVerifier).
@@ -62,7 +61,7 @@ class InternalInsightController(
     @PutMapping("/instagram-accounts/{id}")
     fun updateAccount(
         @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) auth: String?,
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: InstagramAccountUpdateRequest,
     ): InstagramAccountResponse {
         authVerifier.verify(auth)
@@ -73,7 +72,7 @@ class InternalInsightController(
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteAccount(
         @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) auth: String?,
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
     ) {
         authVerifier.verify(auth)
         ingestService.deleteAccount(id)

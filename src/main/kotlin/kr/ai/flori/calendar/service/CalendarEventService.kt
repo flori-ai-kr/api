@@ -6,13 +6,12 @@ import kr.ai.flori.calendar.dto.CalendarEventUpdateRequest
 import kr.ai.flori.calendar.entity.CalendarEvent
 import kr.ai.flori.calendar.repository.CalendarEventRepository
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.YearMonth
-import java.util.UUID
 
 /**
  * 캘린더 이벤트 서비스. 모든 쿼리 TenantContext userId 격리(HARD).
@@ -30,7 +29,7 @@ class CalendarEventService(
     }
 
     @Transactional(readOnly = true)
-    fun get(id: UUID): CalendarEventResponse = CalendarEventResponse.from(load(id))
+    fun get(id: Long): CalendarEventResponse = CalendarEventResponse.from(load(id))
 
     @Transactional
     fun create(request: CalendarEventCreateRequest): CalendarEventResponse {
@@ -45,7 +44,7 @@ class CalendarEventService(
 
     @Transactional
     fun update(
-        id: UUID,
+        id: Long,
         request: CalendarEventUpdateRequest,
     ): CalendarEventResponse {
         val event = load(id)
@@ -59,18 +58,18 @@ class CalendarEventService(
     }
 
     @Transactional
-    fun delete(id: UUID) {
+    fun delete(id: Long) {
         repository.delete(load(id))
     }
 
-    private fun load(id: UUID): CalendarEvent =
+    private fun load(id: Long): CalendarEvent =
         repository.findByIdAndUserId(id, TenantContext.currentUserId())
-            ?: throw AppException(ErrorCode.NOT_FOUND, "이벤트를 찾을 수 없습니다")
+            ?: throw AppException(CommonErrorCode.NOT_FOUND, "이벤트를 찾을 수 없습니다")
 
     private fun requireValidRange(
         start: LocalDate,
         end: LocalDate,
     ) {
-        if (end.isBefore(start)) throw AppException(ErrorCode.VALIDATION, "종료일은 시작일보다 이전일 수 없습니다")
+        if (end.isBefore(start)) throw AppException(CommonErrorCode.VALIDATION, "종료일은 시작일보다 이전일 수 없습니다")
     }
 }

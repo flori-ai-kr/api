@@ -7,7 +7,6 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import kr.ai.flori.common.entity.BaseEntity
-import java.util.UUID
 
 /**
  * 고객. (phone, user_id) 복합 unique. 멀티테넌시: 모든 쿼리 user_id 격리.
@@ -17,16 +16,16 @@ import java.util.UUID
 @Table(name = "customers")
 class Customer(
     @Column(name = "user_id", nullable = false)
-    var userId: UUID,
+    var userId: Long,
     @Column(name = "name", nullable = false)
     var name: String,
     @Column(name = "phone", nullable = false)
     var phone: String,
 ) : BaseEntity() {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id: UUID? = null
+    var id: Long? = null
 
     @Column(name = "grade")
     var grade: String = "new"

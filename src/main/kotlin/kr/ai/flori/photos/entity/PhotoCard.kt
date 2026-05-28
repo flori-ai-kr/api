@@ -9,7 +9,6 @@ import jakarta.persistence.Table
 import kr.ai.flori.common.entity.BaseEntity
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
-import java.util.UUID
 
 /** 사진 파일(jsonb 배열 요소). */
 data class PhotoFile(
@@ -25,14 +24,14 @@ data class PhotoFile(
 @Table(name = "photo_cards")
 class PhotoCard(
     @Column(name = "user_id", nullable = false)
-    var userId: UUID,
+    var userId: Long,
     @Column(name = "title", nullable = false)
     var title: String,
 ) : BaseEntity() {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id: UUID? = null
+    var id: Long? = null
 
     @Column(name = "description")
     var description: String? = null
@@ -47,5 +46,5 @@ class PhotoCard(
     var photos: List<PhotoFile> = emptyList()
 
     @Column(name = "sale_id")
-    var saleId: UUID? = null
+    var saleId: Long? = null
 }

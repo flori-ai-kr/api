@@ -10,7 +10,7 @@
 ## 2. 전체 아키텍처
 
 ```
- Flutter 앱 (flori-ai/mobile) ──REST+JWT──→ Flori Server (이 repo)
+ React Native 앱 (flori-ai/mobile) ──REST+JWT──→ Flori Server (이 repo)
                                        ├ Spring Security + JWT
                                        ├ @Scheduled (Cron 대체)
                                        ├ S3 presigned 발급
@@ -61,11 +61,11 @@ kr.ai.flori
 
 ## 6. 인증
 
-- `signup` → users INSERT(BCrypt) + 사용자별 기본 설정 시드(카테고리/결제방식) → JWT 발급.
-- `login` → access JWT(짧음) + refresh token(회전, 저장/무효화).
-- JWT 서명키·TTL은 환경변수. 위변조/만료 검증.
-- **카카오 소셜 로그인** (SPEC-RN-015, 구현 완료): `POST /auth/oauth/kakao` — 인증코드+redirectUri → `KakaoOAuthClient`(인터페이스, 테스트 스텁 가능) → kauth.kakao.com 토큰교환 + kapi.kakao.com 프로필조회(providerId, nickname). 신규면 User(provider=KAKAO, providerId) INSERT + 기본설정 시드, 기존이면 findByProviderAndProviderId → 동일한 JWT 발급. 동시 첫 로그인 경쟁은 DataIntegrityViolationException 캐치 후 재조회로 멱등 처리. 소셜 사용자는 email/passwordHash가 null. 설정: `KAKAO_REST_API_KEY`, `KAKAO_CLIENT_SECRET` 환경변수.
-- 구글 소셜 로그인: 미구현(인터페이스 분리로 향후 동일 패턴 추가 가능).
+- **소셜 전용 인증**: 이메일/비밀번호 가입은 폐지(비밀번호 미저장). 카카오/구글/네이버 OAuth로만 로그인한다.
+- `POST /auth/oauth/{kakao|google|naver}` → `SocialOAuthClient`(provider별 빈, 테스트 스텁 가능)로 제공자 토큰교환 + 프로필조회(providerId, socialEmail, nickname). 카카오는 `kakao_account.email`을 읽어 `socialEmail`로 전달해 온보딩 이메일 프리필에 사용한다(동의항목 미수집 시 null). 기존 신원이면 즉시 JWT 발급(`registered=true`), 신규 신원이면 **User를 만들지 않고** `registerToken`(JWT 5분)만 발급(`registered=false`, socialEmail 동봉).
+- `POST /auth/register/complete` → registerToken 검증(신원은 토큰에서만 도출) + 가게 프로필 + 기본설정 시드(카테고리/결제방식)와 함께 **User + user_profiles 행을 한 트랜잭션에서 생성** → JWT 발급. **즉, User 존재 = 온보딩 완료 = 가입 완료** (별도 onboarded 플래그 없음).
+- `POST /auth/refresh` → access JWT(짧음) + refresh token 회전(저장/무효화). JWT 서명키·TTL은 환경변수. 위변조/만료 검증.
+- 동시 첫 가입 경쟁은 DataIntegrityViolationException 캐치로 멱등 처리(중복 신원/이메일 → DUPLICATE). 설정: `KAKAO_*`, `GOOGLE_*`, `NAVER_*` 환경변수.
 
 ## 7. 도메인 매핑 (원본 Server Actions → API)
 

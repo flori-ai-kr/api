@@ -1,7 +1,7 @@
 package kr.ai.flori.expenses.service
 
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.common.util.monthRange
 import kr.ai.flori.expenses.dto.ExpenseCreateRequest
@@ -12,7 +12,6 @@ import kr.ai.flori.expenses.entity.Expense
 import kr.ai.flori.expenses.repository.ExpenseRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
 
 /**
  * 지출 서비스. 모든 쿼리는 TenantContext userId로 격리(HARD).
@@ -36,7 +35,7 @@ class ExpenseService(
     }
 
     @Transactional(readOnly = true)
-    fun get(id: UUID): ExpenseResponse = ExpenseResponse.from(load(id))
+    fun get(id: Long): ExpenseResponse = ExpenseResponse.from(load(id))
 
     @Transactional(readOnly = true)
     fun suggestions(): ExpenseSuggestionsResponse {
@@ -70,7 +69,7 @@ class ExpenseService(
 
     @Transactional
     fun update(
-        id: UUID,
+        id: Long,
         request: ExpenseUpdateRequest,
     ): ExpenseResponse {
         val expense = load(id)
@@ -88,11 +87,11 @@ class ExpenseService(
     }
 
     @Transactional
-    fun delete(id: UUID) {
+    fun delete(id: Long) {
         expenseRepository.delete(load(id))
     }
 
-    private fun load(id: UUID): Expense =
+    private fun load(id: Long): Expense =
         expenseRepository.findByIdAndUserId(id, TenantContext.currentUserId())
-            ?: throw AppException(ErrorCode.NOT_FOUND, "지출을 찾을 수 없습니다")
+            ?: throw AppException(CommonErrorCode.NOT_FOUND, "지출을 찾을 수 없습니다")
 }

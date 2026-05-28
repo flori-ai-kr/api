@@ -7,7 +7,6 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import kr.ai.flori.common.entity.BaseEntity
-import java.util.UUID
 
 /**
  * 팔로우 인스타그램 계정. 공유 데이터. 쓰기는 내부 API만.
@@ -23,9 +22,9 @@ class InstagramAccount(
     var region: String,
 ) : BaseEntity() {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id: UUID? = null
+    var id: Long? = null
 
     @Column(name = "display_name")
     var displayName: String? = null

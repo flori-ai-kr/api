@@ -1,7 +1,7 @@
 package kr.ai.flori.common.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.error.ErrorResponse
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
@@ -11,8 +11,6 @@ import org.springframework.http.MediaType
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.invoke
 import org.springframework.security.config.http.SessionCreationPolicy
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
-import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
@@ -30,9 +28,6 @@ class SecurityConfig(
     private val corsConfigurationSource: CorsConfigurationSource,
 ) {
     @Bean
-    fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
-
-    @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http {
             csrf { disable() }
@@ -45,7 +40,12 @@ class SecurityConfig(
             }
             sessionManagement { sessionCreationPolicy = SessionCreationPolicy.STATELESS }
             authorizeHttpRequests {
-                authorize("/auth/**", permitAll)
+                // 비인증 공개 경로만 명시(향후 /auth 하위에 인증 필요 엔드포인트 추가 시 자동 노출 방지)
+                authorize("/auth/oauth/**", permitAll)
+                authorize("/auth/register/complete", permitAll)
+                authorize("/auth/refresh", permitAll)
+                authorize("/auth/logout", permitAll)
+                authorize("/auth/nickname/check", permitAll)
                 authorize("/health", permitAll)
                 authorize("/actuator/health/**", permitAll) // 헬스만 공개, 그 외 actuator는 인증 필요
                 authorize("/actuator/info", permitAll)
@@ -76,7 +76,7 @@ class SecurityConfig(
             response.characterEncoding = Charsets.UTF_8.name()
             response.writer.write(
                 objectMapper.writeValueAsString(
-                    ErrorResponse(ErrorCode.UNAUTHORIZED.name, ErrorCode.UNAUTHORIZED.defaultMessage),
+                    ErrorResponse(CommonErrorCode.UNAUTHORIZED.code, CommonErrorCode.UNAUTHORIZED.defaultMessage),
                 ),
             )
         }

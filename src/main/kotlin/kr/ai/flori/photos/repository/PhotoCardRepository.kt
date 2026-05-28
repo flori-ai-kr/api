@@ -5,17 +5,16 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
-import java.util.UUID
 
-interface PhotoCardRepository : JpaRepository<PhotoCard, UUID> {
+interface PhotoCardRepository : JpaRepository<PhotoCard, Long> {
     fun findByIdAndUserId(
-        id: UUID,
-        userId: UUID,
+        id: Long,
+        userId: Long,
     ): PhotoCard?
 
     fun findFirstByUserIdAndSaleId(
-        userId: UUID,
-        saleId: UUID,
+        userId: Long,
+        saleId: Long,
     ): PhotoCard?
 
     /**
@@ -28,12 +27,12 @@ interface PhotoCardRepository : JpaRepository<PhotoCard, UUID> {
                 "WHERE pc.user_id = :userId " +
                 "AND (CAST(:cursor AS timestamptz) IS NULL OR pc.updated_at < CAST(:cursor AS timestamptz)) " +
                 "AND (CAST(:tag AS text) IS NULL OR :tag = ANY(pc.tags)) " +
-                "AND (CAST(:customerId AS uuid) IS NULL OR s.customer_id = CAST(:customerId AS uuid)) " +
+                "AND (CAST(:customerId AS bigint) IS NULL OR s.customer_id = CAST(:customerId AS bigint)) " +
                 "ORDER BY pc.updated_at DESC LIMIT :limit",
         nativeQuery = true,
     )
     fun findPage(
-        @Param("userId") userId: UUID,
+        @Param("userId") userId: Long,
         @Param("cursor") cursor: String?,
         @Param("tag") tag: String?,
         @Param("customerId") customerId: String?,
@@ -47,7 +46,7 @@ interface PhotoCardRepository : JpaRepository<PhotoCard, UUID> {
         nativeQuery = true,
     )
     fun removeTagFromCards(
-        @Param("userId") userId: UUID,
+        @Param("userId") userId: Long,
         @Param("tagName") tagName: String,
     ): Int
 }

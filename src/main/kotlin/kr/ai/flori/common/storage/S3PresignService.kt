@@ -1,7 +1,7 @@
 package kr.ai.flori.common.storage
 
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import org.springframework.stereotype.Service
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
@@ -22,7 +22,7 @@ class S3PresignService(
         contentType: String,
     ): PresignedUpload {
         if (properties.s3.bucket.isBlank()) {
-            throw AppException(ErrorCode.INTERNAL, "스토리지가 구성되지 않았습니다")
+            throw AppException(CommonErrorCode.INTERNAL, "스토리지가 구성되지 않았습니다")
         }
         val putRequest =
             PutObjectRequest

@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import java.util.UUID
 
 /**
  * 고정비 템플릿 + 인스턴스 분기(scope=this|all).
@@ -34,7 +33,7 @@ class RecurringExpenseController(
 
     @GetMapping("/{id}")
     fun get(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
     ): RecurringExpenseResponse = service.get(id)
 
     @PostMapping
@@ -45,33 +44,33 @@ class RecurringExpenseController(
 
     @PutMapping("/{id}")
     fun update(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: RecurringExpenseRequest,
     ): RecurringExpenseResponse = service.update(id, request)
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun delete(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
     ) {
         service.delete(id)
     }
 
     @PostMapping("/{id}/toggle")
     fun toggle(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: ToggleActiveRequest,
     ): RecurringExpenseResponse = service.toggleActive(id, requireNotNull(request.isActive))
 
     @PostMapping("/{id}/quick-add")
     @ResponseStatus(HttpStatus.CREATED)
     fun quickAdd(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
     ): ExpenseResponse = service.quickAdd(id)
 
     @PatchMapping("/instances/{expenseId}")
     fun updateInstance(
-        @PathVariable expenseId: UUID,
+        @PathVariable expenseId: Long,
         @RequestParam(defaultValue = "this") scope: String,
         @Valid @RequestBody fields: RecurringInstanceUpdateRequest,
     ) {
@@ -85,7 +84,7 @@ class RecurringExpenseController(
     @DeleteMapping("/instances/{expenseId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteInstance(
-        @PathVariable expenseId: UUID,
+        @PathVariable expenseId: Long,
         @RequestParam(defaultValue = "this") scope: String,
     ) {
         if (scope == SCOPE_ALL) {

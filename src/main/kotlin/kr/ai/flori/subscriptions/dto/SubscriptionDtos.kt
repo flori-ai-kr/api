@@ -42,7 +42,7 @@ data class RevenueCatWebhookRequest(
 )
 
 /**
- * RevenueCat 웹훅 이벤트(snake_case). app_user_id 는 앱이 사용자 UUID로 설정한다.
+ * RevenueCat 웹훅 이벤트(snake_case). app_user_id 는 앱이 사용자 Long로 설정한다.
  * @see <a href="https://www.revenuecat.com/docs/integrations/webhooks/event-types-and-fields">RevenueCat Webhook fields</a>
  */
 data class RevenueCatEvent(

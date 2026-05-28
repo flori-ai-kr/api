@@ -34,7 +34,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
     /** RecurringExpenseResponse 공통 응답 필드 — 단건/목록/토글/수정에서 재사용 */
     private val recurringResponseFields =
         listOf(
-            fieldWithPath("id").type(JsonFieldType.STRING).description("고정비 UUID"),
+            fieldWithPath("id").type(JsonFieldType.NUMBER).description("고정비 ID"),
             fieldWithPath("itemName").type(JsonFieldType.STRING).description("물품명"),
             fieldWithPath("category").type(JsonFieldType.STRING).description("지출 카테고리"),
             fieldWithPath("unitPrice").type(JsonFieldType.NUMBER).description("단가(원)"),
@@ -168,7 +168,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
     }
 
     /**
-     * 고정비 템플릿에서 스케줄러를 통해 생성된 인스턴스 UUID를 반환한다.
+     * 고정비 템플릿에서 스케줄러를 통해 생성된 인스턴스 ID를 반환한다.
      * scope=all 수정/삭제는 recurringId가 있는 인스턴스가 필요하므로 generator를 직접 호출한다.
      */
     private fun generateInstance(
@@ -176,12 +176,14 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
         date: LocalDate,
     ): String {
         generator.generateForDate(date)
-        return jdbcTemplate.queryForObject(
-            "SELECT id FROM expenses WHERE recurring_id = ?::uuid AND date = ?",
-            String::class.java,
-            recurringId,
-            Date.valueOf(date),
-        )!!
+        return jdbcTemplate
+            .queryForObject(
+                "SELECT id FROM expenses WHERE recurring_id = ?::bigint AND date = ?",
+                Long::class.java,
+                recurringId,
+                Date.valueOf(date),
+            )!!
+            .toString()
     }
 
     // ── 1. 고정비 생성 ──────────────────────────────────────────────────────────
@@ -240,7 +242,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         summary = "고정비 목록",
                         responseFields =
                             listOf(
-                                fieldWithPath("[].id").type(JsonFieldType.STRING).description("고정비 UUID"),
+                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("고정비 ID"),
                                 fieldWithPath("[].itemName").type(JsonFieldType.STRING).description("물품명"),
                                 fieldWithPath("[].category")
                                     .type(JsonFieldType.STRING)
@@ -313,7 +315,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         identifier = "recurring-expense-get",
                         tag = "RecurringExpenses",
                         summary = "고정비 단건 조회",
-                        pathParameters = listOf(parameterWithName("id").description("고정비 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("고정비 ID")),
                         responseFields = recurringResponseFields,
                     ),
                 )
@@ -352,7 +354,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         identifier = "recurring-expense-update",
                         tag = "RecurringExpenses",
                         summary = "고정비 수정 (전체 교체 — PUT)",
-                        pathParameters = listOf(parameterWithName("id").description("고정비 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("고정비 ID")),
                         requestFields = recurringRequestFields,
                         responseFields = recurringResponseFields,
                     ),
@@ -380,7 +382,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         identifier = "recurring-expense-toggle",
                         tag = "RecurringExpenses",
                         summary = "고정비 활성/비활성 토글",
-                        pathParameters = listOf(parameterWithName("id").description("고정비 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("고정비 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("isActive")
@@ -411,10 +413,10 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         identifier = "recurring-expense-quick-add",
                         tag = "RecurringExpenses",
                         summary = "빠른 추가 (오늘 날짜로 즉시 지출 생성, 템플릿과 분리)",
-                        pathParameters = listOf(parameterWithName("id").description("고정비 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("고정비 ID")),
                         responseFields =
                             listOf(
-                                fieldWithPath("id").type(JsonFieldType.STRING).description("생성된 지출 UUID"),
+                                fieldWithPath("id").type(JsonFieldType.NUMBER).description("생성된 지출 ID"),
                                 fieldWithPath("date")
                                     .type(JsonFieldType.STRING)
                                     .description("지출 발생일 (오늘 날짜, yyyy-MM-dd)"),
@@ -441,7 +443,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                                     .optional()
                                     .description("비고"),
                                 fieldWithPath("recurringId")
-                                    .type(JsonFieldType.STRING)
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("빠른 추가는 템플릿 분리 — null 반환"),
                                 fieldWithPath("isRecurringModified")
@@ -500,7 +502,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         identifier = "recurring-instance-update-this",
                         tag = "RecurringExpenses",
                         summary = "고정비 인스턴스 수정 — 이것만 (scope=this, 해당 지출만 변경)",
-                        pathParameters = listOf(parameterWithName("expenseId").description("지출 UUID")),
+                        pathParameters = listOf(parameterWithName("expenseId").description("지출 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("date")
@@ -573,7 +575,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         identifier = "recurring-instance-update-all",
                         tag = "RecurringExpenses",
                         summary = "고정비 인스턴스 수정 — 이후 모두 (scope=all, 템플릿+인스턴스 동시 변경)",
-                        pathParameters = listOf(parameterWithName("expenseId").description("지출 UUID")),
+                        pathParameters = listOf(parameterWithName("expenseId").description("지출 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("date")
@@ -646,7 +648,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         identifier = "recurring-instance-delete-this",
                         tag = "RecurringExpenses",
                         summary = "고정비 인스턴스 삭제 — 이것만 (scope=this, skip 기록 후 지출 삭제)",
-                        pathParameters = listOf(parameterWithName("expenseId").description("지출 UUID")),
+                        pathParameters = listOf(parameterWithName("expenseId").description("지출 ID")),
                     ),
                 )
             }
@@ -677,7 +679,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         identifier = "recurring-instance-delete-all",
                         tag = "RecurringExpenses",
                         summary = "고정비 인스턴스 삭제 — 이후 모두 (scope=all, 템플릿 종료일 단축)",
-                        pathParameters = listOf(parameterWithName("expenseId").description("지출 UUID")),
+                        pathParameters = listOf(parameterWithName("expenseId").description("지출 ID")),
                     ),
                 )
             }
@@ -701,7 +703,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                         identifier = "recurring-expense-delete",
                         tag = "RecurringExpenses",
                         summary = "고정비 삭제 (템플릿 전체 삭제)",
-                        pathParameters = listOf(parameterWithName("id").description("고정비 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("고정비 ID")),
                     ),
                 )
             }

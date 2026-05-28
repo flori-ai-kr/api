@@ -125,7 +125,7 @@
 
 - **Phase 1 전부 완료.** ROADMAP의 다음 TODO는 **SPEC-SERVER-014 (구독/결제)** — `deps: (앱 M4 완료)` 이므로 **현재 진행 불가**(앱 출시 후 Phase 2). 자율 루프는 진행 가능한 TODO가 없어 여기서 멈춘다.
 - **남은 운영 준비물(사용자 작업)**: 배포 환경변수 — `DB_URL`/`DB_USER`/`DB_PASSWORD`, `JWT_SECRET`, `AWS_*`/`S3_BUCKET`/`CLOUDFRONT_DOMAIN`, `FCM_ENABLED`/`FCM_CREDENTIALS`, `DISCORD_WEBHOOK_URL`, `INTERNAL_API_KEY`, `CORS_ALLOWED_ORIGINS`. (코드는 모두 `${ENV}` 참조, 미설정 시 로컬 graceful 동작.)
-- **앱 연동**: Swagger UI(`/swagger-ui.html`) / OpenAPI(`/v3/api-docs`)가 계약 출처. flori-ai/mobile(Flutter)이 이 ROADMAP의 DONE 상태를 보고 연동.
+- **앱 연동**: Swagger UI(`/swagger-ui.html`) / OpenAPI(`/v3/api-docs`)가 계약 출처. flori-ai/mobile(React Native)이 이 ROADMAP의 DONE 상태를 보고 연동.
 - **후속(선택)**: 통합 e2e 스모크, 실제 RDS/Testcontainers 기반 CI, 부하/보안 점검.
 - [중요] SPEC 완료 시 ROADMAP status를 `DONE`으로 정확히 갱신 — 앱 세션이 이 상태를 보고 연동을 시작한다.
 

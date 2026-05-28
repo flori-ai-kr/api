@@ -1,7 +1,7 @@
 package kr.ai.flori.insights.service
 
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.insights.dto.InsightScrapResponse
 import kr.ai.flori.insights.dto.InstagramPostResponse
@@ -18,7 +18,6 @@ import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
 
 /**
  * 인사이트 스크랩(polymorphic). 멀티테넌시: user_id 격리(HARD).
@@ -32,7 +31,7 @@ class ScrapService(
     @Transactional
     fun toggle(
         targetType: String,
-        targetId: UUID,
+        targetId: Long,
     ): Boolean {
         val userId = TenantContext.currentUserId()
         val type = validType(targetType)
@@ -53,19 +52,19 @@ class ScrapService(
     @Transactional
     fun updateMemo(
         targetType: String,
-        targetId: UUID,
+        targetId: Long,
         memo: String?,
     ): InsightScrapResponse {
         val userId = TenantContext.currentUserId()
         val scrap =
             scrapRepository.findByUserIdAndTargetTypeAndTargetId(userId, validType(targetType), targetId)
-                ?: throw AppException(ErrorCode.NOT_FOUND, "먼저 스크랩한 후 메모를 저장할 수 있어요")
+                ?: throw AppException(CommonErrorCode.NOT_FOUND, "먼저 스크랩한 후 메모를 저장할 수 있어요")
         scrap.memo = memo?.takeIf { it.isNotBlank() }
         return InsightScrapResponse.from(scrapRepository.save(scrap))
     }
 
     @Transactional(readOnly = true)
-    fun scrapMap(targetType: String): Map<UUID, ScrapInfo> =
+    fun scrapMap(targetType: String): Map<Long, ScrapInfo> =
         scrapRepository
             .findByUserIdAndTargetType(TenantContext.currentUserId(), validType(targetType))
             .associate { it.targetId to ScrapInfo(requireNotNull(it.id), it.memo) }
@@ -115,16 +114,16 @@ class ScrapService(
 
     private fun requireTargetExists(
         type: String,
-        targetId: UUID,
+        targetId: Long,
     ) {
         val exists = if (type == TYPE_TREND) trendRepository.existsById(targetId) else postRepository.existsById(targetId)
         if (!exists) {
-            throw AppException(ErrorCode.NOT_FOUND, if (type == TYPE_TREND) "존재하지 않는 트렌드입니다" else "존재하지 않는 포스트입니다")
+            throw AppException(CommonErrorCode.NOT_FOUND, if (type == TYPE_TREND) "존재하지 않는 트렌드입니다" else "존재하지 않는 포스트입니다")
         }
     }
 
     private fun validType(targetType: String): String {
-        if (targetType !in TYPES) throw AppException(ErrorCode.VALIDATION, "올바르지 않은 대상 유형입니다")
+        if (targetType !in TYPES) throw AppException(CommonErrorCode.VALIDATION, "올바르지 않은 대상 유형입니다")
         return targetType
     }
 

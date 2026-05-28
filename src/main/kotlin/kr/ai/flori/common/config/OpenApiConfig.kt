@@ -53,7 +53,7 @@ class OpenApiConfig {
                 .type(SecurityScheme.Type.HTTP)
                 .scheme("bearer")
                 .bearerFormat("JWT")
-                .description("`/auth/login`으로 발급받은 access 토큰. `Authorization: Bearer <token>`"),
+                .description("소셜 로그인/가입 완료(`/auth/oauth/*`, `/auth/register/complete`)로 발급받은 access 토큰. `Authorization: Bearer <token>`"),
         )
 
         return openApi

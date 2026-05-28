@@ -8,7 +8,6 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 import kr.ai.flori.common.entity.BaseEntity
 import java.time.LocalDate
-import java.util.UUID
 
 /**
  * 지출. total_amount = unit_price * quantity 는 서버가 계산하는 SSOT.
@@ -18,7 +17,7 @@ import java.util.UUID
 @Table(name = "expenses")
 class Expense(
     @Column(name = "user_id", nullable = false)
-    var userId: UUID,
+    var userId: Long,
     @Column(name = "date", nullable = false)
     var date: LocalDate,
     @Column(name = "item_name", nullable = false)
@@ -35,9 +34,9 @@ class Expense(
     var paymentMethod: String,
 ) : BaseEntity() {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id: UUID? = null
+    var id: Long? = null
 
     @Column(name = "card_company")
     var cardCompany: String? = null
@@ -49,7 +48,7 @@ class Expense(
     var note: String? = null
 
     @Column(name = "recurring_id")
-    var recurringId: UUID? = null
+    var recurringId: Long? = null
 
     @Column(name = "is_recurring_modified", nullable = false)
     var isRecurringModified: Boolean = false

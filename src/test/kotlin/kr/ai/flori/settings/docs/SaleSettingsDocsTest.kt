@@ -22,7 +22,7 @@ class SaleSettingsDocsTest : RestDocsSupport() {
     /** LabelSettingResponse 공통 응답 필드 */
     private val labelResponseFields =
         listOf(
-            fieldWithPath("id").type(JsonFieldType.STRING).description("설정 항목 UUID"),
+            fieldWithPath("id").type(JsonFieldType.NUMBER).description("설정 항목 ID"),
             fieldWithPath("value")
                 .type(JsonFieldType.STRING)
                 .description("식별 값 (영문 snake_case, 매출 기록 시 참조 키)"),
@@ -92,7 +92,7 @@ class SaleSettingsDocsTest : RestDocsSupport() {
                         responseFields =
                             listOf(
                                 fieldWithPath("[]").type(JsonFieldType.ARRAY).description("카테고리 목록"),
-                                fieldWithPath("[].id").type(JsonFieldType.STRING).description("설정 항목 UUID"),
+                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("설정 항목 ID"),
                                 fieldWithPath("[].value")
                                     .type(JsonFieldType.STRING)
                                     .description("식별 값 (영문 snake_case)"),
@@ -182,7 +182,7 @@ class SaleSettingsDocsTest : RestDocsSupport() {
                         identifier = "settings-sale-category-update",
                         tag = "SaleSettings",
                         summary = "매출 카테고리 수정 (label·color 전체 교체)",
-                        pathParameters = listOf(parameterWithName("id").description("매출 카테고리 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("매출 카테고리 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("label")
@@ -216,7 +216,7 @@ class SaleSettingsDocsTest : RestDocsSupport() {
                         identifier = "settings-sale-category-delete",
                         tag = "SaleSettings",
                         summary = "매출 카테고리 삭제",
-                        pathParameters = listOf(parameterWithName("id").description("매출 카테고리 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("매출 카테고리 ID")),
                     ),
                 )
             }
@@ -241,7 +241,7 @@ class SaleSettingsDocsTest : RestDocsSupport() {
                         responseFields =
                             listOf(
                                 fieldWithPath("[]").type(JsonFieldType.ARRAY).description("결제방식 목록"),
-                                fieldWithPath("[].id").type(JsonFieldType.STRING).description("설정 항목 UUID"),
+                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("설정 항목 ID"),
                                 fieldWithPath("[].value")
                                     .type(JsonFieldType.STRING)
                                     .description("식별 값 (영문 snake_case)"),
@@ -331,7 +331,7 @@ class SaleSettingsDocsTest : RestDocsSupport() {
                         identifier = "settings-payment-method-update",
                         tag = "SaleSettings",
                         summary = "매출 결제방식 수정 (label·color 전체 교체)",
-                        pathParameters = listOf(parameterWithName("id").description("결제방식 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("결제방식 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("label")
@@ -365,7 +365,7 @@ class SaleSettingsDocsTest : RestDocsSupport() {
                         identifier = "settings-payment-method-delete",
                         tag = "SaleSettings",
                         summary = "매출 결제방식 삭제",
-                        pathParameters = listOf(parameterWithName("id").description("결제방식 UUID")),
+                        pathParameters = listOf(parameterWithName("id").description("결제방식 ID")),
                     ),
                 )
             }

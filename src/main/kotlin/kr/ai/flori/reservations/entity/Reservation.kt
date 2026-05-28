@@ -10,7 +10,6 @@ import kr.ai.flori.common.entity.BaseEntity
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
-import java.util.UUID
 
 /**
  * 예약(픽업). 매출과 양방향 연결(sale_id). 멀티테넌시: user_id 격리.
@@ -20,14 +19,14 @@ import java.util.UUID
 @Table(name = "reservations")
 class Reservation(
     @Column(name = "user_id", nullable = false)
-    var userId: UUID,
+    var userId: Long,
     @Column(name = "date", nullable = false)
     var date: LocalDate,
 ) : BaseEntity() {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id: UUID? = null
+    var id: Long? = null
 
     @Column(name = "time")
     var time: LocalTime? = null
@@ -48,7 +47,7 @@ class Reservation(
     var status: String = "pending"
 
     @Column(name = "sale_id")
-    var saleId: UUID? = null
+    var saleId: Long? = null
 
     @Column(name = "amount")
     var amount: Int = 0

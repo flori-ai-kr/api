@@ -8,7 +8,6 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 import kr.ai.flori.common.entity.BaseEntity
 import java.time.Instant
-import java.util.UUID
 
 /**
  * 사용자별 현재 구독 상태(사용자당 1행). 서버가 SSOT.
@@ -20,16 +19,16 @@ import java.util.UUID
 @Table(name = "subscriptions")
 class Subscription(
     @Column(name = "user_id", nullable = false, unique = true)
-    var userId: UUID,
+    var userId: Long,
     @Column(name = "store", nullable = false)
     var store: String,
     @Column(name = "product_id", nullable = false)
     var productId: String,
 ) : BaseEntity() {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id: UUID? = null
+    var id: Long? = null
 
     @Column(name = "entitlement", nullable = false)
     var entitlement: String = "premium"
