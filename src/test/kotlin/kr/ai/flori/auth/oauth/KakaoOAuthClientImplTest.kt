@@ -24,7 +24,7 @@ class KakaoOAuthClientImplTest {
             .expect(requestTo("https://kapi.kakao.com/v2/user/me"))
             .andRespond(
                 withSuccess(
-                    """{"id":424242,"properties":{"nickname":"헤이즐 플라워"}}""",
+                    """{"id":424242,"properties":{"nickname":"헤이즐 플라워"},"kakao_account":{"email":"florist@kakao.com"}}""",
                     MediaType.APPLICATION_JSON,
                 ),
             )
@@ -34,6 +34,30 @@ class KakaoOAuthClientImplTest {
 
         assertThat(info.providerId).isEqualTo("424242")
         assertThat(info.nickname).isEqualTo("헤이즐 플라워")
+        assertThat(info.email).isEqualTo("florist@kakao.com")
+        server.verify()
+    }
+
+    @Test
+    fun `카카오 동의항목에 이메일이 없으면 email은 null이다`() {
+        val builder = RestClient.builder()
+        val server = MockRestServiceServer.bindTo(builder).build()
+        server
+            .expect(requestTo("https://kauth.kakao.com/oauth/token"))
+            .andRespond(withSuccess("""{"access_token":"kakao-at"}""", MediaType.APPLICATION_JSON))
+        server
+            .expect(requestTo("https://kapi.kakao.com/v2/user/me"))
+            .andRespond(
+                withSuccess(
+                    """{"id":424242,"properties":{"nickname":"헤이즐 플라워"}}""",
+                    MediaType.APPLICATION_JSON,
+                ),
+            )
+
+        val client = KakaoOAuthClientImpl(builder, KakaoProperties("rest-key", "secret"))
+        val info = client.authenticate("auth-code", "flori://oauth/kakao")
+
+        assertThat(info.email).isNull()
         server.verify()
     }
 

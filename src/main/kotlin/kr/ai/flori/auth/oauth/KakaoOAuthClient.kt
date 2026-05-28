@@ -8,8 +8,9 @@ interface KakaoOAuthClient {
     ): KakaoUserInfo
 }
 
-/** 카카오 사용자 신원. providerId(카카오 회원번호)만 필수, 이메일은 MVP 미수집. */
+/** 카카오 사용자 신원. providerId(카카오 회원번호) 필수, email/nickname은 동의항목에 따라 선택. */
 data class KakaoUserInfo(
     val providerId: String,
     val nickname: String?,
+    val email: String? = null,
 )

@@ -26,7 +26,7 @@ class KakaoOAuthClientImpl(
     SocialOAuthClient {
     private val client = builder.build()
 
-    /** 제공자 일반화 진입점. 카카오는 이메일 미수집이므로 email=null, provider="KAKAO". state 미사용. */
+    /** 제공자 일반화 진입점. 카카오 동의항목의 이메일을 그대로 전달, provider="KAKAO". state 미사용. */
     override fun authenticate(
         code: String,
         redirectUri: String,
@@ -36,7 +36,7 @@ class KakaoOAuthClientImpl(
         return SocialUserInfo(
             provider = "KAKAO",
             providerId = info.providerId,
-            email = null,
+            email = info.email,
             nickname = info.nickname,
         )
     }
@@ -89,7 +89,11 @@ class KakaoOAuthClientImpl(
                 throw AppException(ErrorCode.INVALID_TOKEN, "카카오 프로필 조회에 실패했습니다", e)
             }
         return me?.let {
-            KakaoUserInfo(providerId = it.id.toString(), nickname = it.properties?.get("nickname"))
+            KakaoUserInfo(
+                providerId = it.id.toString(),
+                nickname = it.properties?.get("nickname"),
+                email = it.kakaoAccount?.email,
+            )
         } ?: throw AppException(ErrorCode.INVALID_TOKEN, "카카오 프로필 응답이 비어 있습니다")
     }
 
@@ -106,4 +110,9 @@ private data class KakaoTokenResponse(
 private data class KakaoMeResponse(
     val id: Long,
     val properties: Map<String, String>? = null,
+    @JsonProperty("kakao_account") val kakaoAccount: KakaoAccount? = null,
+)
+
+private data class KakaoAccount(
+    val email: String? = null,
 )
