@@ -1,38 +1,119 @@
-# Flori Server — 꽃집 관리 백엔드 API
+# CLAUDE.md
 
-Flori(꽃집 어드민)의 모바일/웹 백엔드. Spring Boot(Kotlin) REST API.
+이 파일은 Claude Code가 이 프로젝트에서 작업할 때 참조하는 가이드입니다.
+
+---
+
+## 프로젝트 개요
+
+**Flori Server** — 꽃집 어드민(Flori)의 모바일/웹 백엔드. 기존 Next.js 웹의 비즈니스 로직을 **앱/웹이 호출 가능한 REST API**로 재구현하고, 자체 AWS 인프라 위에서 동작시킨다.
+
 자매 repo: `~/Desktop/flori-ai/mobile`(React Native / Expo), `~/Desktop/flori-ai/web`(Next.js).
 
-## 이 repo의 역할
+### 기술 스택
 
-기존 Next.js 웹의 비즈니스 로직을 **앱/웹이 호출 가능한 REST API**로 재구현하고, 자체 AWS 인프라 위에서 동작시킨다.
-
-## 기술 스택
-
-| 영역 | 선택 |
+| 구분 | 기술 |
 |------|------|
-| 언어/빌드 | Kotlin + Gradle (Kotlin DSL) |
-| 프레임워크 | Spring Boot 3.x (Java 21 toolchain) |
+| 언어/빌드 | Kotlin + Gradle (Kotlin DSL), Java 21 toolchain |
+| 프레임워크 | Spring Boot 3.5 |
 | 데이터 접근 | Spring Data JPA + Hibernate (jsonb/배열은 hypersistence-utils), 통계 집계는 네이티브 SQL |
-| DB | AWS RDS PostgreSQL (로컬: Docker `flori-pg`) |
-| 스키마 관리 | **DDL 직접 관리** — 스키마 변경은 SQL DDL로 수행, `ddl-auto: validate`로 엔티티↔DB 정합 검증 |
+| Database | AWS RDS PostgreSQL (로컬: Docker `flori-pg`) |
+| 스키마 관리 | Flyway(SQL DDL 마이그레이션) + `ddl-auto: validate`로 엔티티↔DB 정합 검증 |
 | 인증 | Spring Security + 자체 JWT(access + refresh rotation) + **registerToken**(가입 대기, 5분). **소셜 전용**(카카오·구글·네이버 OAuth), 비밀번호 없음 |
 | 검증 | Jakarta Bean Validation |
 | 스토리지 | AWS S3 + CloudFront (presigned PUT URL 발급) |
 | 푸시 | FCM (Firebase Admin SDK) |
-| 스케줄 | Spring `@Scheduled` |
+| 스케줄 | Spring `@Scheduled` (KST) |
 | 에러 | `@ControllerAdvice` 표준 응답(`E-{DOMAIN}-{NNN}` 코드 체계) + Discord 웹훅 |
-| API 문서 | Spring REST Docs → OpenAPI 3 (swagger-ui) |
-| 커버리지 | JaCoCo line 80% 게이트 |
+| API 문서 | Spring REST Docs → OpenAPI 3 (springdoc swagger-ui) — 테스트가 문서의 단일 출처 |
+| 품질 | ktlint + detekt + JUnit(Zonky embedded PostgreSQL) + JaCoCo line 80% 게이트 |
+
+---
+
+## 빌드 및 실행
+
+```bash
+./gradlew build test     # ktlint + detekt + 전체 테스트 + JaCoCo 80% 게이트 (embedded PostgreSQL)
+./gradlew ktlintFormat   # 자동 포맷
+./gradlew openapi3        # RestDocs 테스트에서 OpenAPI 스펙 재생성 (→ static/docs/open-api-3.0.1.json)
+./gradlew bootRun         # 로컬 실행 (기본 프로필: local)
+open http://localhost:8080/swagger-ui.html   # API 계약 (테스트로 생성된 스펙)
+```
+
+| 프로필 | DB | 용도 |
+|--------|-----|------|
+| `local` | Docker `flori-pg` (bootRun) / Zonky embedded (test) | 로컬 개발·테스트 |
+| `prod` | AWS RDS PostgreSQL | 운영 서버 (강한 `JWT_SECRET` 미설정 시 부팅 거부) |
+
+> 테스트는 Zonky embedded PostgreSQL로 동작 → `./gradlew test`에 로컬 DB 불필요. 부팅 시 Flyway가 스키마를 적용하고, 헬스체크는 `GET /health`.
+
+---
+
+## 프로젝트 구조
+
+```
+src/main/kotlin/kr/ai/flori/
+├── auth/                  # 소셜 로그인/가입, JWT 발급·refresh rotation, registerToken
+├── user/                  # 사용자 / 내 정보(/me)
+├── sales/                 # 매출 기록 · 미수(unpaid) 처리
+├── expenses/              # 지출 + 고정비 자동 생성(@Scheduled)
+├── customers/             # 고객 (find-or-create, 실시간 통계)
+├── reservations/          # 예약 (판매 전환, 픽업)
+├── calendar/              # 캘린더 (리마인더 푸시)
+├── photos/                # 갤러리 (presigned 업로드) · 태그
+├── insights/              # 트렌드/공유 조회 · 스크랩 · 내부 ingest
+├── settings/              # 카드사 · 매출/지출 설정 · 하단바 · 푸시 구독
+├── subscriptions/         # 구독 + 게이팅(gating/) · 구독 보안(security/)
+├── dashboard/             # 오늘/월 집계 · 네이티브 SQL 통계
+└── common/                # 횡단 관심사
+    ├── config/            # CORS, OpenAPI, Async, Schedule, Web
+    ├── domain/            # 공통 enum (PaymentMethods, ReservationStatuses)
+    ├── entity/            # BaseEntity (Auditing)
+    ├── error/             # GlobalExceptionHandler, AppException, ErrorCode, Discord 리포팅
+    ├── health/            # 헬스체크
+    ├── log/               # TraceIdFilter, LoggingInterceptor
+    ├── push/              # PushService (FCM / 로깅 fallback)
+    ├── security/          # JWT, SecurityConfig, 내부 인증
+    ├── storage/           # S3 presign
+    ├── tenant/            # TenantContext (멀티테넌시)
+    └── util/              # DateRanges 등
+```
+
+### 도메인별 레이어 패턴
+
+```
+{domain}/ → controller/ → service/ → repository/
+                                   → entity/
+                                   → dto/        # 요청/응답 DTO (엔티티 노출 금지)
+                                   → error/      # 도메인 에러 코드
+```
+
+---
 
 ## 아키텍처 원칙 (HARD)
 
-- **클린 아키텍처**: `controller → service → repository`. 도메인별 패키지(`kr.ai.flori.<domain>`). 횡단 관심사는 `kr.ai.flori.common/`(security, error, tenant, storage, push, config). 도메인 에러 코드는 `<domain>/error/`.
+- **클린 아키텍처**: `controller → service → repository`. 도메인별 패키지(`kr.ai.flori.<domain>`). 횡단 관심사는 `kr.ai.flori.common/`. 도메인 에러 코드는 `<domain>/error/`.
 - **DTO 경계**: 엔티티를 컨트롤러 밖으로 노출하지 않는다. 요청/응답 DTO 분리.
-- **멀티테넌시 = 보안 1순위** [HARD]: 모든 데이터 쿼리는 JWT에서 추출한 `userId`(`TenantContext`)로 격리한다. `user_id` 필터 누락은 곧 데이터 유출. RLS가 없으므로 애플리케이션이 유일한 방어선. 신원은 요청 본문이 아닌 토큰/TenantContext에서만 도출한다.
+- **멀티테넌시 = 보안 1순위**: 모든 데이터 쿼리는 JWT에서 추출한 `userId`(`TenantContext`)로 격리한다. `user_id` 필터 누락은 곧 데이터 유출. RLS가 없으므로 애플리케이션이 유일한 방어선. 신원은 요청 본문이 아닌 토큰/TenantContext에서만 도출한다.
 - **검증은 시스템 경계에서**: 컨트롤러 진입점 `@Valid`.
 - **계산은 서버가 SSOT**: 지출총액(`unit_price * quantity`) 등은 서버가 계산해 응답.
 - **시크릿은 환경변수**: 코드/깃에 시크릿 금지. `application.yml`은 `${ENV}` 참조만.
+
+---
+
+## 코딩 컨벤션
+
+> **상세 내용과 코드 예시는 `docs/conventions/` 및 아래 레퍼런스 문서 참조**
+
+| 컨벤션 | 핵심 규칙 | 상세 문서 |
+|--------|-----------|-----------|
+| 멀티테넌시 격리 | 모든 쿼리 `user_id` 격리, 신원은 토큰에서만 도출 | `docs/conventions/26-05-25-multitenancy-isolation.md` |
+| 엔티티 Auditing·업데이트 | `BaseEntity` 자동 시각 관리, 상태 전이는 도메인 메서드(클래스 레벨 `@Setter` 금지) | `docs/conventions/26-05-25-entity-auditing-and-update-convention.md` |
+| 레이어 패턴·레시피 | 도메인 추가 레시피, 멀티테넌시 적용 패턴 | `docs/PATTERNS.md` |
+| Kotlin 관용구 | 이 repo에서 쓰는 Kotlin/Spring 관용구 | `docs/KOTLIN.md` |
+| 에러 코드 | `E-{DOMAIN}-{NNN}` 코드 체계 | `docs/ERROR_CODES.md` |
+
+---
 
 ## 보안 체크리스트 (HARD)
 
@@ -44,19 +125,55 @@ Flori(꽃집 어드민)의 모바일/웹 백엔드. Spring Boot(Kotlin) REST API
 - 에러 응답: 내부 디테일(스택/쿼리) 노출 금지, 일반 메시지 + Discord에만 상세
 - OWASP Top 10 준수
 
+---
+
+## 주요 클래스 위치
+
+| 용도 | 위치 |
+|------|------|
+| 멀티테넌시 컨텍스트 | `common/tenant/TenantContext.kt` |
+| JWT 발급/검증 | `common/security/JwtTokenProvider.kt`, `JwtAuthenticationFilter.kt` |
+| Security 설정 | `common/security/SecurityConfig.kt` |
+| 내부 ingest 인증 | `common/security/InternalAuthVerifier.kt` |
+| 글로벌 예외 처리 | `common/error/GlobalExceptionHandler.kt`, `AppException.kt`, `ErrorCode.kt` |
+| Discord 에러 리포팅 | `common/error/DiscordErrorReporter.kt` |
+| Auditing 베이스 엔티티 | `common/entity/BaseEntity.kt` |
+| S3 presign | `common/storage/S3PresignService.kt` |
+| 푸시 | `common/push/PushService.kt`, `FirebasePushService.kt` |
+| 구독 게이팅 | `subscriptions/gating/`, `subscriptions/security/` |
+| CORS / OpenAPI 설정 | `common/config/CorsConfig.kt`, `OpenApiConfig.kt` |
+| 헬스체크 | `common/health/HealthController.kt` |
+
+---
+
 ## 커밋 규칙
+
 - `git add -A` 금지 → 변경 파일만 명시 추가
-- conventional commits, 한국어 메시지
-- 빌드/테스트 통과 후에만 커밋(`./gradlew build test`)
+- conventional commits, 한국어 메시지 (`git log`로 기존 스타일 확인 후 따름)
+- 빌드/테스트 통과 후에만 커밋 (`./gradlew build test`)
 - Co-Authored-By: Claude <noreply@anthropic.com>
 - force push 금지
 
+---
+
 ## 참고 문서
-- `docs/ARCHITECTURE.md` — 아키텍처
-- `docs/DATABASE.md` — DB 스키마 명세 (SSOT)
-- `docs/DESIGN.md` — 설계
-- `docs/ERROR_CODES.md` — 에러 코드 체계
+
+```
+docs/
+├── ARCHITECTURE.md        # 시스템 아키텍처 & 기술 선정 이유 (Mermaid)
+├── DATABASE.md            # DB 스키마 명세 (SSOT)
+├── DESIGN.md              # 설계 SSOT, 배경 & 범위
+├── ERROR_CODES.md         # 에러 코드 체계
+├── KOTLIN.md              # Kotlin/Spring 관용구
+├── PATTERNS.md            # 레이어 패턴, 멀티테넌시, 신규 도메인 레시피
+├── conventions/           # 컨벤션 ADR (결정과 근거, 작업 전 필독)
+├── guides/                # how-to 가이드
+├── plans/                 # 구현 계획
+└── troubleshooting/       # 문제 해결 기록
+```
 
 ## 문서화 규칙
+
 - 모든 문서는 한국어로 작성한다. 코드/식별자/함수명/타입은 영어.
 - 코드와 문서를 함께 갱신한다.
+- `docs/conventions/`·`guides/`·`plans/`·`troubleshooting/` 하위 문서 파일명은 `yy-mm-dd-{슬러그}.md`(2자리 연도). 단, 루트의 대문자 레퍼런스 문서(`ARCHITECTURE.md` 등)는 네이밍을 그대로 유지한다.

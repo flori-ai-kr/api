@@ -6,7 +6,7 @@
 
 ## 작성 규칙
 
-- **파일명**: `yy-mm-dd-{슬러그}.md` (예: `2026-05-25-multitenancy-isolation.md`).
+- **파일명**: `yy-mm-dd-{슬러그}.md` (2자리 연도, 예: `26-05-25-multitenancy-isolation.md`).
 - **언어**: 한국어(코드/식별자만 영어).
 - **구조**: ① 배경/맥락 → ② 결정(Best Practice) → ③ 근거(Rationale) → ④ 공식 문서/참고 → ⑤ 적용 범위·예외.
 - 결정이 바뀌면 새 문서를 추가하고 옛 문서 상단에 `> SUPERSEDED BY {파일}`을 표기한다(삭제하지 않음 — 이력 보존).
@@ -15,8 +15,8 @@
 
 | 날짜 | 문서 | 요약 |
 |------|------|------|
-| 2026-05-25 | [멀티테넌시 격리](2026-05-25-multitenancy-isolation.md) | 모든 데이터 쿼리 `user_id` 격리(앱이 유일 방어선) + 자동 가드 테스트 |
-| 2026-05-25 | [엔티티 Auditing·업데이트 컨벤션](2026-05-25-entity-auditing-and-update-convention.md) | `BaseEntity` 자동 시각 관리 + 상태 전이는 도메인 메서드 |
+| 2026-05-25 | [멀티테넌시 격리](26-05-25-multitenancy-isolation.md) | 모든 데이터 쿼리 `user_id` 격리(앱이 유일 방어선) + 자동 가드 테스트 |
+| 2026-05-25 | [엔티티 Auditing·업데이트 컨벤션](26-05-25-entity-auditing-and-update-convention.md) | `BaseEntity` 자동 시각 관리 + 상태 전이는 도메인 메서드 |
 
 > 후속 후보: API 응답·OpenAPI 계약(`@Schema`) 컨벤션, 에러코드/예외 체계 컨벤션.
 
