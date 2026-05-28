@@ -15,7 +15,7 @@ class OnboardingDocsTest : RestDocsSupport() {
     @Test
     fun `가게 프로필 편집 문서화`() {
         val token = signupAndToken()
-        // 닉네임은 전역 유일(uq_users_name) — 공유 컨텍스트의 다른 문서 테스트와 충돌하지 않도록 고유 값 사용
+        // 닉네임은 전역 유일(uq_users_nickname) — 공유 컨텍스트의 다른 문서 테스트와 충돌하지 않도록 고유 값 사용
         val nickname = "헤이즐-${java.util.UUID.randomUUID()}"
 
         mockMvc
@@ -55,7 +55,7 @@ class OnboardingDocsTest : RestDocsSupport() {
                             listOf(
                                 fieldWithPath("id").type(JsonFieldType.NUMBER).description("사용자 ID"),
                                 fieldWithPath("email").type(JsonFieldType.STRING).optional().description("로그인 이메일"),
-                                fieldWithPath("name").type(JsonFieldType.STRING).optional().description("계정 표시 이름"),
+                                fieldWithPath("nickname").type(JsonFieldType.STRING).optional().description("닉네임"),
                                 fieldWithPath("profile").type(JsonFieldType.OBJECT).description("저장된 가게 프로필"),
                                 fieldWithPath("profile.storeName").type(JsonFieldType.STRING).description("가게명"),
                                 fieldWithPath("profile.regionSido").type(JsonFieldType.STRING).description("시/도"),

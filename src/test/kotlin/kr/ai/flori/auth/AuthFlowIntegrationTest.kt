@@ -78,7 +78,7 @@ class AuthFlowIntegrationTest {
                         body(
                             "registerToken" to registerToken,
                             "storeName" to "헤이즐 플라워",
-                            // 닉네임 전역 유일(uq_users_name) — 메서드 간 공유 DB 충돌 방지 위해 고유 생성
+                            // 닉네임 전역 유일(uq_users_nickname) — 메서드 간 공유 DB 충돌 방지 위해 고유 생성
                             "nickname" to "헤이즐-${UUID.randomUUID()}",
                             "email" to email,
                             "regionSido" to "서울특별시",

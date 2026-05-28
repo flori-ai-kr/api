@@ -39,9 +39,9 @@ class TenantIsolationGuardTest {
             // 인증: 사용자(테넌트 루트)·자격증명 조회 — 테넌트 데이터가 아님
             "UserRepository#findByEmail",
             "UserRepository#existsByEmail",
-            // 인증: 닉네임(users.name) 전역 유일성 검사 — 전역 unique 제약(uq_users_name)이므로 테넌트 격리 대상 아님
-            "UserRepository#existsByName",
-            "UserRepository#existsByNameAndIdNot",
+            // 인증: 닉네임(users.nickname) 전역 유일성 검사 — 전역 unique 제약(uq_users_nickname)이므로 테넌트 격리 대상 아님
+            "UserRepository#existsByNickname",
+            "UserRepository#existsByNicknameAndIdNot",
             // 인증: 소셜 신원(provider+providerId) 조회 — 자격증명 조회, 테넌트 데이터 아님 (SPEC-RN-015)
             "UserRepository#findByProviderAndProviderId",
             "RefreshTokenRepository#findByTokenHash",

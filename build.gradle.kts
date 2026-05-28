@@ -49,8 +49,6 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-impl:$jjwtVersion")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jjwtVersion")
 
-    implementation("org.flywaydb:flyway-core")
-    implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
 
     // S3 presigned URL 발급
@@ -65,7 +63,7 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    // Docker 없이 실제 PostgreSQL을 띄워 Flyway/리포지토리를 검증 (CI·로컬 동일)
+    // Docker 없이 실제 PostgreSQL을 띄워 스키마(docs/sql)·리포지토리를 검증 (CI·로컬 동일)
     testImplementation("io.zonky.test:embedded-database-spring-test:$embeddedDbTestVersion")
     testImplementation("io.zonky.test:embedded-postgres:2.0.7")
 
@@ -107,6 +105,8 @@ val snippetsDir = layout.buildDirectory.dir("generated-snippets")
 tasks.withType<Test> {
     useJUnitPlatform()
     outputs.dir(snippetsDir)
+    // 테스트는 임베디드 PG에 docs/sql DDL을 spring.sql.init로 적용한다(test 프로필). local은 OAuth 스텁/기본값 유지.
+    systemProperty("spring.profiles.active", "local,test")
 }
 
 openapi3 {

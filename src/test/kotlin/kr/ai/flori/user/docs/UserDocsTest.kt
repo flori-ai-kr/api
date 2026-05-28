@@ -1,4 +1,4 @@
-package kr.ai.flori.auth.docs
+package kr.ai.flori.user.docs
 
 import kr.ai.flori.common.docs.RestDocsSupport
 import org.junit.jupiter.api.Test
@@ -11,9 +11,9 @@ import org.springframework.test.web.servlet.patch
 import java.util.UUID
 
 /**
- * Me API RestDocs 문서화. 실제 보안 체인 + Zonky PG에서 각 엔드포인트를 1회 호출하며 OpenAPI를 생성한다.
+ * User(/me) API RestDocs 문서화. 실제 보안 체인 + Zonky PG에서 각 엔드포인트를 1회 호출하며 OpenAPI를 생성한다.
  */
-class MeDocsTest : RestDocsSupport() {
+class UserDocsTest : RestDocsSupport() {
     @Test
     fun `me 조회 문서화`() {
         val token = signupAndToken()
@@ -32,7 +32,7 @@ class MeDocsTest : RestDocsSupport() {
                             listOf(
                                 fieldWithPath("id").type(JsonFieldType.NUMBER).description("사용자 ID"),
                                 fieldWithPath("email").type(JsonFieldType.STRING).description("로그인 이메일"),
-                                fieldWithPath("name").type(JsonFieldType.STRING).optional().description("표시 이름(미설정 시 null)"),
+                                fieldWithPath("nickname").type(JsonFieldType.STRING).optional().description("닉네임(미설정 시 null)"),
                                 fieldWithPath("profile")
                                     .type(JsonFieldType.OBJECT)
                                     .optional()
@@ -74,7 +74,7 @@ class MeDocsTest : RestDocsSupport() {
                             listOf(
                                 fieldWithPath("id").type(JsonFieldType.NUMBER).description("사용자 ID"),
                                 fieldWithPath("email").type(JsonFieldType.STRING).description("보완된 이메일"),
-                                fieldWithPath("name").type(JsonFieldType.STRING).optional().description("표시 이름(미설정 시 null)"),
+                                fieldWithPath("nickname").type(JsonFieldType.STRING).optional().description("닉네임(미설정 시 null)"),
                                 fieldWithPath("profile")
                                     .type(JsonFieldType.OBJECT)
                                     .optional()

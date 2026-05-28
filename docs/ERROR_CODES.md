@@ -52,7 +52,7 @@
 |------|------|------|----------------|
 | `E-AUTH-001` | ALREADY_REGISTERED (이미 가입된 신원) | 409 | 같은 `(provider, providerId)`가 이미 가입됨 → registerToken 재사용 차단 |
 | `E-AUTH-002` | DUPLICATE_EMAIL (이메일 중복) | 409 | 이메일이 타 계정에서 사용 중 (가입 완료 / 이메일 변경) |
-| `E-AUTH-003` | DUPLICATE_NICKNAME (닉네임 중복) | 409 | 닉네임(`users.name` 전역 유일)이 타 계정에서 사용 중 (가입 완료 / 온보딩 닉네임 편집) |
+| `E-AUTH-003` | DUPLICATE_NICKNAME (닉네임 중복) | 409 | 닉네임(`users.nickname` 전역 유일)이 타 계정에서 사용 중 (가입 완료 / 온보딩 닉네임 편집) |
 
 ### 중복 시나리오별 반환 코드 (웹팀 전달용)
 
@@ -67,4 +67,4 @@
 | 온보딩에서 타 계정이 쓰는 닉네임으로 변경 | `E-AUTH-003` |
 | 동시성 경쟁(unique 제약) 폴백: `uq_users_provider_identity` | `E-AUTH-001` |
 | 동시성 경쟁(unique 제약) 폴백: email | `E-AUTH-002` |
-| 동시성 경쟁(unique 제약) 폴백: `uq_users_name` | `E-AUTH-003` |
+| 동시성 경쟁(unique 제약) 폴백: `uq_users_nickname` | `E-AUTH-003` |

@@ -1,20 +1,20 @@
 package kr.ai.flori.user.service
 
-import kr.ai.flori.auth.dto.UserResponse
 import kr.ai.flori.auth.error.AuthErrorCode
-import kr.ai.flori.auth.repository.UserRepository
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.user.dto.OnboardingRequest
 import kr.ai.flori.user.dto.ProfileResponse
+import kr.ai.flori.user.dto.UserResponse
 import kr.ai.flori.user.entity.UserProfile
 import kr.ai.flori.user.repository.UserProfileRepository
+import kr.ai.flori.user.repository.UserRepository
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * 온보딩 서비스: 가게 프로필 upsert + 닉네임(users.name) 편집.
+ * 온보딩 서비스: 가게 프로필 upsert + 닉네임(users.nickname) 편집.
  *
  * 멀티테넌시: 항상 호출부가 넘긴 currentUserId만 키로 사용한다. 요청 본문의 user_id는 받지 않는다
  * (UserProfile PK = user_id이므로 본질적으로 테넌트 격리). 같은 사용자가 두 번 제출하면 멱등 갱신.
@@ -38,13 +38,13 @@ class OnboardingService(
 
         // 닉네임 변경 요청이 있을 때만 유일성 검사 후 적용. 본인 기존 닉네임 유지는 오탐하지 않는다.
         val newNickname = request.nickname?.takeIf { it.isNotBlank() }
-        if (newNickname != null && newNickname != user.name) {
-            if (userRepository.existsByNameAndIdNot(newNickname, userId)) {
+        if (newNickname != null && newNickname != user.nickname) {
+            if (userRepository.existsByNicknameAndIdNot(newNickname, userId)) {
                 throw AppException(AuthErrorCode.DUPLICATE_NICKNAME, DUP_NICKNAME)
             }
-            user.name = newNickname
+            user.nickname = newNickname
             try {
-                // 동시성 경쟁(uq_users_name)에 대비해 즉시 flush, 충돌 시 멱등하게 닉네임 중복으로 변환.
+                // 동시성 경쟁(uq_users_nickname)에 대비해 즉시 flush, 충돌 시 멱등하게 닉네임 중복으로 변환.
                 userRepository.saveAndFlush(user)
             } catch (_: DataIntegrityViolationException) {
                 throw AppException(AuthErrorCode.DUPLICATE_NICKNAME, DUP_NICKNAME)
@@ -72,7 +72,7 @@ class OnboardingService(
         return UserResponse(
             id = userId,
             email = user.email,
-            name = user.name,
+            nickname = user.nickname,
             profile = saved.toResponse(),
         )
     }

@@ -10,6 +10,6 @@ import org.springframework.boot.test.context.SpringBootTest
 class FloriServerApplicationTests {
     @Test
     fun contextLoads() {
-        // 임베디드 PostgreSQL + Flyway 마이그레이션이 적용된 상태로 컨텍스트가 로딩되는지 검증한다.
+        // 임베디드 PostgreSQL + docs/sql DDL이 적용된 상태로 컨텍스트가 로딩되는지 검증한다.
     }
 }

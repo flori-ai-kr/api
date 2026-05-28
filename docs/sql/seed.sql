@@ -1,4 +1,9 @@
--- 인사이트 팔로우 계정 시드 (공유 참조 데이터, 테넌트 무관)
+-- =============================================
+-- 공유 시드 데이터 (테넌트 무관 참조 데이터)
+-- all-tables-ddl.sql 적용 후 실행한다. 멱등(ON CONFLICT DO NOTHING).
+-- =============================================
+
+-- 인사이트 팔로우 인스타그램 계정 시드
 -- 원본: flori-ai/web/supabase/migrations/2026-04-17-insights.sql
 INSERT INTO instagram_accounts (username, display_name, profile_url, region, sort_order) VALUES
   ('heartmadebykigpcn',   'Heart Made by KIG',    'https://www.instagram.com/heartmadebykigpcn',   'international', 10),

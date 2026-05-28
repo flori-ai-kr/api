@@ -48,7 +48,7 @@ class InsightDocsTest : RestDocsSupport() {
         return requireNotNull(trendRepository.save(article).id)
     }
 
-    /** 인스타 포스트 시드 — Flyway에서 계정이 이미 시드되어 있으므로 첫 번째 계정을 사용 */
+    /** 인스타 포스트 시드 — seed.sql에서 계정이 이미 시드되어 있으므로 첫 번째 계정을 사용 */
     private fun seedPost(): Long {
         val account = accountRepository.findByActiveTrueOrderBySortOrderAscUsernameAsc().first()
         val post =

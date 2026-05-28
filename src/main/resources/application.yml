@@ -10,15 +10,11 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      # 스키마의 SSOT는 Flyway. 엔티티-스키마 정합성은 validate로 강제.
+      # 스키마의 SSOT는 docs/sql DDL(직접 관리). 엔티티-스키마 정합성은 validate로 강제(스키마 생성/변경 안 함).
       ddl-auto: validate
     open-in-view: false
     properties:
       hibernate.jdbc.time_zone: UTC
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
-    baseline-on-migrate: false
 
 server:
   port: ${SERVER_PORT:8080}

@@ -9,7 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.JdbcTemplate
 
 /**
- * Flyway 베이스라인을 실제 PostgreSQL(Zonky 임베디드)에 적용해 검증한다.
+ * 스키마 정본(docs/sql DDL)을 실제 PostgreSQL(Zonky 임베디드)에 적용해 검증한다.
  * - 모든 도메인 테이블 생성 확인
  * - 멀티테넌시 전제: RLS 정책 부재(애플리케이션이 격리 책임)
  * - user_id가 자체 users 테이블을 참조(원본 auth 스키마 제거)
@@ -22,7 +22,7 @@ class SchemaMigrationIntegrationTest {
     lateinit var jdbcTemplate: JdbcTemplate
 
     @Test
-    fun `Flyway 마이그레이션으로 모든 도메인 테이블이 생성된다`() {
+    fun `docs sql DDL로 모든 도메인 테이블이 생성된다`() {
         val tables =
             jdbcTemplate
                 .queryForList(
@@ -70,7 +70,7 @@ class SchemaMigrationIntegrationTest {
     fun `user_id 외래키는 users 테이블을 참조한다`() {
         val userId =
             jdbcTemplate.queryForObject(
-                "INSERT INTO users(email, name, provider, provider_id) " +
+                "INSERT INTO users(email, nickname, provider, provider_id) " +
                     "VALUES ('tenant@flori.dev', 'tenant-fk-user', 'GOOGLE', 'tenant-fk-1') RETURNING id",
                 Long::class.java,
             )

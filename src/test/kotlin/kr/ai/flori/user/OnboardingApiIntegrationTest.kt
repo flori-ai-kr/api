@@ -205,7 +205,7 @@ class OnboardingApiIntegrationTest {
                     )
             }.andExpect {
                 status { isOk() }
-                jsonPath("$.name") { value(newNickname) }
+                jsonPath("$.nickname") { value(newNickname) }
             }
     }
 
@@ -246,9 +246,9 @@ class OnboardingApiIntegrationTest {
                 .get("/me") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") }
                 .andReturn()
                 .response.contentAsString
-        val currentNickname = objectMapper.readTree(meJson).get("name").asText()
+        val currentNickname = objectMapper.readTree(meJson).get("nickname").asText()
 
-        // 같은 닉네임을 그대로 전송 → uq_users_name 자기 자신 충돌이 아니어야 함(자기 제외)
+        // 같은 닉네임을 그대로 전송 → uq_users_nickname 자기 자신 충돌이 아니어야 함(자기 제외)
         mockMvc
             .post("/me/profile") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
@@ -259,7 +259,7 @@ class OnboardingApiIntegrationTest {
                     )
             }.andExpect {
                 status { isOk() }
-                jsonPath("$.name") { value(currentNickname) }
+                jsonPath("$.nickname") { value(currentNickname) }
             }
     }
 

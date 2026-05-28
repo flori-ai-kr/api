@@ -1,11 +1,11 @@
-package kr.ai.flori.auth.controller
+package kr.ai.flori.user.controller
 
 import jakarta.validation.Valid
 import kr.ai.flori.auth.dto.UpdateEmailRequest
-import kr.ai.flori.auth.dto.UserResponse
 import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.user.dto.OnboardingRequest
+import kr.ai.flori.user.dto.UserResponse
 import kr.ai.flori.user.service.OnboardingService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
