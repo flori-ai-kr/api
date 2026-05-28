@@ -19,8 +19,9 @@ Flori 백엔드의 PostgreSQL 스키마 전체 명세. 각 테이블의 역할·
 | V3 | onboarding | ✅ | ✅ |
 | V4 | social only | ✅ | ✅ |
 | V5 | drop onboarded | ✅ | ✅ |
+| V6 | unique nickname | ✅ | ⏳ |
 
-**V5(`V5__drop_onboarded.sql`)까지 모두 적용 완료.** `users` 테이블은 `password_hash` 컬럼이 제거되고 `email`이 NOT NULL로 강화된 **소셜 전용 인증** 상태이며, 더 이상 의미가 없어진 `onboarded` 컬럼(V3에서 추가)이 V5에서 제거됐다. **User 행 존재 자체가 온보딩 완료를 의미**한다.
+**V6(`V6__unique_nickname.sql`)까지 코드 반영 완료.** `users` 테이블은 `password_hash` 컬럼이 제거되고 `email`이 NOT NULL로 강화된 **소셜 전용 인증** 상태이며, 더 이상 의미가 없어진 `onboarded` 컬럼(V3에서 추가)이 V5에서 제거됐다. **User 행 존재 자체가 온보딩 완료를 의미**한다. V6에서 `name`(닉네임)을 NOT NULL + 전역 UNIQUE(`uq_users_name`)로 강화했다.
 
 데이터 현황(로컬): `instagram_accounts` 15건(V2 시드), 그 외 도메인 테이블은 비어 있음.
 
@@ -76,7 +77,7 @@ customers (1) ── (N) sales                       [customer_id SET NULL]
 |------|------|------|------|
 | `id` | BIGINT | PK, IDENTITY | |
 | `email` | VARCHAR(255) | NOT NULL, UNIQUE | 온보딩에서 항상 채워짐 (소셜 전용) |
-| `name` | VARCHAR(100) | | 계정 표시명/소셜 닉네임 (가게명과 분리, 가게명은 `user_profiles.store_name`) |
+| `name` | VARCHAR(100) | NOT NULL, UNIQUE | 계정 표시명/닉네임. **전역 유일**(`uq_users_name`, 정확 일치) — 향후 커뮤니티 기능 대비. 가게명과 분리(가게명은 `user_profiles.store_name`) |
 | `provider` | VARCHAR(20) | NOT NULL, DEFAULT 'LOCAL' | 소셜 제공자 (KAKAO/GOOGLE/NAVER 등) |
 | `provider_id` | VARCHAR(255) | | 소셜 측 사용자 식별자 |
 | `is_active` | BOOLEAN | NOT NULL, DEFAULT TRUE | |
@@ -84,8 +85,9 @@ customers (1) ── (N) sales                       [customer_id SET NULL]
 
 > V3에서 추가했던 `onboarded` 컬럼은 V5(`V5__drop_onboarded.sql`)에서 제거됐다. User 행은 `register/complete`(온보딩 완료) 시점에만 `user_profiles`와 함께 원자적으로 생성되므로 **User 존재 = 온보딩 완료**이고, 별도 플래그가 불필요하다.
 
-- **인덱스**: PK(id), UNIQUE(email), `uq_users_provider_identity` UNIQUE(provider, provider_id) WHERE provider_id IS NOT NULL — 같은 소셜 신원=같은 사용자
+- **인덱스**: PK(id), UNIQUE(email), `uq_users_name` UNIQUE(name) — 닉네임 전역 유일(V6), `uq_users_provider_identity` UNIQUE(provider, provider_id) WHERE provider_id IS NOT NULL — 같은 소셜 신원=같은 사용자
 - **트리거**: `update_users_updated_at`
+- **닉네임 유일성(V6, `V6__unique_nickname.sql`)**: `name`을 NOT NULL로 강화하고 `uq_users_name` UNIQUE를 추가했다. 가입(`register/complete`)·프로필 편집(`POST /me/profile`, 본인 제외 검사) 양쪽에서 중복을 거부하며, 동시성 경쟁 시 unique 위반을 잡아 `이미 사용 중인 닉네임입니다`(409)로 변환한다. 중복 충돌 메시지는 신원(`이미 가입된 계정입니다`)·이메일(`이미 사용 중인 이메일입니다`)·닉네임 셋으로 구분된다.
 
 ### `refresh_tokens` — 리프레시 토큰 저장소
 

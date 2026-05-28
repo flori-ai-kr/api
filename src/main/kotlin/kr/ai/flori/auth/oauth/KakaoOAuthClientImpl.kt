@@ -2,7 +2,7 @@ package kr.ai.flori.auth.oauth
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.util.LinkedMultiValueMap
@@ -70,10 +70,10 @@ class KakaoOAuthClientImpl(
                     .retrieve()
                     .body(KakaoTokenResponse::class.java)
             } catch (e: RestClientException) {
-                throw AppException(ErrorCode.INVALID_TOKEN, "카카오 인증코드 교환에 실패했습니다", e)
+                throw AppException(CommonErrorCode.INVALID_TOKEN, "카카오 인증코드 교환에 실패했습니다", e)
             }
         return token?.accessToken
-            ?: throw AppException(ErrorCode.INVALID_TOKEN, "카카오 토큰 응답이 비어 있습니다")
+            ?: throw AppException(CommonErrorCode.INVALID_TOKEN, "카카오 토큰 응답이 비어 있습니다")
     }
 
     private fun fetchProfile(accessToken: String): KakaoUserInfo {
@@ -86,7 +86,7 @@ class KakaoOAuthClientImpl(
                     .retrieve()
                     .body(KakaoMeResponse::class.java)
             } catch (e: RestClientException) {
-                throw AppException(ErrorCode.INVALID_TOKEN, "카카오 프로필 조회에 실패했습니다", e)
+                throw AppException(CommonErrorCode.INVALID_TOKEN, "카카오 프로필 조회에 실패했습니다", e)
             }
         return me?.let {
             KakaoUserInfo(
@@ -94,7 +94,7 @@ class KakaoOAuthClientImpl(
                 nickname = it.properties?.get("nickname"),
                 email = it.kakaoAccount?.email,
             )
-        } ?: throw AppException(ErrorCode.INVALID_TOKEN, "카카오 프로필 응답이 비어 있습니다")
+        } ?: throw AppException(CommonErrorCode.INVALID_TOKEN, "카카오 프로필 응답이 비어 있습니다")
     }
 
     private companion object {

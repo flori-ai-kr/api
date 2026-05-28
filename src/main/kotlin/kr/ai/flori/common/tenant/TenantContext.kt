@@ -1,7 +1,7 @@
 package kr.ai.flori.common.tenant
 
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 
 /**
  * 요청 스코프 테넌트(현재 사용자) 컨텍스트.
@@ -17,7 +17,7 @@ object TenantContext {
     fun clear() = holder.remove()
 
     /** 인증된 사용자 id. 없으면 인증 누락으로 간주(보안상 안전한 기본값). */
-    fun currentUserId(): Long = holder.get() ?: throw AppException(ErrorCode.UNAUTHORIZED)
+    fun currentUserId(): Long = holder.get() ?: throw AppException(CommonErrorCode.UNAUTHORIZED)
 
     fun currentUserIdOrNull(): Long? = holder.get()
 }

@@ -1,7 +1,7 @@
 package kr.ai.flori.customers.service
 
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.customers.dto.CustomerCreateRequest
 import kr.ai.flori.customers.dto.CustomerResponse
@@ -87,7 +87,7 @@ class CustomerService(
         val userId = TenantContext.currentUserId()
         val phone = requireNotNull(request.phone)
         if (customerRepository.findByUserIdAndPhone(userId, phone) != null) {
-            throw AppException(ErrorCode.DUPLICATE, "이미 등록된 전화번호입니다")
+            throw AppException(CommonErrorCode.CONFLICT, "이미 등록된 전화번호입니다")
         }
         val customer = Customer(userId, requireNotNull(request.name), phone)
         customer.grade = validGrade(request.grade ?: DEFAULT_GRADE)
@@ -148,12 +148,12 @@ class CustomerService(
         try {
             customerRepository.save(customer)
         } catch (_: DataIntegrityViolationException) {
-            throw AppException(ErrorCode.DUPLICATE, "이미 등록된 전화번호입니다")
+            throw AppException(CommonErrorCode.CONFLICT, "이미 등록된 전화번호입니다")
         }
 
     private fun load(id: Long): Customer =
         customerRepository.findByIdAndUserId(id, TenantContext.currentUserId())
-            ?: throw AppException(ErrorCode.NOT_FOUND, "고객을 찾을 수 없습니다")
+            ?: throw AppException(CommonErrorCode.NOT_FOUND, "고객을 찾을 수 없습니다")
 
     private fun statsFor(
         userId: Long,
@@ -194,13 +194,13 @@ class CustomerService(
             ).toMap()
 
     private fun validGrade(grade: String): String {
-        if (grade !in GRADES) throw AppException(ErrorCode.VALIDATION, "올바르지 않은 등급입니다")
+        if (grade !in GRADES) throw AppException(CommonErrorCode.VALIDATION, "올바르지 않은 등급입니다")
         return grade
     }
 
     private fun validGender(gender: String?): String? {
         if (gender == null) return null
-        if (gender !in GENDERS) throw AppException(ErrorCode.VALIDATION, "올바르지 않은 성별입니다")
+        if (gender !in GENDERS) throw AppException(CommonErrorCode.VALIDATION, "올바르지 않은 성별입니다")
         return gender
     }
 

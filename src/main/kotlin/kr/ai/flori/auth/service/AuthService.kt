@@ -6,11 +6,12 @@ import kr.ai.flori.auth.dto.TokenResponse
 import kr.ai.flori.auth.dto.UserResponse
 import kr.ai.flori.auth.entity.RefreshToken
 import kr.ai.flori.auth.entity.User
+import kr.ai.flori.auth.error.AuthErrorCode
 import kr.ai.flori.auth.oauth.SocialOAuthClient
 import kr.ai.flori.auth.repository.RefreshTokenRepository
 import kr.ai.flori.auth.repository.UserRepository
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.security.JwtProperties
 import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.user.entity.UserProfile
@@ -63,13 +64,13 @@ class AuthService(
     ): OAuthResult {
         val client =
             socialClients[provider]
-                ?: throw AppException(ErrorCode.VALIDATION, "지원하지 않는 소셜 제공자입니다: $provider")
+                ?: throw AppException(CommonErrorCode.VALIDATION, "지원하지 않는 소셜 제공자입니다: $provider")
         val info = client.authenticate(code, redirectUri, state)
 
         val existing = userRepository.findByProviderAndProviderId(info.provider, info.providerId)
         if (existing != null) {
             if (!existing.isActive) {
-                throw AppException(ErrorCode.FORBIDDEN, "비활성화된 계정입니다")
+                throw AppException(CommonErrorCode.FORBIDDEN, "비활성화된 계정입니다")
             }
             return OAuthResult(registered = true, token = issueTokens(existing))
         }
@@ -101,8 +102,8 @@ class AuthService(
     fun registerComplete(request: RegisterCompleteRequest): TokenResponse {
         val principal =
             tokenProvider.parseRegisterToken(request.registerToken)
-                ?: throw AppException(ErrorCode.INVALID_TOKEN, "가입 토큰이 유효하지 않거나 만료되었습니다")
-        verifyRegisterable(principal.provider, principal.providerId, request.email)
+                ?: throw AppException(CommonErrorCode.INVALID_TOKEN, "가입 토큰이 유효하지 않거나 만료되었습니다")
+        verifyRegisterable(principal.provider, principal.providerId, request.email, request.nickname)
 
         val user =
             try {
@@ -115,9 +116,10 @@ class AuthService(
                         providerId = principal.providerId,
                     ),
                 )
-            } catch (_: DataIntegrityViolationException) {
-                // 동시 가입 경쟁(같은 신원/이메일 unique 충돌): 멱등하게 이미 가입됨으로 처리
-                throw AppException(ErrorCode.DUPLICATE, "이미 가입된 계정입니다")
+            } catch (e: DataIntegrityViolationException) {
+                // 동시 가입 경쟁(unique 충돌): pre-check를 통과했어도 flush 시점에 unique 인덱스가 거부할 수 있다.
+                // 충돌한 제약을 식별해 신원/이메일/닉네임 중 알맞은 메시지로 멱등 변환한다(at-most-once 보장).
+                throw duplicateFromConstraint(e)
             }
         val userId = requireNotNull(user.id)
 
@@ -138,20 +140,43 @@ class AuthService(
     }
 
     /**
-     * 가입 가능 여부 검증(자동 병합 금지 정책).
-     * - 같은 (provider, providerId)가 이미 가입 → DUPLICATE(registerToken 재사용 차단).
-     * - 이메일이 타 계정 사용 중 → DUPLICATE(이메일 선점 공격 시 다른 계정에 붙이지 않는다).
+     * 가입 가능 여부 검증(자동 병합 금지 정책). 충돌 시 신원/이메일/닉네임을 구분한 DUPLICATE 메시지로 던진다.
+     * - 같은 (provider, providerId)가 이미 가입 → registerToken 재사용 차단.
+     * - 이메일이 타 계정 사용 중 → 이메일 선점 공격 시 다른 계정에 붙이지 않는다.
+     * - 닉네임이 타 계정 사용 중 → 전역 유일(uq_users_name) 위반 선검사.
      */
     private fun verifyRegisterable(
         provider: String,
         providerId: String,
         email: String,
+        nickname: String,
     ) {
-        if (userRepository.findByProviderAndProviderId(provider, providerId) != null) {
-            throw AppException(ErrorCode.DUPLICATE, "이미 가입된 계정입니다")
+        val conflict: AppException? =
+            when {
+                userRepository.findByProviderAndProviderId(provider, providerId) != null ->
+                    AppException(AuthErrorCode.ALREADY_REGISTERED, DUP_IDENTITY)
+                userRepository.existsByEmail(email) ->
+                    AppException(AuthErrorCode.DUPLICATE_EMAIL, DUP_EMAIL)
+                userRepository.existsByName(nickname) ->
+                    AppException(AuthErrorCode.DUPLICATE_NICKNAME, DUP_NICKNAME)
+                else -> null
+            }
+        if (conflict != null) {
+            throw conflict
         }
-        if (userRepository.existsByEmail(email)) {
-            throw AppException(ErrorCode.DUPLICATE, "이미 사용 중인 이메일입니다")
+    }
+
+    /**
+     * DataIntegrityViolationException(unique 충돌)을 충돌 제약명으로 구분해 알맞은 AuthErrorCode로 변환한다.
+     * pre-check가 세 종류를 모두 선검사하므로 이 경로는 동시성 경쟁 fallback이며, 제약명 매칭은 best-effort다.
+     */
+    private fun duplicateFromConstraint(e: DataIntegrityViolationException): AppException {
+        val detail = (e.mostSpecificCause.message ?: e.message ?: "").lowercase()
+        return when {
+            detail.contains("uq_users_name") -> AppException(AuthErrorCode.DUPLICATE_NICKNAME, DUP_NICKNAME)
+            detail.contains("uq_users_provider_identity") -> AppException(AuthErrorCode.ALREADY_REGISTERED, DUP_IDENTITY)
+            detail.contains("email") -> AppException(AuthErrorCode.DUPLICATE_EMAIL, DUP_EMAIL)
+            else -> AppException(AuthErrorCode.ALREADY_REGISTERED, DUP_IDENTITY)
         }
     }
 
@@ -161,7 +186,7 @@ class AuthService(
         val user =
             userRepository
                 .findById(userId)
-                .orElseThrow { AppException(ErrorCode.UNAUTHORIZED) }
+                .orElseThrow { AppException(CommonErrorCode.UNAUTHORIZED) }
         val profile = userProfileRepository.findById(userId).orElse(null)?.toResponse()
         return UserResponse(
             id = userId,
@@ -183,9 +208,9 @@ class AuthService(
         val user =
             userRepository
                 .findById(userId)
-                .orElseThrow { AppException(ErrorCode.UNAUTHORIZED) }
+                .orElseThrow { AppException(CommonErrorCode.UNAUTHORIZED) }
         if (email != user.email && userRepository.existsByEmail(email)) {
-            throw AppException(ErrorCode.DUPLICATE, "이미 사용 중인 이메일입니다")
+            throw AppException(AuthErrorCode.DUPLICATE_EMAIL, DUP_EMAIL)
         }
         user.email = email
         userRepository.save(user)
@@ -202,14 +227,14 @@ class AuthService(
     fun refresh(rawRefreshToken: String): TokenResponse {
         val stored =
             refreshTokenRepository.findByTokenHash(hashToken(rawRefreshToken))
-                ?: throw AppException(ErrorCode.INVALID_TOKEN)
+                ?: throw AppException(CommonErrorCode.INVALID_TOKEN)
         if (stored.revoked || stored.expiresAt.isBefore(Instant.now())) {
-            throw AppException(ErrorCode.INVALID_TOKEN)
+            throw AppException(CommonErrorCode.INVALID_TOKEN)
         }
         val user =
             userRepository
                 .findById(stored.userId)
-                .orElseThrow { AppException(ErrorCode.INVALID_TOKEN) }
+                .orElseThrow { AppException(CommonErrorCode.INVALID_TOKEN) }
 
         // 회전: 사용된 refresh 토큰 무효화 후 재발급
         stored.revoked = true
@@ -257,5 +282,10 @@ class AuthService(
 
     private companion object {
         const val REFRESH_TOKEN_BYTES = 32
+
+        // 중복 충돌 메시지(웹이 어떤 필드가 겹쳤는지 구분할 수 있도록 셋을 명확히 구별)
+        const val DUP_IDENTITY = "이미 가입된 계정입니다"
+        const val DUP_EMAIL = "이미 사용 중인 이메일입니다"
+        const val DUP_NICKNAME = "이미 사용 중인 닉네임입니다"
     }
 }

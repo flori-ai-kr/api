@@ -3,7 +3,7 @@ package kr.ai.flori.subscriptions.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import kr.ai.flori.auth.repository.UserRepository
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.subscriptions.dto.RevenueCatEvent
 import kr.ai.flori.subscriptions.dto.SubscriptionResponse
@@ -47,7 +47,7 @@ class SubscriptionService(
     @Transactional(readOnly = true)
     fun requireActiveSubscription() {
         if (!hasActiveSubscription(TenantContext.currentUserId())) {
-            throw AppException(ErrorCode.FORBIDDEN, "구독이 필요한 기능입니다")
+            throw AppException(CommonErrorCode.FORBIDDEN, "구독이 필요한 기능입니다")
         }
     }
 

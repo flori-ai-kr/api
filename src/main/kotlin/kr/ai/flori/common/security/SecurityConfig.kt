@@ -1,7 +1,7 @@
 package kr.ai.flori.common.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.error.ErrorResponse
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
@@ -71,7 +71,7 @@ class SecurityConfig(
             response.characterEncoding = Charsets.UTF_8.name()
             response.writer.write(
                 objectMapper.writeValueAsString(
-                    ErrorResponse(ErrorCode.UNAUTHORIZED.name, ErrorCode.UNAUTHORIZED.defaultMessage),
+                    ErrorResponse(CommonErrorCode.UNAUTHORIZED.code, CommonErrorCode.UNAUTHORIZED.defaultMessage),
                 ),
             )
         }

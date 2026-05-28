@@ -15,6 +15,8 @@ class OnboardingDocsTest : RestDocsSupport() {
     @Test
     fun `가게 프로필 편집 문서화`() {
         val token = signupAndToken()
+        // 닉네임은 전역 유일(uq_users_name) — 공유 컨텍스트의 다른 문서 테스트와 충돌하지 않도록 고유 값 사용
+        val nickname = "헤이즐-${java.util.UUID.randomUUID()}"
 
         mockMvc
             .post("/me/profile") {
@@ -25,6 +27,7 @@ class OnboardingDocsTest : RestDocsSupport() {
                         mapOf(
                             "name" to "헤이즐 플라워",
                             "regionSido" to "서울특별시",
+                            "nickname" to nickname,
                             "regionSigungu" to "강남구",
                             "ownerAgeRange" to "30대",
                             "interests" to listOf("웨딩", "개업화환"),
@@ -42,6 +45,7 @@ class OnboardingDocsTest : RestDocsSupport() {
                             listOf(
                                 fieldWithPath("name").type(JsonFieldType.STRING).description("가게명(필수)"),
                                 fieldWithPath("regionSido").type(JsonFieldType.STRING).description("시/도(필수, 웹 enum 값)"),
+                                fieldWithPath("nickname").type(JsonFieldType.STRING).optional().description("닉네임(선택, 전역유일)"),
                                 fieldWithPath("regionSigungu").type(JsonFieldType.STRING).optional().description("시군구(선택)"),
                                 fieldWithPath("ownerAgeRange").type(JsonFieldType.STRING).optional().description("나이대(선택, 단일)"),
                                 fieldWithPath("interests").type(JsonFieldType.ARRAY).optional().description("관심사(선택, 복수)"),

@@ -1,7 +1,7 @@
 package kr.ai.flori.photos.service
 
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.storage.S3PresignService
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.photos.dto.FileMetaRequest
@@ -120,7 +120,7 @@ class PhotoCardService(
         val card = load(cardId)
         if (card.photos.size + files.size > MAX_PHOTOS_PER_CARD) {
             throw AppException(
-                ErrorCode.VALIDATION,
+                CommonErrorCode.VALIDATION,
                 "사진은 최대 ${MAX_PHOTOS_PER_CARD}장까지 등록할 수 있습니다 (현재 ${card.photos.size}장)",
             )
         }
@@ -137,8 +137,8 @@ class PhotoCardService(
         contentType: String,
         size: Long,
     ) {
-        if (!contentType.startsWith("image/")) throw AppException(ErrorCode.VALIDATION, "이미지 파일만 업로드할 수 있습니다")
-        if (size > MAX_FILE_SIZE_BYTES) throw AppException(ErrorCode.VALIDATION, "파일 크기가 너무 큽니다")
+        if (!contentType.startsWith("image/")) throw AppException(CommonErrorCode.VALIDATION, "이미지 파일만 업로드할 수 있습니다")
+        if (size > MAX_FILE_SIZE_BYTES) throw AppException(CommonErrorCode.VALIDATION, "파일 크기가 너무 큽니다")
     }
 
     private fun buildKey(
@@ -151,18 +151,18 @@ class PhotoCardService(
 
     private fun requirePhotoLimit(count: Int) {
         if (count > MAX_PHOTOS_PER_CARD) {
-            throw AppException(ErrorCode.VALIDATION, "사진은 최대 ${MAX_PHOTOS_PER_CARD}장까지 등록할 수 있습니다")
+            throw AppException(CommonErrorCode.VALIDATION, "사진은 최대 ${MAX_PHOTOS_PER_CARD}장까지 등록할 수 있습니다")
         }
     }
 
     private fun load(id: Long): PhotoCard =
         photoCardRepository.findByIdAndUserId(id, TenantContext.currentUserId())
-            ?: throw AppException(ErrorCode.NOT_FOUND, "사진 카드를 찾을 수 없습니다")
+            ?: throw AppException(CommonErrorCode.NOT_FOUND, "사진 카드를 찾을 수 없습니다")
 
     /** 매출 연동(sale_id) 소유권 검증 — 타 테넌트 매출 연결 차단. */
     private fun verifySaleOwnership(saleId: Long) {
         if (saleRepository.findByIdAndUserId(saleId, TenantContext.currentUserId()) == null) {
-            throw AppException(ErrorCode.VALIDATION, "유효하지 않은 매출입니다")
+            throw AppException(CommonErrorCode.VALIDATION, "유효하지 않은 매출입니다")
         }
     }
 

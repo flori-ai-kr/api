@@ -23,7 +23,7 @@ class GlobalExceptionHandlerTest {
     fun `AppException은 해당 상태코드와 코드로 매핑된다`() {
         mockMvc.get("/dummy/app").andExpect {
             status { isNotFound() }
-            jsonPath("$.code") { value("NOT_FOUND") }
+            jsonPath("$.code") { value("E-CMN-005") }
         }
         assertThat(reporter.reported).isNull()
     }
@@ -32,7 +32,7 @@ class GlobalExceptionHandlerTest {
     fun `데이터 제약 위반은 409로 매핑된다`() {
         mockMvc.get("/dummy/conflict").andExpect {
             status { isConflict() }
-            jsonPath("$.code") { value("DUPLICATE") }
+            jsonPath("$.code") { value("E-CMN-006") }
         }
         assertThat(reporter.reported).isNull()
     }
@@ -44,7 +44,7 @@ class GlobalExceptionHandlerTest {
                 .get("/dummy/boom")
                 .andExpect {
                     status { isInternalServerError() }
-                    jsonPath("$.code") { value("INTERNAL") }
+                    jsonPath("$.code") { value("E-CMN-999") }
                 }.andReturn()
                 .response.contentAsString
 
@@ -55,7 +55,7 @@ class GlobalExceptionHandlerTest {
     @RestController
     class DummyController {
         @GetMapping("/dummy/app")
-        fun app(): Nothing = throw AppException(ErrorCode.NOT_FOUND)
+        fun app(): Nothing = throw AppException(CommonErrorCode.NOT_FOUND)
 
         @GetMapping("/dummy/conflict")
         fun conflict(): Nothing = throw DataIntegrityViolationException("dup")

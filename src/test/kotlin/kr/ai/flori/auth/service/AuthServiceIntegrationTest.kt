@@ -3,11 +3,12 @@ package kr.ai.flori.auth.service
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
 import kr.ai.flori.auth.dto.RegisterCompleteRequest
+import kr.ai.flori.auth.error.AuthErrorCode
 import kr.ai.flori.auth.oauth.SocialOAuthClient
 import kr.ai.flori.auth.oauth.SocialUserInfo
 import kr.ai.flori.auth.repository.UserRepository
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.security.JwtTokenProvider
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -88,7 +89,8 @@ class AuthServiceIntegrationTest {
         registerToken: String,
         email: String,
         storeName: String = "헤이즐 플라워",
-        nickname: String = "헤이즐",
+        // 닉네임은 전역 유일(uq_users_name)이므로 기본값을 호출마다 고유하게 생성한다.
+        nickname: String = "헤이즐-${UUID.randomUUID()}",
     ) = RegisterCompleteRequest(
         registerToken = registerToken,
         storeName = storeName,
@@ -189,7 +191,7 @@ class AuthServiceIntegrationTest {
         val reused = tokenProvider.generateRegisterToken("GOOGLE", pid, email, "헤이즐")
         assertThatThrownBy { authService.registerComplete(completeRequest(reused, uniqueEmail())) }
             .isInstanceOfSatisfying(AppException::class.java) {
-                assertThat(it.errorCode).isEqualTo(ErrorCode.DUPLICATE)
+                assertThat(it.errorCode).isEqualTo(AuthErrorCode.ALREADY_REGISTERED)
             }
     }
 
@@ -209,15 +211,34 @@ class AuthServiceIntegrationTest {
 
         assertThatThrownBy { authService.registerComplete(completeRequest(registerToken, takenEmail)) }
             .isInstanceOfSatisfying(AppException::class.java) {
-                assertThat(it.errorCode).isEqualTo(ErrorCode.DUPLICATE)
+                assertThat(it.errorCode).isEqualTo(AuthErrorCode.DUPLICATE_EMAIL)
             }
+    }
+
+    @Test
+    fun `다른 계정이 쓰는 닉네임으로 register-complete 하면 DUPLICATE`() {
+        // 먼저 한 계정이 닉네임을 선점
+        val takenNickname = "선점닉-${UUID.randomUUID()}"
+        val firstEmail = uniqueEmail()
+        val firstToken = tokenProvider.generateRegisterToken("KAKAO", "kakao-${UUID.randomUUID()}", firstEmail, "x")
+        authService.registerComplete(completeRequest(firstToken, firstEmail, nickname = takenNickname))
+
+        // 다른 신원이 같은 닉네임을 주장 → DUPLICATE
+        val secondToken =
+            tokenProvider.generateRegisterToken("GOOGLE", "google-${UUID.randomUUID()}", uniqueEmail(), "x")
+        assertThatThrownBy {
+            authService.registerComplete(completeRequest(secondToken, uniqueEmail(), nickname = takenNickname))
+        }.isInstanceOfSatisfying(AppException::class.java) {
+            assertThat(it.errorCode).isEqualTo(AuthErrorCode.DUPLICATE_NICKNAME)
+            assertThat(it.message).contains("닉네임")
+        }
     }
 
     @Test
     fun `위조-잘못된 registerToken으로 register-complete 하면 INVALID_TOKEN`() {
         assertThatThrownBy { authService.registerComplete(completeRequest("not.a.valid.token", uniqueEmail())) }
             .isInstanceOfSatisfying(AppException::class.java) {
-                assertThat(it.errorCode).isEqualTo(ErrorCode.INVALID_TOKEN)
+                assertThat(it.errorCode).isEqualTo(CommonErrorCode.INVALID_TOKEN)
             }
     }
 
@@ -247,7 +268,7 @@ class AuthServiceIntegrationTest {
 
         assertThatThrownBy { authService.refresh(first.refreshToken) }
             .isInstanceOfSatisfying(AppException::class.java) {
-                assertThat(it.errorCode).isEqualTo(ErrorCode.INVALID_TOKEN)
+                assertThat(it.errorCode).isEqualTo(CommonErrorCode.INVALID_TOKEN)
             }
     }
 
@@ -280,7 +301,7 @@ class AuthServiceIntegrationTest {
 
         assertThatThrownBy { authService.updateEmail(userIdA, emailB) }
             .isInstanceOfSatisfying(AppException::class.java) {
-                assertThat(it.errorCode).isEqualTo(ErrorCode.DUPLICATE)
+                assertThat(it.errorCode).isEqualTo(AuthErrorCode.DUPLICATE_EMAIL)
             }
     }
 }

@@ -3,7 +3,7 @@ package kr.ai.flori.insights.service
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.insights.dto.InstagramAccountCreateRequest
 import kr.ai.flori.insights.dto.InstagramPostIngest
 import kr.ai.flori.insights.dto.TrendArticleIngest
@@ -74,7 +74,7 @@ class InsightIngestServiceTest {
 
         assertThatThrownBy { ingestService.createAccount(InstagramAccountCreateRequest(username = username, region = "domestic")) }
             .isInstanceOfSatisfying(AppException::class.java) {
-                assertThat(it.errorCode).isEqualTo(ErrorCode.DUPLICATE)
+                assertThat(it.errorCode).isEqualTo(CommonErrorCode.CONFLICT)
             }
     }
 }

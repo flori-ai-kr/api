@@ -192,6 +192,78 @@ class OnboardingApiIntegrationTest {
     }
 
     @Test
+    fun `닉네임을 새 값으로 변경하면 me에 반영된다`() {
+        val token = token()
+        val newNickname = "새닉네임-${java.util.UUID.randomUUID()}"
+        mockMvc
+            .post("/me/profile") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    objectMapper.writeValueAsString(
+                        mapOf("name" to "가게", "regionSido" to "서울특별시", "nickname" to newNickname),
+                    )
+            }.andExpect {
+                status { isOk() }
+                jsonPath("$.name") { value(newNickname) }
+            }
+    }
+
+    @Test
+    fun `이미 다른 사용자가 쓰는 닉네임으로 변경하면 409`() {
+        // 사용자 A가 닉네임을 선점
+        val tokenA = token()
+        val takenNickname = "겹치는닉-${java.util.UUID.randomUUID()}"
+        mockMvc
+            .post("/me/profile") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $tokenA")
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    objectMapper.writeValueAsString(
+                        mapOf("name" to "A가게", "regionSido" to "서울특별시", "nickname" to takenNickname),
+                    )
+            }.andExpect { status { isOk() } }
+
+        // 사용자 B가 같은 닉네임으로 변경 시도 → 409
+        val tokenB = token()
+        mockMvc
+            .post("/me/profile") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $tokenB")
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    objectMapper.writeValueAsString(
+                        mapOf("name" to "B가게", "regionSido" to "서울특별시", "nickname" to takenNickname),
+                    )
+            }.andExpect { status { isConflict() } }
+    }
+
+    @Test
+    fun `본인 닉네임을 그대로 다시 보내면 오탐 없이 200`() {
+        val token = token()
+        // 현재 닉네임 조회
+        val meJson =
+            mockMvc
+                .get("/me") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") }
+                .andReturn()
+                .response.contentAsString
+        val currentNickname = objectMapper.readTree(meJson).get("name").asText()
+
+        // 같은 닉네임을 그대로 전송 → uq_users_name 자기 자신 충돌이 아니어야 함(자기 제외)
+        mockMvc
+            .post("/me/profile") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    objectMapper.writeValueAsString(
+                        mapOf("name" to "내가게", "regionSido" to "서울특별시", "nickname" to currentNickname),
+                    )
+            }.andExpect {
+                status { isOk() }
+                jsonPath("$.name") { value(currentNickname) }
+            }
+    }
+
+    @Test
     fun `토큰 없이 프로필 편집은 401`() {
         mockMvc
             .post("/me/profile") {

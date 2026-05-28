@@ -2,7 +2,7 @@ package kr.ai.flori.sales.service
 
 import kr.ai.flori.common.domain.PaymentMethods
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.customers.repository.CustomerRepository
 import kr.ai.flori.sales.dto.SaleCreateRequest
@@ -110,7 +110,7 @@ class SaleService(
         paymentMethod: String,
     ): SaleResponse {
         val sale = load(id)
-        if (!sale.isUnpaid) throw AppException(ErrorCode.VALIDATION, "미수 매출이 아닙니다")
+        if (!sale.isUnpaid) throw AppException(CommonErrorCode.VALIDATION, "미수 매출이 아닙니다")
         sale.paymentMethod = requireValidPaymentMethod(paymentMethod, allowUnpaid = false)
         return SaleResponse.from(saleRepository.save(sale))
     }
@@ -118,7 +118,7 @@ class SaleService(
     @Transactional
     fun revertUnpaid(id: Long): SaleResponse {
         val sale = load(id)
-        if (!sale.isUnpaid) throw AppException(ErrorCode.VALIDATION, "미수 매출이 아닙니다")
+        if (!sale.isUnpaid) throw AppException(CommonErrorCode.VALIDATION, "미수 매출이 아닙니다")
         sale.paymentMethod = PaymentMethods.UNPAID
         return SaleResponse.from(saleRepository.save(sale))
     }
@@ -130,7 +130,7 @@ class SaleService(
 
     private fun load(id: Long): Sale =
         saleRepository.findByIdAndUserId(id, TenantContext.currentUserId())
-            ?: throw AppException(ErrorCode.NOT_FOUND, "매출을 찾을 수 없습니다")
+            ?: throw AppException(CommonErrorCode.NOT_FOUND, "매출을 찾을 수 없습니다")
 
     // 고객 도메인 리포지토리를 통해 소유권 검증(raw SQL 대신 도메인 경계 준수)
     private fun verifyCustomerOwnership(
@@ -138,7 +138,7 @@ class SaleService(
         customerId: Long,
     ) {
         if (customerRepository.findByIdAndUserId(customerId, userId) == null) {
-            throw AppException(ErrorCode.VALIDATION, "유효하지 않은 고객입니다")
+            throw AppException(CommonErrorCode.VALIDATION, "유효하지 않은 고객입니다")
         }
     }
 
@@ -147,7 +147,7 @@ class SaleService(
         allowUnpaid: Boolean,
     ): String {
         val allowed = if (allowUnpaid) PaymentMethods.SALE else PaymentMethods.SALE - PaymentMethods.UNPAID
-        if (value !in allowed) throw AppException(ErrorCode.VALIDATION, "올바르지 않은 결제방식입니다")
+        if (value !in allowed) throw AppException(CommonErrorCode.VALIDATION, "올바르지 않은 결제방식입니다")
         return value
     }
 

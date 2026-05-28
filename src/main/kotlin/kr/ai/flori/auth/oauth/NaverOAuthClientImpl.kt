@@ -2,7 +2,7 @@ package kr.ai.flori.auth.oauth
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientException
@@ -30,7 +30,7 @@ class NaverOAuthClientImpl(
     ): SocialUserInfo {
         val resolvedState =
             state?.takeIf { it.isNotBlank() }
-                ?: throw AppException(ErrorCode.INVALID_TOKEN, "네이버 로그인에는 state가 필요합니다")
+                ?: throw AppException(CommonErrorCode.INVALID_TOKEN, "네이버 로그인에는 state가 필요합니다")
         return fetchProfile(exchangeToken(code, resolvedState))
     }
 
@@ -57,10 +57,10 @@ class NaverOAuthClientImpl(
                     .retrieve()
                     .body(NaverTokenResponse::class.java)
             } catch (e: RestClientException) {
-                throw AppException(ErrorCode.INVALID_TOKEN, "네이버 인증코드 교환에 실패했습니다", e)
+                throw AppException(CommonErrorCode.INVALID_TOKEN, "네이버 인증코드 교환에 실패했습니다", e)
             }
         return token?.accessToken
-            ?: throw AppException(ErrorCode.INVALID_TOKEN, "네이버 토큰 응답이 비어 있습니다")
+            ?: throw AppException(CommonErrorCode.INVALID_TOKEN, "네이버 토큰 응답이 비어 있습니다")
     }
 
     private fun fetchProfile(accessToken: String): SocialUserInfo {
@@ -73,11 +73,11 @@ class NaverOAuthClientImpl(
                     .retrieve()
                     .body(NaverMeResponse::class.java)
             } catch (e: RestClientException) {
-                throw AppException(ErrorCode.INVALID_TOKEN, "네이버 프로필 조회에 실패했습니다", e)
+                throw AppException(CommonErrorCode.INVALID_TOKEN, "네이버 프로필 조회에 실패했습니다", e)
             }
         val profile =
             me?.response
-                ?: throw AppException(ErrorCode.INVALID_TOKEN, "네이버 프로필 응답이 비어 있습니다")
+                ?: throw AppException(CommonErrorCode.INVALID_TOKEN, "네이버 프로필 응답이 비어 있습니다")
         return SocialUserInfo(
             provider = "NAVER",
             providerId = profile.id,

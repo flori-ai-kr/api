@@ -1,7 +1,7 @@
 package kr.ai.flori.expenses.service
 
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.common.util.monthRange
 import kr.ai.flori.expenses.dto.ExpenseCreateRequest
@@ -93,5 +93,5 @@ class ExpenseService(
 
     private fun load(id: Long): Expense =
         expenseRepository.findByIdAndUserId(id, TenantContext.currentUserId())
-            ?: throw AppException(ErrorCode.NOT_FOUND, "지출을 찾을 수 없습니다")
+            ?: throw AppException(CommonErrorCode.NOT_FOUND, "지출을 찾을 수 없습니다")
 }

@@ -16,6 +16,11 @@ data class OnboardingRequest(
     @field:NotBlank(message = "시/도는 필수입니다")
     @field:Schema(description = "시/도(웹 enum 값 문자열)", example = "서울특별시")
     val regionSido: String,
+    @field:Schema(
+        description = "계정 표시명(닉네임). 보내면 변경, 생략하면 기존 닉네임 유지. 전역 유일.",
+        example = "헤이즐",
+    )
+    val nickname: String? = null,
     @field:Schema(description = "시군구(선택)", example = "강남구")
     val regionSigungu: String? = null,
     @field:Schema(description = "사장님 나이대(선택, 단일)", example = "30대")

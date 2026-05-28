@@ -2,7 +2,7 @@ package kr.ai.flori.expenses.service
 
 import kr.ai.flori.common.domain.PaymentMethods
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.common.util.KST
 import kr.ai.flori.expenses.dto.ExpenseResponse
@@ -126,7 +126,7 @@ class RecurringExpenseService(
         fields: RecurringInstanceUpdateRequest,
     ) {
         val expense = loadExpense(expenseId)
-        val recurringId = expense.recurringId ?: throw AppException(ErrorCode.NOT_FOUND, "반복 지출 정보를 찾을 수 없습니다")
+        val recurringId = expense.recurringId ?: throw AppException(CommonErrorCode.NOT_FOUND, "반복 지출 정보를 찾을 수 없습니다")
         val rule = loadRule(recurringId)
         fields.itemName?.let { rule.itemName = it }
         fields.category?.let { rule.category = it }
@@ -158,7 +158,7 @@ class RecurringExpenseService(
     @Transactional
     fun deleteRecurringFromInstance(expenseId: Long) {
         val expense = loadExpense(expenseId)
-        val recurringId = expense.recurringId ?: throw AppException(ErrorCode.NOT_FOUND, "반복 지출 정보를 찾을 수 없습니다")
+        val recurringId = expense.recurringId ?: throw AppException(CommonErrorCode.NOT_FOUND, "반복 지출 정보를 찾을 수 없습니다")
         val rule = loadRule(recurringId)
         rule.endDate = expense.date.minusDays(1)
         recurringRepository.save(rule)
@@ -196,19 +196,19 @@ class RecurringExpenseService(
 
     private fun loadRule(id: Long): RecurringExpense =
         recurringRepository.findByIdAndUserId(id, TenantContext.currentUserId())
-            ?: throw AppException(ErrorCode.NOT_FOUND, "고정비를 찾을 수 없습니다")
+            ?: throw AppException(CommonErrorCode.NOT_FOUND, "고정비를 찾을 수 없습니다")
 
     private fun loadExpense(id: Long): Expense =
         expenseRepository.findByIdAndUserId(id, TenantContext.currentUserId())
-            ?: throw AppException(ErrorCode.NOT_FOUND, "지출을 찾을 수 없습니다")
+            ?: throw AppException(CommonErrorCode.NOT_FOUND, "지출을 찾을 수 없습니다")
 
     private fun requireValidFrequency(value: String): String {
-        if (value !in FREQUENCIES) throw AppException(ErrorCode.VALIDATION, "올바르지 않은 반복 주기입니다")
+        if (value !in FREQUENCIES) throw AppException(CommonErrorCode.VALIDATION, "올바르지 않은 반복 주기입니다")
         return value
     }
 
     private fun requireValidPayment(value: String): String {
-        if (value !in PaymentMethods.EXPENSE) throw AppException(ErrorCode.VALIDATION, "올바르지 않은 결제방식입니다")
+        if (value !in PaymentMethods.EXPENSE) throw AppException(CommonErrorCode.VALIDATION, "올바르지 않은 결제방식입니다")
         return value
     }
 

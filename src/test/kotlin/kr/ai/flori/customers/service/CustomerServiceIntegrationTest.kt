@@ -5,7 +5,7 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
 import kr.ai.flori.auth.repository.UserRepository
 import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.customers.dto.CustomerCreateRequest
@@ -70,7 +70,7 @@ class CustomerServiceIntegrationTest {
         create(phone = "01011112222")
         assertThatThrownBy { create(name = "다른사람", phone = "01011112222") }
             .isInstanceOfSatisfying(AppException::class.java) {
-                assertThat(it.errorCode).isEqualTo(ErrorCode.DUPLICATE)
+                assertThat(it.errorCode).isEqualTo(CommonErrorCode.CONFLICT)
             }
     }
 

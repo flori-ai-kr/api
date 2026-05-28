@@ -2,7 +2,7 @@ package kr.ai.flori.reservations.service
 
 import kr.ai.flori.common.domain.ReservationStatuses
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.common.util.KST
 import kr.ai.flori.reservations.dto.AddPickupRequest
@@ -163,10 +163,10 @@ class ReservationService(
 
     private fun load(id: Long): Reservation =
         reservationRepository.findByIdAndUserId(id, TenantContext.currentUserId())
-            ?: throw AppException(ErrorCode.NOT_FOUND, "예약을 찾을 수 없습니다")
+            ?: throw AppException(CommonErrorCode.NOT_FOUND, "예약을 찾을 수 없습니다")
 
     private fun validStatus(value: String): String {
-        if (value !in ReservationStatuses.ALL) throw AppException(ErrorCode.VALIDATION, "올바르지 않은 상태입니다")
+        if (value !in ReservationStatuses.ALL) throw AppException(CommonErrorCode.VALIDATION, "올바르지 않은 상태입니다")
         return value
     }
 

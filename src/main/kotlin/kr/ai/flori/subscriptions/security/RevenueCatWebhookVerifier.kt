@@ -1,7 +1,7 @@
 package kr.ai.flori.subscriptions.security
 
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.security.BearerSecret
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -16,7 +16,7 @@ class RevenueCatWebhookVerifier(
 ) {
     fun verify(authorizationHeader: String?) {
         if (!BearerSecret.matches(BearerSecret.extract(authorizationHeader), webhookSecret)) {
-            throw AppException(ErrorCode.UNAUTHORIZED, "웹훅 인증 실패")
+            throw AppException(CommonErrorCode.UNAUTHORIZED, "웹훅 인증 실패")
         }
     }
 }

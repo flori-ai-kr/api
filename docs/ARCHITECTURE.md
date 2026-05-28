@@ -525,16 +525,21 @@ erDiagram
 ## 에러 처리
 
 ```
-AppException(errorCode, message)
-└── ErrorCode (VALIDATION·UNAUTHORIZED·INVALID_CREDENTIALS·INVALID_TOKEN
-              ·FORBIDDEN·NOT_FOUND·DUPLICATE·INTERNAL)
+AppException(errorCode: ErrorCode, message)
+└── ErrorCode (인터페이스: code·status·defaultMessage)
+    ├── CommonErrorCode  (common/error)         — 횡단 코드  E-CMN-*
+    └── AuthErrorCode    (auth/error)           — 도메인 코드 E-AUTH-*
+        (새 도메인은 <domain>/error 에 enum 추가)
 ```
+
+에러 코드는 안정적인 `E-{DOMAIN}-{NNN}` 식별자다. 공통(횡단) 코드는 `common/error`, 도메인 전용 코드는
+각 도메인 패키지의 `<domain>/error`에 둔다. **전체 코드 표는 [`docs/ERROR_CODES.md`](ERROR_CODES.md) 참조.**
 
 `@RestControllerAdvice GlobalExceptionHandler`가 표준 응답으로 변환한다:
 - **예상된 예외**(AppException·검증·제약위반·DataIntegrity→409)는 그대로 매핑, Discord 전송 안 함.
 - **예기치 못한 예외(5xx)만** `DiscordErrorReporter`로 **비동기**(`@Async`) 리포팅 + 일반 메시지로 교체. 스택의 경로/이메일/토큰/비밀번호/키를 새니타이즈, 5분 중복 제거, 웹훅 미설정 시 콘솔 폴백.
 
-응답 형식: `{ "code": "...", "message": "..." }` 통일.
+응답 형식: `{ "code": "E-…", "message": "..." }` 통일. 클라이언트는 메시지가 아닌 `code`로 분기한다.
 
 ---
 

@@ -5,7 +5,7 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
 import kr.ai.flori.auth.repository.UserRepository
 import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.sales.dto.SaleCreateRequest
@@ -143,7 +143,7 @@ class SaleServiceIntegrationTest {
         newTenant()
         assertThatThrownBy { saleService.get(saleA.id) }
             .isInstanceOfSatisfying(AppException::class.java) {
-                assertThat(it.errorCode).isEqualTo(ErrorCode.NOT_FOUND)
+                assertThat(it.errorCode).isEqualTo(CommonErrorCode.NOT_FOUND)
             }
         assertThatThrownBy { saleService.update(saleA.id, SaleUpdateRequest(amount = 1)) }
             .isInstanceOf(AppException::class.java)

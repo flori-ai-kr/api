@@ -1,7 +1,7 @@
 package kr.ai.flori.common.security
 
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
@@ -15,7 +15,7 @@ class InternalAuthVerifier(
 ) {
     fun verify(authorizationHeader: String?) {
         if (!BearerSecret.matches(BearerSecret.extract(authorizationHeader), apiKey)) {
-            throw AppException(ErrorCode.UNAUTHORIZED, "내부 API 인증 실패")
+            throw AppException(CommonErrorCode.UNAUTHORIZED, "내부 API 인증 실패")
         }
     }
 }

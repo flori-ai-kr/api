@@ -2,7 +2,7 @@ package kr.ai.flori.auth.oauth
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.util.LinkedMultiValueMap
@@ -51,10 +51,10 @@ class GoogleOAuthClientImpl(
                     .retrieve()
                     .body(GoogleTokenResponse::class.java)
             } catch (e: RestClientException) {
-                throw AppException(ErrorCode.INVALID_TOKEN, "구글 인증코드 교환에 실패했습니다", e)
+                throw AppException(CommonErrorCode.INVALID_TOKEN, "구글 인증코드 교환에 실패했습니다", e)
             }
         return token?.accessToken
-            ?: throw AppException(ErrorCode.INVALID_TOKEN, "구글 토큰 응답이 비어 있습니다")
+            ?: throw AppException(CommonErrorCode.INVALID_TOKEN, "구글 토큰 응답이 비어 있습니다")
     }
 
     private fun fetchProfile(accessToken: String): SocialUserInfo {
@@ -67,7 +67,7 @@ class GoogleOAuthClientImpl(
                     .retrieve()
                     .body(GoogleUserInfoResponse::class.java)
             } catch (e: RestClientException) {
-                throw AppException(ErrorCode.INVALID_TOKEN, "구글 프로필 조회에 실패했습니다", e)
+                throw AppException(CommonErrorCode.INVALID_TOKEN, "구글 프로필 조회에 실패했습니다", e)
             }
         return me?.let {
             SocialUserInfo(
@@ -76,7 +76,7 @@ class GoogleOAuthClientImpl(
                 email = it.email,
                 nickname = it.name,
             )
-        } ?: throw AppException(ErrorCode.INVALID_TOKEN, "구글 프로필 응답이 비어 있습니다")
+        } ?: throw AppException(CommonErrorCode.INVALID_TOKEN, "구글 프로필 응답이 비어 있습니다")
     }
 
     private companion object {

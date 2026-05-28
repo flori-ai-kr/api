@@ -24,7 +24,8 @@ object TestAccounts {
         email: String = "user-${UUID.randomUUID()}@flori.dev",
         provider: String = "GOOGLE",
         providerId: String = "$provider-${UUID.randomUUID()}",
-        nickname: String = "사장님",
+        // 닉네임(users.name)은 전역 유일(uq_users_name)이므로 호출마다 고유 기본값을 생성해 충돌을 피한다.
+        nickname: String = "사장님-${UUID.randomUUID()}",
         storeName: String = "테스트 가게",
         regionSido: String = "서울특별시",
     ): TokenResponse {

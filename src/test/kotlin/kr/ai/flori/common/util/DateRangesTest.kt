@@ -1,7 +1,7 @@
 package kr.ai.flori.common.util
 
 import kr.ai.flori.common.error.AppException
-import kr.ai.flori.common.error.ErrorCode
+import kr.ai.flori.common.error.CommonErrorCode
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -35,12 +35,12 @@ class DateRangesTest {
     @Test
     fun `숫자가 아닌 4자 입력은 VALIDATION`() {
         val ex = assertThrows<AppException> { monthRange("ABCD") }
-        assertThat(ex.errorCode).isEqualTo(ErrorCode.VALIDATION)
+        assertThat(ex.errorCode).isEqualTo(CommonErrorCode.VALIDATION)
     }
 
     @Test
     fun `형식이 잘못된 입력은 VALIDATION`() {
-        assertThat(assertThrows<AppException> { monthRange("2026-13") }.errorCode).isEqualTo(ErrorCode.VALIDATION)
-        assertThat(assertThrows<AppException> { monthRange("2026-99-99") }.errorCode).isEqualTo(ErrorCode.VALIDATION)
+        assertThat(assertThrows<AppException> { monthRange("2026-13") }.errorCode).isEqualTo(CommonErrorCode.VALIDATION)
+        assertThat(assertThrows<AppException> { monthRange("2026-99-99") }.errorCode).isEqualTo(CommonErrorCode.VALIDATION)
     }
 }
