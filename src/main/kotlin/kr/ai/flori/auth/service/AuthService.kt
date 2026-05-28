@@ -113,7 +113,7 @@ class AuthService(
                         name = request.nickname,
                         provider = principal.provider,
                         providerId = principal.providerId,
-                    ).apply { onboarded = true },
+                    ),
                 )
             } catch (_: DataIntegrityViolationException) {
                 // 동시 가입 경쟁(같은 신원/이메일 unique 충돌): 멱등하게 이미 가입됨으로 처리
@@ -155,7 +155,7 @@ class AuthService(
         }
     }
 
-    /** 현재 사용자 조회. TenantContext에서 받은 userId로 격리. onboarded·가게 프로필을 함께 반환한다. */
+    /** 현재 사용자 조회. TenantContext에서 받은 userId로 격리. 가게 프로필을 함께 반환한다. */
     @Transactional(readOnly = true)
     fun me(userId: Long): UserResponse {
         val user =
@@ -167,7 +167,6 @@ class AuthService(
             id = userId,
             email = user.email,
             name = user.name,
-            onboarded = user.onboarded,
             profile = profile,
         )
     }
@@ -195,7 +194,6 @@ class AuthService(
             id = userId,
             email = user.email,
             name = user.name,
-            onboarded = user.onboarded,
             profile = profile,
         )
     }

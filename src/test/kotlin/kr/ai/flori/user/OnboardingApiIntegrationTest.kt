@@ -19,7 +19,7 @@ import org.springframework.test.web.servlet.post
 /**
  * 가게 프로필 편집 API(POST /me/profile) 통합테스트.
  *
- * 소셜 전용 전환 후 가입은 register/complete에서 끝나므로(항상 onboarded=true), 이 엔드포인트는
+ * 소셜 전용 전환 후 가입은 register/complete에서 끝나므로(가입 시 온보딩 완료), 이 엔드포인트는
  * 기존 사용자의 프로필 편집(upsert) 용도다. 실제 보안 체인 + Zonky PG에서 전체/최소 제출, 멱등 재제출,
  * /me 프로필 노출, 멀티테넌시 격리를 검증한다.
  */
@@ -43,13 +43,12 @@ class OnboardingApiIntegrationTest {
     private fun token(): String = TestAccounts.register(authService, tokenProvider).accessToken
 
     @Test
-    fun `가입 직후 me는 onboarded=true이며 가입 시 입력한 프로필이 보인다`() {
+    fun `가입 직후 me는 가입 시 입력한 프로필이 보인다`() {
         val token = token()
         mockMvc
             .get("/me") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") }
             .andExpect {
                 status { isOk() }
-                jsonPath("$.onboarded") { value(true) }
                 jsonPath("$.profile.storeName") { value("테스트 가게") }
             }
     }
@@ -74,7 +73,6 @@ class OnboardingApiIntegrationTest {
                     )
             }.andExpect {
                 status { isOk() }
-                jsonPath("$.onboarded") { value(true) }
                 jsonPath("$.profile.storeName") { value("헤이즐 플라워") }
                 jsonPath("$.profile.regionSido") { value("서울특별시") }
                 jsonPath("$.profile.regionSigungu") { value("강남구") }

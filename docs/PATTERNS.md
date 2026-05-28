@@ -43,7 +43,7 @@ PostgreSQL
 
 각 레이어의 책임을 코드로 보면:
 
-**Controller** — HTTP만. 비즈니스 로직 없음. ([`SaleController.kt`](../src/main/kotlin/com/flori/sales/controller/SaleController.kt))
+**Controller** — HTTP만. 비즈니스 로직 없음. ([`SaleController.kt`](../src/main/kotlin/kr/ai/flori/sales/controller/SaleController.kt))
 
 ```kotlin
 @Tag(name = "Sales", description = "매출 관리")          // Swagger 그룹
@@ -63,7 +63,7 @@ class SaleController(
 
 > 컨트롤러가 하는 "정규화"의 예: `list`에서 `limit.coerceIn(1, 100)`으로 페이지 크기를 강제(과도한 limit 방어). 비즈니스 규칙이 아닌 HTTP 입력 위생이므로 컨트롤러에 둔다.
 
-**Service** — 로직·격리·트랜잭션. ([`SaleService.kt`](../src/main/kotlin/com/flori/sales/service/SaleService.kt))
+**Service** — 로직·격리·트랜잭션. ([`SaleService.kt`](../src/main/kotlin/kr/ai/flori/sales/service/SaleService.kt))
 
 ```kotlin
 @Service
@@ -81,13 +81,13 @@ class SaleService(
 }
 ```
 
-**Repository** — 데이터 접근만. 인터페이스만 선언하면 Spring이 구현을 만든다. ([`SaleRepository.kt`](../src/main/kotlin/com/flori/sales/repository/SaleRepository.kt))
+**Repository** — 데이터 접근만. 인터페이스만 선언하면 Spring이 구현을 만든다. ([`SaleRepository.kt`](../src/main/kotlin/kr/ai/flori/sales/repository/SaleRepository.kt))
 
 ```kotlin
 interface SaleRepository :
-    JpaRepository<Sale, UUID>,                 // 기본 CRUD 제공
+    JpaRepository<Sale, Long>,                 // 기본 CRUD 제공
     JpaSpecificationExecutor<Sale> {           // 동적 필터(Specification)
-    fun findByIdAndUserId(id: UUID, userId: UUID): Sale?   // ← 메서드 이름이 곧 쿼리
+    fun findByIdAndUserId(id: Long, userId: Long): Sale?   // ← 메서드 이름이 곧 쿼리
 }
 ```
 
@@ -115,7 +115,7 @@ flowchart LR
 
 ### 구성요소
 
-**① 필터가 set/clear** — [`JwtAuthenticationFilter.kt`](../src/main/kotlin/com/flori/common/security/JwtAuthenticationFilter.kt). `finally`에서 반드시 `clear()` (스레드풀 재사용 시 이전 사용자 id 누수 방지):
+**① 필터가 set/clear** — [`JwtAuthenticationFilter.kt`](../src/main/kotlin/kr/ai/flori/common/security/JwtAuthenticationFilter.kt). `finally`에서 반드시 `clear()` (스레드풀 재사용 시 이전 사용자 id 누수 방지):
 
 ```kotlin
 try {
@@ -131,19 +131,19 @@ try {
 }
 ```
 
-**② TenantContext가 보관** — [`TenantContext.kt`](../src/main/kotlin/com/flori/common/tenant/TenantContext.kt). 인증이 없으면 안전한 기본값으로 **예외**를 던진다(빈 결과가 아니라 401):
+**② TenantContext가 보관** — [`TenantContext.kt`](../src/main/kotlin/kr/ai/flori/common/tenant/TenantContext.kt). 인증이 없으면 안전한 기본값으로 **예외**를 던진다(빈 결과가 아니라 401):
 
 ```kotlin
 object TenantContext {
-    private val holder = ThreadLocal<UUID?>()
-    fun currentUserId(): UUID = holder.get() ?: throw AppException(ErrorCode.UNAUTHORIZED)
+    private val holder = ThreadLocal<Long?>()
+    fun currentUserId(): Long = holder.get() ?: throw AppException(ErrorCode.UNAUTHORIZED)
 }
 ```
 
 **③ 서비스가 모든 쿼리에 적용** — 단건 조회는 `findByIdAndUserId`, 목록은 spec/쿼리에 `userId` 포함:
 
 ```kotlin
-private fun load(id: UUID): Sale =
+private fun load(id: Long): Sale =
     saleRepository.findByIdAndUserId(id, TenantContext.currentUserId())
         ?: throw AppException(ErrorCode.NOT_FOUND)   // 남의 것이면 "없음"으로 응답
 ```
@@ -163,14 +163,14 @@ private fun load(id: UUID): Sale =
 
 ## 3. DTO 경계
 
-**엔티티는 컨트롤러 밖으로 나가지 않는다.** 요청과 응답 DTO는 분리한다. 한 도메인의 모든 DTO는 `<Domain>Dtos.kt` 한 파일에 모은다. ([`SaleDtos.kt`](../src/main/kotlin/com/flori/sales/dto/SaleDtos.kt))
+**엔티티는 컨트롤러 밖으로 나가지 않는다.** 요청과 응답 DTO는 분리한다. 한 도메인의 모든 DTO는 `<Domain>Dtos.kt` 한 파일에 모은다. ([`SaleDtos.kt`](../src/main/kotlin/kr/ai/flori/sales/dto/SaleDtos.kt))
 
 ```kotlin
 // 요청: 검증 애너테이션을 붙인다. 서버 계산값(fee 등)은 받지 않는다.
 data class SaleCreateRequest(
     @field:NotNull(message = "날짜는 필수입니다") val date: LocalDate?,
     @field:Min(value = 0, message = "금액은 0 이상이어야 합니다") val amount: Int?,
-    val customerId: UUID? = null,             // 선택 필드는 기본값으로
+    val customerId: Long? = null,             // 선택 필드는 기본값으로
 )
 
 // 부분 수정: 모든 필드 nullable + 기본 null → "제공된 필드만 반영"
@@ -181,7 +181,7 @@ data class SaleUpdateRequest(
 
 // 응답: 엔티티→DTO 변환은 companion object의 from()으로
 data class SaleResponse(
-    val id: UUID,
+    val id: Long,
     val fee: Int?,                            // 서버가 계산한 값
     /* ... */
 ) {
@@ -203,7 +203,7 @@ data class SaleResponse(
 **시스템 경계(컨트롤러 진입점)에서 검증한다.**
 
 - 컨트롤러 파라미터에 `@Valid @RequestBody` → Bean Validation이 자동 수행, 실패 시 `MethodArgumentNotValidException` → `GlobalExceptionHandler`가 400으로 변환.
-- `@PathVariable id: UUID` — UUID 타입이라 형식 불일치는 Spring이 자동 거부.
+- `@PathVariable id: Long` — Long 타입이라 형식 불일치(숫자 아님)는 Spring이 자동 거부.
 - 도메인 규칙(결제수단 화이트리스트 등)은 서비스에서 검증:
 
 ```kotlin
@@ -219,7 +219,7 @@ private fun requireValidPayment(value: String): String {
 
 도메인 코드는 `AppException(ErrorCode.X)`만 던진다. HTTP 상태 매핑·응답 형식·Discord 알림은 전부 `@RestControllerAdvice` 한 곳에서 처리한다.
 
-**ErrorCode** = (HTTP 상태 + 기본 메시지) 매핑 테이블. ([`ErrorCode.kt`](../src/main/kotlin/com/flori/common/error/ErrorCode.kt))
+**ErrorCode** = (HTTP 상태 + 기본 메시지) 매핑 테이블. ([`ErrorCode.kt`](../src/main/kotlin/kr/ai/flori/common/error/ErrorCode.kt))
 
 ```kotlin
 enum class ErrorCode(val status: HttpStatus, val defaultMessage: String) {
@@ -230,7 +230,7 @@ enum class ErrorCode(val status: HttpStatus, val defaultMessage: String) {
 }
 ```
 
-**GlobalExceptionHandler** ([파일](../src/main/kotlin/com/flori/common/error/GlobalExceptionHandler.kt)):
+**GlobalExceptionHandler** ([파일](../src/main/kotlin/kr/ai/flori/common/error/GlobalExceptionHandler.kt)):
 - 예상된 예외(`AppException`, 검증 실패, 제약 위반) → 그대로 매핑, **Discord 전송 안 함**.
 - 예기치 못한 예외(5xx) → **Discord 리포팅** + 일반 메시지로 교체 → 스택/쿼리 같은 내부 디테일을 클라이언트에 노출하지 않음.
 
@@ -280,9 +280,9 @@ class RecurringExpenseGenerator(
 
 | 위치 | 내용 |
 |---|---|
-| [`common/domain/PaymentMethods.kt`](../src/main/kotlin/com/flori/common/domain/PaymentMethods.kt) | `PaymentMethods.SALE/EXPENSE/UNPAID` |
-| [`common/domain/ReservationStatuses.kt`](../src/main/kotlin/com/flori/common/domain/ReservationStatuses.kt) | `ReservationStatuses.PENDING/CONFIRMED/COMPLETED/CANCELLED` + `ALL` |
-| [`common/util/DateRanges.kt`](../src/main/kotlin/com/flori/common/util/DateRanges.kt) | `KST`(=`ZoneId.of("Asia/Seoul")`), `monthRange(month)` (YYYY/YYYY-MM/YYYY-MM-DD → 시작·끝 날짜, 잘못된 형식은 400 VALIDATION) |
+| [`common/domain/PaymentMethods.kt`](../src/main/kotlin/kr/ai/flori/common/domain/PaymentMethods.kt) | `PaymentMethods.SALE/EXPENSE/UNPAID` |
+| [`common/domain/ReservationStatuses.kt`](../src/main/kotlin/kr/ai/flori/common/domain/ReservationStatuses.kt) | `ReservationStatuses.PENDING/CONFIRMED/COMPLETED/CANCELLED` + `ALL` |
+| [`common/util/DateRanges.kt`](../src/main/kotlin/kr/ai/flori/common/util/DateRanges.kt) | `KST`(=`ZoneId.of("Asia/Seoul")`), `monthRange(month)` (YYYY/YYYY-MM/YYYY-MM-DD → 시작·끝 날짜, 잘못된 형식은 400 VALIDATION) |
 
 > 도메인 상태/수단 문자열은 새로 만들지 말고 `common/domain`의 상수를 쓴다. 새 상태군이 생기면 같은 패턴으로 `common/domain`에 추가한다(예: `ReservationStatuses`).
 
@@ -323,7 +323,7 @@ class CouponDocsTest : RestDocsSupport() {
             .andDo { handle(docs(
                 identifier = "coupon-create", tag = "Coupons", summary = "쿠폰 생성",
                 requestFields = listOf(fieldWithPath("code").type(JsonFieldType.STRING).description("쿠폰 코드")),
-                responseFields = listOf(fieldWithPath("id").type(JsonFieldType.STRING).description("쿠폰 UUID")),
+                responseFields = listOf(fieldWithPath("id").type(JsonFieldType.NUMBER).description("쿠폰 ID")),
             )) }
     }
 }
@@ -338,16 +338,16 @@ class CouponDocsTest : RestDocsSupport() {
 목표: **기존 코드를 수정하지 않고 패키지 추가만으로** 새 도메인을 붙인다. 예로 `coupons` 도메인을 추가한다고 하자.
 
 **0. (스키마가 새로 필요하면) Flyway 마이그레이션 추가**
-`src/main/resources/db/migration/V{다음번호}__add_coupons.sql` 생성. 기존 V 파일은 절대 수정하지 않는다(불변). `user_id uuid not null` 컬럼 필수.
+`src/main/resources/db/migration/V{다음번호}__add_coupons.sql` 생성. 기존 V 파일은 절대 수정하지 않는다(불변). PK는 `id bigint generated by default as identity`, `user_id bigint not null references users(id) on delete cascade` 컬럼 필수.
 
 **1. 엔티티** — `coupons/entity/Coupon.kt`. 생성/수정 시각은 `BaseEntity`를 상속해 자동 관리(직접 선언·갱신 ❌).
 ```kotlin
 @Entity @Table(name = "coupons")
 class Coupon(
-    @Column(name = "user_id", nullable = false) var userId: UUID,
+    @Column(name = "user_id", nullable = false) var userId: Long,
     @Column(name = "code", nullable = false) var code: String,
 ) : BaseEntity() {              // created_at/updated_at 자동 — common/entity/BaseEntity.kt
-    @Id @GeneratedValue(strategy = GenerationType.UUID) var id: UUID? = null
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY) var id: Long? = null
 }
 ```
 > `data class`가 아니라 `class` + `var`를 쓰는 이유는 [KOTLIN.md §엔티티](KOTLIN.md) 참고.
@@ -356,9 +356,9 @@ class Coupon(
 
 **2. 리포지토리** — `coupons/repository/CouponRepository.kt`. **반드시 `...AndUserId` 메서드로** 격리.
 ```kotlin
-interface CouponRepository : JpaRepository<Coupon, UUID> {
-    fun findByIdAndUserId(id: UUID, userId: UUID): Coupon?
-    fun findByUserIdOrderByCreatedAtDesc(userId: UUID): List<Coupon>
+interface CouponRepository : JpaRepository<Coupon, Long> {
+    fun findByIdAndUserId(id: Long, userId: Long): Coupon?
+    fun findByUserIdOrderByCreatedAtDesc(userId: Long): List<Coupon>
 }
 ```
 
@@ -394,7 +394,7 @@ class CouponService(private val couponRepository: CouponRepository) {
 | 패키지 | `kr.ai.flori.<domain>.{controller,service,repository,entity,dto}`; 횡단은 `common/` |
 | 네이밍 | 컨트롤러 `XController`, 서비스 `XService`, 리포 `XRepository`, DTO `XRequest`/`XResponse` |
 | DTO 파일 | 도메인당 `XDtos.kt` 하나에 모음 |
-| 엔티티 | `class`(not data class) + `var`, `@Id`는 nullable `UUID? = null` |
+| 엔티티 | `class`(not data class) + `var`, `@Id`는 nullable `Long? = null`(IDENTITY) |
 | 격리 | 모든 쿼리 `...AndUserId`; 단건은 `findByIdAndUserId` |
 | 검증 | 경계에서 `@Valid`; 요청 필드 nullable + `@field:NotNull` |
 | 에러 | `AppException(ErrorCode.X)`만 던짐; 매핑은 핸들러가 |

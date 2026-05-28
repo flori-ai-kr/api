@@ -24,7 +24,7 @@
               },
               "examples" : {
                 "auth-logout" : {
-                  "value" : "{\"refreshToken\":\"BUHgnMeDROjZagsZ3iWASpf8cBVoO1vn21z14h1tiHg\"}"
+                  "value" : "{\"refreshToken\":\"TH2fVz55NxxRxIcL9G581pi9rVTlR3zIbL7OXme6Imk\"}"
                 }
               }
             }
@@ -51,7 +51,7 @@
               },
               "examples" : {
                 "auth-refresh" : {
-                  "value" : "{\"refreshToken\":\"21ptLpf6iZUkzyJfY9hjhElsxtyPm4G6cqvlVY3DzVk\"}"
+                  "value" : "{\"refreshToken\":\"kZiijKafOzfX42xsrPVgxnbsKsuG92JT7bsgOj24EwI\"}"
                 }
               }
             }
@@ -67,7 +67,7 @@
                 },
                 "examples" : {
                   "auth-refresh" : {
-                    "value" : "{\"accessToken\":\"eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ1c2VyLTc5MzE1Mjg0LWQwMmQtNDFhZC04OWU3LThiZDU5MzVlNDU1ZUBmbG9yaS5kZXYiLCJpYXQiOjE3Nzk4OTMxMTYsImV4cCI6MTc3OTg5NDAxNn0.HuPrnu5b4lYmVyQVzDDYrsJpzTf0jif-8JkwG2DNHhKgXqpNMKEgWUPy5g9VWkfa\",\"refreshToken\":\"I9bNhSF8VQg68gC994VUK2_eD_VKmASbDHfeu4WeMmQ\",\"expiresIn\":900,\"tokenType\":\"Bearer\"}"
+                    "value" : "{\"accessToken\":\"eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ1c2VyLTU1NTQ1ZDVhLTVlNTUtNGM1Mi1hMmYxLTlkYzUyZjA4Y2Y1ZEBmbG9yaS5kZXYiLCJpYXQiOjE3Nzk5NTc4MTAsImV4cCI6MTc3OTk1ODcxMH0.rDoAtpr6SrHFNYn0JlEJxfoxVf9_t9jkXCRaIvo1_7TwyG48lLxdvflE6yMizxi5\",\"refreshToken\":\"FtQtM-qBZlkuRMqwM-8zmX8wamPu-Ju5GUr_vTblKl0\",\"expiresIn\":900,\"tokenType\":\"Bearer\"}"
                   }
                 }
               }
@@ -106,7 +106,7 @@
                 },
                 "examples" : {
                   "auth-oauth-google" : {
-                    "value" : "{\"registered\":false,\"token\":null,\"registerToken\":\"eyJhbGciOiJIUzM4NCJ9.eyJ0eXBlIjoiUkVHSVNURVIiLCJwcm92aWRlciI6IkdPT0dMRSIsInByb3ZpZGVySWQiOiJHT09HTEUtZG9jLTEyMyIsImVtYWlsIjoic2hvcEBnbWFpbC5jb20iLCJuaWNrbmFtZSI6Iuq1rOq4gCDsgqzsnqXri5giLCJpYXQiOjE3Nzk4OTMxMTcsImV4cCI6MTc3OTg5MzQxN30.3ZByVxzgoaKCUpZ8rOjuTZkcvfrK3efy0KUCXdvaXw6AXRvxxvAYzDUxO5lXhars\",\"socialEmail\":\"shop@gmail.com\",\"socialNickname\":\"구글 사장님\"}"
+                    "value" : "{\"registered\":false,\"token\":null,\"registerToken\":\"eyJhbGciOiJIUzM4NCJ9.eyJ0eXBlIjoiUkVHSVNURVIiLCJwcm92aWRlciI6IkdPT0dMRSIsInByb3ZpZGVySWQiOiJHT09HTEUtZG9jLTEyMyIsImVtYWlsIjoic2hvcEBnbWFpbC5jb20iLCJuaWNrbmFtZSI6Iuq1rOq4gCDsgqzsnqXri5giLCJpYXQiOjE3Nzk5NTc4MTEsImV4cCI6MTc3OTk1ODExMX0.zOXgrOZ4Shc0VnJSyf2bctQwzmdvDlqaI8eZZuHvjt1qqXW35-ymlhXe8wM_8db_\",\"socialEmail\":\"shop@gmail.com\",\"socialNickname\":\"구글 사장님\"}"
                   }
                 }
               }
@@ -145,7 +145,7 @@
                 },
                 "examples" : {
                   "auth-oauth-kakao" : {
-                    "value" : "{\"registered\":false,\"token\":null,\"registerToken\":\"eyJhbGciOiJIUzM4NCJ9.eyJ0eXBlIjoiUkVHSVNURVIiLCJwcm92aWRlciI6IktBS0FPIiwicHJvdmlkZXJJZCI6IktBS0FPLWRvYy0xMjMiLCJuaWNrbmFtZSI6Iuy5tOy5tOyYpCDsgqzsnqXri5giLCJpYXQiOjE3Nzk4OTMxMTcsImV4cCI6MTc3OTg5MzQxN30._3IKH5HZ_wt4aLW9v6pMWw-d7AJ5ipc_5NzyYvkzH8mu-n8-61mzKc2PHG6SlSni\",\"socialEmail\":null,\"socialNickname\":\"카카오 사장님\"}"
+                    "value" : "{\"registered\":false,\"token\":null,\"registerToken\":\"eyJhbGciOiJIUzM4NCJ9.eyJ0eXBlIjoiUkVHSVNURVIiLCJwcm92aWRlciI6IktBS0FPIiwicHJvdmlkZXJJZCI6IktBS0FPLWRvYy0xMjMiLCJuaWNrbmFtZSI6Iuy5tOy5tOyYpCDsgqzsnqXri5giLCJpYXQiOjE3Nzk5NTc4MTEsImV4cCI6MTc3OTk1ODExMX0.tE93o_IpXLVjwqPVwuiEKumWho4NPfEe47u0gjcjT04tkTjgZc4x61LJQam51Q0B\",\"socialEmail\":null,\"socialNickname\":\"카카오 사장님\"}"
                   }
                 }
               }
@@ -184,7 +184,7 @@
                 },
                 "examples" : {
                   "auth-oauth-naver" : {
-                    "value" : "{\"registered\":false,\"token\":null,\"registerToken\":\"eyJhbGciOiJIUzM4NCJ9.eyJ0eXBlIjoiUkVHSVNURVIiLCJwcm92aWRlciI6Ik5BVkVSIiwicHJvdmlkZXJJZCI6Ik5BVkVSLWRvYy0xMjMiLCJlbWFpbCI6InNob3BAbmF2ZXIuY29tIiwibmlja25hbWUiOiLrhKTsnbTrsoQg7IKs7J6l64uYIiwiaWF0IjoxNzc5ODkzMTE3LCJleHAiOjE3Nzk4OTM0MTd9.jVCn0iMWjng4GizEUbOoNktXIB-8Ew0wr--aW31J25wwUIvZxDj3kLmZ1ipA0pQf\",\"socialEmail\":\"shop@naver.com\",\"socialNickname\":\"네이버 사장님\"}"
+                    "value" : "{\"registered\":false,\"token\":null,\"registerToken\":\"eyJhbGciOiJIUzM4NCJ9.eyJ0eXBlIjoiUkVHSVNURVIiLCJwcm92aWRlciI6Ik5BVkVSIiwicHJvdmlkZXJJZCI6Ik5BVkVSLWRvYy0xMjMiLCJlbWFpbCI6InNob3BAbmF2ZXIuY29tIiwibmlja25hbWUiOiLrhKTsnbTrsoQg7IKs7J6l64uYIiwiaWF0IjoxNzc5OTU3ODExLCJleHAiOjE3Nzk5NTgxMTF9.wQ-Mi6wPWG18GJYCiAOIyGSqBHERRJfHREvEDYDT77gSZQU6s5UBlsL2vJDU5S94\",\"socialEmail\":\"shop@naver.com\",\"socialNickname\":\"네이버 사장님\"}"
                   }
                 }
               }
@@ -207,7 +207,7 @@
               },
               "examples" : {
                 "auth-register-complete" : {
-                  "value" : "{\"registerToken\":\"eyJhbGciOiJIUzM4NCJ9.eyJ0eXBlIjoiUkVHSVNURVIiLCJwcm92aWRlciI6IktBS0FPIiwicHJvdmlkZXJJZCI6Imtha2FvLTMyMzk3YTNkLTliM2ItNGU3YS04MzgwLTU1OTQ2MmE2YjJiZSIsImVtYWlsIjoicmVnaXN0ZXItZG9jLWFhZjU3YzgzLTllMWEtNDYzZS04NmYzLWIxZWIwMDBjNGFjNUBmbG9yaS5kZXYiLCJuaWNrbmFtZSI6Iu2XpOydtOymkCIsImlhdCI6MTc3OTg5MzExNywiZXhwIjoxNzc5ODkzNDE3fQ.XJAsxkkzmEuUIGEPfzbZ4L8X2I4n0aQzDiCsN5BTIi1i0TLvQlnoIGYiDSJcJLV4\",\"storeName\":\"헤이즐 플라워\",\"nickname\":\"헤이즐\",\"email\":\"register-doc-aaf57c83-9e1a-463e-86f3-b1eb000c4ac5@flori.dev\",\"regionSido\":\"서울특별시\",\"regionSigungu\":\"강남구\",\"ownerAgeRange\":\"30대\",\"interests\":[\"웨딩\",\"개업화환\"],\"specialties\":[\"꽃다발\",\"화분\"]}"
+                  "value" : "{\"registerToken\":\"eyJhbGciOiJIUzM4NCJ9.eyJ0eXBlIjoiUkVHSVNURVIiLCJwcm92aWRlciI6IktBS0FPIiwicHJvdmlkZXJJZCI6Imtha2FvLTk3NWEzZjI2LTgxNjEtNGNhYi1hZTE0LTQ3ODNmZDA2YTUyMyIsImVtYWlsIjoicmVnaXN0ZXItZG9jLWY3N2E0ODZjLWMwODgtNDVmOS1iMTJhLTE4MGUzYThkYjA0MkBmbG9yaS5kZXYiLCJuaWNrbmFtZSI6Iu2XpOydtOymkCIsImlhdCI6MTc3OTk1NzgxMSwiZXhwIjoxNzc5OTU4MTExfQ.WwoSPIm6TmM9VstM7WL1RuP592BY6-L5G-wknSWh38_LsUiNoUmtjn3A6lmWB8UK\",\"storeName\":\"헤이즐 플라워\",\"nickname\":\"헤이즐\",\"email\":\"register-doc-f77a486c-c088-45f9-b12a-180e3a8db042@flori.dev\",\"regionSido\":\"서울특별시\",\"regionSigungu\":\"강남구\",\"ownerAgeRange\":\"30대\",\"interests\":[\"웨딩\",\"개업화환\"],\"specialties\":[\"꽃다발\",\"화분\"]}"
                 }
               }
             }
@@ -223,7 +223,7 @@
                 },
                 "examples" : {
                   "auth-register-complete" : {
-                    "value" : "{\"accessToken\":\"eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiI1IiwiZW1haWwiOiJyZWdpc3Rlci1kb2MtYWFmNTdjODMtOWUxYS00NjNlLTg2ZjMtYjFlYjAwMGM0YWM1QGZsb3JpLmRldiIsImlhdCI6MTc3OTg5MzExNywiZXhwIjoxNzc5ODk0MDE3fQ.SxyaljvGzgRjndJhvcPeUW5wp-YGlALrCMd2cyM22hF4c3s1CKhUWumWGgnPgxuP\",\"refreshToken\":\"bZG4AiOJO_-CsM_-2K0iySA2eWcGwH9E9Tx7mBLMG4w\",\"expiresIn\":900,\"tokenType\":\"Bearer\"}"
+                    "value" : "{\"accessToken\":\"eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiI1IiwiZW1haWwiOiJyZWdpc3Rlci1kb2MtZjc3YTQ4NmMtYzA4OC00NWY5LWIxMmEtMTgwZTNhOGRiMDQyQGZsb3JpLmRldiIsImlhdCI6MTc3OTk1NzgxMSwiZXhwIjoxNzc5OTU4NzExfQ.4HFPLyHKu6Mef7sSEy5EIW4PskWu0yt-pw9Y--vLy-KhOOCmUseuDwDF29XeBnzv\",\"refreshToken\":\"2nGcYz9pM7YD_RUtnLb2FJg2cCrth0vWWLHED1skYMk\",\"expiresIn\":900,\"tokenType\":\"Bearer\"}"
                   }
                 }
               }
@@ -248,7 +248,7 @@
                 },
                 "examples" : {
                   "calendar-event-list" : {
-                    "value" : "[{\"id\":1,\"title\":\"워크숍\",\"startDate\":\"2026-06-01\",\"endDate\":\"2026-06-03\",\"color\":\"#f43f5e\",\"description\":null,\"createdAt\":\"2026-05-27T14:45:18.268700Z\",\"updatedAt\":\"2026-05-27T14:45:18.268704Z\"}]"
+                    "value" : "[{\"id\":1,\"title\":\"워크숍\",\"startDate\":\"2026-06-01\",\"endDate\":\"2026-06-03\",\"color\":\"#f43f5e\",\"description\":null,\"createdAt\":\"2026-05-28T08:43:32.531785Z\",\"updatedAt\":\"2026-05-28T08:43:32.531789Z\"}]"
                   }
                 }
               }
@@ -288,7 +288,7 @@
                 },
                 "examples" : {
                   "calendar-event-create" : {
-                    "value" : "{\"id\":2,\"title\":\"플로리스트 교육\",\"startDate\":\"2026-06-10\",\"endDate\":\"2026-06-12\",\"color\":\"#1565C0\",\"description\":\"꽃꽂이 심화 과정\",\"createdAt\":\"2026-05-27T14:45:18.309900Z\",\"updatedAt\":\"2026-05-27T14:45:18.309905Z\"}"
+                    "value" : "{\"id\":2,\"title\":\"플로리스트 교육\",\"startDate\":\"2026-06-10\",\"endDate\":\"2026-06-12\",\"color\":\"#1565C0\",\"description\":\"꽃꽂이 심화 과정\",\"createdAt\":\"2026-05-28T08:43:32.574121Z\",\"updatedAt\":\"2026-05-28T08:43:32.574126Z\"}"
                   }
                 }
               }
@@ -325,7 +325,7 @@
                 },
                 "examples" : {
                   "calendar-event-get" : {
-                    "value" : "{\"id\":5,\"title\":\"워크숍\",\"startDate\":\"2026-06-01\",\"endDate\":\"2026-06-03\",\"color\":\"#f43f5e\",\"description\":null,\"createdAt\":\"2026-05-27T14:45:18.416097Z\",\"updatedAt\":\"2026-05-27T14:45:18.416102Z\"}"
+                    "value" : "{\"id\":5,\"title\":\"워크숍\",\"startDate\":\"2026-06-01\",\"endDate\":\"2026-06-03\",\"color\":\"#f43f5e\",\"description\":null,\"createdAt\":\"2026-05-28T08:43:32.662104Z\",\"updatedAt\":\"2026-05-28T08:43:32.662108Z\"}"
                   }
                 }
               }
@@ -397,7 +397,7 @@
                 },
                 "examples" : {
                   "calendar-event-update" : {
-                    "value" : "{\"id\":4,\"title\":\"수정된 이벤트\",\"startDate\":\"2026-06-01\",\"endDate\":\"2026-06-03\",\"color\":\"#C62828\",\"description\":null,\"createdAt\":\"2026-05-27T14:45:18.375987Z\",\"updatedAt\":\"2026-05-27T14:45:18.375991Z\"}"
+                    "value" : "{\"id\":4,\"title\":\"수정된 이벤트\",\"startDate\":\"2026-06-01\",\"endDate\":\"2026-06-03\",\"color\":\"#C62828\",\"description\":null,\"createdAt\":\"2026-05-28T08:43:32.630792Z\",\"updatedAt\":\"2026-05-28T08:43:32.630796Z\"}"
                   }
                 }
               }
@@ -425,7 +425,7 @@
                 },
                 "examples" : {
                   "customer-list" : {
-                    "value" : "[{\"id\":4,\"name\":\"홍길동\",\"phone\":\"010-84097433\",\"grade\":\"new\",\"gender\":null,\"note\":null,\"totalPurchaseCount\":1,\"totalPurchaseAmount\":50000,\"firstPurchaseDate\":\"2026-05-22\",\"lastPurchaseDate\":\"2026-05-22\",\"createdAt\":\"2026-05-27T14:45:19.691082Z\",\"updatedAt\":\"2026-05-27T14:45:19.691087Z\"}]"
+                    "value" : "[{\"id\":4,\"name\":\"홍길동\",\"phone\":\"010-73004776\",\"grade\":\"new\",\"gender\":null,\"note\":null,\"totalPurchaseCount\":1,\"totalPurchaseAmount\":50000,\"firstPurchaseDate\":\"2026-05-22\",\"lastPurchaseDate\":\"2026-05-22\",\"createdAt\":\"2026-05-28T08:43:33.962576Z\",\"updatedAt\":\"2026-05-28T08:43:33.962584Z\"}]"
                   }
                 }
               }
@@ -461,11 +461,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/customers-find-or-create-924544121"
+                  "$ref" : "#/components/schemas/customers-id-grade-924544121"
                 },
                 "examples" : {
                   "customer-create" : {
-                    "value" : "{\"id\":8,\"name\":\"김하늘\",\"phone\":\"010-5555-6666\",\"grade\":\"regular\",\"gender\":\"female\",\"note\":\"VIP 예비 고객\",\"totalPurchaseCount\":0,\"totalPurchaseAmount\":0,\"firstPurchaseDate\":null,\"lastPurchaseDate\":null,\"createdAt\":\"2026-05-27T14:45:19.863226Z\",\"updatedAt\":\"2026-05-27T14:45:19.863230Z\"}"
+                    "value" : "{\"id\":8,\"name\":\"김하늘\",\"phone\":\"010-5555-6666\",\"grade\":\"regular\",\"gender\":\"female\",\"note\":\"VIP 예비 고객\",\"totalPurchaseCount\":0,\"totalPurchaseAmount\":0,\"firstPurchaseDate\":null,\"lastPurchaseDate\":null,\"createdAt\":\"2026-05-28T08:43:34.144932Z\",\"updatedAt\":\"2026-05-28T08:43:34.144938Z\"}"
                   }
                 }
               }
@@ -534,11 +534,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/customers-find-or-create-924544121"
+                  "$ref" : "#/components/schemas/customers-id-grade-924544121"
                 },
                 "examples" : {
                   "customer-find-or-create" : {
-                    "value" : "{\"id\":2,\"name\":\"이민준\",\"phone\":\"010-7777-8888\",\"grade\":\"new\",\"gender\":null,\"note\":null,\"totalPurchaseCount\":0,\"totalPurchaseAmount\":0,\"firstPurchaseDate\":null,\"lastPurchaseDate\":null,\"createdAt\":\"2026-05-27T14:45:19.615602Z\",\"updatedAt\":\"2026-05-27T14:45:19.615609Z\"}"
+                    "value" : "{\"id\":2,\"name\":\"이민준\",\"phone\":\"010-7777-8888\",\"grade\":\"new\",\"gender\":null,\"note\":null,\"totalPurchaseCount\":0,\"totalPurchaseAmount\":0,\"firstPurchaseDate\":null,\"lastPurchaseDate\":null,\"createdAt\":\"2026-05-28T08:43:33.901585Z\",\"updatedAt\":\"2026-05-28T08:43:33.901591Z\"}"
                   }
                 }
               }
@@ -566,7 +566,7 @@
                 },
                 "examples" : {
                   "customer-search" : {
-                    "value" : "[{\"id\":10,\"name\":\"홍길동\",\"phone\":\"010-12441105\",\"grade\":\"new\"}]"
+                    "value" : "[{\"id\":10,\"name\":\"홍길동\",\"phone\":\"010-88380828\",\"grade\":\"new\"}]"
                   }
                 }
               }
@@ -599,11 +599,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/customers-find-or-create-924544121"
+                  "$ref" : "#/components/schemas/customers-id-grade-924544121"
                 },
                 "examples" : {
                   "customer-get" : {
-                    "value" : "{\"id\":6,\"name\":\"홍길동\",\"phone\":\"010-31699828\",\"grade\":\"new\",\"gender\":null,\"note\":null,\"totalPurchaseCount\":1,\"totalPurchaseAmount\":50000,\"firstPurchaseDate\":\"2026-05-22\",\"lastPurchaseDate\":\"2026-05-22\",\"createdAt\":\"2026-05-27T14:45:19.789725Z\",\"updatedAt\":\"2026-05-27T14:45:19.789729Z\"}"
+                    "value" : "{\"id\":6,\"name\":\"홍길동\",\"phone\":\"010-70999997\",\"grade\":\"new\",\"gender\":null,\"note\":null,\"totalPurchaseCount\":1,\"totalPurchaseAmount\":50000,\"firstPurchaseDate\":\"2026-05-22\",\"lastPurchaseDate\":\"2026-05-22\",\"createdAt\":\"2026-05-28T08:43:34.065826Z\",\"updatedAt\":\"2026-05-28T08:43:34.065833Z\"}"
                   }
                 }
               }
@@ -671,11 +671,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/customers-find-or-create-924544121"
+                  "$ref" : "#/components/schemas/customers-id-grade-924544121"
                 },
                 "examples" : {
                   "customer-update" : {
-                    "value" : "{\"id\":1,\"name\":\"홍길동\",\"phone\":\"010-52492266\",\"grade\":\"new\",\"gender\":\"male\",\"note\":\"수정된 메모\",\"totalPurchaseCount\":0,\"totalPurchaseAmount\":0,\"firstPurchaseDate\":null,\"lastPurchaseDate\":null,\"createdAt\":\"2026-05-27T14:45:19.574475Z\",\"updatedAt\":\"2026-05-27T14:45:19.574480Z\"}"
+                    "value" : "{\"id\":1,\"name\":\"홍길동\",\"phone\":\"010-44566277\",\"grade\":\"new\",\"gender\":\"male\",\"note\":\"수정된 메모\",\"totalPurchaseCount\":0,\"totalPurchaseAmount\":0,\"firstPurchaseDate\":null,\"lastPurchaseDate\":null,\"createdAt\":\"2026-05-28T08:43:33.860125Z\",\"updatedAt\":\"2026-05-28T08:43:33.860130Z\"}"
                   }
                 }
               }
@@ -722,11 +722,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/customers-find-or-create-924544121"
+                  "$ref" : "#/components/schemas/customers-id-grade-924544121"
                 },
                 "examples" : {
                   "customer-update-grade" : {
-                    "value" : "{\"id\":3,\"name\":\"홍길동\",\"phone\":\"010-80874803\",\"grade\":\"vip\",\"gender\":null,\"note\":null,\"totalPurchaseCount\":0,\"totalPurchaseAmount\":0,\"firstPurchaseDate\":null,\"lastPurchaseDate\":null,\"createdAt\":\"2026-05-27T14:45:19.653295Z\",\"updatedAt\":\"2026-05-27T14:45:19.653299Z\"}"
+                    "value" : "{\"id\":3,\"name\":\"홍길동\",\"phone\":\"010-38425586\",\"grade\":\"vip\",\"gender\":null,\"note\":null,\"totalPurchaseCount\":0,\"totalPurchaseAmount\":0,\"firstPurchaseDate\":null,\"lastPurchaseDate\":null,\"createdAt\":\"2026-05-28T08:43:33.925498Z\",\"updatedAt\":\"2026-05-28T08:43:33.925503Z\"}"
                   }
                 }
               }
@@ -759,11 +759,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/sales887028705"
+                  "$ref" : "#/components/schemas/customers-id-sales887028705"
                 },
                 "examples" : {
                   "customer-sales" : {
-                    "value" : "{\"sales\":[{\"id\":3,\"date\":\"2026-05-22\",\"productName\":\"basic_bouquet\",\"productCategory\":\"basic_bouquet\",\"amount\":50000,\"paymentMethod\":\"cash\",\"reservationChannel\":\"other\",\"customerName\":null,\"customerPhone\":null,\"customerId\":7,\"note\":null,\"isUnpaid\":false,\"hasReview\":false,\"createdAt\":\"2026-05-27T14:45:19.829680Z\",\"updatedAt\":\"2026-05-27T14:45:19.829683Z\"}],\"hasMore\":false}"
+                    "value" : "{\"sales\":[{\"id\":3,\"date\":\"2026-05-22\",\"productName\":\"basic_bouquet\",\"productCategory\":\"basic_bouquet\",\"amount\":50000,\"paymentMethod\":\"cash\",\"reservationChannel\":\"other\",\"customerName\":null,\"customerPhone\":null,\"customerId\":7,\"note\":null,\"isUnpaid\":false,\"hasReview\":false,\"createdAt\":\"2026-05-28T08:43:34.108285Z\",\"updatedAt\":\"2026-05-28T08:43:34.108288Z\"}],\"hasMore\":false}"
                   }
                 }
               }
@@ -819,7 +819,7 @@
                 },
                 "examples" : {
                   "dashboard-today" : {
-                    "value" : "{\"summary\":{\"totalAmount\":150000,\"cardAmount\":100000,\"cashAmount\":50000,\"transferAmount\":0,\"naverpayAmount\":0,\"kakaopayAmount\":0},\"upcomingReservations\":[{\"id\":3,\"date\":\"2026-05-27\",\"time\":null,\"customerName\":\"김하늘\",\"customerPhone\":null,\"title\":\"웨딩 부케\",\"description\":null,\"status\":\"pending\",\"saleId\":null,\"amount\":150000,\"reminderAt\":null,\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-27T14:45:20.239027Z\",\"updatedAt\":\"2026-05-27T14:45:20.239030Z\"},{\"id\":4,\"date\":\"2026-05-27\",\"time\":null,\"customerName\":\"박민준\",\"customerPhone\":null,\"title\":\"생일 꽃다발\",\"description\":null,\"status\":\"pending\",\"saleId\":null,\"amount\":80000,\"reminderAt\":\"2026-05-27T14:44:20.240743Z\",\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-27T14:45:20.243292Z\",\"updatedAt\":\"2026-05-27T14:45:20.243295Z\"}],\"triggeredReminders\":[{\"id\":4,\"date\":\"2026-05-27\",\"time\":null,\"customerName\":\"박민준\",\"customerPhone\":null,\"title\":\"생일 꽃다발\",\"description\":null,\"status\":\"pending\",\"saleId\":null,\"amount\":80000,\"reminderAt\":\"2026-05-27T14:44:20.240743Z\",\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-27T14:45:20.243292Z\",\"updatedAt\":\"2026-05-27T14:45:20.243295Z\"}],\"recentSales\":[{\"id\":7,\"date\":\"2026-05-27\",\"productName\":\"vase\",\"productCategory\":\"vase\",\"amount\":50000,\"paymentMethod\":\"cash\",\"reservationChannel\":\"phone\",\"customerName\":null,\"customerPhone\":null,\"customerId\":null,\"note\":null,\"isUnpaid\":false,\"hasReview\":false,\"createdAt\":\"2026-05-27T14:45:20.232940Z\",\"updatedAt\":\"2026-05-27T14:45:20.232942Z\"},{\"id\":6,\"date\":\"2026-05-27\",\"productName\":\"basic_bouquet\",\"productCategory\":\"basic_bouquet\",\"amount\":100000,\"paymentMethod\":\"card\",\"reservationChannel\":\"kakaotalk\",\"customerName\":null,\"customerPhone\":\"01012345678\",\"customerId\":null,\"note\":null,\"isUnpaid\":false,\"hasReview\":false,\"createdAt\":\"2026-05-27T14:45:20.228162Z\",\"updatedAt\":\"2026-05-27T14:45:20.228166Z\"}],\"saleCategories\":[{\"value\":\"mini_bouquet\",\"label\":\"미니 꽃다발\"},{\"value\":\"basic_bouquet\",\"label\":\"기본 꽃다발\"},{\"value\":\"medium_bouquet\",\"label\":\"중형 꽃다발\"},{\"value\":\"large_bouquet\",\"label\":\"대형 꽃다발\"},{\"value\":\"special_bouquet\",\"label\":\"스페셜 꽃다발\"},{\"value\":\"proposal_bouquet\",\"label\":\"프로포즈 꽃다발\"},{\"value\":\"basket\",\"label\":\"꽃바구니\"},{\"value\":\"vase\",\"label\":\"화병꽂이\"},{\"value\":\"group_bouquet\",\"label\":\"단체꽃다발\"},{\"value\":\"reservation\",\"label\":\"예약\"},{\"value\":\"photo_bouquet\",\"label\":\"촬영부케\"}]}"
+                    "value" : "{\"summary\":{\"totalAmount\":150000,\"cardAmount\":100000,\"cashAmount\":50000,\"transferAmount\":0,\"naverpayAmount\":0,\"kakaopayAmount\":0},\"upcomingReservations\":[{\"id\":3,\"date\":\"2026-05-28\",\"time\":null,\"customerName\":\"김하늘\",\"customerPhone\":null,\"title\":\"웨딩 부케\",\"description\":null,\"status\":\"pending\",\"saleId\":null,\"amount\":150000,\"reminderAt\":null,\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-28T08:43:34.532081Z\",\"updatedAt\":\"2026-05-28T08:43:34.532084Z\"},{\"id\":4,\"date\":\"2026-05-28\",\"time\":null,\"customerName\":\"박민준\",\"customerPhone\":null,\"title\":\"생일 꽃다발\",\"description\":null,\"status\":\"pending\",\"saleId\":null,\"amount\":80000,\"reminderAt\":\"2026-05-28T08:42:34.533930Z\",\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-28T08:43:34.536870Z\",\"updatedAt\":\"2026-05-28T08:43:34.536874Z\"}],\"triggeredReminders\":[{\"id\":4,\"date\":\"2026-05-28\",\"time\":null,\"customerName\":\"박민준\",\"customerPhone\":null,\"title\":\"생일 꽃다발\",\"description\":null,\"status\":\"pending\",\"saleId\":null,\"amount\":80000,\"reminderAt\":\"2026-05-28T08:42:34.533930Z\",\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-28T08:43:34.536870Z\",\"updatedAt\":\"2026-05-28T08:43:34.536874Z\"}],\"recentSales\":[{\"id\":7,\"date\":\"2026-05-28\",\"productName\":\"vase\",\"productCategory\":\"vase\",\"amount\":50000,\"paymentMethod\":\"cash\",\"reservationChannel\":\"phone\",\"customerName\":null,\"customerPhone\":null,\"customerId\":null,\"note\":null,\"isUnpaid\":false,\"hasReview\":false,\"createdAt\":\"2026-05-28T08:43:34.526169Z\",\"updatedAt\":\"2026-05-28T08:43:34.526172Z\"},{\"id\":6,\"date\":\"2026-05-28\",\"productName\":\"basic_bouquet\",\"productCategory\":\"basic_bouquet\",\"amount\":100000,\"paymentMethod\":\"card\",\"reservationChannel\":\"kakaotalk\",\"customerName\":null,\"customerPhone\":\"01012345678\",\"customerId\":null,\"note\":null,\"isUnpaid\":false,\"hasReview\":false,\"createdAt\":\"2026-05-28T08:43:34.521515Z\",\"updatedAt\":\"2026-05-28T08:43:34.521518Z\"}],\"saleCategories\":[{\"value\":\"mini_bouquet\",\"label\":\"미니 꽃다발\"},{\"value\":\"basic_bouquet\",\"label\":\"기본 꽃다발\"},{\"value\":\"medium_bouquet\",\"label\":\"중형 꽃다발\"},{\"value\":\"large_bouquet\",\"label\":\"대형 꽃다발\"},{\"value\":\"special_bouquet\",\"label\":\"스페셜 꽃다발\"},{\"value\":\"proposal_bouquet\",\"label\":\"프로포즈 꽃다발\"},{\"value\":\"basket\",\"label\":\"꽃바구니\"},{\"value\":\"vase\",\"label\":\"화병꽂이\"},{\"value\":\"group_bouquet\",\"label\":\"단체꽃다발\"},{\"value\":\"reservation\",\"label\":\"예약\"},{\"value\":\"photo_bouquet\",\"label\":\"촬영부케\"}]}"
                   }
                 }
               }
@@ -847,7 +847,7 @@
                 },
                 "examples" : {
                   "expense-list" : {
-                    "value" : "[{\"id\":2,\"date\":\"2026-05-10\",\"itemName\":\"장미 100송이\",\"category\":\"flower_purchase\",\"unitPrice\":5000,\"quantity\":3,\"totalAmount\":15000,\"paymentMethod\":\"card\",\"cardCompany\":\"신한카드\",\"vendor\":\"양재 꽃시장\",\"note\":null,\"recurringId\":null,\"isRecurringModified\":false,\"createdAt\":\"2026-05-27T14:45:20.480648Z\",\"updatedAt\":\"2026-05-27T14:45:20.480651Z\"}]"
+                    "value" : "[{\"id\":2,\"date\":\"2026-05-10\",\"itemName\":\"장미 100송이\",\"category\":\"flower_purchase\",\"unitPrice\":5000,\"quantity\":3,\"totalAmount\":15000,\"paymentMethod\":\"card\",\"cardCompany\":\"신한카드\",\"vendor\":\"양재 꽃시장\",\"note\":null,\"recurringId\":null,\"isRecurringModified\":false,\"createdAt\":\"2026-05-28T08:43:34.775750Z\",\"updatedAt\":\"2026-05-28T08:43:34.775752Z\"}]"
                   }
                 }
               }
@@ -883,11 +883,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/expenses-75081279"
+                  "$ref" : "#/components/schemas/expenses-id-75081279"
                 },
                 "examples" : {
                   "expense-create" : {
-                    "value" : "{\"id\":3,\"date\":\"2026-05-10\",\"itemName\":\"장미 100송이\",\"category\":\"flower_purchase\",\"unitPrice\":5000,\"quantity\":3,\"totalAmount\":15000,\"paymentMethod\":\"card\",\"cardCompany\":\"신한카드\",\"vendor\":\"양재 꽃시장\",\"note\":\"웨딩 준비\",\"recurringId\":null,\"isRecurringModified\":false,\"createdAt\":\"2026-05-27T14:45:20.508177Z\",\"updatedAt\":\"2026-05-27T14:45:20.508179Z\"}"
+                    "value" : "{\"id\":3,\"date\":\"2026-05-10\",\"itemName\":\"장미 100송이\",\"category\":\"flower_purchase\",\"unitPrice\":5000,\"quantity\":3,\"totalAmount\":15000,\"paymentMethod\":\"card\",\"cardCompany\":\"신한카드\",\"vendor\":\"양재 꽃시장\",\"note\":\"웨딩 준비\",\"recurringId\":null,\"isRecurringModified\":false,\"createdAt\":\"2026-05-28T08:43:34.801557Z\",\"updatedAt\":\"2026-05-28T08:43:34.801560Z\"}"
                   }
                 }
               }
@@ -948,11 +948,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/expenses-75081279"
+                  "$ref" : "#/components/schemas/expenses-id-75081279"
                 },
                 "examples" : {
                   "expense-get" : {
-                    "value" : "{\"id\":6,\"date\":\"2026-05-10\",\"itemName\":\"장미 100송이\",\"category\":\"flower_purchase\",\"unitPrice\":5000,\"quantity\":3,\"totalAmount\":15000,\"paymentMethod\":\"card\",\"cardCompany\":\"신한카드\",\"vendor\":\"양재 꽃시장\",\"note\":null,\"recurringId\":null,\"isRecurringModified\":false,\"createdAt\":\"2026-05-27T14:45:20.580595Z\",\"updatedAt\":\"2026-05-27T14:45:20.580597Z\"}"
+                    "value" : "{\"id\":6,\"date\":\"2026-05-10\",\"itemName\":\"장미 100송이\",\"category\":\"flower_purchase\",\"unitPrice\":5000,\"quantity\":3,\"totalAmount\":15000,\"paymentMethod\":\"card\",\"cardCompany\":\"신한카드\",\"vendor\":\"양재 꽃시장\",\"note\":null,\"recurringId\":null,\"isRecurringModified\":false,\"createdAt\":\"2026-05-28T08:43:34.882395Z\",\"updatedAt\":\"2026-05-28T08:43:34.882399Z\"}"
                   }
                 }
               }
@@ -1020,11 +1020,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/expenses-75081279"
+                  "$ref" : "#/components/schemas/expenses-id-75081279"
                 },
                 "examples" : {
                   "expense-update" : {
-                    "value" : "{\"id\":5,\"date\":\"2026-05-10\",\"itemName\":\"장미 100송이\",\"category\":\"flower_purchase\",\"unitPrice\":10000,\"quantity\":2,\"totalAmount\":20000,\"paymentMethod\":\"card\",\"cardCompany\":\"신한카드\",\"vendor\":\"양재 꽃시장\",\"note\":\"수정된 비고\",\"recurringId\":null,\"isRecurringModified\":false,\"createdAt\":\"2026-05-27T14:45:20.552283Z\",\"updatedAt\":\"2026-05-27T14:45:20.552285Z\"}"
+                    "value" : "{\"id\":5,\"date\":\"2026-05-10\",\"itemName\":\"장미 100송이\",\"category\":\"flower_purchase\",\"unitPrice\":10000,\"quantity\":2,\"totalAmount\":20000,\"paymentMethod\":\"card\",\"cardCompany\":\"신한카드\",\"vendor\":\"양재 꽃시장\",\"note\":\"수정된 비고\",\"recurringId\":null,\"isRecurringModified\":false,\"createdAt\":\"2026-05-28T08:43:34.848546Z\",\"updatedAt\":\"2026-05-28T08:43:34.848550Z\"}"
                   }
                 }
               }
@@ -1052,7 +1052,7 @@
                 },
                 "examples" : {
                   "health-check" : {
-                    "value" : "{\"status\":\"UP\",\"service\":\"flori-ai-server\",\"time\":\"2026-05-27T23:45:19.269466+09:00\"}"
+                    "value" : "{\"status\":\"UP\",\"service\":\"flori-ai-server\",\"time\":\"2026-05-28T17:43:33.53418+09:00\"}"
                   }
                 }
               }
@@ -1105,7 +1105,7 @@
                 },
                 "examples" : {
                   "insight-posts-list" : {
-                    "value" : "[{\"id\":1,\"accountId\":1,\"shortcode\":\"DOCSaa796ce0\",\"permalink\":\"https://www.instagram.com/p/docs_test/\",\"imageUrls\":[\"https://cdn.example.com/docs-img.jpg\"],\"caption\":\"봄 꽃꽂이 트렌드\",\"likeCount\":99,\"postedAt\":\"2026-05-27T14:45:21.521954Z\",\"account\":{\"id\":1,\"username\":\"heartmadebykigpcn\",\"displayName\":\"Heart Made by KIG\",\"profileUrl\":\"https://www.instagram.com/heartmadebykigpcn\",\"region\":\"international\",\"sortOrder\":10,\"active\":true,\"notes\":null}}]"
+                    "value" : "[{\"id\":1,\"accountId\":1,\"shortcode\":\"DOCSa4d48013\",\"permalink\":\"https://www.instagram.com/p/docs_test/\",\"imageUrls\":[\"https://cdn.example.com/docs-img.jpg\"],\"caption\":\"봄 꽃꽂이 트렌드\",\"likeCount\":99,\"postedAt\":\"2026-05-28T08:43:36.010412Z\",\"account\":{\"id\":1,\"username\":\"heartmadebykigpcn\",\"displayName\":\"Heart Made by KIG\",\"profileUrl\":\"https://www.instagram.com/heartmadebykigpcn\",\"region\":\"international\",\"sortOrder\":10,\"active\":true,\"notes\":null}}]"
                   }
                 }
               }
@@ -1133,7 +1133,7 @@
                 },
                 "examples" : {
                   "insight-trends-list" : {
-                    "value" : "[{\"id\":1,\"category\":\"flower\",\"title\":\"플로리스트를 위한 flower 트렌드\",\"summary\":\"flower 봄 시즌 인사이트 요약\",\"keyPoints\":[\"핵심 포인트1\",\"핵심 포인트2\"],\"sourceUrl\":\"https://seed.docs.example.com/eaa9f493-fae0-4fab-9130-39b4a6ac64bf\",\"sourceName\":\"FlowerTrend\",\"publishedAt\":\"2026-05-27T14:45:21.452444Z\",\"collectedAt\":\"2026-05-27\",\"createdAt\":\"2026-05-27T14:45:21.454727Z\"}]"
+                    "value" : "[{\"id\":1,\"category\":\"flower\",\"title\":\"플로리스트를 위한 flower 트렌드\",\"summary\":\"flower 봄 시즌 인사이트 요약\",\"keyPoints\":[\"핵심 포인트1\",\"핵심 포인트2\"],\"sourceUrl\":\"https://seed.docs.example.com/8d2909e4-2642-4514-9224-9c6b94575a41\",\"sourceName\":\"FlowerTrend\",\"publishedAt\":\"2026-05-28T08:43:35.938030Z\",\"collectedAt\":\"2026-05-28\",\"createdAt\":\"2026-05-28T08:43:35.940642Z\"}]"
                   }
                 }
               }
@@ -1231,7 +1231,7 @@
                 },
                 "examples" : {
                   "scrap-memo-update" : {
-                    "value" : "{\"id\":5,\"targetType\":\"trend\",\"targetId\":10,\"memo\":\"나중에 다시 읽을 것\",\"createdAt\":\"2026-05-27T14:45:22.220650Z\",\"updatedAt\":\"2026-05-27T14:45:22.220652Z\"}"
+                    "value" : "{\"id\":5,\"targetType\":\"trend\",\"targetId\":10,\"memo\":\"나중에 다시 읽을 것\",\"createdAt\":\"2026-05-28T08:43:36.750824Z\",\"updatedAt\":\"2026-05-28T08:43:36.750826Z\"}"
                   }
                 }
               }
@@ -1259,7 +1259,7 @@
                 },
                 "examples" : {
                   "scrap-post-list" : {
-                    "value" : "[{\"scrap\":{\"id\":6,\"targetType\":\"post\",\"targetId\":2,\"memo\":null,\"createdAt\":\"2026-05-27T14:45:22.251418Z\",\"updatedAt\":\"2026-05-27T14:45:22.251420Z\"},\"post\":{\"id\":2,\"accountId\":1,\"shortcode\":\"SCRAP37570554\",\"permalink\":\"https://www.instagram.com/p/scrap_test/\",\"imageUrls\":[\"https://cdn.example.com/scrap-img.jpg\"],\"caption\":\"스크랩 문서화용 포스트\",\"likeCount\":42,\"postedAt\":\"2026-05-27T14:45:22.236642Z\",\"account\":{\"id\":1,\"username\":\"heartmadebykigpcn\",\"displayName\":\"Heart Made by KIG\",\"profileUrl\":\"https://www.instagram.com/heartmadebykigpcn\",\"region\":\"international\",\"sortOrder\":10,\"active\":true,\"notes\":null}}}]"
+                    "value" : "[{\"scrap\":{\"id\":6,\"targetType\":\"post\",\"targetId\":2,\"memo\":null,\"createdAt\":\"2026-05-28T08:43:36.781666Z\",\"updatedAt\":\"2026-05-28T08:43:36.781667Z\"},\"post\":{\"id\":2,\"accountId\":1,\"shortcode\":\"SCRAPaf6aac13\",\"permalink\":\"https://www.instagram.com/p/scrap_test/\",\"imageUrls\":[\"https://cdn.example.com/scrap-img.jpg\"],\"caption\":\"스크랩 문서화용 포스트\",\"likeCount\":42,\"postedAt\":\"2026-05-28T08:43:36.765799Z\",\"account\":{\"id\":1,\"username\":\"heartmadebykigpcn\",\"displayName\":\"Heart Made by KIG\",\"profileUrl\":\"https://www.instagram.com/heartmadebykigpcn\",\"region\":\"international\",\"sortOrder\":10,\"active\":true,\"notes\":null}}}]"
                   }
                 }
               }
@@ -1329,7 +1329,7 @@
                 },
                 "examples" : {
                   "scrap-trend-list" : {
-                    "value" : "[{\"scrap\":{\"id\":4,\"targetType\":\"trend\",\"targetId\":9,\"memo\":null,\"createdAt\":\"2026-05-27T14:45:22.190983Z\",\"updatedAt\":\"2026-05-27T14:45:22.190985Z\"},\"article\":{\"id\":9,\"category\":\"flower\",\"title\":\"스크랩 테스트용 트렌드\",\"summary\":\"스크랩 문서화용 트렌드 요약\",\"keyPoints\":[],\"sourceUrl\":\"https://scrap.docs.example.com/0ca6fe1d-3fb8-4a86-a3e5-ece7ccd772b5\",\"sourceName\":null,\"publishedAt\":null,\"collectedAt\":\"2026-05-27\",\"createdAt\":\"2026-05-27T14:45:22.178275Z\"}}]"
+                    "value" : "[{\"scrap\":{\"id\":4,\"targetType\":\"trend\",\"targetId\":9,\"memo\":null,\"createdAt\":\"2026-05-28T08:43:36.720400Z\",\"updatedAt\":\"2026-05-28T08:43:36.720402Z\"},\"article\":{\"id\":9,\"category\":\"flower\",\"title\":\"스크랩 테스트용 트렌드\",\"summary\":\"스크랩 문서화용 트렌드 요약\",\"keyPoints\":[],\"sourceUrl\":\"https://scrap.docs.example.com/8dd3d14d-0c8f-4ecf-b517-63e6bd77224e\",\"sourceName\":null,\"publishedAt\":null,\"collectedAt\":\"2026-05-28\",\"createdAt\":\"2026-05-28T08:43:36.707363Z\"}}]"
                   }
                 }
               }
@@ -1357,7 +1357,7 @@
                 },
                 "examples" : {
                   "insight-trends-recent" : {
-                    "value" : "{\"flower\":[{\"id\":2,\"category\":\"flower\",\"title\":\"플로리스트를 위한 flower 트렌드\",\"summary\":\"flower 봄 시즌 인사이트 요약\",\"keyPoints\":[\"핵심 포인트1\",\"핵심 포인트2\"],\"sourceUrl\":\"https://seed.docs.example.com/bdd55119-369f-49e3-9aa5-479e149821b1\",\"sourceName\":\"FlowerTrend\",\"publishedAt\":\"2026-05-27T14:45:21.480372Z\",\"collectedAt\":\"2026-05-27\",\"createdAt\":\"2026-05-27T14:45:21.482361Z\"},{\"id\":1,\"category\":\"flower\",\"title\":\"플로리스트를 위한 flower 트렌드\",\"summary\":\"flower 봄 시즌 인사이트 요약\",\"keyPoints\":[\"핵심 포인트1\",\"핵심 포인트2\"],\"sourceUrl\":\"https://seed.docs.example.com/eaa9f493-fae0-4fab-9130-39b4a6ac64bf\",\"sourceName\":\"FlowerTrend\",\"publishedAt\":\"2026-05-27T14:45:21.452444Z\",\"collectedAt\":\"2026-05-27\",\"createdAt\":\"2026-05-27T14:45:21.454727Z\"}],\"inspiration\":[{\"id\":3,\"category\":\"inspiration\",\"title\":\"플로리스트를 위한 inspiration 트렌드\",\"summary\":\"inspiration 봄 시즌 인사이트 요약\",\"keyPoints\":[\"핵심 포인트1\",\"핵심 포인트2\"],\"sourceUrl\":\"https://seed.docs.example.com/0e66c49d-97f3-47a7-9e11-6b8cd6c247b0\",\"sourceName\":\"FlowerTrend\",\"publishedAt\":\"2026-05-27T14:45:21.484062Z\",\"collectedAt\":\"2026-05-27\",\"createdAt\":\"2026-05-27T14:45:21.485688Z\"}],\"business\":[{\"id\":4,\"category\":\"business\",\"title\":\"플로리스트를 위한 business 트렌드\",\"summary\":\"business 봄 시즌 인사이트 요약\",\"keyPoints\":[\"핵심 포인트1\",\"핵심 포인트2\"],\"sourceUrl\":\"https://seed.docs.example.com/4143bc3e-b929-480d-9747-2751098f69fc\",\"sourceName\":\"FlowerTrend\",\"publishedAt\":\"2026-05-27T14:45:21.487119Z\",\"collectedAt\":\"2026-05-27\",\"createdAt\":\"2026-05-27T14:45:21.488639Z\"}],\"industry\":[{\"id\":5,\"category\":\"industry\",\"title\":\"플로리스트를 위한 industry 트렌드\",\"summary\":\"industry 봄 시즌 인사이트 요약\",\"keyPoints\":[\"핵심 포인트1\",\"핵심 포인트2\"],\"sourceUrl\":\"https://seed.docs.example.com/45edce5a-6bb7-406a-a468-54d754431e22\",\"sourceName\":\"FlowerTrend\",\"publishedAt\":\"2026-05-27T14:45:21.490058Z\",\"collectedAt\":\"2026-05-27\",\"createdAt\":\"2026-05-27T14:45:21.491805Z\"}]}"
+                    "value" : "{\"flower\":[{\"id\":2,\"category\":\"flower\",\"title\":\"플로리스트를 위한 flower 트렌드\",\"summary\":\"flower 봄 시즌 인사이트 요약\",\"keyPoints\":[\"핵심 포인트1\",\"핵심 포인트2\"],\"sourceUrl\":\"https://seed.docs.example.com/a28005ac-e4ae-4d63-a054-433e46759247\",\"sourceName\":\"FlowerTrend\",\"publishedAt\":\"2026-05-28T08:43:35.968591Z\",\"collectedAt\":\"2026-05-28\",\"createdAt\":\"2026-05-28T08:43:35.970785Z\"},{\"id\":1,\"category\":\"flower\",\"title\":\"플로리스트를 위한 flower 트렌드\",\"summary\":\"flower 봄 시즌 인사이트 요약\",\"keyPoints\":[\"핵심 포인트1\",\"핵심 포인트2\"],\"sourceUrl\":\"https://seed.docs.example.com/8d2909e4-2642-4514-9224-9c6b94575a41\",\"sourceName\":\"FlowerTrend\",\"publishedAt\":\"2026-05-28T08:43:35.938030Z\",\"collectedAt\":\"2026-05-28\",\"createdAt\":\"2026-05-28T08:43:35.940642Z\"}],\"inspiration\":[{\"id\":3,\"category\":\"inspiration\",\"title\":\"플로리스트를 위한 inspiration 트렌드\",\"summary\":\"inspiration 봄 시즌 인사이트 요약\",\"keyPoints\":[\"핵심 포인트1\",\"핵심 포인트2\"],\"sourceUrl\":\"https://seed.docs.example.com/c9f3f944-2f8c-4d65-be57-4bffef9751f0\",\"sourceName\":\"FlowerTrend\",\"publishedAt\":\"2026-05-28T08:43:35.972489Z\",\"collectedAt\":\"2026-05-28\",\"createdAt\":\"2026-05-28T08:43:35.974215Z\"}],\"business\":[{\"id\":4,\"category\":\"business\",\"title\":\"플로리스트를 위한 business 트렌드\",\"summary\":\"business 봄 시즌 인사이트 요약\",\"keyPoints\":[\"핵심 포인트1\",\"핵심 포인트2\"],\"sourceUrl\":\"https://seed.docs.example.com/85d55179-7157-4e8b-9e81-115141003f81\",\"sourceName\":\"FlowerTrend\",\"publishedAt\":\"2026-05-28T08:43:35.975908Z\",\"collectedAt\":\"2026-05-28\",\"createdAt\":\"2026-05-28T08:43:35.977640Z\"}],\"industry\":[{\"id\":5,\"category\":\"industry\",\"title\":\"플로리스트를 위한 industry 트렌드\",\"summary\":\"industry 봄 시즌 인사이트 요약\",\"keyPoints\":[\"핵심 포인트1\",\"핵심 포인트2\"],\"sourceUrl\":\"https://seed.docs.example.com/495305b7-8b8a-4161-8a9f-38c38c710865\",\"sourceName\":\"FlowerTrend\",\"publishedAt\":\"2026-05-28T08:43:35.979042Z\",\"collectedAt\":\"2026-05-28\",\"createdAt\":\"2026-05-28T08:43:35.980674Z\"}]}"
                   }
                 }
               }
@@ -1383,7 +1383,7 @@
               },
               "examples" : {
                 "internal-create-instagram-account" : {
-                  "value" : "{\"username\":\"docs_create_6babf1fd\",\"displayName\":\"문서화 테스트 계정\",\"region\":\"domestic\",\"sortOrder\":5,\"active\":true,\"notes\":\"문서화용 계정\"}"
+                  "value" : "{\"username\":\"docs_create_33815452\",\"displayName\":\"문서화 테스트 계정\",\"region\":\"domestic\",\"sortOrder\":5,\"active\":true,\"notes\":\"문서화용 계정\"}"
                 }
               }
             }
@@ -1395,11 +1395,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/internal-instagram-accounts-1299620064"
+                  "$ref" : "#/components/schemas/internal-instagram-accounts-id-1299620064"
                 },
                 "examples" : {
                   "internal-create-instagram-account" : {
-                    "value" : "{\"id\":17,\"username\":\"docs_create_6babf1fd\",\"displayName\":\"문서화 테스트 계정\",\"profileUrl\":\"https://www.instagram.com/docs_create_6babf1fd\",\"region\":\"domestic\",\"sortOrder\":5,\"active\":true,\"notes\":\"문서화용 계정\"}"
+                    "value" : "{\"id\":17,\"username\":\"docs_create_33815452\",\"displayName\":\"문서화 테스트 계정\",\"profileUrl\":\"https://www.instagram.com/docs_create_33815452\",\"region\":\"domestic\",\"sortOrder\":5,\"active\":true,\"notes\":\"문서화용 계정\"}"
                   }
                 }
               }
@@ -1422,7 +1422,7 @@
               },
               "examples" : {
                 "internal-ingest-instagram-posts" : {
-                  "value" : "{\"posts\":[{\"accountId\":17,\"shortcode\":\"DOCSc850bdb2\",\"permalink\":\"https://www.instagram.com/p/docs_post/\",\"imageUrls\":[\"https://cdn.example.com/img1.jpg\"],\"caption\":\"봄 꽃꽂이 인스피레이션\",\"likeCount\":128,\"postedAt\":\"2026-05-27T14:45:22.044270Z\"}]}"
+                  "value" : "{\"posts\":[{\"accountId\":17,\"shortcode\":\"DOCSaae2bffa\",\"permalink\":\"https://www.instagram.com/p/docs_post/\",\"imageUrls\":[\"https://cdn.example.com/img1.jpg\"],\"caption\":\"봄 꽃꽂이 인스피레이션\",\"likeCount\":128,\"postedAt\":\"2026-05-28T08:43:36.571333Z\"}]}"
                 }
               }
             }
@@ -1461,7 +1461,7 @@
               },
               "examples" : {
                 "internal-ingest-trends" : {
-                  "value" : "{\"articles\":[{\"category\":\"flower\",\"title\":\"봄 꽃꽂이 글로벌 트렌드\",\"summary\":\"2026년 봄 시즌 글로벌 플로럴 디자인 트렌드 요약\",\"keyPoints\":[\"자연주의 스타일 부상\",\"지속가능성 강조\"],\"sourceUrl\":\"https://example.com/trend/2c7f4190-6f42-45e8-98c8-40b1906d6f51\",\"sourceName\":\"FlowerTrend Magazine\",\"publishedAt\":\"2026-05-27T14:45:21.970121Z\"}]}"
+                  "value" : "{\"articles\":[{\"category\":\"flower\",\"title\":\"봄 꽃꽂이 글로벌 트렌드\",\"summary\":\"2026년 봄 시즌 글로벌 플로럴 디자인 트렌드 요약\",\"keyPoints\":[\"자연주의 스타일 부상\",\"지속가능성 강조\"],\"sourceUrl\":\"https://example.com/trend/7a8dbb51-e459-4398-af6a-54058f0c5e06\",\"sourceName\":\"FlowerTrend Magazine\",\"publishedAt\":\"2026-05-28T08:43:36.483095Z\"}]}"
                 }
               }
             }
@@ -1521,11 +1521,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/internal-instagram-accounts-1299620064"
+                  "$ref" : "#/components/schemas/internal-instagram-accounts-id-1299620064"
                 },
                 "examples" : {
                   "internal-update-instagram-account" : {
-                    "value" : "{\"id\":18,\"username\":\"docs_update_166d0cc0\",\"displayName\":\"수정된 표시명\",\"profileUrl\":\"https://www.instagram.com/docs_update_166d0cc0\",\"region\":\"domestic\",\"sortOrder\":10,\"active\":false,\"notes\":\"수정된 메모\"}"
+                    "value" : "{\"id\":18,\"username\":\"docs_update_a03b8cda\",\"displayName\":\"수정된 표시명\",\"profileUrl\":\"https://www.instagram.com/docs_update_a03b8cda\",\"region\":\"domestic\",\"sortOrder\":10,\"active\":false,\"notes\":\"수정된 메모\"}"
                   }
                 }
               }
@@ -1566,11 +1566,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/me-1042293125"
+                  "$ref" : "#/components/schemas/me821040093"
                 },
                 "examples" : {
                   "me-get" : {
-                    "value" : "{\"id\":3,\"email\":\"user-abf865d5-31e2-4fe9-89c5-918771f15a89@flori.dev\",\"name\":\"사장님\",\"onboarded\":true,\"profile\":{\"storeName\":\"테스트 가게\",\"regionSido\":\"서울특별시\",\"regionSigungu\":null,\"ownerAgeRange\":null,\"interests\":[],\"specialties\":[]}}"
+                    "value" : "{\"id\":3,\"email\":\"user-489f3e8f-143e-407d-ae59-79767da594c4@flori.dev\",\"name\":\"사장님\",\"profile\":{\"storeName\":\"테스트 가게\",\"regionSido\":\"서울특별시\",\"regionSigungu\":null,\"ownerAgeRange\":null,\"interests\":[],\"specialties\":[]}}"
                   }
                 }
               }
@@ -1596,7 +1596,7 @@
               },
               "examples" : {
                 "me-email-update" : {
-                  "value" : "{\"email\":\"updated-a2059a8b-07bb-42d0-b44c-ea255ee988a7@flori.dev\"}"
+                  "value" : "{\"email\":\"updated-cdeba86e-759b-4baa-b4c2-82e634850dc5@flori.dev\"}"
                 }
               }
             }
@@ -1608,11 +1608,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/me-email1747291720"
+                  "$ref" : "#/components/schemas/me-email-1473368019"
                 },
                 "examples" : {
                   "me-email-update" : {
-                    "value" : "{\"id\":4,\"email\":\"updated-a2059a8b-07bb-42d0-b44c-ea255ee988a7@flori.dev\",\"name\":\"사장님\",\"onboarded\":true,\"profile\":{\"storeName\":\"테스트 가게\",\"regionSido\":\"서울특별시\",\"regionSigungu\":null,\"ownerAgeRange\":null,\"interests\":[],\"specialties\":[]}}"
+                    "value" : "{\"id\":4,\"email\":\"updated-cdeba86e-759b-4baa-b4c2-82e634850dc5@flori.dev\",\"name\":\"사장님\",\"profile\":{\"storeName\":\"테스트 가게\",\"regionSido\":\"서울특별시\",\"regionSigungu\":null,\"ownerAgeRange\":null,\"interests\":[],\"specialties\":[]}}"
                   }
                 }
               }
@@ -1650,11 +1650,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/me-profile513993502"
+                  "$ref" : "#/components/schemas/me-profile-1428220914"
                 },
                 "examples" : {
                   "me-profile-update" : {
-                    "value" : "{\"id\":106,\"email\":\"user-6c5632be-f4cf-443a-9242-861469a06e2a@flori.dev\",\"name\":\"사장님\",\"onboarded\":true,\"profile\":{\"storeName\":\"헤이즐 플라워\",\"regionSido\":\"서울특별시\",\"regionSigungu\":\"강남구\",\"ownerAgeRange\":\"30대\",\"interests\":[\"웨딩\",\"개업화환\"],\"specialties\":[\"꽃다발\",\"화분\"]}}"
+                    "value" : "{\"id\":106,\"email\":\"user-e2263aef-ffbe-47b9-8eaf-8322b431520e@flori.dev\",\"name\":\"사장님\",\"profile\":{\"storeName\":\"헤이즐 플라워\",\"regionSido\":\"서울특별시\",\"regionSigungu\":\"강남구\",\"ownerAgeRange\":\"30대\",\"interests\":[\"웨딩\",\"개업화환\"],\"specialties\":[\"꽃다발\",\"화분\"]}}"
                   }
                 }
               }
@@ -1682,7 +1682,7 @@
                 },
                 "examples" : {
                   "photo-card-list" : {
-                    "value" : "{\"cards\":[{\"id\":6,\"title\":\"결혼식 부케\",\"description\":\"봄 웨딩 부케 작업\",\"tags\":[\"웨딩\",\"부케\"],\"photos\":[],\"saleId\":null,\"createdAt\":\"2026-05-27T14:45:22.652618Z\",\"updatedAt\":\"2026-05-27T14:45:22.652620Z\"}],\"nextCursor\":null,\"hasMore\":false}"
+                    "value" : "{\"cards\":[{\"id\":6,\"title\":\"결혼식 부케\",\"description\":\"봄 웨딩 부케 작업\",\"tags\":[\"웨딩\",\"부케\"],\"photos\":[],\"saleId\":null,\"createdAt\":\"2026-05-28T08:43:37.194742Z\",\"updatedAt\":\"2026-05-28T08:43:37.194743Z\"}],\"nextCursor\":null,\"hasMore\":false}"
                   }
                 }
               }
@@ -1722,7 +1722,7 @@
                 },
                 "examples" : {
                   "photo-card-create" : {
-                    "value" : "{\"id\":2,\"title\":\"가을 꽃다발\",\"description\":\"국화 혼합 꽃다발\",\"tags\":[\"꽃다발\",\"가을\"],\"photos\":[{\"url\":\"https://cdn.example.com/photo1.jpg\",\"originalName\":\"photo1.jpg\"}],\"saleId\":null,\"createdAt\":\"2026-05-27T14:45:22.552730Z\",\"updatedAt\":\"2026-05-27T14:45:22.552732Z\"}"
+                    "value" : "{\"id\":2,\"title\":\"가을 꽃다발\",\"description\":\"국화 혼합 꽃다발\",\"tags\":[\"꽃다발\",\"가을\"],\"photos\":[{\"url\":\"https://cdn.example.com/photo1.jpg\",\"originalName\":\"photo1.jpg\"}],\"saleId\":null,\"createdAt\":\"2026-05-28T08:43:37.099542Z\",\"updatedAt\":\"2026-05-28T08:43:37.099543Z\"}"
                   }
                 }
               }
@@ -1759,7 +1759,7 @@
                 },
                 "examples" : {
                   "photo-card-get" : {
-                    "value" : "{\"id\":8,\"title\":\"결혼식 부케\",\"description\":\"봄 웨딩 부케 작업\",\"tags\":[\"웨딩\",\"부케\"],\"photos\":[],\"saleId\":null,\"createdAt\":\"2026-05-27T14:45:22.725893Z\",\"updatedAt\":\"2026-05-27T14:45:22.725895Z\"}"
+                    "value" : "{\"id\":8,\"title\":\"결혼식 부케\",\"description\":\"봄 웨딩 부케 작업\",\"tags\":[\"웨딩\",\"부케\"],\"photos\":[],\"saleId\":null,\"createdAt\":\"2026-05-28T08:43:37.270626Z\",\"updatedAt\":\"2026-05-28T08:43:37.270628Z\"}"
                   }
                 }
               }
@@ -1843,7 +1843,7 @@
                 },
                 "examples" : {
                   "photo-card-update" : {
-                    "value" : "{\"id\":5,\"title\":\"수정된 부케\",\"description\":\"봄 웨딩 부케 작업\",\"tags\":[\"웨딩\",\"봄\",\"수정\"],\"photos\":[],\"saleId\":null,\"createdAt\":\"2026-05-27T14:45:22.624505Z\",\"updatedAt\":\"2026-05-27T14:45:22.624507Z\"}"
+                    "value" : "{\"id\":5,\"title\":\"수정된 부케\",\"description\":\"봄 웨딩 부케 작업\",\"tags\":[\"웨딩\",\"봄\",\"수정\"],\"photos\":[],\"saleId\":null,\"createdAt\":\"2026-05-28T08:43:37.167329Z\",\"updatedAt\":\"2026-05-28T08:43:37.167331Z\"}"
                   }
                 }
               }
@@ -1880,7 +1880,7 @@
                 },
                 "examples" : {
                   "photo-card-by-sale-found" : {
-                    "value" : "{\"id\":1,\"title\":\"매출 연결 카드\",\"description\":null,\"tags\":[],\"photos\":[],\"saleId\":8,\"createdAt\":\"2026-05-27T14:45:22.503900Z\",\"updatedAt\":\"2026-05-27T14:45:22.503901Z\"}"
+                    "value" : "{\"id\":1,\"title\":\"매출 연결 카드\",\"description\":null,\"tags\":[],\"photos\":[],\"saleId\":8,\"createdAt\":\"2026-05-28T08:43:37.032670Z\",\"updatedAt\":\"2026-05-28T08:43:37.032673Z\"}"
                   }
                 }
               }
@@ -1914,7 +1914,7 @@
           "content" : {
             "application/x-www-form-urlencoded" : {
               "schema" : {
-                "$ref" : "#/components/schemas/photo-cards-id-photos486549215"
+                "$ref" : "#/components/schemas/push-unsubscribe486549215"
               },
               "examples" : {
                 "photo-card-delete-photo" : {
@@ -1934,7 +1934,7 @@
                 },
                 "examples" : {
                   "photo-card-delete-photo" : {
-                    "value" : "{\"id\":7,\"title\":\"사진삭제 테스트\",\"description\":null,\"tags\":[],\"photos\":[],\"saleId\":null,\"createdAt\":\"2026-05-27T14:45:22.700399Z\",\"updatedAt\":\"2026-05-27T14:45:22.700400Z\"}"
+                    "value" : "{\"id\":7,\"title\":\"사진삭제 테스트\",\"description\":null,\"tags\":[],\"photos\":[],\"saleId\":null,\"createdAt\":\"2026-05-28T08:43:37.245010Z\",\"updatedAt\":\"2026-05-28T08:43:37.245012Z\"}"
                   }
                 }
               }
@@ -1985,7 +1985,7 @@
                 },
                 "examples" : {
                   "photo-card-upload-targets" : {
-                    "value" : "[{\"uploadUrl\":\"https://flori-test-bucket.s3.ap-northeast-2.amazonaws.com/photo-cards/1/4fd53418-6465-4dee-b88c-56ba36cfee0a-flower.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260527T144523Z&X-Amz-SignedHeaders=content-type%3Bhost&X-Amz-Credential=dummy-access-key-id%2F20260527%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=300&X-Amz-Signature=f47cd3ab4fcdb464a19cada3111812ef1b71affdb19c6d9509f416b7fc6cbfb2\",\"fileUrl\":\"https://cdn.flori.dev/photo-cards/1/4fd53418-6465-4dee-b88c-56ba36cfee0a-flower.jpg\",\"originalName\":\"flower.jpg\"}]"
+                    "value" : "[{\"uploadUrl\":\"https://flori-test-bucket.s3.ap-northeast-2.amazonaws.com/photo-cards/1/85667499-d7e5-44ae-b7fe-71e56f1cddaa-flower.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260528T084337Z&X-Amz-SignedHeaders=content-type%3Bhost&X-Amz-Credential=dummy-access-key-id%2F20260528%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=300&X-Amz-Signature=9ed18941b21ffc6350bec4e92fadb0c9939a22edbf9543da41672391612299a6\",\"fileUrl\":\"https://cdn.flori.dev/photo-cards/1/85667499-d7e5-44ae-b7fe-71e56f1cddaa-flower.jpg\",\"originalName\":\"flower.jpg\"}]"
                   }
                 }
               }
@@ -2036,7 +2036,7 @@
                 },
                 "examples" : {
                   "photo-card-reorder" : {
-                    "value" : "{\"id\":4,\"title\":\"순서변경 테스트\",\"description\":null,\"tags\":[],\"photos\":[{\"url\":\"https://cdn.example.com/b.jpg\",\"originalName\":\"b.jpg\"},{\"url\":\"https://cdn.example.com/a.jpg\",\"originalName\":\"a.jpg\"}],\"saleId\":null,\"createdAt\":\"2026-05-27T14:45:22.594510Z\",\"updatedAt\":\"2026-05-27T14:45:22.594511Z\"}"
+                    "value" : "{\"id\":4,\"title\":\"순서변경 테스트\",\"description\":null,\"tags\":[],\"photos\":[{\"url\":\"https://cdn.example.com/b.jpg\",\"originalName\":\"b.jpg\"},{\"url\":\"https://cdn.example.com/a.jpg\",\"originalName\":\"a.jpg\"}],\"saleId\":null,\"createdAt\":\"2026-05-28T08:43:37.139125Z\",\"updatedAt\":\"2026-05-28T08:43:37.139127Z\"}"
                   }
                 }
               }
@@ -2064,7 +2064,7 @@
                 },
                 "examples" : {
                   "photo-tag-list" : {
-                    "value" : "[{\"id\":3,\"name\":\"부케\",\"color\":\"#3366ff\",\"createdAt\":\"2026-05-27T14:45:22.785789Z\"},{\"id\":2,\"name\":\"웨딩\",\"color\":\"#ff5733\",\"createdAt\":\"2026-05-27T14:45:22.781654Z\"}]"
+                    "value" : "[{\"id\":3,\"name\":\"부케\",\"color\":\"#3366ff\",\"createdAt\":\"2026-05-28T08:43:37.330889Z\"},{\"id\":2,\"name\":\"웨딩\",\"color\":\"#ff5733\",\"createdAt\":\"2026-05-28T08:43:37.326691Z\"}]"
                   }
                 }
               }
@@ -2104,7 +2104,7 @@
                 },
                 "examples" : {
                   "photo-tag-create" : {
-                    "value" : "{\"id\":4,\"name\":\"행사\",\"color\":\"#4caf50\",\"createdAt\":\"2026-05-27T14:45:22.806087Z\"}"
+                    "value" : "{\"id\":4,\"name\":\"행사\",\"color\":\"#4caf50\",\"createdAt\":\"2026-05-28T08:43:37.352440Z\"}"
                   }
                 }
               }
@@ -2155,7 +2155,7 @@
                 },
                 "examples" : {
                   "photo-tag-update" : {
-                    "value" : "{\"id\":1,\"name\":\"수정후태그\",\"color\":\"#1565c0\",\"createdAt\":\"2026-05-27T14:45:22.755872Z\"}"
+                    "value" : "{\"id\":1,\"name\":\"수정후태그\",\"color\":\"#1565c0\",\"createdAt\":\"2026-05-28T08:43:37.300087Z\"}"
                   }
                 }
               }
@@ -2232,7 +2232,7 @@
               },
               "examples" : {
                 "push-subscribe" : {
-                  "value" : "{\"endpoint\":\"fcm-token-255201364102291\",\"p256dh\":\"BNcRdreALRFXTkOOUHK1EtK2wtZ\",\"auth\":\"tBHItJI5svbpez7KI4CCXg\",\"userAgent\":\"Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)\"}"
+                  "value" : "{\"endpoint\":\"fcm-token-270583147657666\",\"p256dh\":\"BNcRdreALRFXTkOOUHK1EtK2wtZ\",\"auth\":\"tBHItJI5svbpez7KI4CCXg\",\"userAgent\":\"Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)\"}"
                 }
               }
             }
@@ -2258,11 +2258,11 @@
           "content" : {
             "application/x-www-form-urlencoded" : {
               "schema" : {
-                "$ref" : "#/components/schemas/photo-cards-id-photos486549215"
+                "$ref" : "#/components/schemas/push-unsubscribe486549215"
               },
               "examples" : {
                 "push-unsubscribe" : {
-                  "value" : "endpoint=fcm-unsubscribe-token-255201315959458"
+                  "value" : "endpoint=fcm-unsubscribe-token-270583101435416"
                 }
               }
             }
@@ -2294,7 +2294,7 @@
                 },
                 "examples" : {
                   "recurring-expense-list" : {
-                    "value" : "[{\"id\":3,\"itemName\":\"월세\",\"category\":\"rent\",\"unitPrice\":500000,\"quantity\":1,\"paymentMethod\":\"transfer\",\"vendor\":null,\"note\":null,\"frequency\":\"monthly\",\"intervalCount\":1,\"daysOfWeek\":[],\"daysOfMonth\":[15],\"yearlyDates\":[],\"startDate\":\"2026-01-01\",\"endDate\":null,\"isActive\":true,\"createdAt\":\"2026-05-27T14:45:20.694166Z\",\"updatedAt\":\"2026-05-27T14:45:20.694167Z\"}]"
+                    "value" : "[{\"id\":3,\"itemName\":\"월세\",\"category\":\"rent\",\"unitPrice\":500000,\"quantity\":1,\"paymentMethod\":\"transfer\",\"vendor\":null,\"note\":null,\"frequency\":\"monthly\",\"intervalCount\":1,\"daysOfWeek\":[],\"daysOfMonth\":[15],\"yearlyDates\":[],\"startDate\":\"2026-01-01\",\"endDate\":null,\"isActive\":true,\"createdAt\":\"2026-05-28T08:43:35.008663Z\",\"updatedAt\":\"2026-05-28T08:43:35.008666Z\"}]"
                   }
                 }
               }
@@ -2334,7 +2334,7 @@
                 },
                 "examples" : {
                   "recurring-expense-create" : {
-                    "value" : "{\"id\":5,\"itemName\":\"월세\",\"category\":\"rent\",\"unitPrice\":500000,\"quantity\":1,\"paymentMethod\":\"transfer\",\"vendor\":null,\"note\":null,\"frequency\":\"monthly\",\"intervalCount\":1,\"daysOfWeek\":[],\"daysOfMonth\":[15],\"yearlyDates\":[],\"startDate\":\"2026-01-01\",\"endDate\":null,\"isActive\":true,\"createdAt\":\"2026-05-27T14:45:20.748039Z\",\"updatedAt\":\"2026-05-27T14:45:20.748041Z\"}"
+                    "value" : "{\"id\":5,\"itemName\":\"월세\",\"category\":\"rent\",\"unitPrice\":500000,\"quantity\":1,\"paymentMethod\":\"transfer\",\"vendor\":null,\"note\":null,\"frequency\":\"monthly\",\"intervalCount\":1,\"daysOfWeek\":[],\"daysOfMonth\":[15],\"yearlyDates\":[],\"startDate\":\"2026-01-01\",\"endDate\":null,\"isActive\":true,\"createdAt\":\"2026-05-28T08:43:35.066719Z\",\"updatedAt\":\"2026-05-28T08:43:35.066722Z\"}"
                   }
                 }
               }
@@ -2371,7 +2371,7 @@
                 },
                 "examples" : {
                   "recurring-expense-get" : {
-                    "value" : "{\"id\":4,\"itemName\":\"월세\",\"category\":\"rent\",\"unitPrice\":500000,\"quantity\":1,\"paymentMethod\":\"transfer\",\"vendor\":null,\"note\":null,\"frequency\":\"monthly\",\"intervalCount\":1,\"daysOfWeek\":[],\"daysOfMonth\":[15],\"yearlyDates\":[],\"startDate\":\"2026-01-01\",\"endDate\":null,\"isActive\":true,\"createdAt\":\"2026-05-27T14:45:20.721747Z\",\"updatedAt\":\"2026-05-27T14:45:20.721749Z\"}"
+                    "value" : "{\"id\":4,\"itemName\":\"월세\",\"category\":\"rent\",\"unitPrice\":500000,\"quantity\":1,\"paymentMethod\":\"transfer\",\"vendor\":null,\"note\":null,\"frequency\":\"monthly\",\"intervalCount\":1,\"daysOfWeek\":[],\"daysOfMonth\":[15],\"yearlyDates\":[],\"startDate\":\"2026-01-01\",\"endDate\":null,\"isActive\":true,\"createdAt\":\"2026-05-28T08:43:35.037219Z\",\"updatedAt\":\"2026-05-28T08:43:35.037221Z\"}"
                   }
                 }
               }
@@ -2420,7 +2420,7 @@
                 },
                 "examples" : {
                   "recurring-expense-update" : {
-                    "value" : "{\"id\":10,\"itemName\":\"월세 (변경)\",\"category\":\"rent\",\"unitPrice\":550000,\"quantity\":1,\"paymentMethod\":\"transfer\",\"vendor\":null,\"note\":null,\"frequency\":\"monthly\",\"intervalCount\":1,\"daysOfWeek\":[],\"daysOfMonth\":[15],\"yearlyDates\":[],\"startDate\":\"2026-01-01\",\"endDate\":null,\"isActive\":true,\"createdAt\":\"2026-05-27T14:45:20.921666Z\",\"updatedAt\":\"2026-05-27T14:45:20.921668Z\"}"
+                    "value" : "{\"id\":10,\"itemName\":\"월세 (변경)\",\"category\":\"rent\",\"unitPrice\":550000,\"quantity\":1,\"paymentMethod\":\"transfer\",\"vendor\":null,\"note\":null,\"frequency\":\"monthly\",\"intervalCount\":1,\"daysOfWeek\":[],\"daysOfMonth\":[15],\"yearlyDates\":[],\"startDate\":\"2026-01-01\",\"endDate\":null,\"isActive\":true,\"createdAt\":\"2026-05-28T08:43:35.357971Z\",\"updatedAt\":\"2026-05-28T08:43:35.357974Z\"}"
                   }
                 }
               }
@@ -2474,7 +2474,7 @@
           "content" : {
             "application/x-www-form-urlencoded" : {
               "schema" : {
-                "$ref" : "#/components/schemas/photo-cards-id-photos486549215"
+                "$ref" : "#/components/schemas/push-unsubscribe486549215"
               },
               "examples" : {
                 "recurring-instance-delete-all" : {
@@ -2562,7 +2562,7 @@
                 },
                 "examples" : {
                   "recurring-expense-quick-add" : {
-                    "value" : "{\"id\":7,\"date\":\"2026-05-27\",\"itemName\":\"월세\",\"category\":\"rent\",\"unitPrice\":500000,\"quantity\":1,\"totalAmount\":500000,\"paymentMethod\":\"transfer\",\"cardCompany\":null,\"vendor\":null,\"note\":null,\"recurringId\":null,\"isRecurringModified\":false,\"createdAt\":\"2026-05-27T14:45:20.627204Z\",\"updatedAt\":\"2026-05-27T14:45:20.627205Z\"}"
+                    "value" : "{\"id\":7,\"date\":\"2026-05-28\",\"itemName\":\"월세\",\"category\":\"rent\",\"unitPrice\":500000,\"quantity\":1,\"totalAmount\":500000,\"paymentMethod\":\"transfer\",\"cardCompany\":null,\"vendor\":null,\"note\":null,\"recurringId\":null,\"isRecurringModified\":false,\"createdAt\":\"2026-05-28T08:43:34.934745Z\",\"updatedAt\":\"2026-05-28T08:43:34.934747Z\"}"
                   }
                 }
               }
@@ -2613,7 +2613,7 @@
                 },
                 "examples" : {
                   "recurring-expense-toggle" : {
-                    "value" : "{\"id\":11,\"itemName\":\"월세\",\"category\":\"rent\",\"unitPrice\":500000,\"quantity\":1,\"paymentMethod\":\"transfer\",\"vendor\":null,\"note\":null,\"frequency\":\"monthly\",\"intervalCount\":1,\"daysOfWeek\":[],\"daysOfMonth\":[15],\"yearlyDates\":[],\"startDate\":\"2026-01-01\",\"endDate\":null,\"isActive\":false,\"createdAt\":\"2026-05-27T14:45:20.951774Z\",\"updatedAt\":\"2026-05-27T14:45:20.951776Z\"}"
+                    "value" : "{\"id\":11,\"itemName\":\"월세\",\"category\":\"rent\",\"unitPrice\":500000,\"quantity\":1,\"paymentMethod\":\"transfer\",\"vendor\":null,\"note\":null,\"frequency\":\"monthly\",\"intervalCount\":1,\"daysOfWeek\":[],\"daysOfMonth\":[15],\"yearlyDates\":[],\"startDate\":\"2026-01-01\",\"endDate\":null,\"isActive\":false,\"createdAt\":\"2026-05-28T08:43:35.394529Z\",\"updatedAt\":\"2026-05-28T08:43:35.394532Z\"}"
                   }
                 }
               }
@@ -2641,7 +2641,7 @@
                 },
                 "examples" : {
                   "reservation-list" : {
-                    "value" : "[{\"id\":14,\"date\":\"2026-06-01\",\"time\":null,\"customerName\":\"홍길동\",\"customerPhone\":null,\"title\":\"생일 꽃다발\",\"description\":null,\"status\":\"pending\",\"saleId\":null,\"amount\":0,\"reminderAt\":null,\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-27T14:45:23.757469Z\",\"updatedAt\":\"2026-05-27T14:45:23.757470Z\"}]"
+                    "value" : "[{\"id\":14,\"date\":\"2026-06-01\",\"time\":null,\"customerName\":\"홍길동\",\"customerPhone\":null,\"title\":\"생일 꽃다발\",\"description\":null,\"status\":\"pending\",\"saleId\":null,\"amount\":0,\"reminderAt\":null,\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-28T08:43:38.298813Z\",\"updatedAt\":\"2026-05-28T08:43:38.298814Z\"}]"
                   }
                 }
               }
@@ -2677,11 +2677,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/reservations281444601"
+                  "$ref" : "#/components/schemas/reservations-add-pickup-saleId281444601"
                 },
                 "examples" : {
                   "reservation-create" : {
-                    "value" : "{\"id\":10,\"date\":\"2026-06-01\",\"time\":\"14:00:00\",\"customerName\":\"김하늘\",\"customerPhone\":\"010-1234-5678\",\"title\":\"웨딩 부케\",\"description\":\"흰 장미 위주\",\"status\":\"confirmed\",\"saleId\":null,\"amount\":150000,\"reminderAt\":null,\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-27T14:45:23.653806Z\",\"updatedAt\":\"2026-05-27T14:45:23.653807Z\"}"
+                    "value" : "{\"id\":10,\"date\":\"2026-06-01\",\"time\":\"14:00:00\",\"customerName\":\"김하늘\",\"customerPhone\":\"010-1234-5678\",\"title\":\"웨딩 부케\",\"description\":\"흰 장미 위주\",\"status\":\"confirmed\",\"saleId\":null,\"amount\":150000,\"reminderAt\":null,\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-28T08:43:38.172059Z\",\"updatedAt\":\"2026-05-28T08:43:38.172060Z\"}"
                   }
                 }
               }
@@ -2709,7 +2709,7 @@
                 },
                 "examples" : {
                   "reservation-reminders" : {
-                    "value" : "[{\"id\":9,\"date\":\"2026-06-01\",\"time\":null,\"customerName\":\"홍길동\",\"customerPhone\":null,\"title\":\"생일 꽃다발\",\"description\":null,\"status\":\"pending\",\"saleId\":null,\"amount\":0,\"reminderAt\":\"2026-05-27T13:45:23.626943Z\",\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-27T14:45:23.625421Z\",\"updatedAt\":\"2026-05-27T14:45:23.632357Z\"}]"
+                    "value" : "[{\"id\":9,\"date\":\"2026-06-01\",\"time\":null,\"customerName\":\"홍길동\",\"customerPhone\":null,\"title\":\"생일 꽃다발\",\"description\":null,\"status\":\"pending\",\"saleId\":null,\"amount\":0,\"reminderAt\":\"2026-05-28T07:43:38.144894Z\",\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-28T08:43:38.143318Z\",\"updatedAt\":\"2026-05-28T08:43:38.150579Z\"}]"
                   }
                 }
               }
@@ -2765,7 +2765,7 @@
                 },
                 "examples" : {
                   "reservation-upcoming" : {
-                    "value" : "[{\"id\":8,\"date\":\"2099-12-31\",\"time\":null,\"customerName\":\"미래고객\",\"customerPhone\":null,\"title\":\"웨딩 부케\",\"description\":null,\"status\":\"pending\",\"saleId\":null,\"amount\":0,\"reminderAt\":null,\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-27T14:45:23.604599Z\",\"updatedAt\":\"2026-05-27T14:45:23.604600Z\"}]"
+                    "value" : "[{\"id\":8,\"date\":\"2099-12-31\",\"time\":null,\"customerName\":\"미래고객\",\"customerPhone\":null,\"title\":\"웨딩 부케\",\"description\":null,\"status\":\"pending\",\"saleId\":null,\"amount\":0,\"reminderAt\":null,\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-28T08:43:38.122788Z\",\"updatedAt\":\"2026-05-28T08:43:38.122791Z\"}]"
                   }
                 }
               }
@@ -2798,11 +2798,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/reservations281444601"
+                  "$ref" : "#/components/schemas/reservations-add-pickup-saleId281444601"
                 },
                 "examples" : {
                   "reservation-get" : {
-                    "value" : "{\"id\":5,\"date\":\"2026-06-01\",\"time\":null,\"customerName\":\"홍길동\",\"customerPhone\":null,\"title\":\"생일 꽃다발\",\"description\":null,\"status\":\"pending\",\"saleId\":null,\"amount\":0,\"reminderAt\":null,\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-27T14:45:23.534476Z\",\"updatedAt\":\"2026-05-27T14:45:23.534477Z\"}"
+                    "value" : "{\"id\":5,\"date\":\"2026-06-01\",\"time\":null,\"customerName\":\"홍길동\",\"customerPhone\":null,\"title\":\"생일 꽃다발\",\"description\":null,\"status\":\"pending\",\"saleId\":null,\"amount\":0,\"reminderAt\":null,\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-28T08:43:38.052935Z\",\"updatedAt\":\"2026-05-28T08:43:38.052936Z\"}"
                   }
                 }
               }
@@ -2870,11 +2870,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/reservations281444601"
+                  "$ref" : "#/components/schemas/reservations-add-pickup-saleId281444601"
                 },
                 "examples" : {
                   "reservation-update" : {
-                    "value" : "{\"id\":15,\"date\":\"2026-06-01\",\"time\":null,\"customerName\":\"홍길동\",\"customerPhone\":null,\"title\":\"생일 꽃다발\",\"description\":\"수정된 메모\",\"status\":\"confirmed\",\"saleId\":null,\"amount\":0,\"reminderAt\":null,\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-27T14:45:23.797581Z\",\"updatedAt\":\"2026-05-27T14:45:23.797583Z\"}"
+                    "value" : "{\"id\":15,\"date\":\"2026-06-01\",\"time\":null,\"customerName\":\"홍길동\",\"customerPhone\":null,\"title\":\"생일 꽃다발\",\"description\":\"수정된 메모\",\"status\":\"confirmed\",\"saleId\":null,\"amount\":0,\"reminderAt\":null,\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-28T08:43:38.339006Z\",\"updatedAt\":\"2026-05-28T08:43:38.339007Z\"}"
                   }
                 }
               }
@@ -2921,11 +2921,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/reservations281444601"
+                  "$ref" : "#/components/schemas/reservations-add-pickup-saleId281444601"
                 },
                 "examples" : {
                   "reservation-add-pickup" : {
-                    "value" : "{\"id\":11,\"date\":\"2026-06-05\",\"time\":null,\"customerName\":\"이민준\",\"customerPhone\":\"010-9876-5432\",\"title\":\"픽업\",\"description\":null,\"status\":\"pending\",\"saleId\":11,\"amount\":0,\"reminderAt\":null,\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-27T14:45:23.682386Z\",\"updatedAt\":\"2026-05-27T14:45:23.682387Z\"}"
+                    "value" : "{\"id\":11,\"date\":\"2026-06-05\",\"time\":null,\"customerName\":\"이민준\",\"customerPhone\":\"010-9876-5432\",\"title\":\"픽업\",\"description\":null,\"status\":\"pending\",\"saleId\":11,\"amount\":0,\"reminderAt\":null,\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-28T08:43:38.201684Z\",\"updatedAt\":\"2026-05-28T08:43:38.201685Z\"}"
                   }
                 }
               }
@@ -2962,7 +2962,7 @@
                 },
                 "examples" : {
                   "reservation-by-sale" : {
-                    "value" : "[{\"id\":12,\"date\":\"2026-06-01\",\"time\":null,\"customerName\":\"홍길동\",\"customerPhone\":null,\"title\":\"생일 꽃다발\",\"description\":null,\"status\":\"pending\",\"saleId\":12,\"amount\":0,\"reminderAt\":null,\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-27T14:45:23.704052Z\",\"updatedAt\":\"2026-05-27T14:45:23.708950Z\"}]"
+                    "value" : "[{\"id\":12,\"date\":\"2026-06-01\",\"time\":null,\"customerName\":\"홍길동\",\"customerPhone\":null,\"title\":\"생일 꽃다발\",\"description\":null,\"status\":\"pending\",\"saleId\":12,\"amount\":0,\"reminderAt\":null,\"reminderSent\":false,\"pickupCompleted\":false,\"createdAt\":\"2026-05-28T08:43:38.224076Z\",\"updatedAt\":\"2026-05-28T08:43:38.233407Z\"}]"
                   }
                 }
               }
@@ -3009,11 +3009,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/reservations281444601"
+                  "$ref" : "#/components/schemas/reservations-add-pickup-saleId281444601"
                 },
                 "examples" : {
                   "reservation-complete-pickup" : {
-                    "value" : "{\"id\":6,\"date\":\"2026-06-01\",\"time\":null,\"customerName\":\"홍길동\",\"customerPhone\":null,\"title\":\"생일 꽃다발\",\"description\":null,\"status\":\"pending\",\"saleId\":null,\"amount\":0,\"reminderAt\":null,\"reminderSent\":false,\"pickupCompleted\":true,\"createdAt\":\"2026-05-27T14:45:23.555500Z\",\"updatedAt\":\"2026-05-27T14:45:23.555501Z\"}"
+                    "value" : "{\"id\":6,\"date\":\"2026-06-01\",\"time\":null,\"customerName\":\"홍길동\",\"customerPhone\":null,\"title\":\"생일 꽃다발\",\"description\":null,\"status\":\"pending\",\"saleId\":null,\"amount\":0,\"reminderAt\":null,\"reminderSent\":false,\"pickupCompleted\":true,\"createdAt\":\"2026-05-28T08:43:38.074809Z\",\"updatedAt\":\"2026-05-28T08:43:38.074810Z\"}"
                   }
                 }
               }
@@ -3064,7 +3064,7 @@
                 },
                 "examples" : {
                   "reservation-convert-to-sale" : {
-                    "value" : "{\"id\":10,\"date\":\"2026-06-01\",\"productName\":\"basic_bouquet\",\"productCategory\":\"basic_bouquet\",\"amount\":100000,\"paymentMethod\":\"cash\",\"reservationChannel\":\"other\",\"customerName\":null,\"customerPhone\":null,\"customerId\":null,\"note\":null,\"isUnpaid\":false,\"hasReview\":false,\"createdAt\":\"2026-05-27T14:45:23.586107Z\",\"updatedAt\":\"2026-05-27T14:45:23.586108Z\"}"
+                    "value" : "{\"id\":10,\"date\":\"2026-06-01\",\"productName\":\"basic_bouquet\",\"productCategory\":\"basic_bouquet\",\"amount\":100000,\"paymentMethod\":\"cash\",\"reservationChannel\":\"other\",\"customerName\":null,\"customerPhone\":null,\"customerId\":null,\"note\":null,\"isUnpaid\":false,\"hasReview\":false,\"createdAt\":\"2026-05-28T08:43:38.104138Z\",\"updatedAt\":\"2026-05-28T08:43:38.104139Z\"}"
                   }
                 }
               }
@@ -3088,11 +3088,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/sales887028705"
+                  "$ref" : "#/components/schemas/customers-id-sales887028705"
                 },
                 "examples" : {
                   "sale-list" : {
-                    "value" : "{\"sales\":[{\"id\":18,\"date\":\"2026-05-22\",\"productName\":\"basic_bouquet\",\"productCategory\":\"basic_bouquet\",\"amount\":100000,\"paymentMethod\":\"card\",\"reservationChannel\":\"other\",\"customerName\":null,\"customerPhone\":null,\"customerId\":null,\"note\":null,\"isUnpaid\":false,\"hasReview\":false,\"createdAt\":\"2026-05-27T14:45:24.338678Z\",\"updatedAt\":\"2026-05-27T14:45:24.338679Z\"}],\"hasMore\":false}"
+                    "value" : "{\"sales\":[{\"id\":18,\"date\":\"2026-05-22\",\"productName\":\"basic_bouquet\",\"productCategory\":\"basic_bouquet\",\"amount\":100000,\"paymentMethod\":\"card\",\"reservationChannel\":\"other\",\"customerName\":null,\"customerPhone\":null,\"customerId\":null,\"note\":null,\"isUnpaid\":false,\"hasReview\":false,\"createdAt\":\"2026-05-28T08:43:38.845349Z\",\"updatedAt\":\"2026-05-28T08:43:38.845351Z\"}],\"hasMore\":false}"
                   }
                 }
               }
@@ -3128,11 +3128,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/sales-id-1257083852"
+                  "$ref" : "#/components/schemas/sales-1257083852"
                 },
                 "examples" : {
                   "sale-create" : {
-                    "value" : "{\"id\":19,\"date\":\"2026-05-22\",\"productName\":\"basic_bouquet\",\"productCategory\":\"basic_bouquet\",\"amount\":100000,\"paymentMethod\":\"card\",\"reservationChannel\":\"kakaotalk\",\"customerName\":\"김하늘\",\"customerPhone\":null,\"customerId\":null,\"note\":\"웨딩 부케\",\"isUnpaid\":false,\"hasReview\":false,\"createdAt\":\"2026-05-27T14:45:24.362167Z\",\"updatedAt\":\"2026-05-27T14:45:24.362168Z\"}"
+                    "value" : "{\"id\":19,\"date\":\"2026-05-22\",\"productName\":\"basic_bouquet\",\"productCategory\":\"basic_bouquet\",\"amount\":100000,\"paymentMethod\":\"card\",\"reservationChannel\":\"kakaotalk\",\"customerName\":\"김하늘\",\"customerPhone\":null,\"customerId\":null,\"note\":\"웨딩 부케\",\"isUnpaid\":false,\"hasReview\":false,\"createdAt\":\"2026-05-28T08:43:38.865983Z\",\"updatedAt\":\"2026-05-28T08:43:38.865985Z\"}"
                   }
                 }
               }
@@ -3193,11 +3193,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/sales-id-1257083852"
+                  "$ref" : "#/components/schemas/sales-1257083852"
                 },
                 "examples" : {
                   "sale-get" : {
-                    "value" : "{\"id\":17,\"date\":\"2026-05-22\",\"productName\":\"basic_bouquet\",\"productCategory\":\"basic_bouquet\",\"amount\":100000,\"paymentMethod\":\"card\",\"reservationChannel\":\"other\",\"customerName\":null,\"customerPhone\":null,\"customerId\":null,\"note\":null,\"isUnpaid\":false,\"hasReview\":false,\"createdAt\":\"2026-05-27T14:45:24.318295Z\",\"updatedAt\":\"2026-05-27T14:45:24.318295Z\"}"
+                    "value" : "{\"id\":17,\"date\":\"2026-05-22\",\"productName\":\"basic_bouquet\",\"productCategory\":\"basic_bouquet\",\"amount\":100000,\"paymentMethod\":\"card\",\"reservationChannel\":\"other\",\"customerName\":null,\"customerPhone\":null,\"customerId\":null,\"note\":null,\"isUnpaid\":false,\"hasReview\":false,\"createdAt\":\"2026-05-28T08:43:38.825087Z\",\"updatedAt\":\"2026-05-28T08:43:38.825089Z\"}"
                   }
                 }
               }
@@ -3265,11 +3265,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/sales-id-1257083852"
+                  "$ref" : "#/components/schemas/sales-1257083852"
                 },
                 "examples" : {
                   "sale-update" : {
-                    "value" : "{\"id\":14,\"date\":\"2026-05-22\",\"productName\":\"basic_bouquet\",\"productCategory\":\"basic_bouquet\",\"amount\":120000,\"paymentMethod\":\"card\",\"reservationChannel\":\"other\",\"customerName\":null,\"customerPhone\":null,\"customerId\":null,\"note\":\"수정된 비고\",\"isUnpaid\":false,\"hasReview\":false,\"createdAt\":\"2026-05-27T14:45:24.219123Z\",\"updatedAt\":\"2026-05-27T14:45:24.219124Z\"}"
+                    "value" : "{\"id\":14,\"date\":\"2026-05-22\",\"productName\":\"basic_bouquet\",\"productCategory\":\"basic_bouquet\",\"amount\":120000,\"paymentMethod\":\"card\",\"reservationChannel\":\"other\",\"customerName\":null,\"customerPhone\":null,\"customerId\":null,\"note\":\"수정된 비고\",\"isUnpaid\":false,\"hasReview\":false,\"createdAt\":\"2026-05-28T08:43:38.731908Z\",\"updatedAt\":\"2026-05-28T08:43:38.731909Z\"}"
                   }
                 }
               }
@@ -3316,11 +3316,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/sales-id-1257083852"
+                  "$ref" : "#/components/schemas/sales-1257083852"
                 },
                 "examples" : {
                   "sale-complete-unpaid" : {
-                    "value" : "{\"id\":16,\"date\":\"2026-05-22\",\"productName\":\"basic_bouquet\",\"productCategory\":\"basic_bouquet\",\"amount\":80000,\"paymentMethod\":\"cash\",\"reservationChannel\":\"other\",\"customerName\":null,\"customerPhone\":null,\"customerId\":null,\"note\":null,\"isUnpaid\":true,\"hasReview\":false,\"createdAt\":\"2026-05-27T14:45:24.276680Z\",\"updatedAt\":\"2026-05-27T14:45:24.276682Z\"}"
+                    "value" : "{\"id\":16,\"date\":\"2026-05-22\",\"productName\":\"basic_bouquet\",\"productCategory\":\"basic_bouquet\",\"amount\":80000,\"paymentMethod\":\"cash\",\"reservationChannel\":\"other\",\"customerName\":null,\"customerPhone\":null,\"customerId\":null,\"note\":null,\"isUnpaid\":true,\"hasReview\":false,\"createdAt\":\"2026-05-28T08:43:38.784985Z\",\"updatedAt\":\"2026-05-28T08:43:38.784986Z\"}"
                   }
                 }
               }
@@ -3353,11 +3353,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/sales-id-1257083852"
+                  "$ref" : "#/components/schemas/sales-1257083852"
                 },
                 "examples" : {
                   "sale-revert-unpaid" : {
-                    "value" : "{\"id\":15,\"date\":\"2026-05-22\",\"productName\":\"basic_bouquet\",\"productCategory\":\"basic_bouquet\",\"amount\":60000,\"paymentMethod\":\"unpaid\",\"reservationChannel\":\"other\",\"customerName\":null,\"customerPhone\":null,\"customerId\":null,\"note\":null,\"isUnpaid\":true,\"hasReview\":false,\"createdAt\":\"2026-05-27T14:45:24.246949Z\",\"updatedAt\":\"2026-05-27T14:45:24.253095Z\"}"
+                    "value" : "{\"id\":15,\"date\":\"2026-05-22\",\"productName\":\"basic_bouquet\",\"productCategory\":\"basic_bouquet\",\"amount\":60000,\"paymentMethod\":\"unpaid\",\"reservationChannel\":\"other\",\"customerName\":null,\"customerPhone\":null,\"customerId\":null,\"note\":null,\"isUnpaid\":true,\"hasReview\":false,\"createdAt\":\"2026-05-28T08:43:38.757983Z\",\"updatedAt\":\"2026-05-28T08:43:38.763804Z\"}"
                   }
                 }
               }
@@ -3421,7 +3421,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/settings-expense-categories1244066605"
+                  "$ref" : "#/components/schemas/settings-expense-payment-methods-id1244066605"
                 },
                 "examples" : {
                   "settings-expense-category-create" : {
@@ -3489,7 +3489,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/settings-expense-categories1244066605"
+                  "$ref" : "#/components/schemas/settings-expense-payment-methods-id1244066605"
                 },
                 "examples" : {
                   "settings-expense-payment-method-create" : {
@@ -3688,7 +3688,7 @@
           "content" : {
             "application/json;charset=UTF-8" : {
               "schema" : {
-                "$ref" : "#/components/schemas/settings-payment-methods-id459890053"
+                "$ref" : "#/components/schemas/settings-expense-payment-methods-id459890053"
               },
               "examples" : {
                 "settings-expense-category-update" : {
@@ -3704,11 +3704,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/settings-expense-categories1244066605"
+                  "$ref" : "#/components/schemas/settings-expense-payment-methods-id1244066605"
                 },
                 "examples" : {
                   "settings-expense-category-update" : {
-                    "value" : "{\"id\":610,\"value\":\"ecat_373208\",\"label\":\"수정된 지출 카테고리\",\"color\":\"#ffffff\",\"sortOrder\":8}"
+                    "value" : "{\"id\":610,\"value\":\"ecat_977916\",\"label\":\"수정된 지출 카테고리\",\"color\":\"#ffffff\",\"sortOrder\":8}"
                   }
                 }
               }
@@ -3762,7 +3762,7 @@
           "content" : {
             "application/json;charset=UTF-8" : {
               "schema" : {
-                "$ref" : "#/components/schemas/settings-payment-methods-id459890053"
+                "$ref" : "#/components/schemas/settings-expense-payment-methods-id459890053"
               },
               "examples" : {
                 "settings-expense-payment-method-update" : {
@@ -3778,11 +3778,11 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/settings-expense-categories1244066605"
+                  "$ref" : "#/components/schemas/settings-expense-payment-methods-id1244066605"
                 },
                 "examples" : {
                   "settings-expense-payment-method-update" : {
-                    "value" : "{\"id\":270,\"value\":\"epay_589208\",\"label\":\"수정된 지출 결제방식\",\"color\":\"#000000\",\"sortOrder\":4}"
+                    "value" : "{\"id\":270,\"value\":\"epay_125583\",\"label\":\"수정된 지출 결제방식\",\"color\":\"#000000\",\"sortOrder\":4}"
                   }
                 }
               }
@@ -3836,7 +3836,7 @@
           "content" : {
             "application/json;charset=UTF-8" : {
               "schema" : {
-                "$ref" : "#/components/schemas/settings-payment-methods-id459890053"
+                "$ref" : "#/components/schemas/settings-expense-payment-methods-id459890053"
               },
               "examples" : {
                 "settings-payment-method-update" : {
@@ -3856,7 +3856,7 @@
                 },
                 "examples" : {
                   "settings-payment-method-update" : {
-                    "value" : "{\"id\":394,\"value\":\"tpay_736750\",\"label\":\"수정된 결제방식\",\"color\":\"#000000\",\"sortOrder\":5}"
+                    "value" : "{\"id\":394,\"value\":\"tpay_414541\",\"label\":\"수정된 결제방식\",\"color\":\"#000000\",\"sortOrder\":5}"
                   }
                 }
               }
@@ -3952,7 +3952,7 @@
           "content" : {
             "application/json;charset=UTF-8" : {
               "schema" : {
-                "$ref" : "#/components/schemas/settings-payment-methods-id459890053"
+                "$ref" : "#/components/schemas/settings-expense-payment-methods-id459890053"
               },
               "examples" : {
                 "settings-sale-category-update" : {
@@ -3972,7 +3972,7 @@
                 },
                 "examples" : {
                   "settings-sale-category-update" : {
-                    "value" : "{\"id\":1068,\"value\":\"tcat_369500\",\"label\":\"수정된 카테고리\",\"color\":\"#ffffff\",\"sortOrder\":12}"
+                    "value" : "{\"id\":1068,\"value\":\"tcat_536875\",\"label\":\"수정된 카테고리\",\"color\":\"#ffffff\",\"sortOrder\":12}"
                   }
                 }
               }
@@ -4049,7 +4049,7 @@
               },
               "examples" : {
                 "webhook-revenuecat" : {
-                  "value" : "{\"event\":{\"type\":\"INITIAL_PURCHASE\",\"app_user_id\":\"1\",\"product_id\":\"premium_monthly\",\"store\":\"APP_STORE\",\"entitlement_ids\":[\"premium\"],\"entitlement_id\":\"premium\",\"expiration_at_ms\":1782485126090,\"original_transaction_id\":\"txn_f048f3c3-bb3e-4bec-b893-4959c596e09a\",\"id\":\"37f9d190-53a1-4986-bef1-7c987441a940\",\"event_timestamp_ms\":1779893126090}}"
+                  "value" : "{\"event\":{\"type\":\"INITIAL_PURCHASE\",\"app_user_id\":\"1\",\"product_id\":\"premium_monthly\",\"store\":\"APP_STORE\",\"entitlement_ids\":[\"premium\"],\"entitlement_id\":\"premium\",\"expiration_at_ms\":1782549820600,\"original_transaction_id\":\"txn_834f8ce7-b560-4b6d-9d1e-6ea1e6aa8c6f\",\"id\":\"94111945-69be-4324-9096-edf1388705da\",\"event_timestamp_ms\":1779957820600}}"
                 }
               }
             }
@@ -4104,7 +4104,81 @@
           "description" : "검색 결과 목록"
         }
       },
-      "settings-expense-categories1244066605" : {
+      "me-email-1473368019" : {
+        "required" : [ "email", "id" ],
+        "type" : "object",
+        "properties" : {
+          "profile" : {
+            "required" : [ "interests", "regionSido", "specialties", "storeName" ],
+            "type" : "object",
+            "properties" : {
+              "regionSigungu" : {
+                "type" : "string",
+                "description" : "시군구(미설정 시 null)",
+                "nullable" : true
+              },
+              "specialties" : {
+                "type" : "array",
+                "description" : "가게 주력 목록",
+                "items" : {
+                  "oneOf" : [ {
+                    "type" : "object"
+                  }, {
+                    "type" : "boolean"
+                  }, {
+                    "type" : "string"
+                  }, {
+                    "type" : "number"
+                  } ]
+                }
+              },
+              "ownerAgeRange" : {
+                "type" : "string",
+                "description" : "나이대(미설정 시 null)",
+                "nullable" : true
+              },
+              "storeName" : {
+                "type" : "string",
+                "description" : "가게명"
+              },
+              "interests" : {
+                "type" : "array",
+                "description" : "관심사 목록",
+                "items" : {
+                  "oneOf" : [ {
+                    "type" : "object"
+                  }, {
+                    "type" : "boolean"
+                  }, {
+                    "type" : "string"
+                  }, {
+                    "type" : "number"
+                  } ]
+                }
+              },
+              "regionSido" : {
+                "type" : "string",
+                "description" : "시/도"
+              }
+            },
+            "description" : "가게 프로필"
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "표시 이름(미설정 시 null)",
+            "nullable" : true
+          },
+          "id" : {
+            "type" : "number",
+            "description" : "사용자 ID"
+          },
+          "email" : {
+            "type" : "string",
+            "description" : "보완된 이메일"
+          }
+        }
+      },
+      "settings-expense-payment-methods-id1244066605" : {
         "required" : [ "color", "id", "label", "sortOrder", "value" ],
         "type" : "object",
         "properties" : {
@@ -4381,7 +4455,7 @@
           }
         }
       },
-      "sales-id-1257083852" : {
+      "sales-1257083852" : {
         "required" : [ "amount", "createdAt", "date", "hasReview", "id", "isUnpaid", "paymentMethod", "productName", "reservationChannel", "updatedAt" ],
         "type" : "object",
         "properties" : {
@@ -4564,6 +4638,80 @@
                 "type" : "number"
               } ]
             }
+          }
+        }
+      },
+      "me821040093" : {
+        "required" : [ "email", "id" ],
+        "type" : "object",
+        "properties" : {
+          "profile" : {
+            "required" : [ "interests", "regionSido", "specialties", "storeName" ],
+            "type" : "object",
+            "properties" : {
+              "regionSigungu" : {
+                "type" : "string",
+                "description" : "시군구(미설정 시 null)",
+                "nullable" : true
+              },
+              "specialties" : {
+                "type" : "array",
+                "description" : "가게 주력 목록",
+                "items" : {
+                  "oneOf" : [ {
+                    "type" : "object"
+                  }, {
+                    "type" : "boolean"
+                  }, {
+                    "type" : "string"
+                  }, {
+                    "type" : "number"
+                  } ]
+                }
+              },
+              "ownerAgeRange" : {
+                "type" : "string",
+                "description" : "나이대(미설정 시 null)",
+                "nullable" : true
+              },
+              "storeName" : {
+                "type" : "string",
+                "description" : "가게명"
+              },
+              "interests" : {
+                "type" : "array",
+                "description" : "관심사 목록",
+                "items" : {
+                  "oneOf" : [ {
+                    "type" : "object"
+                  }, {
+                    "type" : "boolean"
+                  }, {
+                    "type" : "string"
+                  }, {
+                    "type" : "number"
+                  } ]
+                }
+              },
+              "regionSido" : {
+                "type" : "string",
+                "description" : "시/도"
+              }
+            },
+            "description" : "가게 프로필"
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "표시 이름(미설정 시 null)",
+            "nullable" : true
+          },
+          "id" : {
+            "type" : "number",
+            "description" : "사용자 ID"
+          },
+          "email" : {
+            "type" : "string",
+            "description" : "로그인 이메일"
           }
         }
       },
@@ -4762,7 +4910,7 @@
           }
         }
       },
-      "reservations281444601" : {
+      "reservations-add-pickup-saleId281444601" : {
         "required" : [ "amount", "createdAt", "customerName", "date", "id", "pickupCompleted", "reminderSent", "status", "title", "updatedAt" ],
         "type" : "object",
         "properties" : {
@@ -4833,7 +4981,7 @@
           }
         }
       },
-      "sales887028705" : {
+      "customers-id-sales887028705" : {
         "required" : [ "hasMore", "sales" ],
         "type" : "object",
         "properties" : {
@@ -5137,7 +5285,7 @@
           "description" : "업로드 타깃 목록"
         }
       },
-      "expenses-75081279" : {
+      "expenses-id-75081279" : {
         "required" : [ "category", "createdAt", "date", "id", "isRecurringModified", "itemName", "paymentMethod", "quantity", "totalAmount", "unitPrice", "updatedAt" ],
         "type" : "object",
         "properties" : {
@@ -5766,7 +5914,7 @@
           }
         }
       },
-      "customers-find-or-create-924544121" : {
+      "customers-id-grade-924544121" : {
         "required" : [ "createdAt", "grade", "id", "name", "phone", "totalPurchaseAmount", "totalPurchaseCount", "updatedAt" ],
         "type" : "object",
         "properties" : {
@@ -6111,84 +6259,6 @@
             }
           },
           "description" : "카테고리 목록"
-        }
-      },
-      "me-email1747291720" : {
-        "required" : [ "email", "id", "onboarded" ],
-        "type" : "object",
-        "properties" : {
-          "onboarded" : {
-            "type" : "boolean",
-            "description" : "온보딩 완료 여부"
-          },
-          "profile" : {
-            "required" : [ "interests", "regionSido", "specialties", "storeName" ],
-            "type" : "object",
-            "properties" : {
-              "regionSigungu" : {
-                "type" : "string",
-                "description" : "시군구(미설정 시 null)",
-                "nullable" : true
-              },
-              "specialties" : {
-                "type" : "array",
-                "description" : "가게 주력 목록",
-                "items" : {
-                  "oneOf" : [ {
-                    "type" : "object"
-                  }, {
-                    "type" : "boolean"
-                  }, {
-                    "type" : "string"
-                  }, {
-                    "type" : "number"
-                  } ]
-                }
-              },
-              "ownerAgeRange" : {
-                "type" : "string",
-                "description" : "나이대(미설정 시 null)",
-                "nullable" : true
-              },
-              "storeName" : {
-                "type" : "string",
-                "description" : "가게명"
-              },
-              "interests" : {
-                "type" : "array",
-                "description" : "관심사 목록",
-                "items" : {
-                  "oneOf" : [ {
-                    "type" : "object"
-                  }, {
-                    "type" : "boolean"
-                  }, {
-                    "type" : "string"
-                  }, {
-                    "type" : "number"
-                  } ]
-                }
-              },
-              "regionSido" : {
-                "type" : "string",
-                "description" : "시/도"
-              }
-            },
-            "description" : "가게 프로필"
-          },
-          "name" : {
-            "type" : "string",
-            "description" : "표시 이름(미설정 시 null)",
-            "nullable" : true
-          },
-          "id" : {
-            "type" : "number",
-            "description" : "사용자 ID"
-          },
-          "email" : {
-            "type" : "string",
-            "description" : "보완된 이메일"
-          }
         }
       },
       "reservations-by-sale-saleId-346409161" : {
@@ -7186,81 +7256,17 @@
           }
         }
       },
-      "me-1042293125" : {
-        "required" : [ "email", "id", "onboarded" ],
+      "photo-tags-id1002600295" : {
+        "required" : [ "color", "name" ],
         "type" : "object",
         "properties" : {
-          "onboarded" : {
-            "type" : "boolean",
-            "description" : "온보딩 완료 여부(false면 앱이 온보딩 화면으로 라우팅)"
-          },
-          "profile" : {
-            "required" : [ "interests", "regionSido", "specialties", "storeName" ],
-            "type" : "object",
-            "properties" : {
-              "regionSigungu" : {
-                "type" : "string",
-                "description" : "시군구(미설정 시 null)",
-                "nullable" : true
-              },
-              "specialties" : {
-                "type" : "array",
-                "description" : "가게 주력 목록",
-                "items" : {
-                  "oneOf" : [ {
-                    "type" : "object"
-                  }, {
-                    "type" : "boolean"
-                  }, {
-                    "type" : "string"
-                  }, {
-                    "type" : "number"
-                  } ]
-                }
-              },
-              "ownerAgeRange" : {
-                "type" : "string",
-                "description" : "나이대(미설정 시 null)",
-                "nullable" : true
-              },
-              "storeName" : {
-                "type" : "string",
-                "description" : "가게명"
-              },
-              "interests" : {
-                "type" : "array",
-                "description" : "관심사 목록",
-                "items" : {
-                  "oneOf" : [ {
-                    "type" : "object"
-                  }, {
-                    "type" : "boolean"
-                  }, {
-                    "type" : "string"
-                  }, {
-                    "type" : "number"
-                  } ]
-                }
-              },
-              "regionSido" : {
-                "type" : "string",
-                "description" : "시/도"
-              }
-            },
-            "description" : "가게 프로필"
+          "color" : {
+            "type" : "string",
+            "description" : "새 태그 색상 hex 코드 (필수)"
           },
           "name" : {
             "type" : "string",
-            "description" : "표시 이름(미설정 시 null)",
-            "nullable" : true
-          },
-          "id" : {
-            "type" : "number",
-            "description" : "사용자 ID"
-          },
-          "email" : {
-            "type" : "string",
-            "description" : "로그인 이메일"
+            "description" : "새 태그 이름 (필수)"
           }
         }
       },
@@ -7338,20 +7344,6 @@
             }
           },
           "description" : "예약 목록"
-        }
-      },
-      "photo-tags-id1002600295" : {
-        "required" : [ "color", "name" ],
-        "type" : "object",
-        "properties" : {
-          "color" : {
-            "type" : "string",
-            "description" : "새 태그 색상 hex 코드 (필수)"
-          },
-          "name" : {
-            "type" : "string",
-            "description" : "새 태그 이름 (필수)"
-          }
         }
       },
       "recurring-expenses-2100399002" : {
@@ -7472,7 +7464,7 @@
           }
         }
       },
-      "internal-instagram-accounts-1299620064" : {
+      "internal-instagram-accounts-id-1299620064" : {
         "required" : [ "active", "id", "profileUrl", "region", "sortOrder", "username" ],
         "type" : "object",
         "properties" : {
@@ -7840,85 +7832,6 @@
           } ]
         }
       },
-      "me-profile513993502" : {
-        "required" : [ "id", "onboarded", "profile" ],
-        "type" : "object",
-        "properties" : {
-          "onboarded" : {
-            "type" : "boolean",
-            "description" : "온보딩 완료 여부(제출 후 true)"
-          },
-          "profile" : {
-            "required" : [ "interests", "regionSido", "specialties", "storeName" ],
-            "type" : "object",
-            "properties" : {
-              "regionSigungu" : {
-                "type" : "string",
-                "description" : "시군구(미설정 시 null)",
-                "nullable" : true
-              },
-              "specialties" : {
-                "type" : "array",
-                "description" : "가게 주력 목록",
-                "items" : {
-                  "oneOf" : [ {
-                    "type" : "object"
-                  }, {
-                    "type" : "boolean"
-                  }, {
-                    "type" : "string"
-                  }, {
-                    "type" : "number"
-                  } ]
-                }
-              },
-              "ownerAgeRange" : {
-                "type" : "string",
-                "description" : "나이대(미설정 시 null)",
-                "nullable" : true
-              },
-              "storeName" : {
-                "type" : "string",
-                "description" : "가게명"
-              },
-              "interests" : {
-                "type" : "array",
-                "description" : "관심사 목록",
-                "items" : {
-                  "oneOf" : [ {
-                    "type" : "object"
-                  }, {
-                    "type" : "boolean"
-                  }, {
-                    "type" : "string"
-                  }, {
-                    "type" : "number"
-                  } ]
-                }
-              },
-              "regionSido" : {
-                "type" : "string",
-                "description" : "시/도"
-              }
-            },
-            "description" : "저장된 가게 프로필"
-          },
-          "name" : {
-            "type" : "string",
-            "description" : "계정 표시 이름",
-            "nullable" : true
-          },
-          "id" : {
-            "type" : "number",
-            "description" : "사용자 ID"
-          },
-          "email" : {
-            "type" : "string",
-            "description" : "로그인 이메일",
-            "nullable" : true
-          }
-        }
-      },
       "insights-scraps-counts-1492689736" : {
         "required" : [ "post", "trend" ],
         "type" : "object",
@@ -8015,6 +7928,31 @@
           }
         }
       },
+      "push-subscribe-79858187" : {
+        "required" : [ "endpoint" ],
+        "type" : "object",
+        "properties" : {
+          "endpoint" : {
+            "type" : "string",
+            "description" : "FCM 토큰 또는 Web Push endpoint (필수)"
+          },
+          "auth" : {
+            "type" : "string",
+            "description" : "Web Push auth 시크릿 (Web Push 전용)",
+            "nullable" : true
+          },
+          "userAgent" : {
+            "type" : "string",
+            "description" : "기기 User-Agent (식별용, 선택)",
+            "nullable" : true
+          },
+          "p256dh" : {
+            "type" : "string",
+            "description" : "Web Push p256dh 키 (Web Push 전용, FCM은 불필요)",
+            "nullable" : true
+          }
+        }
+      },
       "insights-trends-283354156" : {
         "type" : "array",
         "description" : "트렌드 목록",
@@ -8079,29 +8017,31 @@
           "description" : "트렌드 목록"
         }
       },
-      "push-subscribe-79858187" : {
-        "required" : [ "endpoint" ],
-        "type" : "object",
-        "properties" : {
-          "endpoint" : {
-            "type" : "string",
-            "description" : "FCM 토큰 또는 Web Push endpoint (필수)"
+      "photo-tags-210212429" : {
+        "type" : "array",
+        "description" : "태그 목록",
+        "items" : {
+          "required" : [ "color", "createdAt", "id", "name" ],
+          "type" : "object",
+          "properties" : {
+            "createdAt" : {
+              "type" : "string",
+              "description" : "생성 시각 (ISO-8601)"
+            },
+            "color" : {
+              "type" : "string",
+              "description" : "태그 색상 (hex 코드)"
+            },
+            "name" : {
+              "type" : "string",
+              "description" : "태그 이름"
+            },
+            "id" : {
+              "type" : "number",
+              "description" : "태그 ID"
+            }
           },
-          "auth" : {
-            "type" : "string",
-            "description" : "Web Push auth 시크릿 (Web Push 전용)",
-            "nullable" : true
-          },
-          "userAgent" : {
-            "type" : "string",
-            "description" : "기기 User-Agent (식별용, 선택)",
-            "nullable" : true
-          },
-          "p256dh" : {
-            "type" : "string",
-            "description" : "Web Push p256dh 키 (Web Push 전용, FCM은 불필요)",
-            "nullable" : true
-          }
+          "description" : "태그 목록"
         }
       },
       "settings-expense-payment-methods1348355221" : {
@@ -8133,33 +8073,6 @@
             }
           },
           "description" : "지출 결제방식 목록"
-        }
-      },
-      "photo-tags-210212429" : {
-        "type" : "array",
-        "description" : "태그 목록",
-        "items" : {
-          "required" : [ "color", "createdAt", "id", "name" ],
-          "type" : "object",
-          "properties" : {
-            "createdAt" : {
-              "type" : "string",
-              "description" : "생성 시각 (ISO-8601)"
-            },
-            "color" : {
-              "type" : "string",
-              "description" : "태그 색상 (hex 코드)"
-            },
-            "name" : {
-              "type" : "string",
-              "description" : "태그 이름"
-            },
-            "id" : {
-              "type" : "number",
-              "description" : "태그 ID"
-            }
-          },
-          "description" : "태그 목록"
         }
       },
       "calendar-events-id-1661551301" : {
@@ -8212,6 +8125,81 @@
           "code" : {
             "type" : "string",
             "description" : "카카오 authorization code"
+          }
+        }
+      },
+      "me-profile-1428220914" : {
+        "required" : [ "id", "profile" ],
+        "type" : "object",
+        "properties" : {
+          "profile" : {
+            "required" : [ "interests", "regionSido", "specialties", "storeName" ],
+            "type" : "object",
+            "properties" : {
+              "regionSigungu" : {
+                "type" : "string",
+                "description" : "시군구(미설정 시 null)",
+                "nullable" : true
+              },
+              "specialties" : {
+                "type" : "array",
+                "description" : "가게 주력 목록",
+                "items" : {
+                  "oneOf" : [ {
+                    "type" : "object"
+                  }, {
+                    "type" : "boolean"
+                  }, {
+                    "type" : "string"
+                  }, {
+                    "type" : "number"
+                  } ]
+                }
+              },
+              "ownerAgeRange" : {
+                "type" : "string",
+                "description" : "나이대(미설정 시 null)",
+                "nullable" : true
+              },
+              "storeName" : {
+                "type" : "string",
+                "description" : "가게명"
+              },
+              "interests" : {
+                "type" : "array",
+                "description" : "관심사 목록",
+                "items" : {
+                  "oneOf" : [ {
+                    "type" : "object"
+                  }, {
+                    "type" : "boolean"
+                  }, {
+                    "type" : "string"
+                  }, {
+                    "type" : "number"
+                  } ]
+                }
+              },
+              "regionSido" : {
+                "type" : "string",
+                "description" : "시/도"
+              }
+            },
+            "description" : "저장된 가게 프로필"
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "계정 표시 이름",
+            "nullable" : true
+          },
+          "id" : {
+            "type" : "number",
+            "description" : "사용자 ID"
+          },
+          "email" : {
+            "type" : "string",
+            "description" : "로그인 이메일",
+            "nullable" : true
           }
         }
       },
@@ -8812,7 +8800,7 @@
           }
         }
       },
-      "photo-cards-id-photos486549215" : {
+      "push-unsubscribe486549215" : {
         "type" : "object"
       },
       "insights-scraps-map660983940" : {
@@ -9034,7 +9022,7 @@
           "description" : "포스트 목록"
         }
       },
-      "settings-payment-methods-id459890053" : {
+      "settings-expense-payment-methods-id459890053" : {
         "required" : [ "color", "label" ],
         "type" : "object",
         "properties" : {

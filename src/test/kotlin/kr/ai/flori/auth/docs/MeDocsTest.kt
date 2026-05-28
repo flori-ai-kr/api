@@ -33,9 +33,6 @@ class MeDocsTest : RestDocsSupport() {
                                 fieldWithPath("id").type(JsonFieldType.NUMBER).description("사용자 ID"),
                                 fieldWithPath("email").type(JsonFieldType.STRING).description("로그인 이메일"),
                                 fieldWithPath("name").type(JsonFieldType.STRING).optional().description("표시 이름(미설정 시 null)"),
-                                fieldWithPath("onboarded")
-                                    .type(JsonFieldType.BOOLEAN)
-                                    .description("온보딩 완료 여부(false면 앱이 온보딩 화면으로 라우팅)"),
                                 fieldWithPath("profile")
                                     .type(JsonFieldType.OBJECT)
                                     .optional()
@@ -78,7 +75,6 @@ class MeDocsTest : RestDocsSupport() {
                                 fieldWithPath("id").type(JsonFieldType.NUMBER).description("사용자 ID"),
                                 fieldWithPath("email").type(JsonFieldType.STRING).description("보완된 이메일"),
                                 fieldWithPath("name").type(JsonFieldType.STRING).optional().description("표시 이름(미설정 시 null)"),
-                                fieldWithPath("onboarded").type(JsonFieldType.BOOLEAN).description("온보딩 완료 여부"),
                                 fieldWithPath("profile")
                                     .type(JsonFieldType.OBJECT)
                                     .optional()

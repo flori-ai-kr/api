@@ -52,7 +52,6 @@ class OnboardingDocsTest : RestDocsSupport() {
                                 fieldWithPath("id").type(JsonFieldType.NUMBER).description("사용자 ID"),
                                 fieldWithPath("email").type(JsonFieldType.STRING).optional().description("로그인 이메일"),
                                 fieldWithPath("name").type(JsonFieldType.STRING).optional().description("계정 표시 이름"),
-                                fieldWithPath("onboarded").type(JsonFieldType.BOOLEAN).description("온보딩 완료 여부(제출 후 true)"),
                                 fieldWithPath("profile").type(JsonFieldType.OBJECT).description("저장된 가게 프로필"),
                                 fieldWithPath("profile.storeName").type(JsonFieldType.STRING).description("가게명"),
                                 fieldWithPath("profile.regionSido").type(JsonFieldType.STRING).description("시/도"),

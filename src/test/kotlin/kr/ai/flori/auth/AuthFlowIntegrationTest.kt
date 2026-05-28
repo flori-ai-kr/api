@@ -92,11 +92,10 @@ class AuthFlowIntegrationTest {
     fun `소셜로그인-가입완료-보호엔드포인트-refresh-로그아웃 전체 흐름`() {
         val (access, refresh) = completeRegister(kakaoRegisterToken())
 
-        // 발급된 access로 보호 엔드포인트 접근 가능 + 가입 직후 onboarded=true
+        // 발급된 access로 보호 엔드포인트 접근 가능 + 가입 시 입력한 프로필 확인
         mockMvc
             .get("/me") { header(HttpHeaders.AUTHORIZATION, "Bearer $access") }
             .andExpect { status { isOk() } }
-            .andExpect { jsonPath("$.onboarded") { value(true) } }
             .andExpect { jsonPath("$.profile.storeName") { value("헤이즐 플라워") } }
 
         // refresh 회전 → 새 토큰

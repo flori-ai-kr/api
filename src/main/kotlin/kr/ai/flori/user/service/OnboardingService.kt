@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * 온보딩 서비스: 가게 프로필 upsert + users.onboarded 전환.
+ * 온보딩 서비스: 가게 프로필 upsert.
  *
  * 멀티테넌시: 항상 호출부가 넘긴 currentUserId만 키로 사용한다. 요청 본문의 user_id는 받지 않는다
  * (UserProfile PK = user_id이므로 본질적으로 테넌트 격리). 같은 사용자가 두 번 제출하면 멱등 갱신.
@@ -22,7 +22,7 @@ class OnboardingService(
     private val userRepository: UserRepository,
     private val userProfileRepository: UserProfileRepository,
 ) {
-    /** 가게 프로필을 insert/update하고 onboarded=true로 전환한 뒤 갱신된 사용자 응답을 반환한다. */
+    /** 가게 프로필을 insert/update한 뒤 갱신된 사용자 응답을 반환한다. */
     @Transactional
     fun submit(
         userId: Long,
@@ -51,14 +51,10 @@ class OnboardingService(
         profile.specialties = request.specialties?.toTypedArray() ?: emptyArray()
         val saved = userProfileRepository.save(profile)
 
-        user.onboarded = true
-        userRepository.save(user)
-
         return UserResponse(
             id = userId,
             email = user.email,
             name = user.name,
-            onboarded = true,
             profile = saved.toResponse(),
         )
     }

@@ -116,7 +116,7 @@ class AuthServiceIntegrationTest {
     }
 
     @Test
-    fun `register-complete는 User+프로필을 만들고 onboarded=true로 토큰을 발급한다`() {
+    fun `register-complete는 User+프로필을 만들고 토큰을 발급한다`() {
         val pid = "google-${UUID.randomUUID()}"
         val email = uniqueEmail()
         googleStub.providerId = pid
@@ -131,7 +131,6 @@ class AuthServiceIntegrationTest {
         val user = userRepository.findByProviderAndProviderId("GOOGLE", pid)!!
         assertThat(user.email).isEqualTo(email)
         assertThat(user.name).isEqualTo("닉네임")
-        assertThat(user.onboarded).isTrue()
     }
 
     @Test
@@ -235,7 +234,6 @@ class AuthServiceIntegrationTest {
 
         val user = userRepository.findByProviderAndProviderId("NAVER", pid)!!
         assertThat(user.provider).isEqualTo("NAVER")
-        assertThat(user.onboarded).isTrue()
     }
 
     @Test

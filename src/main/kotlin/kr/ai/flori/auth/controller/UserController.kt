@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController
  * 현재 로그인 사용자 조회 · 이메일 변경 · 가게 프로필 편집. 보호 엔드포인트(인증 필요) —
  * JWT 필터 + TenantContext 격리를 활용한다. user_id는 항상 TenantContext에서만 도출한다.
  *
- * 가입은 register/complete(소셜 전용, 비인증)에서 이미 끝났으므로, 여기 사용자는 항상 onboarded=true다.
+ * 가입은 register/complete(소셜 전용, 비인증)에서 이미 끝났으므로, 여기 사용자는 항상 온보딩이 완료된 상태다.
  * `POST /me/profile`은 기존 사용자의 가게 프로필 편집(upsert) 용도로, 마이페이지 편집 화면(SP4)에서 쓴다.
  */
 @RestController

@@ -35,8 +35,4 @@ class User(
 
     @Column(name = "is_active", nullable = false)
     var isActive: Boolean = true
-
-    /** 온보딩 완료 여부. 가게 프로필을 제출하면 true로 전환된다(서버 SSOT). */
-    @Column(name = "onboarded", nullable = false)
-    var onboarded: Boolean = false
 }

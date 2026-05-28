@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotBlank
  * 서버는 자유 문자열로 저장한다. 필수 필드(name, regionSido)만 NotBlank 검증한다.
  * "건너뛰기" 경로는 name + regionSido만 전송하므로 선택 필드는 부재를 허용해야 한다.
  */
-@Schema(description = "온보딩 제출 요청. 가게 프로필을 저장하고 onboarded=true로 전환한다.")
+@Schema(description = "온보딩 제출 요청. 가게 프로필을 저장한다.")
 data class OnboardingRequest(
     @field:NotBlank(message = "가게명은 필수입니다")
     @field:Schema(description = "가게명", example = "헤이즐 플라워")
