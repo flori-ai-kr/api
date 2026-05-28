@@ -4,6 +4,12 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 
+@Schema(description = "닉네임 사용 가능 응답. 사용 가능하면 available=true(200), 이미 사용 중이면 409(E-AUTH-003).")
+data class NicknameAvailabilityResponse(
+    @field:Schema(description = "사용 가능 여부")
+    val available: Boolean,
+)
+
 @Schema(description = "access 토큰 재발급 요청(refresh 로테이션)")
 data class RefreshRequest(
     @field:NotBlank(message = "refresh 토큰은 필수입니다")

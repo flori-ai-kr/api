@@ -7,15 +7,18 @@ import kr.ai.flori.auth.dto.GoogleOAuthRequest
 import kr.ai.flori.auth.dto.KakaoOAuthRequest
 import kr.ai.flori.auth.dto.LogoutRequest
 import kr.ai.flori.auth.dto.NaverOAuthRequest
+import kr.ai.flori.auth.dto.NicknameAvailabilityResponse
 import kr.ai.flori.auth.dto.OAuthResult
 import kr.ai.flori.auth.dto.RefreshRequest
 import kr.ai.flori.auth.dto.RegisterCompleteRequest
 import kr.ai.flori.auth.dto.TokenResponse
 import kr.ai.flori.auth.service.AuthService
 import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
@@ -75,5 +78,17 @@ class AuthController(
         @Valid @RequestBody request: LogoutRequest,
     ) {
         authService.logout(request.refreshToken)
+    }
+
+    @Operation(
+        summary = "닉네임 중복 확인",
+        description = "가입 화면 중복확인 버튼용. 사용 가능하면 200(available=true), 이미 사용 중이면 409(E-AUTH-003).",
+    )
+    @GetMapping("/nickname/check")
+    fun checkNickname(
+        @RequestParam nickname: String,
+    ): NicknameAvailabilityResponse {
+        authService.ensureNicknameAvailable(nickname)
+        return NicknameAvailabilityResponse(available = true)
     }
 }

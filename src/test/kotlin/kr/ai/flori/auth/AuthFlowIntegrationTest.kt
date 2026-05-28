@@ -208,4 +208,38 @@ class AuthFlowIntegrationTest {
                     )
             }.andExpect { status { isUnauthorized() } }
     }
+
+    @Test
+    fun `사용 가능한 닉네임 중복확인은 200 available=true`() {
+        mockMvc
+            .get("/auth/nickname/check") { param("nickname", "사용가능-${UUID.randomUUID()}") }
+            .andExpect {
+                status { isOk() }
+                jsonPath("$.available") { value(true) }
+            }
+    }
+
+    @Test
+    fun `이미 사용 중인 닉네임 중복확인은 409 E-AUTH-003`() {
+        val nickname = "중복닉-${UUID.randomUUID()}"
+        mockMvc
+            .post("/auth/register/complete") {
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    body(
+                        "registerToken" to kakaoRegisterToken(),
+                        "storeName" to "가게",
+                        "nickname" to nickname,
+                        "email" to "nick-${UUID.randomUUID()}@flori.dev",
+                        "regionSido" to "서울특별시",
+                    )
+            }.andExpect { status { isCreated() } }
+
+        mockMvc
+            .get("/auth/nickname/check") { param("nickname", nickname) }
+            .andExpect {
+                status { isConflict() }
+                jsonPath("$.code") { value("E-AUTH-003") }
+            }
+    }
 }

@@ -180,6 +180,14 @@ class AuthService(
         }
     }
 
+    /** 닉네임 사용 가능 여부 사전 확인(가입 화면 중복확인 버튼). 이미 사용 중이면 DUPLICATE_NICKNAME(409). */
+    @Transactional(readOnly = true)
+    fun ensureNicknameAvailable(nickname: String) {
+        if (userRepository.existsByName(nickname)) {
+            throw AppException(AuthErrorCode.DUPLICATE_NICKNAME, DUP_NICKNAME)
+        }
+    }
+
     /** 현재 사용자 조회. TenantContext에서 받은 userId로 격리. 가게 프로필을 함께 반환한다. */
     @Transactional(readOnly = true)
     fun me(userId: Long): UserResponse {
