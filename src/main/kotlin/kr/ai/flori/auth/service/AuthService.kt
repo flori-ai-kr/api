@@ -54,8 +54,10 @@ class AuthService(
      *
      * @MX:ANCHOR: [AUTO] 모든 소셜 OAuth 엔드포인트(kakao/google/naver)가 의존하는 단일 진입점.
      * @MX:REASON: 컨트롤러 3개 경로 + register/complete 신원 계약의 출처(fan_in>=3). 반환 계약 변경은 웹 세션에 파급된다.
+     *
+     * @Transactional 미적용: 외부 OAuth HTTP 호출(client.authenticate)이 DB 커넥션을 점유하지 않도록.
+     * 내부 DB 작업은 단건(findBy 조회, issueTokens의 refresh save)이라 각자 자체 트랜잭션으로 충분하다.
      */
-    @Transactional
     fun oauthLogin(
         provider: String,
         code: String,
@@ -176,7 +178,7 @@ class AuthService(
             detail.contains("uq_users_name") -> AppException(AuthErrorCode.DUPLICATE_NICKNAME, DUP_NICKNAME)
             detail.contains("uq_users_provider_identity") -> AppException(AuthErrorCode.ALREADY_REGISTERED, DUP_IDENTITY)
             detail.contains("email") -> AppException(AuthErrorCode.DUPLICATE_EMAIL, DUP_EMAIL)
-            else -> AppException(AuthErrorCode.ALREADY_REGISTERED, DUP_IDENTITY)
+            else -> AppException(CommonErrorCode.CONFLICT, "중복 충돌이 발생했습니다. 다시 시도해 주세요")
         }
     }
 

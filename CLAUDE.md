@@ -1,7 +1,7 @@
 # Flori Server — 꽃집 관리 백엔드 API
 
 Flori(꽃집 어드민)의 모바일 앱 백엔드. Spring Boot(Kotlin) REST API.
-이 repo는 **Flori 모바일 전환 프로그램의 백엔드 파트**다. 자매 repo: `~/Desktop/flori-ai/mobile`(Flutter), 원본 웹 `~/Desktop/flori-ai/web`(Next.js, 참고용).
+이 repo는 **Flori 모바일 전환 프로그램의 백엔드 파트**다. 자매 repo: `~/Desktop/flori-ai/mobile`(React Native / Expo), 원본 웹 `~/Desktop/flori-ai/web`(Next.js, 참고용).
 
 ## 이 repo의 역할
 

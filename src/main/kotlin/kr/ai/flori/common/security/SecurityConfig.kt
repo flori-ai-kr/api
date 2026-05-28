@@ -40,7 +40,12 @@ class SecurityConfig(
             }
             sessionManagement { sessionCreationPolicy = SessionCreationPolicy.STATELESS }
             authorizeHttpRequests {
-                authorize("/auth/**", permitAll)
+                // 비인증 공개 경로만 명시(향후 /auth 하위에 인증 필요 엔드포인트 추가 시 자동 노출 방지)
+                authorize("/auth/oauth/**", permitAll)
+                authorize("/auth/register/complete", permitAll)
+                authorize("/auth/refresh", permitAll)
+                authorize("/auth/logout", permitAll)
+                authorize("/auth/nickname/check", permitAll)
                 authorize("/health", permitAll)
                 authorize("/actuator/health/**", permitAll) // 헬스만 공개, 그 외 actuator는 인증 필요
                 authorize("/actuator/info", permitAll)

@@ -13,7 +13,7 @@
 ```mermaid
 flowchart TB
     subgraph Clients["클라이언트"]
-        App([Flutter 앱<br/>flori-ai/mobile])
+        App([React Native 앱<br/>flori-ai/mobile])
         Collector([수집 워커<br/>트렌드/인스타])
     end
 
@@ -309,7 +309,7 @@ sequenceDiagram
     AS-->>U: { 새 access, 새 refresh }
 ```
 
-공개 경로: `/auth/**`, `/health`, `/actuator/**`, Swagger, `/internal/**`(내부 키로 별도 검증). 그 외는 모두 인증 필요.
+공개 경로: `/auth/oauth/**`·`/auth/register/complete`·`/auth/refresh`·`/auth/logout`·`/auth/nickname/check`(비인증 의도 경로만 명시 — `/auth/**` 와일드카드 대신), `/health`, `/actuator/**`, Swagger, `/internal/**`(내부 키로 별도 검증). 그 외(`/me/**` 등)는 모두 인증 필요.
 
 ---
 

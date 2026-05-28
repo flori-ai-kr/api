@@ -10,7 +10,7 @@
 ## 2. 전체 아키텍처
 
 ```
- Flutter 앱 (flori-ai/mobile) ──REST+JWT──→ Flori Server (이 repo)
+ React Native 앱 (flori-ai/mobile) ──REST+JWT──→ Flori Server (이 repo)
                                        ├ Spring Security + JWT
                                        ├ @Scheduled (Cron 대체)
                                        ├ S3 presigned 발급
