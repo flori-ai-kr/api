@@ -2,7 +2,7 @@
 # flori server (Spring Boot/Kotlin) CI/CD — DEV
 # ==============================================================================
 # 배치: flori-ai-kr/server 리포 .github/workflows/deploy-server-dev.yml (별도 레포, 코드 루트)
-# 흐름: gradle build(+test) → ARM64 네이티브 빌드 → ECR(flori-dev/server) → SSH deploy.app.sh
+# 흐름: gradle build(+test) → ARM64 네이티브 빌드 → ECR(flori-dev/server) → SSH deploy.server.sh
 # 패턴: aws-infra/.github/workflows/api/deploy-optigen-dev.yml 과 동일 (ubuntu-24.04-arm, QEMU 불필요)
 #
 # GitHub Secrets (org 또는 repo dev Environment):
@@ -87,4 +87,4 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            /home/ec2-user/scripts/deploy.app.sh ${{ needs.build-and-push.outputs.image_tag }}
+            /home/ec2-user/scripts/deploy.server.sh ${{ needs.build-and-push.outputs.image_tag }}
