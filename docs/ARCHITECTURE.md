@@ -78,6 +78,7 @@ flowchart LR
         CPush[push<br/>FCM + Web Push/VAPID<br/>PushDispatcher 라우팅]
         CCfg[config<br/>CORS·Async·Schedule·WebConfig]
         CLog[log<br/>LoggingInterceptor·TraceIdFilter·logback]
+        CReq[request<br/>ClientContext·ClientContextFilter]
     end
 
     subgraph Domain["도메인 패키지 (kr.ai.flori.*)"]
@@ -89,7 +90,7 @@ flowchart LR
 
     classDef common fill:#0277bd,color:#fff,stroke:#01579b
     classDef dom fill:#ef6c00,color:#fff,stroke:#e65100
-    class CSec,CTen,CErr,CSto,CPush,CCfg,CLog common
+    class CSec,CTen,CErr,CSto,CPush,CCfg,CLog,CReq common
     class D dom
 ```
 
@@ -307,8 +308,8 @@ sequenceDiagram
 
     Note over U,DB: 토큰 회전
     U->>AS: POST /auth/refresh (refreshToken)
-    AS->>DB: 해시 조회 → revoked/만료 확인
-    AS->>DB: 기존 토큰 revoke + 신규 발급/저장
+    AS->>DB: 해시 조회 → status(ACTIVE)/만료 확인
+    AS->>DB: 기존 토큰 ROTATED + 신규 발급/저장(계보 계승)
     AS-->>U: { 새 access, 새 refresh }
 ```
 
@@ -547,6 +548,7 @@ erDiagram
 | 레이어 | 구현 | 방어 대상 |
 |---|---|---|
 | **JWT 필터** | `JwtAuthenticationFilter` — 모든 요청 Bearer 검증, 만료/위변조 시 401 | 비인증 접근 |
+| **요청 컨텍스트 필터** | `ClientContextFilter`(OncePerRequestFilter) — `X-Client-Id`/`X-Device-Id` 헤더·User-Agent·IP(X-Forwarded-For/remoteAddr)를 캡처해 `ClientContext`(ThreadLocal)에 주입. 발급 시 refresh_tokens에 저장(세션 추적). 제어문자 새니타이즈 | 발급 컨텍스트 추적/통계 |
 | **멀티테넌시** | `TenantContext`(ThreadLocal) + 전 쿼리 `user_id` 격리 | 테넌트 간 데이터 유출 |
 | **소유권 재검증** | `customer_id`·다건 `ids` 등 외부 식별자 소유 확인 | 교차 테넌트 식별자 주입 |
 | **소셜 전용 인증** | 이메일/비밀번호 가입 폐지(비밀번호 미저장). 신원은 OAuth providerId로만 도출 | 자격증명 노출 |

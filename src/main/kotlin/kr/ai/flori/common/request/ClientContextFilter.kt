@@ -48,12 +48,7 @@ class ClientContextFilter : OncePerRequestFilter() {
         request: HttpServletRequest,
         name: String,
         max: Int,
-    ): String? =
-        request
-            .getHeader(name)
-            ?.trim()
-            ?.takeIf { it.isNotEmpty() }
-            ?.take(max)
+    ): String? = sanitize(request.getHeader(name), max)
 
     /** 프록시 뒤에서는 X-Forwarded-For 선두 IP가 실제 클라이언트. 없으면 직접 연결 주소. */
     private fun resolveIp(request: HttpServletRequest): String? {
@@ -62,12 +57,25 @@ class ClientContextFilter : OncePerRequestFilter() {
                 .getHeader("X-Forwarded-For")
                 ?.split(",")
                 ?.firstOrNull()
-                ?.trim()
-                ?.takeIf { it.isNotEmpty() }
-        return (forwarded ?: request.remoteAddr)?.take(MAX_IP)
+        return sanitize(forwarded, MAX_IP) ?: sanitize(request.remoteAddr, MAX_IP)
     }
 
+    /**
+     * 헤더값 정제: DB 저장·로그 적재 전에 제어문자(CRLF/널 등)를 제거한다.
+     * 클라이언트가 보낸 값을 그대로 저장하므로 로그 인젝션·저장형 XSS 입력을 입구에서 차단한다.
+     */
+    private fun sanitize(
+        value: String?,
+        max: Int,
+    ): String? =
+        value
+            ?.replace(CONTROL_CHARS, "")
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.take(max)
+
     private companion object {
+        val CONTROL_CHARS = Regex("\\p{Cntrl}")
         const val MAX_CLIENT_ID = 64
         const val MAX_DEVICE_ID = 128
         const val MAX_USER_AGENT = 512

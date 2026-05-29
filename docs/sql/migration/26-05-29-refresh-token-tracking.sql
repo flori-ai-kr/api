@@ -16,8 +16,11 @@ ALTER TABLE refresh_tokens
   ADD COLUMN last_used_at       TIMESTAMPTZ,
   ADD COLUMN updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW();
 
--- 기존 revoked → status 변환: 종료 사유를 구분할 수 없는 기존 데이터는 일괄 ROTATED로 본다.
+-- 기존 revoked → status 변환: 종료 사유를 구분할 수 없는 무효 토큰은 일괄 ROTATED로 본다.
+-- (전환 이전 행의 종료 사유는 신뢰도 낮음 — 통계는 전환일 이후 created_at 기준으로 활용 권장)
 UPDATE refresh_tokens SET status = 'ROTATED' WHERE revoked = TRUE;
+-- 아직 유효(revoked=FALSE)하지만 이미 만료된 토큰은 EXPIRED로 분리 — ACTIVE 통계 부풀림 방지.
+UPDATE refresh_tokens SET status = 'EXPIRED' WHERE revoked = FALSE AND expires_at < NOW();
 ALTER TABLE refresh_tokens DROP COLUMN revoked;
 
 CREATE INDEX idx_refresh_tokens_user_last_used ON refresh_tokens(user_id, last_used_at);
