@@ -4,11 +4,13 @@ import kr.ai.flori.auth.dto.OAuthResult
 import kr.ai.flori.auth.dto.RegisterCompleteRequest
 import kr.ai.flori.auth.dto.TokenResponse
 import kr.ai.flori.auth.entity.RefreshToken
+import kr.ai.flori.auth.entity.RefreshTokenStatuses
 import kr.ai.flori.auth.error.AuthErrorCode
 import kr.ai.flori.auth.oauth.SocialOAuthClient
 import kr.ai.flori.auth.repository.RefreshTokenRepository
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
+import kr.ai.flori.common.request.ClientContext
 import kr.ai.flori.common.security.JwtProperties
 import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.user.dto.UserResponse
@@ -238,7 +240,7 @@ class AuthService(
         val stored =
             refreshTokenRepository.findByTokenHash(hashToken(rawRefreshToken))
                 ?: throw AppException(CommonErrorCode.INVALID_TOKEN)
-        if (stored.revoked || stored.expiresAt.isBefore(Instant.now())) {
+        if (stored.status != RefreshTokenStatuses.ACTIVE || stored.expiresAt.isBefore(Instant.now())) {
             throw AppException(CommonErrorCode.INVALID_TOKEN)
         }
         val user =
@@ -246,30 +248,49 @@ class AuthService(
                 .findById(stored.userId)
                 .orElseThrow { AppException(CommonErrorCode.INVALID_TOKEN) }
 
-        // 회전: 사용된 refresh 토큰 무효화 후 재발급
-        stored.revoked = true
+        // 회전: 사용된 refresh 토큰을 ROTATED로 무효화하고, 새 토큰이 세션 계보를 잇도록 부모로 넘긴다.
+        stored.status = RefreshTokenStatuses.ROTATED
+        stored.lastUsedAt = Instant.now()
         refreshTokenRepository.save(stored)
-        return issueTokens(user)
+        return issueTokens(user, parent = stored)
     }
 
     @Transactional
     fun logout(rawRefreshToken: String) {
         refreshTokenRepository.findByTokenHash(hashToken(rawRefreshToken))?.let { token ->
-            token.revoked = true
+            token.status = RefreshTokenStatuses.LOGGED_OUT
+            token.lastUsedAt = Instant.now()
             refreshTokenRepository.save(token)
         }
     }
 
-    private fun issueTokens(user: User): TokenResponse {
+    /**
+     * access + refresh 발급. refresh는 불투명 난수, DB엔 해시만 저장한다.
+     * [parent]가 있으면(회전) 세션 계보를 잇는다: 세션 시작 시각 계승 + 재발급 횟수 +1 + 부모 id 기록.
+     * 발급 컨텍스트(채널/기기/UA/IP)는 [ClientContext]에서 읽어 통계용으로 함께 저장한다.
+     */
+    private fun issueTokens(
+        user: User,
+        parent: RefreshToken? = null,
+    ): TokenResponse {
         val userId = requireNotNull(user.id)
         val accessToken = tokenProvider.createAccessToken(userId, user.email)
         val rawRefresh = generateRefreshToken()
+        val ctx = ClientContext.current()
         refreshTokenRepository.save(
             RefreshToken(
                 userId = userId,
                 tokenHash = hashToken(rawRefresh),
                 expiresAt = Instant.now().plusSeconds(jwtProperties.refreshTtlSeconds),
-            ),
+                sessionStartedAt = parent?.sessionStartedAt ?: Instant.now(),
+            ).apply {
+                parentTokenId = parent?.id
+                reissuedCount = parent?.let { it.reissuedCount + 1 } ?: 0
+                clientId = ctx?.clientId
+                deviceId = ctx?.deviceId
+                userAgent = ctx?.userAgent
+                createdIp = ctx?.ip
+            },
         )
         return TokenResponse(
             accessToken = accessToken,
