@@ -29,9 +29,11 @@ jwt:
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3100,http://localhost:8081}
 
-# 운영 에러 알림 (미설정 시 콘솔 로깅으로 폴백)
+# Discord 알림 (미설정 시 콘솔 로깅으로 폴백)
 discord:
-  webhook-url: ${DISCORD_WEBHOOK_URL:}
+  webhook-url: ${DISCORD_WEBHOOK_URL:}                              # 운영 에러(DiscordErrorReporter)
+  signup-webhook-url: ${DISCORD_SIGNUP_WEBHOOK_URL:}                # 유저 가입 알림
+  verification-webhook-url: ${DISCORD_VERIFICATION_WEBHOOK_URL:}    # 사업자 인증 신청 알림
 
 # S3 presigned 업로드 (bucket 미설정 시 관련 빈 미생성 — 로컬 부팅 가능)
 aws:
