@@ -2,11 +2,11 @@ package kr.ai.flori.auth.service
 
 import kr.ai.flori.auth.dto.OAuthResult
 import kr.ai.flori.auth.dto.RegisterCompleteRequest
-import kr.ai.flori.auth.event.UserRegisteredEvent
 import kr.ai.flori.auth.dto.TokenResponse
 import kr.ai.flori.auth.entity.RefreshToken
 import kr.ai.flori.auth.entity.RefreshTokenStatuses
 import kr.ai.flori.auth.error.AuthErrorCode
+import kr.ai.flori.auth.event.UserRegisteredEvent
 import kr.ai.flori.auth.oauth.SocialOAuthClient
 import kr.ai.flori.auth.repository.RefreshTokenRepository
 import kr.ai.flori.common.error.AppException

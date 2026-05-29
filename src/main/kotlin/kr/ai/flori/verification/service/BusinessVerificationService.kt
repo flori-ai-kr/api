@@ -93,8 +93,7 @@ class BusinessVerificationService(
 
     /** 게이팅용: APPROVED 행 보유 여부. */
     @Transactional(readOnly = true)
-    fun isVerified(userId: Long): Boolean =
-        repository.existsByUserIdAndStatus(userId, BusinessVerificationStatuses.APPROVED)
+    fun isVerified(userId: Long): Boolean = repository.existsByUserIdAndStatus(userId, BusinessVerificationStatuses.APPROVED)
 
     /** 게이팅 가드: 현재 사용자가 미인증이면 403. */
     @Transactional(readOnly = true)
