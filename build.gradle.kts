@@ -71,6 +71,8 @@ dependencies {
     // Docker 없이 실제 PostgreSQL을 띄워 스키마(docs/sql)·리포지토리를 검증 (CI·로컬 동일)
     testImplementation("io.zonky.test:embedded-database-spring-test:$embeddedDbTestVersion")
     testImplementation("io.zonky.test:embedded-postgres:2.0.7")
+    // arm64(CI ubuntu-24.04-arm / Apple Silicon) 에서도 Zonky 임베디드 PG 구동 — amd64와 동일 버전(14.10.1)
+    testImplementation("io.zonky.test.postgres:embedded-postgres-binaries-linux-arm64v8:14.10.1")
 
     // RestDocs → OpenAPI3 (테스트가 API 문서의 단일 출처)
     testImplementation("com.epages:restdocs-api-spec-mockmvc:0.19.2")

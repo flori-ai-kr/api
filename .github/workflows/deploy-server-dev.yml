@@ -27,7 +27,7 @@ env:
 jobs:
   build-and-push:
     name: 빌드 및 ECR Push
-    runs-on: ubuntu-latest # arm 러너는 가용하나 server 테스트(Zonky embedded-pg)가 arm64 미지원 → x64 + QEMU 유지
+    runs-on: ubuntu-24.04-arm # ARM64 네이티브 (build.gradle 에 Zonky arm64v8 바이너리 추가로 테스트 통과). public 레포 무료 러너
     outputs:
       image_tag: ${{ steps.meta.outputs.tags }}
     steps:
@@ -56,8 +56,6 @@ jobs:
           SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
           TIMESTAMP=$(TZ='Asia/Seoul' date +'%Y%m%d%H%M%S')
           echo "tags=${TIMESTAMP}-${SHORT_SHA}" >> $GITHUB_OUTPUT
-      - name: QEMU 설정 (arm64 에뮬레이션)
-        uses: docker/setup-qemu-action@v3
       - name: Docker Buildx 설정
         uses: docker/setup-buildx-action@v3
       - name: Docker 이미지 빌드 및 Push
