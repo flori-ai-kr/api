@@ -9,6 +9,8 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
 import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.support.TestAccounts
+import kr.ai.flori.verification.entity.BusinessVerification
+import kr.ai.flori.verification.repository.BusinessVerificationRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -41,6 +43,9 @@ abstract class RestDocsSupport {
     @Autowired
     protected lateinit var tokenProvider: JwtTokenProvider
 
+    @Autowired
+    protected lateinit var businessVerificationRepository: BusinessVerificationRepository
+
     protected fun json(value: Any): String = objectMapper.writeValueAsString(value)
 
     /**
@@ -48,6 +53,25 @@ abstract class RestDocsSupport {
      * 실제 신규 경로(registerToken → register/complete)를 그대로 태워 User+프로필+기본 시드를 생성한다.
      */
     protected fun signupAndToken(): String = TestAccounts.register(authService, tokenProvider).accessToken
+
+    /**
+     * 가입 + 사업자 인증(APPROVED)까지 완료하고 access 토큰을 발급한다.
+     * 커뮤니티 등 @RequiresBusinessVerified 게이팅 엔드포인트 문서화/테스트용.
+     */
+    protected fun signupVerifiedAndToken(): String {
+        val tokenResponse = TestAccounts.register(authService, tokenProvider)
+        val userId = tokenProvider.parse(tokenResponse.accessToken)!!.userId
+        businessVerificationRepository.save(
+            BusinessVerification(
+                userId = userId,
+                businessNumber = "1234567890",
+                businessName = "테스트 가게",
+                representativeName = "홍길동",
+                businessLicenseUrl = "https://cdn.example.com/business-licenses/$userId/a.jpg",
+            ).apply { approve() },
+        )
+        return tokenResponse.accessToken
+    }
 
     /**
      * Kotlin MockMvc DSL의 `andDo { handle(...) }`에 넣을 RestDocs 핸들러를 만든다.
