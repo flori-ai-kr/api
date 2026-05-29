@@ -74,6 +74,7 @@ src/main/kotlin/kr/ai/flori/
     ├── health/            # 헬스체크
     ├── log/               # TraceIdFilter, LoggingInterceptor
     ├── push/              # PushService (FCM / 로깅 fallback)
+    ├── request/           # ClientContext(ThreadLocal) + ClientContextFilter (요청 컨텍스트 캡처)
     ├── security/          # JWT, SecurityConfig, 내부 인증
     ├── storage/           # S3 presign
     ├── tenant/            # TenantContext (멀티테넌시)
@@ -133,6 +134,7 @@ src/main/kotlin/kr/ai/flori/
 | 용도 | 위치 |
 |------|------|
 | 멀티테넌시 컨텍스트 | `common/tenant/TenantContext.kt` |
+| 요청 컨텍스트 (클라이언트 정보) | `common/request/ClientContext.kt`, `ClientContextFilter.kt` |
 | JWT 발급/검증 | `common/security/JwtTokenProvider.kt`, `JwtAuthenticationFilter.kt` |
 | Security 설정 | `common/security/SecurityConfig.kt` |
 | 내부 ingest 인증 | `common/security/InternalAuthVerifier.kt` |

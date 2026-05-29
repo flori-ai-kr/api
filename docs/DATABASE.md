@@ -92,20 +92,31 @@ users (1) ── (N) community_posts / community_comments / community_likes  [au
 - **트리거**: `update_users_updated_at`
 - **닉네임 유일성**: `nickname`은 NOT NULL이며 `uq_users_nickname` UNIQUE다. 가입(`register/complete`)·프로필 편집(`POST /me/profile`, 본인 제외 검사) 양쪽에서 중복을 거부하며, 동시성 경쟁 시 unique 위반을 잡아 `이미 사용 중인 닉네임입니다`(409)로 변환한다. 중복 충돌 메시지는 신원(`이미 가입된 계정입니다`)·이메일(`이미 사용 중인 이메일입니다`)·닉네임 셋으로 구분된다.
 
-### `refresh_tokens` — 리프레시 토큰 저장소
+### `refresh_tokens` — 리프레시 토큰 저장소 (회전/세션 추적 + 통계)
 
-JWT refresh 회전/무효화 추적. **원문이 아닌 SHA-256 해시만 저장**. 회전 시 이전 토큰 revoke, 로그아웃 시 revoke.
+JWT refresh 회전/무효화 추적. **원문이 아닌 SHA-256 해시만 저장**. 회전 시 이전 토큰을 `ROTATED`로, 로그아웃 시 `LOGGED_OUT`로 표시한다.
+발급 컨텍스트(채널/기기/UA/IP)와 회전 계보(parent/세션시작/재발급수), 종료 사유(`status`)를 함께 축적해 추후 세션/로그인 통계에 활용한다.
 
 | 컬럼 | 타입 | 제약 | 설명 |
 |------|------|------|------|
 | `id` | BIGINT | PK, IDENTITY | |
 | `user_id` | BIGINT | NOT NULL | 논리참조(FK 제약 없음) |
 | `token_hash` | VARCHAR(64) | NOT NULL, UNIQUE | SHA-256 해시 (64 hex) |
+| `parent_token_id` | BIGINT | NULL | 회전 계보: 직전(재발급원) 토큰 id |
+| `client_id` | VARCHAR(64) | NULL | 채널 식별자(app/web). `X-Client-Id` 헤더 |
+| `device_id` | VARCHAR(128) | NULL | 디바이스 식별자. `X-Device-Id` 헤더 |
+| `user_agent` | VARCHAR(512) | NULL | 발급 시 User-Agent |
+| `created_ip` | VARCHAR(45) | NULL | 발급 시 IP(IPv6 포함) |
+| `status` | VARCHAR(20) | NOT NULL, DEFAULT 'ACTIVE', CHECK | `ACTIVE`/`ROTATED`/`LOGGED_OUT`/`EXPIRED` |
+| `reissued_count` | INT | NOT NULL, DEFAULT 0 | 세션 내 재발급(회전) 횟수 |
+| `session_started_at` | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | 세션 최초 시작(회전 시 계승) |
+| `last_used_at` | TIMESTAMPTZ | NULL | 마지막 사용(회전/로그아웃) 시각 |
 | `expires_at` | TIMESTAMPTZ | NOT NULL | 만료 시각 |
-| `revoked` | BOOLEAN | NOT NULL, DEFAULT FALSE | 무효화 여부 |
 | `created_at` | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+| `updated_at` | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | 트리거 자동 갱신 |
 
-- **인덱스**: `idx_refresh_tokens_user_id`, `idx_refresh_tokens_expires_at`
+- **인덱스**: `idx_refresh_tokens_user_id`, `idx_refresh_tokens_expires_at`, `idx_refresh_tokens_user_last_used (user_id, last_used_at)`, `idx_refresh_tokens_client (client_id)`
+- 발급 컨텍스트는 `ClientContextFilter`가 요청 헤더/원격주소에서 캡처(`common/request/`). 필터를 거치지 않으면 NULL.
 
 ### `user_profiles` — 사용자 프로필 (가게 정보, users와 1:1)
 

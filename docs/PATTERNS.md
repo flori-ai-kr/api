@@ -284,6 +284,7 @@ class RecurringExpenseGenerator(
 |---|---|
 | [`common/domain/PaymentMethods.kt`](../src/main/kotlin/kr/ai/flori/common/domain/PaymentMethods.kt) | `PaymentMethods.SALE/EXPENSE/UNPAID` |
 | [`common/domain/ReservationStatuses.kt`](../src/main/kotlin/kr/ai/flori/common/domain/ReservationStatuses.kt) | `ReservationStatuses.PENDING/CONFIRMED/COMPLETED/CANCELLED` + `ALL` |
+| [`auth/entity/RefreshTokenStatuses.kt`](../src/main/kotlin/kr/ai/flori/auth/entity/RefreshTokenStatuses.kt) | `RefreshTokenStatuses.ACTIVE/ROTATED/LOGGED_OUT/EXPIRED` — refresh_tokens.status 문자열 상수 |
 | [`common/util/DateRanges.kt`](../src/main/kotlin/kr/ai/flori/common/util/DateRanges.kt) | `KST`(=`ZoneId.of("Asia/Seoul")`), `monthRange(month)` (YYYY/YYYY-MM/YYYY-MM-DD → 시작·끝 날짜, 잘못된 형식은 400 VALIDATION) |
 
 > 도메인 상태/수단 문자열은 새로 만들지 말고 `common/domain`의 상수를 쓴다. 새 상태군이 생기면 같은 패턴으로 `common/domain`에 추가한다(예: `ReservationStatuses`).
