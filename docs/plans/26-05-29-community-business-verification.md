@@ -1,5 +1,7 @@
 # 커뮤니티 사업자 인증 + Discord 알림 추상화
 
+> 구현 완료 (브랜치 `feat/community-business-verification`, 2026-05-29). 구현 계획·진행 내역: `docs/superpowers/plans/2026-05-29-community-business-verification.md`
+
 - 작성일: 2026-05-29
 - 브랜치: `feat/community-business-verification`
 - 관련 문서: [설계 SSOT](../DESIGN.md) · [멀티테넌시 격리](../conventions/26-05-25-multitenancy-isolation.md) · [에러 코드](../ERROR_CODES.md)
