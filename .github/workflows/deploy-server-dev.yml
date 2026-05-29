@@ -2,7 +2,8 @@
 # flori server (Spring Boot/Kotlin) CI/CD — DEV
 # ==============================================================================
 # 배치: flori-ai-kr/server 리포 .github/workflows/deploy-server-dev.yml (별도 레포, 코드 루트)
-# 흐름: gradle build(+test) → ARM64 네이티브 빌드 → ECR(flori-dev/server) → SSH deploy.server.sh
+# 흐름: ARM64 네이티브 Docker 빌드(bootJar -x test) → ECR(flori-dev/server) → SSH deploy.server.sh
+# 테스트는 ci.yml 이 전담(같은 push). deploy 는 빌드/배포만 — Zonky 통합테스트 중복 실행 제거로 단축.
 # 패턴: aws-infra/.github/workflows/api/deploy-optigen-dev.yml 과 동일 (ubuntu-24.04-arm, QEMU 불필요)
 #
 # GitHub Secrets (org 또는 repo dev Environment):
@@ -33,14 +34,6 @@ jobs:
     steps:
       - name: 코드 체크아웃
         uses: actions/checkout@v4
-      - name: Java 21 설정
-        uses: actions/setup-java@v4
-        with:
-          java-version: "21"
-          distribution: temurin
-          cache: gradle
-      - name: Gradle 빌드
-        run: ./gradlew clean build
       - name: AWS 인증 설정
         uses: aws-actions/configure-aws-credentials@v4
         with:
