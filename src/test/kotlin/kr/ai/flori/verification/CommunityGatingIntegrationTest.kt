@@ -37,6 +37,26 @@ class CommunityGatingIntegrationTest {
     }
 
     @Test
+    fun `PENDING 사용자는 아직 미인증이라 커뮤니티 목록 조회가 403`() {
+        val tokenResponse = TestAccounts.register(authService, tokenProvider)
+        val userId = tokenProvider.parse(tokenResponse.accessToken)!!.userId
+        // 신청만 한 상태(PENDING) — 승인 전이므로 게이팅 통과 불가.
+        repository.save(
+            BusinessVerification(
+                userId = userId,
+                businessNumber = "1234567890",
+                businessName = "플로리",
+                representativeName = "홍길동",
+                businessLicenseUrl = "https://cdn.example.com/business-licenses/$userId/a.jpg",
+            ),
+        )
+
+        mockMvc
+            .get("/community/posts") { header(HttpHeaders.AUTHORIZATION, "Bearer ${tokenResponse.accessToken}") }
+            .andExpect { status { isForbidden() } }
+    }
+
+    @Test
     fun `APPROVED 사용자는 커뮤니티 목록 조회가 200`() {
         val tokenResponse = TestAccounts.register(authService, tokenProvider)
         val userId = tokenProvider.parse(tokenResponse.accessToken)!!.userId

@@ -18,7 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
-@SpringBootTest
+@SpringBootTest(properties = ["aws.cloudfront.domain=cdn.example.com"])
 class BusinessVerificationServiceIntegrationTest {
     @Autowired private lateinit var service: BusinessVerificationService
 
@@ -85,6 +85,26 @@ class BusinessVerificationServiceIntegrationTest {
                         "플로리 꽃집",
                         "홍길동",
                         "https://cdn.example.com/business-licenses/99999/abc.jpg",
+                    ),
+                )
+            }
+        assertThat(ex.errorCode).isEqualTo(VerificationErrorCode.LICENSE_NOT_OWNED)
+    }
+
+    @Test
+    fun `외부 호스트 등록증 URL은 본인 prefix여도 LICENSE_NOT_OWNED`() {
+        val userId = newUserId()
+        TenantContext.set(userId)
+
+        val ex =
+            assertThrows<AppException> {
+                service.submit(
+                    BusinessVerificationSubmitRequest(
+                        "1234567890",
+                        "플로리 꽃집",
+                        "홍길동",
+                        // prefix는 본인 것이지만 호스트가 우리 CDN(cdn.example.com)이 아님
+                        "https://attacker.com/business-licenses/$userId/abc.jpg",
                     ),
                 )
             }

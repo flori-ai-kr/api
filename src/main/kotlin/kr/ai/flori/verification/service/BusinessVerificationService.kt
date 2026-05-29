@@ -2,6 +2,7 @@ package kr.ai.flori.verification.service
 
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.storage.S3PresignService
+import kr.ai.flori.common.storage.StorageProperties
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.verification.domain.BusinessVerificationStatuses
 import kr.ai.flori.verification.dto.BusinessLicenseUploadTargetResponse
@@ -12,6 +13,7 @@ import kr.ai.flori.verification.error.VerificationErrorCode
 import kr.ai.flori.verification.event.BusinessVerificationSubmittedEvent
 import kr.ai.flori.verification.repository.BusinessVerificationRepository
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.net.URI
@@ -25,6 +27,7 @@ import java.util.UUID
 class BusinessVerificationService(
     private val repository: BusinessVerificationRepository,
     private val s3PresignService: S3PresignService,
+    private val storageProperties: StorageProperties,
     private val eventPublisher: ApplicationEventPublisher,
 ) {
     /** 등록증 업로드 presigned PUT URL 발급. 키에 userId를 박아 소유권을 표현. */
@@ -55,15 +58,21 @@ class BusinessVerificationService(
         }
 
         val saved =
-            repository.save(
-                BusinessVerification(
-                    userId = userId,
-                    businessNumber = request.businessNumber,
-                    businessName = request.businessName,
-                    representativeName = request.representativeName,
-                    businessLicenseUrl = request.businessLicenseUrl,
-                ),
-            )
+            try {
+                repository.save(
+                    BusinessVerification(
+                        userId = userId,
+                        businessNumber = request.businessNumber,
+                        businessName = request.businessName,
+                        representativeName = request.representativeName,
+                        businessLicenseUrl = request.businessLicenseUrl,
+                    ),
+                )
+            } catch (e: DataIntegrityViolationException) {
+                // 동시 신청 경쟁: 위 exists 검사를 통과해도 부분 유니크 인덱스(PENDING)가 거부할 수 있다.
+                // 멱등하게 중복 신청(409)으로 변환한다.
+                throw AppException(VerificationErrorCode.ALREADY_REQUESTED, cause = e)
+            }
 
         eventPublisher.publishEvent(
             BusinessVerificationSubmittedEvent(
@@ -103,18 +112,35 @@ class BusinessVerificationService(
         }
     }
 
-    /** 등록증 URL의 키가 본인 prefix(business-licenses/{userId}/)인지 검증. */
+    /**
+     * 등록증 URL이 (1) 우리 스토리지 호스트(CloudFront/S3)이고 (2) 키가 본인 prefix
+     * (business-licenses/{userId}/)인지 검증. 외부 호스트 URL 주입·경로 우회를 차단한다.
+     */
     private fun requireLicenseOwnership(
         userId: Long,
         fileUrl: String,
     ) {
-        val key =
-            runCatching { URI(fileUrl).path.removePrefix("/") }.getOrNull()
-                ?: throw AppException(VerificationErrorCode.LICENSE_NOT_OWNED)
-        if (!key.startsWith("business-licenses/$userId/") || key.contains("..")) {
+        if (!isOwnedLicenseUrl(userId, fileUrl)) {
             throw AppException(VerificationErrorCode.LICENSE_NOT_OWNED)
         }
     }
+
+    private fun isOwnedLicenseUrl(
+        userId: Long,
+        fileUrl: String,
+    ): Boolean {
+        val uri = runCatching { URI(fileUrl) }.getOrNull() ?: return false
+        val key = uri.path?.removePrefix("/") ?: return false
+        return uri.host == expectedStorageHost() &&
+            key.startsWith("business-licenses/$userId/") &&
+            !key.contains("..")
+    }
+
+    /** presign이 생성하는 공개 URL의 호스트(CloudFront 우선, 없으면 S3 가상호스트). */
+    private fun expectedStorageHost(): String =
+        storageProperties.cloudfront.domain.ifBlank {
+            "${storageProperties.s3.bucket}.s3.${storageProperties.region}.amazonaws.com"
+        }
 
     private companion object {
         val EXTENSION_BY_TYPE =

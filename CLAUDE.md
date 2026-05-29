@@ -65,6 +65,7 @@ src/main/kotlin/kr/ai/flori/
 ├── settings/              # 카드사 · 매출/지출 설정 · 하단바 · 푸시 구독
 ├── subscriptions/         # 구독 + 게이팅(gating/) · 구독 보안(security/)
 ├── community/             # 커뮤니티 게시판(단일 공유) · 비밀글/댓글·대댓글·좋아요·soft delete
+├── verification/          # 사업자 인증 (신청·상태조회·presigned 업로드·게이팅)
 ├── dashboard/             # 오늘/월 집계 · 네이티브 SQL 통계
 └── common/                # 횡단 관심사
     ├── config/            # CORS, OpenAPI, Async, Schedule, Web
@@ -73,6 +74,7 @@ src/main/kotlin/kr/ai/flori/
     ├── error/             # GlobalExceptionHandler, AppException, ErrorCode, Discord 리포팅
     ├── health/            # 헬스체크
     ├── log/               # TraceIdFilter, LoggingInterceptor
+    ├── notification/      # Discord 알림 채널 (DiscordNotifier, DiscordChannel, DiscordProperties)
     ├── push/              # PushService (FCM / 로깅 fallback)
     ├── request/           # ClientContext(ThreadLocal) + ClientContextFilter (요청 컨텍스트 캡처)
     ├── security/          # JWT, SecurityConfig, 내부 인증
@@ -144,6 +146,8 @@ src/main/kotlin/kr/ai/flori/
 | S3 presign | `common/storage/S3PresignService.kt` |
 | 푸시 | `common/push/PushService.kt`, `FirebasePushService.kt` |
 | 구독 게이팅 | `subscriptions/gating/`, `subscriptions/security/` |
+| 사업자 인증 게이팅 | `verification/gating/RequiresBusinessVerified.kt`, `BusinessVerifiedInterceptor.kt` |
+| Discord 알림 | `common/notification/discord/DiscordNotifier.kt`, `DiscordChannel.kt`, `DiscordProperties.kt` |
 | CORS / OpenAPI 설정 | `common/config/CorsConfig.kt`, `OpenApiConfig.kt` |
 | 헬스체크 | `common/health/HealthController.kt` |
 

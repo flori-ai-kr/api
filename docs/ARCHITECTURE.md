@@ -33,7 +33,7 @@ flowchart TB
     subgraph External["외부 서비스"]
         FCM[FCM<br/>모바일 푸시]
         VAPID[Web Push/VAPID<br/>브라우저(PWA) 푸시]
-        Discord[Discord<br/>에러 웹훅]
+        Discord[Discord<br/>에러·가입·인증 웹훅]
         KakaoAuth[kauth.kakao.com<br/>카카오 토큰교환]
         KakaoApi[kapi.kakao.com<br/>카카오 프로필조회]
     end
@@ -47,6 +47,7 @@ flowchart TB
     Svc -->|"PushDispatcher<br/>(FCM or VAPID)"| FCM
     Svc -->|"PushDispatcher<br/>(p256dh/auth 있으면)"| VAPID
     Adv -.->|"예기치 못한 오류"| Discord
+    Svc -.->|"가입·인증 신청<br/>(AFTER_COMMIT @Async)"| Discord
     Svc -->|"인증코드 교환"| KakaoAuth
     Svc -->|"프로필 조회"| KakaoApi
 
@@ -79,6 +80,7 @@ flowchart LR
         CCfg[config<br/>CORS·Async·Schedule·WebConfig]
         CLog[log<br/>LoggingInterceptor·TraceIdFilter·logback]
         CReq[request<br/>ClientContext·ClientContextFilter]
+        CNoti[notification/discord<br/>DiscordNotifier·DiscordChannel]
     end
 
     subgraph Domain["도메인 패키지 (kr.ai.flori.*)"]
@@ -90,7 +92,7 @@ flowchart LR
 
     classDef common fill:#0277bd,color:#fff,stroke:#01579b
     classDef dom fill:#ef6c00,color:#fff,stroke:#e65100
-    class CSec,CTen,CErr,CSto,CPush,CCfg,CLog,CReq common
+    class CSec,CTen,CErr,CSto,CPush,CCfg,CLog,CReq,CNoti common
     class D dom
 ```
 
@@ -105,7 +107,8 @@ flowchart LR
 | `reservations` / `calendar` | 예약(매출 전환·픽업)·캘린더 이벤트·**리마인더/요약 푸시** |
 | `photos` | 사진카드(presigned 업로드·삭제·**다운로드**)·태그 |
 | `insights` | 트렌드/인스타 공유 읽기(**카테고리별 개수·최근 수집 시각**)·스크랩·**내부 수집 API** |
-| `community` | 단일 커뮤니티 게시판(게시글·댓글·대댓글·좋아요·비밀글·soft delete)·이미지 업로드 |
+| `community` | 단일 커뮤니티 게시판(게시글·댓글·대댓글·좋아요·비밀글·soft delete)·이미지 업로드. **`@RequiresBusinessVerified` 게이팅 적용** |
+| `verification` | 사업자 인증 신청·상태 조회(PENDING/APPROVED/REJECTED/NONE)·presigned 업로드·게이팅(`@RequiresBusinessVerified`) |
 | `settings` | 매출/지출 설정·하단바·사용자 설정·푸시 구독·**테스트 발송** |
 | `dashboard` | 오늘/월 집계·**네이티브 SQL 통계** |
 
@@ -523,7 +526,8 @@ erDiagram
 | 사진첩 | `GET/POST/PATCH/DELETE /photo-cards`, `POST /photo-cards/upload-targets`(신규 카드용), `POST /photo-cards/{id}/upload-targets`, `GET /photo-cards/{id}/photos/download`, `/photos/reorder`, `/photo-tags` | Auth |
 | 인사이트 | `GET /insights/{trends,accounts,posts}`, `GET /insights/trends/counts`, `GET /insights/instagram/latest`, `/insights/scraps/*` | Auth |
 | 내부 수집 | `POST /internal/{trends,instagram-posts,instagram-accounts}` | **Internal 키** |
-| 커뮤니티 | `GET/POST /community/posts`, `GET/PATCH/DELETE /community/posts/{id}`, `POST /community/posts/{id}/like`, `GET/POST /community/posts/{id}/comments`, `DELETE /community/comments/{id}`, `POST /community/upload-targets` | Auth |
+| 커뮤니티 | `GET/POST /community/posts`, `GET/PATCH/DELETE /community/posts/{id}`, `POST /community/posts/{id}/like`, `GET/POST /community/posts/{id}/comments`, `DELETE /community/comments/{id}`, `POST /community/upload-targets` | Auth + **사업자 인증** |
+| 사업자 인증 | `POST /verification/business/upload-target`, `POST /verification/business`, `GET /verification/business/me` | Auth |
 | 설정 | `/settings/{sale-categories,payment-methods,expense-*,preferences}`, `/push/{subscribe,unsubscribe,status,test}` | Auth |
 | 대시보드 | `GET /dashboard/today`·`/dashboard/month` | Auth |
 
@@ -559,6 +563,7 @@ erDiagram
 | **SQL 인젝션** | JPA 파라미터 바인딩, 네이티브도 `?`/`:param` 바인딩 전용 | 인젝션 |
 | **S3** | presigned PUT/GET 짧은 만료, 소유권/이미지 메타·최대 장수 검증 후 발급; 삭제는 best-effort(DB 정리 우선) | 무단 업로드·비인가 다운로드 |
 | **커뮤니티 권한** | `users.is_admin`으로 공지(notice) 작성·비밀글/댓글 열람·타인 글 삭제 판정. 수정은 작성자만 | 권한 없는 콘텐츠 수정·열람 |
+| **사업자 인증 게이팅** | `@RequiresBusinessVerified` 어노테이션 → `BusinessVerifiedInterceptor`가 APPROVED 행 보유 여부 검증. 미인증 시 E-VRF-001(403). `/verification/business/**`(인증 입구)는 게이팅 제외 | 미인증 사용자의 커뮤니티 접근 |
 | **CORS / 헤더** | origin 화이트리스트, `X-Frame-Options: DENY`·`nosniff`·`Referrer-Policy` | XSS/클릭재킹/크로스사이트 |
 | **에러 응답** | 표준 `{code, message}`, 내부 디테일·시크릿 비노출 | 정보 노출 |
 | **시크릿** | 전부 `${ENV}` 참조, 코드/깃에 시크릿 없음 | 시크릿 유출 |
@@ -570,9 +575,10 @@ erDiagram
 ```
 AppException(errorCode: ErrorCode, message)
 └── ErrorCode (인터페이스: code·status·defaultMessage)
-    ├── CommonErrorCode    (common/error)       — 횡단 코드  E-CMN-*
-    ├── AuthErrorCode      (auth/error)         — 도메인 코드 E-AUTH-*
-    └── CommunityErrorCode (community/error)   — 도메인 코드 E-CMNT-*
+    ├── CommonErrorCode       (common/error)         — 횡단 코드  E-CMN-*
+    ├── AuthErrorCode         (auth/error)            — 도메인 코드 E-AUTH-*
+    ├── CommunityErrorCode    (community/error)       — 도메인 코드 E-CMNT-*
+    └── VerificationErrorCode (verification/error)   — 도메인 코드 E-VRF-*
         (새 도메인은 <domain>/error 에 enum 추가)
 ```
 
@@ -630,7 +636,9 @@ flowchart LR
 | `AWS_REGION` / `S3_BUCKET` / `CLOUDFRONT_DOMAIN` (+ AWS 자격증명) | presigned 업로드·서빙 |
 | `FCM_ENABLED` / `FCM_CREDENTIALS` | 모바일 FCM 푸시 |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | Web Push/VAPID(브라우저 PWA 푸시). 미설정 시 로깅 폴백 |
-| `DISCORD_WEBHOOK_URL` | 에러 알림 |
+| `DISCORD_WEBHOOK_URL` | 에러 알림 (`DiscordErrorReporter`) |
+| `DISCORD_SIGNUP_WEBHOOK_URL` | 신규 가입 알림 (`DiscordChannel.SIGNUP`) |
+| `DISCORD_VERIFICATION_WEBHOOK_URL` | 사업자 인증 신청 알림 (`DiscordChannel.VERIFICATION`) |
 | `INTERNAL_API_KEY` | 내부 수집 API |
 | `CORS_ALLOWED_ORIGINS` | 앱/웹 origin 화이트리스트 |
 | `KAKAO_REST_API_KEY` / `KAKAO_CLIENT_SECRET` | 카카오 OAuth (시크릿 '사용 안 함'이면 빈 값) |

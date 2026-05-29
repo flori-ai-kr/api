@@ -5,7 +5,6 @@ import kr.ai.flori.common.notification.discord.DiscordChannel
 import kr.ai.flori.common.notification.discord.DiscordMessage
 import kr.ai.flori.common.notification.discord.DiscordNotifier
 import kr.ai.flori.common.util.KST
-import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
@@ -17,7 +16,7 @@ import java.time.format.DateTimeFormatter
 class UserRegisteredEventListener(
     private val discordNotifier: DiscordNotifier,
 ) {
-    @Async
+    // 발송 비동기화는 DiscordNotifier.notify(@Async)가 담당 — 여기 @Async를 두면 이중 디스패치.
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun handle(event: UserRegisteredEvent) {
         val now = ZonedDateTime.now(KST).format(TIMESTAMP_FORMAT)
