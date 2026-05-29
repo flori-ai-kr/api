@@ -6,6 +6,7 @@ import kr.ai.flori.auth.dto.TokenResponse
 import kr.ai.flori.auth.entity.RefreshToken
 import kr.ai.flori.auth.entity.RefreshTokenStatuses
 import kr.ai.flori.auth.error.AuthErrorCode
+import kr.ai.flori.auth.event.UserRegisteredEvent
 import kr.ai.flori.auth.oauth.SocialOAuthClient
 import kr.ai.flori.auth.repository.RefreshTokenRepository
 import kr.ai.flori.common.error.AppException
@@ -19,6 +20,7 @@ import kr.ai.flori.user.entity.UserProfile
 import kr.ai.flori.user.repository.UserProfileRepository
 import kr.ai.flori.user.repository.UserRepository
 import kr.ai.flori.user.service.toResponse
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -45,6 +47,7 @@ class AuthService(
     private val userProfileRepository: UserProfileRepository,
     // 제공자 일반화: 빈 이름(KAKAO/GOOGLE/NAVER)을 키로 소셜 클라이언트 주입. 새 제공자는 빈 추가만으로 확장.
     private val socialClients: Map<String, SocialOAuthClient>,
+    private val eventPublisher: ApplicationEventPublisher,
 ) {
     private val secureRandom = SecureRandom()
 
@@ -140,6 +143,13 @@ class AuthService(
             },
         )
         seeder.seedForNewUser(userId)
+        eventPublisher.publishEvent(
+            UserRegisteredEvent(
+                userId = userId,
+                nickname = user.nickname,
+                provider = user.provider,
+            ),
+        )
         return issueTokens(user)
     }
 

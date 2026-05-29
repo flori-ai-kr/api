@@ -132,7 +132,7 @@ class S3PresignService(
         }
 
     private companion object {
-        val ALLOWED_KEY_PREFIXES = listOf("photo-cards/", "community/")
+        val ALLOWED_KEY_PREFIXES = listOf("photo-cards/", "community/", "business-licenses/")
     }
 }
 

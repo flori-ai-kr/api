@@ -11,6 +11,7 @@ import kr.ai.flori.community.dto.PostResponse
 import kr.ai.flori.community.dto.PostUpdateRequest
 import kr.ai.flori.community.dto.PostsPageResponse
 import kr.ai.flori.community.service.CommunityService
+import kr.ai.flori.verification.gating.RequiresBusinessVerified
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController
  */
 @RestController
 @RequestMapping("/community")
+@RequiresBusinessVerified
 class CommunityController(
     private val communityService: CommunityService,
 ) {

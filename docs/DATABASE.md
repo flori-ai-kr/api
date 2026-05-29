@@ -560,6 +560,35 @@ FCM(모바일)과 Web Push/VAPID(브라우저 PWA) 구독을 함께 관리. `Pus
 
 ---
 
+## 11. 사업자 인증 (커뮤니티 게이팅)
+
+### `business_verifications` — 사업자 인증 신청/상태
+
+커뮤니티 접근 게이팅용. 사용자가 사업자등록증을 제출하면 `PENDING`으로 기록되고, 운영자가 수동 검토 후 `status`를 갱신한다(현재 관리자 API 없음 — SQL 직접 갱신). **인증됨 = 해당 user_id에 `status='APPROVED'` 행 존재.** 재신청은 새 행으로 누적된다.
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|------|------|------|------|
+| `id` | BIGINT | PK, IDENTITY | |
+| `user_id` | BIGINT | NOT NULL | 논리참조(FK 제약 없음). 멀티테넌시 격리 키 |
+| `business_number` | VARCHAR(10) | NOT NULL | 사업자번호 10자리(하이픈 제거 정규화) |
+| `business_name` | VARCHAR(255) | NOT NULL | 상호 |
+| `representative_name` | VARCHAR(100) | NOT NULL | 대표자명 |
+| `business_license_url` | TEXT | NOT NULL | 사업자등록증 이미지 URL(S3/CloudFront) |
+| `status` | VARCHAR(20) | NOT NULL, DEFAULT 'PENDING', CHECK | `PENDING`/`APPROVED`/`REJECTED` |
+| `reject_reason` | TEXT | | 거절 사유 |
+| `reviewed_at` | TIMESTAMPTZ | | 검토(승인/거절) 시각 |
+| `created_at` | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+| `updated_at` | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+
+- **인덱스**: `idx_business_verifications_user`(user_id)
+- **제약**: `uq_business_verifications_pending` — 부분 유니크(`WHERE status='PENDING'`), user당 진행 중 신청 1건만
+- **트리거**: `update_business_verifications_updated_at` (수동 SQL 승인 시에도 updated_at 갱신)
+- **수동 승인/거절 SQL** (현 단계):
+  - 승인: `UPDATE business_verifications SET status='APPROVED', reviewed_at=now() WHERE id=:id;`
+  - 거절: `UPDATE business_verifications SET status='REJECTED', reject_reason=:reason, reviewed_at=now() WHERE id=:id;`
+
+---
+
 ## 부록: 공통 규칙
 
 - **`update_updated_at()` 트리거 함수**: `updated_at` 컬럼이 있는 거의 모든 테이블에 BEFORE UPDATE 트리거로 부착. 예외: `subscriptions`/`subscription_events`(앱 로직이 직접 갱신), `notification_log`/`recurring_skips`(updated_at 없음).

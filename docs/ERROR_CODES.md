@@ -81,3 +81,14 @@
 | `E-CMNT-004` | NOTICE_ADMIN_ONLY (공지 권한) | 403 | 비관리자가 `notice` 작성 시도 |
 | `E-CMNT-005` | FORBIDDEN (권한 없음) | 403 | 타인 글 수정(작성자만)·타인 글/댓글 삭제(작성자+관리자 외) |
 | `E-CMNT-006` | INVALID_PARENT (부모 댓글 오류) | 400 | 다른 글의 댓글·이미 대댓글인 댓글에 대댓글 시도 |
+
+## E-VRF-* (사업자 인증)
+
+> `verification/error/VerificationErrorCode`. 커뮤니티 접근 게이팅용 사업자 인증. 인증됨 = `status='APPROVED'` 행 존재.
+
+| 코드 | 의미 | HTTP | 발생 지점 |
+|------|------|------|-----------|
+| `E-VRF-001` | NOT_VERIFIED (미인증) | 403 | 미인증 사용자가 `@RequiresBusinessVerified` 엔드포인트(커뮤니티) 접근 |
+| `E-VRF-002` | ALREADY_REQUESTED (중복 신청) | 409 | 이미 `PENDING`/`APPROVED` 인증이 있는데 재신청 |
+| `E-VRF-003` | LICENSE_NOT_OWNED (등록증 소유권) | 403 | 등록증 URL 키가 본인 prefix(`business-licenses/{userId}/`)가 아님 |
+| `E-VRF-004` | INVALID_LICENSE_TYPE (파일 형식) | 400 | presign 시 허용되지 않은 contentType(jpeg·png·webp·pdf 외) |

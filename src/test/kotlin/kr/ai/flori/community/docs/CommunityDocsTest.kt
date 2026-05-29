@@ -135,7 +135,7 @@ class CommunityDocsTest : RestDocsSupport() {
 
     @Test
     fun `게시글 생성 문서화`() {
-        val token = signupAndToken()
+        val token = signupVerifiedAndToken()
 
         mockMvc
             .post("/community/posts") {
@@ -180,7 +180,7 @@ class CommunityDocsTest : RestDocsSupport() {
 
     @Test
     fun `게시글 목록 문서화`() {
-        val token = signupAndToken()
+        val token = signupVerifiedAndToken()
         createPost(token)
 
         mockMvc
@@ -210,7 +210,7 @@ class CommunityDocsTest : RestDocsSupport() {
 
     @Test
     fun `게시글 단건 조회 문서화`() {
-        val token = signupAndToken()
+        val token = signupVerifiedAndToken()
         val id = createPost(token)
 
         mockMvc
@@ -235,7 +235,7 @@ class CommunityDocsTest : RestDocsSupport() {
 
     @Test
     fun `게시글 수정 문서화`() {
-        val token = signupAndToken()
+        val token = signupVerifiedAndToken()
         val id = createPost(token)
 
         mockMvc
@@ -271,7 +271,7 @@ class CommunityDocsTest : RestDocsSupport() {
 
     @Test
     fun `게시글 삭제 문서화`() {
-        val token = signupAndToken()
+        val token = signupVerifiedAndToken()
         val id = createPost(token)
 
         mockMvc
@@ -295,7 +295,7 @@ class CommunityDocsTest : RestDocsSupport() {
 
     @Test
     fun `좋아요 토글 문서화`() {
-        val token = signupAndToken()
+        val token = signupVerifiedAndToken()
         val id = createPost(token)
 
         mockMvc
@@ -324,7 +324,7 @@ class CommunityDocsTest : RestDocsSupport() {
 
     @Test
     fun `업로드 타깃 발급 문서화`() {
-        val token = signupAndToken()
+        val token = signupVerifiedAndToken()
 
         mockMvc
             .post("/community/upload-targets") {
@@ -369,7 +369,7 @@ class CommunityDocsTest : RestDocsSupport() {
 
     @Test
     fun `댓글 목록 문서화`() {
-        val token = signupAndToken()
+        val token = signupVerifiedAndToken()
         val id = createPost(token)
         createComment(token, id)
 
@@ -396,7 +396,7 @@ class CommunityDocsTest : RestDocsSupport() {
 
     @Test
     fun `댓글 작성 문서화`() {
-        val token = signupAndToken()
+        val token = signupVerifiedAndToken()
         val id = createPost(token)
 
         mockMvc
@@ -441,7 +441,7 @@ class CommunityDocsTest : RestDocsSupport() {
 
     @Test
     fun `댓글 삭제 문서화`() {
-        val token = signupAndToken()
+        val token = signupVerifiedAndToken()
         val id = createPost(token)
         val commentId = createComment(token, id)
 
