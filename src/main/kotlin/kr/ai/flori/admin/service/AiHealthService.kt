@@ -41,7 +41,11 @@ class AiHealthService(
     ): AiHealthTarget {
         val start = System.nanoTime()
         return try {
-            restClient.get().uri(url).retrieve().toBodilessEntity()
+            restClient
+                .get()
+                .uri(url)
+                .retrieve()
+                .toBodilessEntity()
             AiHealthTarget(name, "UP", elapsedMs(start), null)
         } catch (e: Exception) {
             AiHealthTarget(name, "DOWN", elapsedMs(start), e.message?.take(DETAIL_MAX))
