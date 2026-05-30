@@ -63,10 +63,11 @@ class AiHealthService(
             else -> "도달 불가"
         }
 
-    private fun elapsedMs(start: Long): Long = (System.nanoTime() - start) / 1_000_000
+    private fun elapsedMs(start: Long): Long = (System.nanoTime() - start) / NANOS_PER_MS
 
     private companion object {
         const val CONNECT_TIMEOUT_MS = 2000
         const val READ_TIMEOUT_MS = 3000
+        const val NANOS_PER_MS = 1_000_000L
     }
 }
