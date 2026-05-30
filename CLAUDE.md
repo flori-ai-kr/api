@@ -67,6 +67,7 @@ src/main/kotlin/kr/ai/flori/
 ├── community/             # 커뮤니티 게시판(단일 공유) · 비밀글/댓글·대댓글·좋아요·soft delete
 ├── verification/          # 사업자 인증 (신청·상태조회·presigned 업로드·게이팅)
 ├── dashboard/             # 오늘/월 집계 · 네이티브 SQL 통계
+├── admin/                 # 운영자 콘솔 API (/admin/**, @RequiresAdmin · cross-tenant) — 통계·인증심사·유저/구독·AI헬스 프록시
 └── common/                # 횡단 관심사
     ├── config/            # CORS, OpenAPI, Async, Schedule, Web
     ├── domain/            # 공통 enum (PaymentMethods, ReservationStatuses)
@@ -147,6 +148,7 @@ src/main/kotlin/kr/ai/flori/
 | 푸시 | `common/push/PushService.kt`, `FirebasePushService.kt` |
 | 구독 게이팅 | `subscriptions/gating/`, `subscriptions/security/` |
 | 사업자 인증 게이팅 | `verification/gating/RequiresBusinessVerified.kt`, `BusinessVerifiedInterceptor.kt` |
+| 운영자 콘솔 게이팅 | `admin/gating/RequiresAdmin.kt`, `AdminInterceptor.kt` (User.isAdmin 재검증, `/admin/**`) |
 | Discord 알림 | `common/notification/discord/DiscordNotifier.kt`, `DiscordChannel.kt`, `DiscordProperties.kt` |
 | CORS / OpenAPI 설정 | `common/config/CorsConfig.kt`, `OpenApiConfig.kt` |
 | 헬스체크 | `common/health/HealthController.kt` |

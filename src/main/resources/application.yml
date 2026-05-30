@@ -64,6 +64,12 @@ internal:
 revenuecat:
   webhook-secret: ${REVENUECAT_WEBHOOK_SECRET:}
 
+# 운영 콘솔 AI 헬스 프록시 타깃. 미설정(빈 값) 시 해당 타깃은 응답에서 생략된다.
+ai:
+  health:
+    server-url: ${AI_HEALTH_SERVER_URL:}
+    litellm-url: ${AI_HEALTH_LITELLM_URL:}
+
 springdoc:
   # 문서 본문 = RestDocs 생성 스펙(static/docs/open-api-3.0.1.json).
   # OpenApiConfig가 그 스펙(paths/components)을 읽어 bearerAuth 보안 스킴과 합쳐 /v3/api-docs로 노출하고,
