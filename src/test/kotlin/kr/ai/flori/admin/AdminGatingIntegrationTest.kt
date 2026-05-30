@@ -1,0 +1,56 @@
+package kr.ai.flori.admin
+
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
+import kr.ai.flori.auth.service.AuthService
+import kr.ai.flori.common.security.JwtTokenProvider
+import kr.ai.flori.support.TestAccounts
+import kr.ai.flori.user.repository.UserRepository
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.HttpHeaders
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.get
+
+@AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
+@SpringBootTest
+@AutoConfigureMockMvc
+class AdminGatingIntegrationTest {
+    @Autowired private lateinit var mockMvc: MockMvc
+
+    @Autowired private lateinit var authService: AuthService
+
+    @Autowired private lateinit var tokenProvider: JwtTokenProvider
+
+    @Autowired private lateinit var userRepository: UserRepository
+
+    private fun makeAdmin(userId: Long) {
+        val user = userRepository.findById(userId).orElseThrow()
+        user.isAdmin = true
+        userRepository.save(user)
+    }
+
+    @Test
+    fun `비운영자는 admin me 가 403`() {
+        val token = TestAccounts.register(authService, tokenProvider).accessToken
+        mockMvc
+            .get("/admin/me") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") }
+            .andExpect { status { isForbidden() } }
+    }
+
+    @Test
+    fun `운영자는 admin me 가 200`() {
+        val tokens = TestAccounts.register(authService, tokenProvider)
+        makeAdmin(tokenProvider.parse(tokens.accessToken)!!.userId)
+        mockMvc
+            .get("/admin/me") { header(HttpHeaders.AUTHORIZATION, "Bearer ${tokens.accessToken}") }
+            .andExpect { status { isOk() } }
+    }
+
+    @Test
+    fun `미인증은 admin me 가 401`() {
+        mockMvc.get("/admin/me").andExpect { status { isUnauthorized() } }
+    }
+}
