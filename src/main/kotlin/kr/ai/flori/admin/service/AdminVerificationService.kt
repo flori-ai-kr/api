@@ -28,8 +28,10 @@ class AdminVerificationService(
         size: Int,
     ): List<AdminVerificationResponse> =
         repository
-            .findByStatusOrderByCreatedAtDesc(status, PageRequest.of(page, size))
-            .content
+            .findByStatusOrderByCreatedAtDesc(
+                status,
+                PageRequest.of(page.coerceAtLeast(0), size.coerceIn(1, MAX_PAGE_SIZE)),
+            ).content
             .map { it.toResponse() }
 
     @Transactional
@@ -79,4 +81,8 @@ class AdminVerificationService(
             submittedAt = createdAt,
             reviewedAt = reviewedAt,
         )
+
+    private companion object {
+        const val MAX_PAGE_SIZE = 200
+    }
 }

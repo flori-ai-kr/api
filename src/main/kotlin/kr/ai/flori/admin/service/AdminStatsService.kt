@@ -43,7 +43,8 @@ class AdminStatsService(
             SELECT
               COUNT(*) AS entry_count,
               COALESCE(SUM(amount) FILTER (WHERE payment_method <> 'unpaid'), 0) AS total_amount,
-              COUNT(*) FILTER (WHERE date >= CURRENT_DATE - INTERVAL '30 days') AS last30d
+              COUNT(*) FILTER (WHERE date >= CURRENT_DATE - INTERVAL '30 days'
+                                 AND payment_method <> 'unpaid') AS last30d
             FROM sales
             """.trimIndent(),
         ) { rs, _ -> SalesCounts(rs.getLong("entry_count"), rs.getLong("total_amount"), rs.getLong("last30d")) }!!

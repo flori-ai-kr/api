@@ -15,6 +15,8 @@ class AdminWebConfig(
     private val adminInterceptor: AdminInterceptor,
 ) : WebMvcConfigurer {
     override fun addInterceptors(registry: InterceptorRegistry) {
-        registry.addInterceptor(adminInterceptor)
+        // 운영 콘솔 경로에만 적용. 실제 가드는 @RequiresAdmin 어노테이션 유무로 동작하지만,
+        // 경로를 명시해 admin 외 핸들러에서 불필요하게 인터셉터가 도는 것을 방지한다.
+        registry.addInterceptor(adminInterceptor).addPathPatterns("/admin/**")
     }
 }

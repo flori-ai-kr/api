@@ -15,8 +15,10 @@ class AdminSubscriptionService(
         status: String?,
         page: Int,
         size: Int,
-    ): List<AdminSubscriptionRow> =
-        jdbc.query(
+    ): List<AdminSubscriptionRow> {
+        val safePage = page.coerceAtLeast(0)
+        val safeSize = size.coerceIn(1, MAX_PAGE_SIZE)
+        return jdbc.query(
             """
             SELECT user_id, status, store, product_id, entitlement, current_period_end
             FROM subscriptions
@@ -36,7 +38,12 @@ class AdminSubscriptionService(
             },
             status,
             status,
-            size,
-            page * size,
+            safeSize,
+            safePage * safeSize,
         )
+    }
+
+    private companion object {
+        const val MAX_PAGE_SIZE = 200
+    }
 }

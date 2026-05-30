@@ -4,6 +4,7 @@ import kr.ai.flori.admin.dto.AdminUserPage
 import kr.ai.flori.admin.dto.AdminUserRow
 import kr.ai.flori.admin.error.AdminErrorCode
 import kr.ai.flori.common.error.AppException
+import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.user.repository.UserRepository
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.RowMapper
@@ -25,6 +26,8 @@ class AdminUserService(
         page: Int,
         size: Int,
     ): AdminUserPage {
+        val safePage = page.coerceAtLeast(0)
+        val safeSize = size.coerceIn(1, MAX_PAGE_SIZE)
         val like = query?.takeIf { it.isNotBlank() }?.let { "%$it%" }
         val total =
             jdbc.queryForObject(
@@ -42,10 +45,10 @@ class AdminUserService(
                 like,
                 like,
                 like,
-                size,
-                page * size,
+                safeSize,
+                safePage * safeSize,
             )
-        return AdminUserPage(rows, page, size, total)
+        return AdminUserPage(rows, safePage, safeSize, total)
     }
 
     @Transactional
@@ -53,6 +56,10 @@ class AdminUserService(
         id: Long,
         active: Boolean,
     ): AdminUserRow {
+        // 운영자 본인 계정의 비활성화 차단(자기 잠금 방지).
+        if (!active && TenantContext.currentUserId() == id) {
+            throw AppException(AdminErrorCode.CANNOT_DEACTIVATE_SELF)
+        }
         val user = userRepository.findById(id).orElseThrow { AppException(AdminErrorCode.USER_NOT_FOUND) }
         user.isActive = active
         // saveAndFlush: JdbcTemplate(native SQL) 읽기는 Hibernate autoflush를 트리거하지 않으므로
@@ -67,6 +74,8 @@ class AdminUserService(
             .firstOrNull() ?: throw AppException(AdminErrorCode.USER_NOT_FOUND)
 
     private companion object {
+        const val MAX_PAGE_SIZE = 200
+
         val ROW_SELECT =
             """
             SELECT u.id, u.email, u.nickname, u.is_active, u.is_admin, u.created_at,

@@ -41,18 +41,38 @@ class AdminUserIntegrationTest {
         user.isAdmin = true
         userRepository.save(user)
 
+        // 토글 대상은 운영자 본인이 아닌 다른 유저(자기 비활성화는 차단되므로).
+        val target = TestAccounts.register(authService, tokenProvider)
+        val targetId = tokenProvider.parse(target.accessToken)!!.userId
+
         mockMvc
             .get("/admin/users") { header(HttpHeaders.AUTHORIZATION, "Bearer ${tokens.accessToken}") }
             .andExpect { status { isOk() } }
-            .andExpect { jsonPath("$.total") { value(greaterThanOrEqualTo(1)) } }
+            .andExpect { jsonPath("$.total") { value(greaterThanOrEqualTo(2)) } }
+
+        mockMvc
+            .post("/admin/users/$targetId/active") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer ${tokens.accessToken}")
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(SetActiveRequest(active = false))
+            }.andExpect { status { isOk() } }
+            .andExpect { jsonPath("$.isActive") { value(false) } }
+    }
+
+    @Test
+    fun `운영자는 자기 계정을 비활성화할 수 없다 (422)`() {
+        val tokens = TestAccounts.register(authService, tokenProvider)
+        val uid = tokenProvider.parse(tokens.accessToken)!!.userId
+        val user = userRepository.findById(uid).orElseThrow()
+        user.isAdmin = true
+        userRepository.save(user)
 
         mockMvc
             .post("/admin/users/$uid/active") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer ${tokens.accessToken}")
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(SetActiveRequest(active = false))
-            }.andExpect { status { isOk() } }
-            .andExpect { jsonPath("$.isActive") { value(false) } }
+            }.andExpect { status { isUnprocessableEntity() } }
     }
 
     @Test
