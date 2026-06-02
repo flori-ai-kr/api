@@ -94,4 +94,33 @@ class AdminUserIntegrationTest {
             .get("/admin/subscriptions") { header(HttpHeaders.AUTHORIZATION, "Bearer ${tokens.accessToken}") }
             .andExpect { status { isOk() } }
     }
+
+    @Test
+    fun `운영자는 유저 상세를 조회한다`() {
+        val tokens = TestAccounts.register(authService, tokenProvider)
+        val uid = tokenProvider.parse(tokens.accessToken)!!.userId
+        val user = userRepository.findById(uid).orElseThrow()
+        user.isAdmin = true
+        userRepository.save(user)
+
+        mockMvc
+            .get("/admin/users/$uid") { header(HttpHeaders.AUTHORIZATION, "Bearer ${tokens.accessToken}") }
+            .andExpect { status { isOk() } }
+            .andExpect { jsonPath("$.id") { value(uid.toInt()) } }
+            .andExpect { jsonPath("$.salesCount") { exists() } }
+            .andExpect { jsonPath("$.verifications") { isArray() } }
+            .andExpect { jsonPath("$.storeName") { exists() } }
+    }
+
+    @Test
+    fun `없는 유저 상세는 404`() {
+        val tokens = TestAccounts.register(authService, tokenProvider)
+        val user = userRepository.findById(tokenProvider.parse(tokens.accessToken)!!.userId).orElseThrow()
+        user.isAdmin = true
+        userRepository.save(user)
+
+        mockMvc
+            .get("/admin/users/999999") { header(HttpHeaders.AUTHORIZATION, "Bearer ${tokens.accessToken}") }
+            .andExpect { status { isNotFound() } }
+    }
 }
