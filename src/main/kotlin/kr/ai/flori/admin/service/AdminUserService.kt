@@ -78,79 +78,79 @@ class AdminUserService(
     /** 드릴다운 상세: 프로필·구독·인증이력·매출요약. cross-tenant. */
     @Transactional(readOnly = true)
     fun detail(id: Long): AdminUserDetail {
-        val base =
-            jdbc
-                .query(
-                    """
-                    SELECT u.id, u.email, u.nickname, u.is_active, u.is_admin, u.created_at,
-                           p.store_name, p.region_sido, p.region_sigungu,
-                           s.status AS sub_status
-                    FROM users u
-                    LEFT JOIN user_profiles p ON p.user_id = u.id
-                    LEFT JOIN subscriptions s ON s.user_id = u.id
-                    WHERE u.id = ?
-                    """.trimIndent(),
-                    { rs, _ ->
-                        BaseDetail(
-                            email = rs.getString("email"),
-                            nickname = rs.getString("nickname"),
-                            isActive = rs.getBoolean("is_active"),
-                            isAdmin = rs.getBoolean("is_admin"),
-                            createdAt = rs.getTimestamp("created_at")?.toInstant(),
-                            storeName = rs.getString("store_name"),
-                            regionSido = rs.getString("region_sido"),
-                            regionSigungu = rs.getString("region_sigungu"),
-                            subscriptionStatus = rs.getString("sub_status"),
-                        )
-                    },
-                    id,
-                ).firstOrNull() ?: throw AppException(AdminErrorCode.USER_NOT_FOUND)
+        val base = baseDetail(id)
+        val sales = salesSummary(id)
+        return AdminUserDetail(
+            id = id,
+            email = base.email,
+            nickname = base.nickname,
+            isActive = base.isActive,
+            isAdmin = base.isAdmin,
+            createdAt = base.createdAt,
+            storeName = base.storeName,
+            regionSido = base.regionSido,
+            regionSigungu = base.regionSigungu,
+            subscriptionStatus = base.subscriptionStatus,
+            verifications = verificationBriefs(id),
+            salesCount = sales.count,
+            salesTotal = sales.total,
+            lastSaleDate = sales.lastDate,
+        )
+    }
 
-        val verifications =
-            jdbc.query(
+    private fun baseDetail(id: Long): BaseDetail =
+        jdbc
+            .query(
                 """
-                SELECT status, created_at, reviewed_at, reject_reason
-                FROM business_verifications WHERE user_id = ? ORDER BY created_at DESC
+                SELECT u.email, u.nickname, u.is_active, u.is_admin, u.created_at,
+                       p.store_name, p.region_sido, p.region_sigungu, s.status AS sub_status
+                FROM users u
+                LEFT JOIN user_profiles p ON p.user_id = u.id
+                LEFT JOIN subscriptions s ON s.user_id = u.id
+                WHERE u.id = ?
                 """.trimIndent(),
                 { rs, _ ->
-                    AdminVerificationBrief(
-                        status = rs.getString("status"),
-                        submittedAt = rs.getTimestamp("created_at")?.toInstant(),
-                        reviewedAt = rs.getTimestamp("reviewed_at")?.toInstant(),
-                        rejectReason = rs.getString("reject_reason"),
+                    BaseDetail(
+                        email = rs.getString("email"),
+                        nickname = rs.getString("nickname"),
+                        isActive = rs.getBoolean("is_active"),
+                        isAdmin = rs.getBoolean("is_admin"),
+                        createdAt = rs.getTimestamp("created_at")?.toInstant(),
+                        storeName = rs.getString("store_name"),
+                        regionSido = rs.getString("region_sido"),
+                        regionSigungu = rs.getString("region_sigungu"),
+                        subscriptionStatus = rs.getString("sub_status"),
                     )
                 },
                 id,
-            )
+            ).firstOrNull() ?: throw AppException(AdminErrorCode.USER_NOT_FOUND)
 
-        return jdbc.queryForObject(
+    private fun verificationBriefs(id: Long): List<AdminVerificationBrief> =
+        jdbc.query(
             """
-            SELECT COUNT(*) AS cnt,
-                   COALESCE(SUM(amount), 0) AS total,
-                   MAX(date) AS last_date
-            FROM sales WHERE user_id = ? AND payment_method <> 'unpaid'
+            SELECT status, created_at, reviewed_at, reject_reason
+            FROM business_verifications WHERE user_id = ? ORDER BY created_at DESC
             """.trimIndent(),
             { rs, _ ->
-                AdminUserDetail(
-                    id = id,
-                    email = base.email,
-                    nickname = base.nickname,
-                    isActive = base.isActive,
-                    isAdmin = base.isAdmin,
-                    createdAt = base.createdAt,
-                    storeName = base.storeName,
-                    regionSido = base.regionSido,
-                    regionSigungu = base.regionSigungu,
-                    subscriptionStatus = base.subscriptionStatus,
-                    verifications = verifications,
-                    salesCount = rs.getLong("cnt"),
-                    salesTotal = rs.getLong("total"),
-                    lastSaleDate = rs.getDate("last_date")?.toLocalDate(),
+                AdminVerificationBrief(
+                    status = rs.getString("status"),
+                    submittedAt = rs.getTimestamp("created_at")?.toInstant(),
+                    reviewedAt = rs.getTimestamp("reviewed_at")?.toInstant(),
+                    rejectReason = rs.getString("reject_reason"),
                 )
             },
             id,
+        )
+
+    private fun salesSummary(id: Long): SalesSummary =
+        jdbc.queryForObject(
+            """
+            SELECT COUNT(*) AS cnt, COALESCE(SUM(amount), 0) AS total, MAX(date) AS last_date
+            FROM sales WHERE user_id = ? AND payment_method <> 'unpaid'
+            """.trimIndent(),
+            { rs, _ -> SalesSummary(rs.getLong("cnt"), rs.getLong("total"), rs.getDate("last_date")?.toLocalDate()) },
+            id,
         )!!
-    }
 
     private data class BaseDetail(
         val email: String?,
@@ -162,6 +162,12 @@ class AdminUserService(
         val regionSido: String?,
         val regionSigungu: String?,
         val subscriptionStatus: String?,
+    )
+
+    private data class SalesSummary(
+        val count: Long,
+        val total: Long,
+        val lastDate: java.time.LocalDate?,
     )
 
     private companion object {
