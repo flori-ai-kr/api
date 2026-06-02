@@ -48,4 +48,52 @@ class AdminStatsIntegrationTest {
             .get("/admin/stats/overview") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") }
             .andExpect { status { isForbidden() } }
     }
+
+    @Test
+    fun `range=30d 이면 comparison 객체가 존재한다`() {
+        val token = adminToken()
+        mockMvc
+            .get("/admin/stats/overview?range=30d") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") }
+            .andExpect { status { isOk() } }
+            .andExpect { jsonPath("$.comparison") { exists() } }
+    }
+
+    @Test
+    fun `signups 시계열은 7d 면 7개 점을 반환한다`() {
+        val token = adminToken()
+        mockMvc
+            .get("/admin/stats/timeseries?metric=signups&range=7d") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+            }.andExpect { status { isOk() } }
+            .andExpect { jsonPath("$.length()") { value(7) } }
+            .andExpect { jsonPath("$[0].date") { exists() } }
+            .andExpect { jsonPath("$[0].count") { exists() } }
+    }
+
+    @Test
+    fun `sales 시계열도 동작한다`() {
+        val token = adminToken()
+        mockMvc
+            .get("/admin/stats/timeseries?metric=sales&range=30d") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+            }.andExpect { status { isOk() } }
+            .andExpect { jsonPath("$.length()") { value(30) } }
+    }
+
+    @Test
+    fun `알 수 없는 metric 은 400`() {
+        val token = adminToken()
+        mockMvc
+            .get("/admin/stats/timeseries?metric=bogus&range=7d") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+            }.andExpect { status { isBadRequest() } }
+    }
+
+    private fun adminToken(): String {
+        val tokens = TestAccounts.register(authService, tokenProvider)
+        val user = userRepository.findById(tokenProvider.parse(tokens.accessToken)!!.userId).orElseThrow()
+        user.isAdmin = true
+        userRepository.save(user)
+        return tokens.accessToken
+    }
 }

@@ -31,4 +31,17 @@ data class AdminOverviewResponse(
     val sales: SalesCounts,
     val subscriptions: SubscriptionCounts,
     val verifications: VerificationCounts,
+    val comparison: OverviewComparison?,
+)
+
+/** 선택 기간 대비 직전 동기간 증감(%). 직전 기간 0이거나 range=all이면 null. */
+data class OverviewComparison(
+    val usersChangePct: Double?,
+    val salesCountChangePct: Double?,
+)
+
+/** 일별 시계열 1점. */
+data class TimeseriesPoint(
+    val date: java.time.LocalDate,
+    val count: Long,
 )
