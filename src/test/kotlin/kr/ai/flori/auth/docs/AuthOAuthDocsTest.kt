@@ -76,6 +76,8 @@ class AuthOAuthDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "auth-oauth-kakao",
+                        requestSchema = "KakaoOAuthRequest",
+                        responseSchema = "OAuthResult",
                         tag = "Auth",
                         summary = "카카오 로그인(인증코드 교환)",
                         requestFields =
@@ -101,6 +103,8 @@ class AuthOAuthDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "auth-oauth-google",
+                        requestSchema = "GoogleOAuthRequest",
+                        responseSchema = "OAuthResult",
                         tag = "Auth",
                         summary = "구글 로그인(인증코드 교환)",
                         requestFields =
@@ -133,6 +137,8 @@ class AuthOAuthDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "auth-oauth-naver",
+                        requestSchema = "NaverOAuthRequest",
+                        responseSchema = "OAuthResult",
                         tag = "Auth",
                         summary = "네이버 로그인(인증코드 교환)",
                         requestFields =

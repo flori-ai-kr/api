@@ -61,6 +61,7 @@ class PhotoTagDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "photo-tag-list",
+                        responseSchema = "PhotoTagListResponse",
                         tag = "PhotoTags",
                         summary = "태그 목록 (본인 계정 태그 전체)",
                         responseFields =
@@ -102,6 +103,8 @@ class PhotoTagDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "photo-tag-create",
+                        requestSchema = "PhotoTagCreateRequest",
+                        responseSchema = "PhotoTagResponse",
                         tag = "PhotoTags",
                         summary = "태그 생성 (색상 미지정 시 랜덤 hex 색상 부여)",
                         requestFields =
@@ -144,6 +147,8 @@ class PhotoTagDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "photo-tag-update",
+                        requestSchema = "PhotoTagUpdateRequest",
+                        responseSchema = "PhotoTagResponse",
                         tag = "PhotoTags",
                         summary = "태그 수정 (이름·색상 전체 교체)",
                         pathParameters = listOf(parameterWithName("id").description("태그 ID")),

@@ -46,6 +46,8 @@ class RegisterCompleteDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "auth-register-complete",
+                        requestSchema = "RegisterCompleteRequest",
+                        responseSchema = "TokenResponse",
                         tag = "Auth",
                         summary = "가입 완료(온보딩) — registerToken으로 User+가게 프로필 생성 후 토큰 발급",
                         requestFields =

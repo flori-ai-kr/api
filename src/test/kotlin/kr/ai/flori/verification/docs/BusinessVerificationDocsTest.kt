@@ -69,6 +69,8 @@ class BusinessVerificationDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "business-verification-upload-target",
+                        requestSchema = "BusinessLicenseUploadTargetRequest",
+                        responseSchema = "BusinessLicenseUploadTargetResponse",
                         tag = "BusinessVerification",
                         summary = "사업자등록증 업로드용 presigned PUT URL 발급",
                         requestFields =
@@ -120,6 +122,8 @@ class BusinessVerificationDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "business-verification-submit",
+                        requestSchema = "BusinessVerificationSubmitRequest",
+                        responseSchema = "BusinessVerificationResponse",
                         tag = "BusinessVerification",
                         summary = "사업자 인증 신청(PENDING 생성 + 관리자 Discord 알림)",
                         requestFields =
@@ -153,6 +157,7 @@ class BusinessVerificationDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "business-verification-me",
+                        responseSchema = "BusinessVerificationResponse",
                         tag = "BusinessVerification",
                         summary = "내 사업자 인증 상태 조회(이력 없으면 NONE)",
                         responseFields =

@@ -107,6 +107,8 @@ class ScrapDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "scrap-toggle",
+                        requestSchema = "ScrapToggleRequest",
+                        responseSchema = "ScrapToggleResponse",
                         tag = "Scraps",
                         summary = "스크랩 토글 (추가이면 true, 해제이면 false)",
                         requestFields =
@@ -154,6 +156,8 @@ class ScrapDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "scrap-memo-update",
+                        requestSchema = "ScrapMemoRequest",
+                        responseSchema = "InsightScrapResponse",
                         tag = "Scraps",
                         summary = "스크랩 메모 수정 (스크랩 후에만 가능)",
                         requestFields =
@@ -206,6 +210,7 @@ class ScrapDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "scrap-map",
+                        responseSchema = "ScrapMapResponse",
                         tag = "Scraps",
                         summary = "스크랩 맵 (targetType별 targetId → ScrapInfo 맵)",
                         responseFields =
@@ -245,6 +250,7 @@ class ScrapDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "scrap-counts",
+                        responseSchema = "ScrapCountsResponse",
                         tag = "Scraps",
                         summary = "스크랩 개수 (trend/post 별)",
                         responseFields =
@@ -284,6 +290,7 @@ class ScrapDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "scrap-trend-list",
+                        responseSchema = "TrendScrapListResponse",
                         tag = "Scraps",
                         summary = "트렌드 스크랩 목록 (스크랩+기사 정보 포함)",
                         responseFields =
@@ -331,6 +338,7 @@ class ScrapDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "scrap-post-list",
+                        responseSchema = "PostScrapListResponse",
                         tag = "Scraps",
                         summary = "포스트 스크랩 목록 (스크랩+포스트 정보 포함)",
                         responseFields =

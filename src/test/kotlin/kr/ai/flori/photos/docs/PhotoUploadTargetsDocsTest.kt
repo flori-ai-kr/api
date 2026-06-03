@@ -134,6 +134,8 @@ class PhotoUploadTargetsDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "photo-card-upload-targets",
+                        requestSchema = "UploadTargetsRequest",
+                        responseSchema = "UploadTargetListResponse",
                         tag = "PhotoCards",
                         summary = "사진 업로드 타깃 발급 (S3 presigned PUT URL + CloudFront 파일 URL)",
                         pathParameters = listOf(parameterWithName("id").description("사진 카드 ID")),
@@ -196,6 +198,8 @@ class PhotoUploadTargetsDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "photo-card-upload-targets-new",
+                        requestSchema = "UploadTargetsRequest",
+                        responseSchema = "UploadTargetListResponse",
                         tag = "PhotoCards",
                         summary = "신규 카드용 업로드 타깃 발급 (카드 생성 전 — 업로드 성공 후 카드 생성). presigned PUT URL",
                         requestFields =
@@ -237,6 +241,7 @@ class PhotoUploadTargetsDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "photo-card-download",
+                        responseSchema = "PhotoDownloadResponse",
                         tag = "PhotoCards",
                         summary = "사진 원본 다운로드 URL 발급 (presigned GET, 소유권 검증)",
                         pathParameters = listOf(parameterWithName("id").description("사진 카드 ID")),

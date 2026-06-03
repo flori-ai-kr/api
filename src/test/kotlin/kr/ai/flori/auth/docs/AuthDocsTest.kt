@@ -35,6 +35,8 @@ class AuthDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "auth-refresh",
+                        requestSchema = "RefreshRequest",
+                        responseSchema = "TokenResponse",
                         tag = "Auth",
                         summary = "토큰 갱신(refresh 로테이션)",
                         requestFields =
@@ -58,6 +60,7 @@ class AuthDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "auth-logout",
+                        requestSchema = "LogoutRequest",
                         tag = "Auth",
                         summary = "로그아웃(refresh 무효화)",
                         requestFields =

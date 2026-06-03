@@ -87,6 +87,7 @@ class SaleSettingsDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "settings-sale-category-list",
+                        responseSchema = "LabelSettingListResponse",
                         tag = "SaleSettings",
                         summary = "매출 카테고리 목록 (가입 시 11개 시드)",
                         responseFields =
@@ -134,6 +135,8 @@ class SaleSettingsDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "settings-sale-category-create",
+                        requestSchema = "LabelSettingCreateRequest",
+                        responseSchema = "LabelSettingResponse",
                         tag = "SaleSettings",
                         summary = "매출 카테고리 생성 (value 중복 불가)",
                         requestFields =
@@ -180,6 +183,8 @@ class SaleSettingsDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "settings-sale-category-update",
+                        requestSchema = "LabelSettingUpdateRequest",
+                        responseSchema = "LabelSettingResponse",
                         tag = "SaleSettings",
                         summary = "매출 카테고리 수정 (label·color 전체 교체)",
                         pathParameters = listOf(parameterWithName("id").description("매출 카테고리 ID")),
@@ -236,6 +241,7 @@ class SaleSettingsDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "settings-payment-method-list",
+                        responseSchema = "LabelSettingListResponse",
                         tag = "SaleSettings",
                         summary = "매출 결제방식 목록 (가입 시 시드 포함)",
                         responseFields =
@@ -283,6 +289,8 @@ class SaleSettingsDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "settings-payment-method-create",
+                        requestSchema = "LabelSettingCreateRequest",
+                        responseSchema = "LabelSettingResponse",
                         tag = "SaleSettings",
                         summary = "매출 결제방식 생성",
                         requestFields =
@@ -329,6 +337,8 @@ class SaleSettingsDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "settings-payment-method-update",
+                        requestSchema = "LabelSettingUpdateRequest",
+                        responseSchema = "LabelSettingResponse",
                         tag = "SaleSettings",
                         summary = "매출 결제방식 수정 (label·color 전체 교체)",
                         pathParameters = listOf(parameterWithName("id").description("결제방식 ID")),

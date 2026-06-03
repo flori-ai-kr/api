@@ -165,6 +165,7 @@ class CustomerDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "customer-list",
+                        responseSchema = "CustomerListResponse",
                         tag = "Customers",
                         summary = "고객 목록 (구매 통계 포함, 총 구매액 내림차순)",
                         responseFields =
@@ -232,6 +233,7 @@ class CustomerDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "customer-search",
+                        responseSchema = "CustomerSearchResultListResponse",
                         tag = "Customers",
                         summary = "고객 이름 검색 (부분 일치)",
                         responseFields =
@@ -279,6 +281,7 @@ class CustomerDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "customer-check-phone-found",
+                        responseSchema = "CustomerSearchResult",
                         tag = "Customers",
                         summary = "전화번호 중복 확인 — 중복 있음 (200 + 해당 고객 반환)",
                         responseFields = customerSearchResultFields,
@@ -326,6 +329,7 @@ class CustomerDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "customer-get",
+                        responseSchema = "CustomerResponse",
                         tag = "Customers",
                         summary = "고객 단건 조회 (구매 통계 포함)",
                         pathParameters = listOf(parameterWithName("id").description("고객 ID")),
@@ -354,6 +358,7 @@ class CustomerDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "customer-sales",
+                        responseSchema = "SalesPageResponse",
                         tag = "Customers",
                         summary = "고객별 매출 조회 (페이지네이션)",
                         pathParameters = listOf(parameterWithName("id").description("고객 ID")),
@@ -388,6 +393,8 @@ class CustomerDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "customer-create",
+                        requestSchema = "CustomerCreateRequest",
+                        responseSchema = "CustomerResponse",
                         tag = "Customers",
                         summary = "고객 생성",
                         requestFields =
@@ -439,6 +446,8 @@ class CustomerDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "customer-find-or-create",
+                        requestSchema = "FindOrCreateCustomerRequest",
+                        responseSchema = "CustomerResponse",
                         tag = "Customers",
                         summary = "고객 찾기/생성 (전화번호+계정 복합키 기준 — 기존이면 반환, 신규이면 생성)",
                         requestFields =
@@ -480,6 +489,8 @@ class CustomerDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "customer-update",
+                        requestSchema = "CustomerUpdateRequest",
+                        responseSchema = "CustomerResponse",
                         tag = "Customers",
                         summary = "고객 수정 (제공된 필드만 반영)",
                         pathParameters = listOf(parameterWithName("id").description("고객 ID")),
@@ -530,6 +541,8 @@ class CustomerDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "customer-update-grade",
+                        requestSchema = "UpdateGradeRequest",
+                        responseSchema = "CustomerResponse",
                         tag = "Customers",
                         summary = "고객 등급 변경",
                         pathParameters = listOf(parameterWithName("id").description("고객 ID")),

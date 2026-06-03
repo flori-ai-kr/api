@@ -29,6 +29,7 @@ class UserPreferenceDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "settings-preferences-get",
+                        responseSchema = "UserPreferencesResponse",
                         tag = "Settings",
                         summary = "유저 설정 조회 (하단바 항목 — 미설정 시 서버 기본값 반환)",
                         responseFields =
@@ -58,6 +59,8 @@ class UserPreferenceDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "settings-preferences-bottom-nav-update",
+                        requestSchema = "UpdateBottomNavRequest",
+                        responseSchema = "UserPreferencesResponse",
                         tag = "Settings",
                         summary = "하단바 항목 변경 (upsert — 항목은 4~6개 필수)",
                         requestFields =

@@ -53,6 +53,7 @@ class SubscriptionDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "subscription-current",
+                        responseSchema = "SubscriptionResponse",
                         tag = "Subscription",
                         summary = "현재 구독 상태 조회 (active/in_grace/expired/none + 만료일/티어)",
                         responseFields = subscriptionResponseFields,

@@ -3,6 +3,7 @@ package kr.ai.flori.common.docs
 import com.epages.restdocs.apispec.MockMvcRestDocumentationWrapper
 import com.epages.restdocs.apispec.ResourceDocumentation.resource
 import com.epages.restdocs.apispec.ResourceSnippetParameters
+import com.epages.restdocs.apispec.Schema
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
@@ -86,6 +87,11 @@ abstract class RestDocsSupport {
      *
      * (RequestPostProcessor(`with{}`)로 세팅하면 @AutoConfigureRestDocs의 ConfigurerApplyingRequestPostProcessor가
      *  그보다 먼저 템플릿을 캡처해 null이 되므로, 반드시 `requestAttr`로 빌더에 직접 넣어 ID가 박히지 않게 한다.)
+     *
+     * `requestSchema`/`responseSchema`에 DTO 클래스명을 넘기면 OpenAPI `components.schemas`의 키가 그 이름이 된다
+     * (= flori-ai/mobile orval 코드젠이 읽는 도메인 타입명). 미지정 시 restdocs-api-spec이 경로+해시 이름을 자동 생성하므로
+     * 모바일이 읽는 계약에서는 **항상 명시**한다. 같은 이름 + 같은 필드 내용은 restdocs-api-spec이 한 스키마로 병합한다.
+     * 배열(목록) 응답은 단건 객체 스키마를 `$ref`로 재사용하지 못하므로 `XxxListResponse`처럼 별도 이름을 부여한다.
      */
     protected fun docs(
         identifier: String,
@@ -94,11 +100,15 @@ abstract class RestDocsSupport {
         pathParameters: List<ParameterDescriptor> = emptyList(),
         requestFields: List<FieldDescriptor> = emptyList(),
         responseFields: List<FieldDescriptor> = emptyList(),
+        requestSchema: String? = null,
+        responseSchema: String? = null,
     ): ResultHandler {
         val params = ResourceSnippetParameters.builder().tag(tag).summary(summary)
         if (pathParameters.isNotEmpty()) params.pathParameters(*pathParameters.toTypedArray())
         if (requestFields.isNotEmpty()) params.requestFields(*requestFields.toTypedArray())
         if (responseFields.isNotEmpty()) params.responseFields(*responseFields.toTypedArray())
+        if (requestSchema != null) params.requestSchema(Schema(requestSchema))
+        if (responseSchema != null) params.responseSchema(Schema(responseSchema))
         return MockMvcRestDocumentationWrapper.document(identifier, snippets = arrayOf(resource(params.build())))
     }
 }

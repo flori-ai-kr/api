@@ -88,6 +88,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "photo-card-list",
+                        responseSchema = "PhotoCardsPageResponse",
                         tag = "PhotoCards",
                         summary = "사진 카드 목록 (커서 페이지네이션 + tag/customerId 필터)",
                         responseFields =
@@ -161,6 +162,8 @@ class PhotoCardDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "photo-card-create",
+                        requestSchema = "PhotoCardCreateRequest",
+                        responseSchema = "PhotoCardResponse",
                         tag = "PhotoCards",
                         summary = "사진 카드 생성 (최대 10장, 태그 다중 지정 가능)",
                         requestFields =
@@ -215,6 +218,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "photo-card-get",
+                        responseSchema = "PhotoCardResponse",
                         tag = "PhotoCards",
                         summary = "사진 카드 단건 조회",
                         pathParameters = listOf(parameterWithName("id").description("사진 카드 ID")),
@@ -307,6 +311,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "photo-card-by-sale-found",
+                        responseSchema = "PhotoCardResponse",
                         tag = "PhotoCards",
                         summary = "매출별 사진 카드 조회 — 있음 (200 + 카드 반환)",
                         pathParameters = listOf(parameterWithName("saleId").description("매출 ID")),
@@ -340,6 +345,8 @@ class PhotoCardDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "photo-card-update",
+                        requestSchema = "PhotoCardUpdateRequest",
+                        responseSchema = "PhotoCardResponse",
                         tag = "PhotoCards",
                         summary = "사진 카드 수정 (제공된 필드만 반영)",
                         pathParameters = listOf(parameterWithName("id").description("사진 카드 ID")),
@@ -422,6 +429,8 @@ class PhotoCardDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "photo-card-reorder",
+                        requestSchema = "ReorderPhotosRequest",
+                        responseSchema = "PhotoCardResponse",
                         tag = "PhotoCards",
                         summary = "사진 순서 변경 (photos 배열 전체를 원하는 순서로 전달)",
                         pathParameters = listOf(parameterWithName("id").description("사진 카드 ID")),
@@ -480,6 +489,8 @@ class PhotoCardDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "photo-card-delete-photo",
+                        requestSchema = "EmptyRequest",
+                        responseSchema = "PhotoCardResponse",
                         tag = "PhotoCards",
                         summary = "사진 1장 삭제 (url 쿼리 파라미터로 대상 지정)",
                         pathParameters = listOf(parameterWithName("id").description("사진 카드 ID")),
