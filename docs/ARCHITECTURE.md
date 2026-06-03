@@ -229,7 +229,7 @@ DESIGN은 Testcontainers를 권장하지만, **개발/CI 환경에 Docker 데몬
 | `LoggingInterceptor` | 모든 요청에 대해 method·uri·status·duration_ms를 INFO 레벨로 로깅. 헬스/Swagger 등 노이즈 경로는 `WebConfig`에서 제외 |
 | `TraceIdFilter` | 요청별 UUID `traceId`를 MDC에 주입(`X-Request-Id` 헤더 또는 신규 생성). 응답 헤더에 `X-Request-Id`로 반환. 로그 상관관계 추적에 활용 |
 | `WebConfig` | `LoggingInterceptor`를 `/**`에 등록하고 `/actuator/**`·`/swagger-ui/**`·`/v3/api-docs/**` 등을 제외 |
-| `logback-spring.xml` | `local` 프로필: 사람이 읽는 텍스트. 나머지(운영): LogstashEncoder JSON — ELK/CloudWatch 등 로그 파이프라인 수집에 적합 |
+| `logback-spring.xml` | `local` 프로필: 컬러 텍스트 콘솔 + 롤링 파일(`logs/` INFO/ERROR 분리, `%ex{full}` 전체 스택). 나머지(운영): LogstashEncoder JSON — ELK/CloudWatch 등 로그 파이프라인 수집에 적합. `GlobalExceptionHandler`가 AppException 4xx WARN(cause 포함)/5xx ERROR로 로깅 |
 
 JVM 기본 시간대(`TimeZone.setDefault(UTC)`)는 `main()` 진입 시 HikariCP/Hibernate 초기화 전에 설정한다. `LocalTime` 컬럼(`time without time zone`)이 KST 환경과 UTC 컨테이너 양쪽에서 오프셋 이동 없이 정확히 왕복하도록 보장한다.
 
