@@ -68,6 +68,7 @@ src/main/kotlin/kr/ai/flori/
 ├── verification/          # 사업자 인증 (신청·상태조회·presigned 업로드·게이팅)
 ├── dashboard/             # 오늘/월 집계 · 네이티브 SQL 통계
 ├── admin/                 # 운영자 콘솔 API (/admin/**, @RequiresAdmin · cross-tenant) — 통계·인증심사·유저/구독·AI헬스 프록시
+├── ai/                    # AI 게이트웨이 (/ai/**) — web↔ai-server(FastAPI) 중개 + 모든 AI 호출 DB 로깅. 채팅/proactive/OCR예약/confirm. ai-server는 내부망 stateless
 └── common/                # 횡단 관심사
     ├── config/            # CORS, OpenAPI, Async, Schedule, Web
     ├── domain/            # 공통 enum (PaymentMethods, ReservationStatuses)
@@ -102,6 +103,7 @@ src/main/kotlin/kr/ai/flori/
 - **멀티테넌시 = 보안 1순위**: 모든 데이터 쿼리는 JWT에서 추출한 `userId`(`TenantContext`)로 격리한다. `user_id` 필터 누락은 곧 데이터 유출. RLS가 없으므로 애플리케이션이 유일한 방어선. 신원은 요청 본문이 아닌 토큰/TenantContext에서만 도출한다.
 - **검증은 시스템 경계에서**: 컨트롤러 진입점 `@Valid`.
 - **계산은 서버가 SSOT**: 지출총액(`unit_price * quantity`) 등은 서버가 계산해 응답.
+- **AI 게이트웨이**: `ai/` 도메인이 web↔ai-server(FastAPI, 내부망)를 **중개**한다. web은 `/ai/*`만 호출하고 ai-server를 모른다. 게이트웨이가 유저 JWT 검증 후 ai-server를 `X-Internal-Key`(신뢰) + `X-User-Id` + JWT(도구 패스스루)로 호출하고, **대화 세션·메시지·OCR 쓰기제안·proactive 로그를 자기 DB(`ai_*` 테이블, FK 없음 간접참조)에 적재**한다. 쓰기(예약 생성)는 human-in-loop — `/ai/confirm`이 `ReservationService`로 직접 생성. (LLM 호출은 ai-server→litellm→Bedrock.)
 - **시크릿은 환경변수**: 코드/깃에 시크릿 금지. `application.yml`은 `${ENV}` 참조만.
 
 ---
