@@ -2,7 +2,7 @@
 # flori server (Spring Boot/Kotlin) CI/CD — DEV
 # ==============================================================================
 # 배치: flori-ai-kr/server 리포 .github/workflows/deploy-server-dev.yml (별도 레포, 코드 루트)
-# 흐름: ARM64 네이티브 Docker 빌드(bootJar -x test) → ECR(flori-dev/server) → SSH deploy.server.sh
+# 흐름: ARM64 네이티브 Docker 빌드(bootJar -x test) → ECR(flori-dev/api) → SSH deploy.api.sh
 # 테스트는 ci.yml 이 전담(같은 push). deploy 는 빌드/배포만 — Zonky 통합테스트 중복 실행 제거로 단축.
 # 패턴: aws-infra/.github/workflows/api/deploy-optigen-dev.yml 과 동일 (ubuntu-24.04-arm, QEMU 불필요)
 #
@@ -11,7 +11,7 @@
 #   SSH_HOST (= flori-dev-app EIP 3.35.191.16) / SSH_USER (ec2-user) / SSH_PRIVATE_KEY (flori-key.pem)
 # ==============================================================================
 
-name: 🚀 Deploy server (DEV)
+name: 🚀 Deploy api (DEV)
 
 on:
   push:
@@ -23,7 +23,7 @@ permissions:
 
 env:
   AWS_REGION: ap-northeast-2
-  ECR_REPOSITORY: flori-dev/server
+  ECR_REPOSITORY: flori-dev/api
 
 jobs:
   build-and-push:
@@ -78,4 +78,4 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            /home/ec2-user/scripts/deploy.server.sh ${{ needs.build-and-push.outputs.image_tag }}
+            /home/ec2-user/scripts/deploy.api.sh ${{ needs.build-and-push.outputs.image_tag }}

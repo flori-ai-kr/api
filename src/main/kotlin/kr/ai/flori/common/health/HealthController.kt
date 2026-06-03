@@ -13,7 +13,7 @@ class HealthController {
     fun health(): HealthResponse =
         HealthResponse(
             status = "UP",
-            service = "flori-ai-server",
+            service = "flori-ai-api",
             time = OffsetDateTime.now(),
         )
 }

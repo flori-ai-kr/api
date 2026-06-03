@@ -29,7 +29,7 @@ class HealthDocsTest : RestDocsSupport() {
                                     .description("서버 상태. 정상이면 \"UP\""),
                                 fieldWithPath("service")
                                     .type(JsonFieldType.STRING)
-                                    .description("서비스 식별자 (flori-ai-server)"),
+                                    .description("서비스 식별자 (flori-ai-api)"),
                                 fieldWithPath("time")
                                     .type(JsonFieldType.STRING)
                                     .description("현재 서버 시각 (ISO-8601 오프셋 형식)"),

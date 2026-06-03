@@ -21,7 +21,7 @@ class HealthControllerTest {
         mockMvc.get("/health").andExpect {
             status { isOk() }
             jsonPath("$.status") { value("UP") }
-            jsonPath("$.service") { value("flori-ai-server") }
+            jsonPath("$.service") { value("flori-ai-api") }
         }
     }
 }

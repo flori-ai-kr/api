@@ -6,4 +6,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = "flori-ai-server"
+rootProject.name = "flori-ai-api"

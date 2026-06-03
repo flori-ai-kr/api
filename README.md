@@ -231,7 +231,7 @@ flowchart LR
     PR["GitHub PR/Push<br/>main · dev"] --> CI["CI<br/>ktlint·detekt·test·JaCoCo"]
     Push["Push: dev/main"] --> Build["Gradle Build<br/>Java 21"]
     Build --> Docker["Docker Buildx<br/>ARM64 네이티브"]
-    Docker --> ECR["AWS ECR<br/>flori-dev/server"]
+    Docker --> ECR["AWS ECR<br/>flori-dev/api"]
     ECR --> SSH["SSH Deploy<br/>deploy.app.sh"]
     SSH --> EC2["flori-dev-app EC2<br/>Docker Run"]
 ```
@@ -241,7 +241,7 @@ flowchart LR
 | 파일 | 트리거 | 설명 |
 |------|--------|------|
 | `ci.yml` | PR / push (`main`, `dev`) | 빌드 + 검증(ktlint·detekt·test·JaCoCo, Gradle Wrapper 무결성 검증) |
-| `deploy-server-dev.yml` | push (`dev`, `main`) | ARM64 네이티브 빌드 → ECR(`flori-dev/server`) → SSH `deploy.app.sh` |
+| `deploy-server-dev.yml` | push (`dev`, `main`) | ARM64 네이티브 빌드 → ECR(`flori-dev/api`) → SSH `deploy.app.sh` |
 
 > 인프라(RDS / S3 / CloudFront / ECR / 배포)는 별도로 프로비저닝되며 이 repo 범위 밖이다.
 

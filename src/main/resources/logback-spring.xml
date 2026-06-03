@@ -9,7 +9,7 @@
       로그 레벨은 LOG_LEVEL 환경변수로 조정 가능(기본 INFO).
     -->
 
-    <springProperty name="APP_NAME" source="spring.application.name" defaultValue="flori-ai-server"/>
+    <springProperty name="APP_NAME" source="spring.application.name" defaultValue="flori-ai-api"/>
     <property name="LOG_LEVEL" value="${LOG_LEVEL:-INFO}"/>
     <!-- 로컬 로그 파일 경로(기본 logs/). LOG_PATH 환경변수로 변경 가능. -->
     <property name="LOG_PATH" value="${LOG_PATH:-logs}"/>
@@ -27,7 +27,7 @@
             <encoder class="net.logstash.logback.encoder.LogstashEncoder">
                 <timeZone>Asia/Seoul</timeZone>
                 <includeMdcKeyName>traceId</includeMdcKeyName>
-                <customFields>{"service":"flori-ai-server"}</customFields>
+                <customFields>{"service":"flori-ai-api"}</customFields>
             </encoder>
         </appender>
 
