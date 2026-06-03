@@ -7,7 +7,9 @@ import kr.ai.flori.auth.entity.RefreshToken
 import kr.ai.flori.auth.entity.RefreshTokenStatuses
 import kr.ai.flori.auth.error.AuthErrorCode
 import kr.ai.flori.auth.event.UserRegisteredEvent
+import kr.ai.flori.auth.oauth.AccessTokenOAuthClient
 import kr.ai.flori.auth.oauth.SocialOAuthClient
+import kr.ai.flori.auth.oauth.SocialUserInfo
 import kr.ai.flori.auth.repository.RefreshTokenRepository
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
@@ -73,7 +75,33 @@ class AuthService(
             socialClients[provider]
                 ?: throw AppException(CommonErrorCode.VALIDATION, "지원하지 않는 소셜 제공자입니다: $provider")
         val info = client.authenticate(code, redirectUri, state)
+        return loginOrRegister(info)
+    }
 
+    /**
+     * 앱 네이티브 SDK access token 경로. 카카오처럼 커스텀 스킴 리다이렉트가 막혀 웹 code 플로우를 못 쓰는
+     * 제공자용. code 교환 없이 access token으로 신원을 검증한 뒤 [loginOrRegister]로 합류한다.
+     * → 웹(code)·앱(accessToken) 모두 동일한 find-or-create·토큰·OAuthResult 경로를 공유한다.
+     */
+    fun oauthLoginWithAccessToken(
+        provider: String,
+        accessToken: String,
+    ): OAuthResult {
+        val client =
+            socialClients[provider]
+                ?: throw AppException(CommonErrorCode.VALIDATION, "지원하지 않는 소셜 제공자입니다: $provider")
+        if (client !is AccessTokenOAuthClient) {
+            throw AppException(
+                CommonErrorCode.VALIDATION,
+                "토큰 기반 로그인을 지원하지 않는 제공자입니다: $provider",
+            )
+        }
+        val info = client.authenticateWithAccessToken(accessToken)
+        return loginOrRegister(info)
+    }
+
+    /** 소셜 신원 → 기존 사용자면 로그인 토큰(registered=true), 신규면 registerToken(registered=false). 웹·앱 공통. */
+    private fun loginOrRegister(info: SocialUserInfo): OAuthResult {
         val existing = userRepository.findByProviderAndProviderId(info.provider, info.providerId)
         if (existing != null) {
             if (!existing.isActive) {

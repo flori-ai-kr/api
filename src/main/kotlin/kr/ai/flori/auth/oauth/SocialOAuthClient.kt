@@ -18,6 +18,15 @@ interface SocialOAuthClient {
 }
 
 /**
+ * access token 기반 소셜 인증(네이티브 SDK 경로). 앱이 SDK로 직접 받은 access token으로 프로필을 조회한다.
+ * 커스텀 스킴 리다이렉트를 막는 제공자(카카오)의 모바일 로그인용 — code 교환 단계를 건너뛴다.
+ * [SocialOAuthClient]와 분리해 둠으로써 웹 code 플로우(구글/네이버 포함)에는 영향이 없다.
+ */
+interface AccessTokenOAuthClient {
+    fun authenticateWithAccessToken(accessToken: String): SocialUserInfo
+}
+
+/**
  * 제공자 중립 소셜 신원.
  * - [provider] 대문자 제공자 식별자(KAKAO/GOOGLE/NAVER). User.provider와 일치.
  * - [providerId] 제공자 내 고유 식별자(문자열화).

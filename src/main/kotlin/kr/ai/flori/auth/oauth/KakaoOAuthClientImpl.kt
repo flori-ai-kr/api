@@ -23,7 +23,8 @@ class KakaoOAuthClientImpl(
     builder: RestClient.Builder,
     private val properties: KakaoProperties,
 ) : KakaoOAuthClient,
-    SocialOAuthClient {
+    SocialOAuthClient,
+    AccessTokenOAuthClient {
     private val client = builder.build()
 
     /** 제공자 일반화 진입점. 카카오 동의항목의 이메일을 그대로 전달, provider="KAKAO". state 미사용. */
@@ -45,6 +46,17 @@ class KakaoOAuthClientImpl(
         code: String,
         redirectUri: String,
     ): KakaoUserInfo = fetchProfile(exchangeToken(code, redirectUri))
+
+    /** 앱 네이티브 SDK access token 경로. code 교환(exchangeToken)을 건너뛰고 프로필만 조회. */
+    override fun authenticateWithAccessToken(accessToken: String): SocialUserInfo {
+        val info = fetchProfile(accessToken)
+        return SocialUserInfo(
+            provider = "KAKAO",
+            providerId = info.providerId,
+            email = info.email,
+            nickname = info.nickname,
+        )
+    }
 
     private fun exchangeToken(
         code: String,
