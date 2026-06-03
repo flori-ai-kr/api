@@ -106,7 +106,7 @@ class AdminUserIntegrationTest {
         mockMvc
             .get("/admin/users/$uid") { header(HttpHeaders.AUTHORIZATION, "Bearer ${tokens.accessToken}") }
             .andExpect { status { isOk() } }
-            .andExpect { jsonPath("$.id") { value(uid.toInt()) } }
+            .andExpect { jsonPath("$.id") { value(uid) } }
             .andExpect { jsonPath("$.salesCount") { exists() } }
             .andExpect { jsonPath("$.verifications") { isArray() } }
             .andExpect { jsonPath("$.storeName") { exists() } }

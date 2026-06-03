@@ -44,13 +44,16 @@
             </encoder>
         </appender>
 
-        <!-- INFO 파일(ERROR 제외) -->
+        <!-- INFO 파일(ERROR 제외, DEBUG/TRACE 폭증 방지: INFO 이상만) -->
         <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
             <file>${LOG_PATH}/flori-server.log</file>
             <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
                 <fileNamePattern>${LOG_PATH}/flori-server-%d{yyyy-MM-dd}.log</fileNamePattern>
                 <maxHistory>14</maxHistory>
             </rollingPolicy>
+            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                <level>INFO</level>
+            </filter>
             <filter class="ch.qos.logback.classic.filter.LevelFilter">
                 <level>ERROR</level>
                 <onMatch>DENY</onMatch>

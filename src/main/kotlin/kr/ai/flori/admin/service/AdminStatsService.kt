@@ -40,7 +40,7 @@ class AdminStatsService(
         metric: String,
         range: String,
     ): List<TimeseriesPoint> {
-        val from = LocalDate.now().minusDays((timeseriesDays(range) - 1).toLong())
+        val from = LocalDate.now().minusDays((daysForRange(range) - 1).toLong())
         val sql =
             when (metric) {
                 "signups" ->
@@ -64,7 +64,7 @@ class AdminStatsService(
 
     private fun comparison(range: String): OverviewComparison? {
         if (range == RANGE_ALL) return null
-        val days = comparisonDays(range).toLong()
+        val days = daysForRange(range).toLong()
         val today = LocalDate.now()
         val curFrom = today.minusDays(days - 1)
         val prevFrom = today.minusDays(days * 2 - 1)
@@ -150,23 +150,19 @@ class AdminStatsService(
             """.trimIndent(),
         ) { rs, _ -> VerificationCounts(rs.getLong("pending"), rs.getLong("approved"), rs.getLong("rejected")) }!!
 
-    private fun comparisonDays(range: String): Int =
+    // 단일 range→일수 매핑. 잘못된 range는 400(silent fallback 금지). all=최근 365일 캡.
+    private fun daysForRange(range: String): Int =
         when (range) {
             RANGE_7D -> DAYS_7
-            RANGE_90D -> DAYS_90
-            else -> DAYS_30
-        }
-
-    private fun timeseriesDays(range: String): Int =
-        when (range) {
-            RANGE_7D -> DAYS_7
+            RANGE_30D -> DAYS_30
             RANGE_90D -> DAYS_90
             RANGE_ALL -> DAYS_ALL
-            else -> DAYS_30
+            else -> throw AppException(CommonErrorCode.VALIDATION)
         }
 
     private companion object {
         const val RANGE_7D = "7d"
+        const val RANGE_30D = "30d"
         const val RANGE_90D = "90d"
         const val RANGE_ALL = "all"
         const val DAYS_7 = 7

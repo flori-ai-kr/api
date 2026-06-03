@@ -89,6 +89,15 @@ class AdminStatsIntegrationTest {
             }.andExpect { status { isBadRequest() } }
     }
 
+    @Test
+    fun `알 수 없는 range 는 400 (silent fallback 금지)`() {
+        val token = adminToken()
+        mockMvc
+            .get("/admin/stats/timeseries?metric=signups&range=bogus") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+            }.andExpect { status { isBadRequest() } }
+    }
+
     private fun adminToken(): String {
         val tokens = TestAccounts.register(authService, tokenProvider)
         val user = userRepository.findById(tokenProvider.parse(tokens.accessToken)!!.userId).orElseThrow()

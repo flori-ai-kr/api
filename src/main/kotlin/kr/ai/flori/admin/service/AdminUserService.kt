@@ -102,6 +102,7 @@ class AdminUserService(
         jdbc
             .query(
                 """
+                -- subscriptions.user_id 는 UNIQUE(사용자당 1행) → LEFT JOIN 1:1 안전.
                 SELECT u.email, u.nickname, u.is_active, u.is_admin, u.created_at,
                        p.store_name, p.region_sido, p.region_sigungu, s.status AS sub_status
                 FROM users u
@@ -150,7 +151,7 @@ class AdminUserService(
             """.trimIndent(),
             { rs, _ -> SalesSummary(rs.getLong("cnt"), rs.getLong("total"), rs.getDate("last_date")?.toLocalDate()) },
             id,
-        )!!
+        ) ?: SalesSummary(0, 0, null)
 
     private data class BaseDetail(
         val email: String?,
