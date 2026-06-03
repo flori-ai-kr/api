@@ -7,7 +7,9 @@ import kr.ai.flori.auth.entity.RefreshToken
 import kr.ai.flori.auth.entity.RefreshTokenStatuses
 import kr.ai.flori.auth.error.AuthErrorCode
 import kr.ai.flori.auth.event.UserRegisteredEvent
+import kr.ai.flori.auth.oauth.AccessTokenOAuthClient
 import kr.ai.flori.auth.oauth.SocialOAuthClient
+import kr.ai.flori.auth.oauth.SocialUserInfo
 import kr.ai.flori.auth.repository.RefreshTokenRepository
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
@@ -61,7 +63,7 @@ class AuthService(
      * @MX:REASON: 컨트롤러 3개 경로 + register/complete 신원 계약의 출처(fan_in>=3). 반환 계약 변경은 웹 세션에 파급된다.
      *
      * @Transactional 미적용: 외부 OAuth HTTP 호출(client.authenticate)이 DB 커넥션을 점유하지 않도록.
-     * 내부 DB 작업은 단건(findBy 조회, issueTokens의 refresh save)이라 각자 자체 트랜잭션으로 충분하다.
+     * DB 작업(find-or-create·토큰 발급)은 [loginOrRegister]로 분리됐고, 그 근거는 해당 메서드 주석 참조.
      */
     fun oauthLogin(
         provider: String,
@@ -73,7 +75,36 @@ class AuthService(
             socialClients[provider]
                 ?: throw AppException(CommonErrorCode.VALIDATION, "지원하지 않는 소셜 제공자입니다: $provider")
         val info = client.authenticate(code, redirectUri, state)
+        return loginOrRegister(info)
+    }
 
+    /**
+     * 앱 네이티브 SDK access token 경로. 카카오처럼 커스텀 스킴 리다이렉트가 막혀 웹 code 플로우를 못 쓰는
+     * 제공자용. code 교환 없이 access token으로 신원을 검증한 뒤 [loginOrRegister]로 합류한다.
+     * → 웹(code)·앱(accessToken) 모두 동일한 find-or-create·토큰·OAuthResult 경로를 공유한다.
+     */
+    fun oauthLoginWithAccessToken(
+        provider: String,
+        accessToken: String,
+    ): OAuthResult {
+        val client =
+            socialClients[provider]
+                ?: throw AppException(CommonErrorCode.VALIDATION, "지원하지 않는 소셜 제공자입니다: $provider")
+        if (client !is AccessTokenOAuthClient) {
+            throw AppException(
+                CommonErrorCode.VALIDATION,
+                "토큰 기반 로그인을 지원하지 않는 제공자입니다: $provider",
+            )
+        }
+        val info = client.authenticateWithAccessToken(accessToken)
+        return loginOrRegister(info)
+    }
+
+    /**
+     * 소셜 신원 → 기존 사용자면 로그인 토큰(registered=true), 신규면 registerToken(registered=false). 웹(code)·앱(accessToken) 공통 합류점.
+     * @Transactional 미적용: DB 작업이 단건(findBy 조회, issueTokens의 refresh save)이라 각자 자체 트랜잭션으로 충분하다.
+     */
+    private fun loginOrRegister(info: SocialUserInfo): OAuthResult {
         val existing = userRepository.findByProviderAndProviderId(info.provider, info.providerId)
         if (existing != null) {
             if (!existing.isActive) {

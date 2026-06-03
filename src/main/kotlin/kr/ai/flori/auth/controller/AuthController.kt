@@ -30,12 +30,19 @@ class AuthController(
 ) {
     @Operation(
         summary = "카카오 로그인",
-        description = "카카오 인증코드 검증. 기존 사용자면 토큰, 신규면 registerToken+소셜 기본값 반환(가입 필요).",
+        description =
+            "카카오 신원 검증. 웹은 code+redirectUri(교환), 앱은 네이티브 SDK accessToken으로 호출한다. " +
+                "기존 사용자면 토큰, 신규면 registerToken+소셜 기본값 반환(가입 필요).",
     )
     @PostMapping("/oauth/kakao")
     fun kakaoLogin(
         @Valid @RequestBody request: KakaoOAuthRequest,
-    ): OAuthResult = authService.oauthLogin("KAKAO", request.code, request.redirectUri, null)
+    ): OAuthResult =
+        if (!request.accessToken.isNullOrBlank()) {
+            authService.oauthLoginWithAccessToken("KAKAO", request.accessToken)
+        } else {
+            authService.oauthLogin("KAKAO", request.code.orEmpty(), request.redirectUri.orEmpty(), null)
+        }
 
     @Operation(
         summary = "구글 로그인",

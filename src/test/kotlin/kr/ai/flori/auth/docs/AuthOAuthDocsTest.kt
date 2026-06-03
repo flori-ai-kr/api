@@ -1,5 +1,6 @@
 package kr.ai.flori.auth.docs
 
+import kr.ai.flori.auth.oauth.AccessTokenOAuthClient
 import kr.ai.flori.auth.oauth.SocialOAuthClient
 import kr.ai.flori.auth.oauth.SocialUserInfo
 import kr.ai.flori.common.docs.RestDocsSupport
@@ -26,8 +27,26 @@ class AuthOAuthDocsTest : RestDocsSupport() {
     @TestConfiguration
     class StubSocialConfig {
         // 빈 이름을 제공자 키와 일치시켜 AuthService의 Map<String, SocialOAuthClient> 주입에 그대로 들어가게 한다.
+        // 카카오는 웹(code) + 앱(accessToken) 두 경로를 지원하므로 두 인터페이스를 모두 구현한 스텁을 쓴다.
         @Bean("KAKAO")
-        fun stubKakaoClient(): SocialOAuthClient = stub("KAKAO", email = null, nickname = "카카오 사장님")
+        fun stubKakaoClient(): SocialOAuthClient =
+            object : SocialOAuthClient, AccessTokenOAuthClient {
+                private val info =
+                    SocialUserInfo(
+                        provider = "KAKAO",
+                        providerId = "KAKAO-doc-123",
+                        email = null,
+                        nickname = "카카오 사장님",
+                    )
+
+                override fun authenticate(
+                    code: String,
+                    redirectUri: String,
+                    state: String?,
+                ): SocialUserInfo = info
+
+                override fun authenticateWithAccessToken(accessToken: String): SocialUserInfo = info
+            }
 
         @Bean("GOOGLE")
         fun stubGoogleClient(): SocialOAuthClient = stub("GOOGLE", email = "shop@gmail.com", nickname = "구글 사장님")
@@ -79,16 +98,46 @@ class AuthOAuthDocsTest : RestDocsSupport() {
                         requestSchema = "KakaoOAuthRequest",
                         responseSchema = "OAuthResult",
                         tag = "Auth",
-                        summary = "카카오 로그인(인증코드 교환)",
+                        summary = "카카오 로그인(웹 code 교환 / 앱 accessToken)",
                         requestFields =
                             listOf(
-                                fieldWithPath("code").type(JsonFieldType.STRING).description("카카오 authorization code"),
-                                fieldWithPath("redirectUri").type(JsonFieldType.STRING).description("앱에서 사용한 redirect URI"),
+                                fieldWithPath("accessToken")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("앱 네이티브 SDK access token. 있으면 code 교환을 건너뛴다."),
+                                fieldWithPath("code")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("웹 카카오 authorization code(accessToken 미지정 시 필수)"),
+                                fieldWithPath("redirectUri")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("웹 code 교환 시 사용한 redirect URI"),
                             ),
                         responseFields = oauthResultFields,
                     ),
                 )
             }
+    }
+
+    @Test
+    fun `카카오 앱 로그인 — accessToken 경로로 신규 신원 처리`() {
+        mockMvc
+            .post("/auth/oauth/kakao") {
+                contentType = MediaType.APPLICATION_JSON
+                content = json(mapOf("accessToken" to "kakao-access-token"))
+            }.andExpect { status { isOk() } }
+            .andExpect { jsonPath("$.registered") { value(false) } }
+            .andExpect { jsonPath("$.registerToken") { exists() } }
+    }
+
+    @Test
+    fun `카카오 로그인 — accessToken·code 모두 없으면 검증 실패(400)`() {
+        mockMvc
+            .post("/auth/oauth/kakao") {
+                contentType = MediaType.APPLICATION_JSON
+                content = json(emptyMap<String, String>())
+            }.andExpect { status { isBadRequest() } }
     }
 
     @Test

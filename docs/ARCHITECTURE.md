@@ -281,10 +281,10 @@ sequenceDiagram
     participant DB as PostgreSQL
 
     Note over U,DB: 소셜 로그인 (POST /auth/oauth/{kakao|google|naver})
-    U->>AS: code, redirectUri
-    AS->>AS: SocialOAuthClient(provider 선택).authenticate()
-    AS->>AS: 제공자 토큰교환 + 프로필조회(providerId, socialEmail, nickname)
-    Note right of AS: 카카오는 kakao_account.email을 읽어 socialEmail로 전달(온보딩 이메일 프리필)
+    U->>AS: 웹: code+redirectUri / 앱(카카오 네이티브 SDK): accessToken
+    AS->>AS: code → SocialOAuthClient.authenticate(토큰교환) · accessToken → AccessTokenOAuthClient.authenticateWithAccessToken(교환 생략)
+    AS->>AS: 프로필조회(providerId, socialEmail, nickname) → loginOrRegister
+    Note right of AS: 카카오는 커스텀 스킴 리다이렉트 불가 → 앱은 네이티브 SDK accessToken 사용(웹은 code 유지). kakao_account.email을 socialEmail로 프리필
     alt 기존 사용자
         AS->>DB: findByProviderAndProviderId → JWT 발급
     else 신규 사용자(미가입)

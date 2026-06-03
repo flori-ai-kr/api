@@ -1,6 +1,7 @@
 package kr.ai.flori.auth.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 
@@ -36,15 +37,26 @@ data class TokenResponse(
     val tokenType: String = "Bearer",
 )
 
-@Schema(description = "카카오 OAuth 로그인 요청(인증코드 교환).")
-data class KakaoOAuthRequest(
-    @field:NotBlank(message = "인증코드는 필수입니다")
-    @field:Schema(description = "카카오 authorize에서 받은 authorization code")
-    val code: String,
-    @field:NotBlank(message = "redirectUri는 필수입니다")
-    @field:Schema(description = "앱에서 사용한 redirect URI(코드 교환 시 일치 필요)")
-    val redirectUri: String,
+@Schema(
+    description =
+        "카카오 OAuth 로그인 요청. 두 경로를 모두 지원한다 — " +
+            "웹(code+redirectUri 교환) / 앱(네이티브 SDK accessToken). accessToken이 있으면 code 교환을 건너뛴다.",
 )
+data class KakaoOAuthRequest(
+    @field:Schema(description = "카카오 네이티브 SDK가 발급한 access token(앱). 있으면 code 교환 생략.")
+    val accessToken: String? = null,
+    @field:Schema(description = "카카오 authorize에서 받은 authorization code(웹). accessToken 미지정 시 필수.")
+    val code: String? = null,
+    @field:Schema(description = "앱에서 사용한 redirect URI(웹 code 교환 시 일치 필요).")
+    val redirectUri: String? = null,
+) {
+    @get:AssertTrue(message = "accessToken 또는 (code, redirectUri)가 필요합니다")
+    @get:Schema(hidden = true)
+    val isValidRequest: Boolean
+        get() =
+            !accessToken.isNullOrBlank() ||
+                (!code.isNullOrBlank() && !redirectUri.isNullOrBlank())
+}
 
 @Schema(description = "구글 OAuth 로그인 요청(인증코드 교환).")
 data class GoogleOAuthRequest(
