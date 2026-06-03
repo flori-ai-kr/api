@@ -69,6 +69,13 @@ ai:
   health:
     server-url: ${AI_HEALTH_SERVER_URL:}
     litellm-url: ${AI_HEALTH_LITELLM_URL:}
+  # AI 게이트웨이 — ai-server(FastAPI, 내부망). base-url 빈 값이면 AI 기능 비활성.
+  gateway:
+    base-url: ${AI_SERVER_URL:}
+    internal-key: ${AI_INTERNAL_KEY:}
+    chat-model: ${AI_CHAT_MODEL:claude-sonnet-4-6}
+    usage-cap-per-day: ${AI_USAGE_CAP_PER_DAY:500}
+    proposal-ttl-seconds: ${AI_PROPOSAL_TTL_SECONDS:86400}
 
 springdoc:
   # 문서 본문 = RestDocs 생성 스펙(static/docs/open-api-3.0.1.json).
