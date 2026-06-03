@@ -26,6 +26,7 @@ class UserDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "me-get",
+                        responseSchema = "UserResponse",
                         tag = "Me",
                         summary = "내 프로필 조회",
                         responseFields =
@@ -64,6 +65,8 @@ class UserDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "me-email-update",
+                        requestSchema = "UpdateEmailRequest",
+                        responseSchema = "UserResponse",
                         tag = "Me",
                         summary = "내 이메일 보완(소셜 가입 후)",
                         requestFields =

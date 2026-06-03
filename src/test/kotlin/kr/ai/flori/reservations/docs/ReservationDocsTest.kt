@@ -138,6 +138,8 @@ class ReservationDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "reservation-create",
+                        requestSchema = "ReservationCreateRequest",
+                        responseSchema = "ReservationResponse",
                         tag = "Reservations",
                         summary = "예약 생성",
                         requestFields =
@@ -200,6 +202,7 @@ class ReservationDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "reservation-list",
+                        responseSchema = "ReservationListResponse",
                         tag = "Reservations",
                         summary = "월별 예약 목록",
                         responseFields =
@@ -279,6 +282,7 @@ class ReservationDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "reservation-upcoming",
+                        responseSchema = "ReservationListResponse",
                         tag = "Reservations",
                         summary = "다가오는 예약 목록",
                         responseFields =
@@ -357,6 +361,7 @@ class ReservationDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "reservation-reminders",
+                        responseSchema = "ReservationListResponse",
                         tag = "Reservations",
                         summary = "발동된 리마인더 목록 (최근 48시간 내 도달한 리마인더)",
                         responseFields =
@@ -422,6 +427,7 @@ class ReservationDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "reservation-suggestions",
+                        responseSchema = "ReservationSuggestionsResponse",
                         tag = "Reservations",
                         summary = "예약 제목/메모 자동완성 (과거 사용 빈도순)",
                         responseFields =
@@ -481,6 +487,7 @@ class ReservationDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "reservation-by-sale",
+                        responseSchema = "ReservationListResponse",
                         tag = "Reservations",
                         summary = "매출 연결 예약 목록",
                         pathParameters = listOf(parameterWithName("saleId").description("매출 ID")),
@@ -549,6 +556,7 @@ class ReservationDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "reservation-get",
+                        responseSchema = "ReservationResponse",
                         tag = "Reservations",
                         summary = "예약 단건 조회",
                         pathParameters = listOf(parameterWithName("id").description("예약 ID")),
@@ -582,6 +590,8 @@ class ReservationDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "reservation-update",
+                        requestSchema = "ReservationUpdateRequest",
+                        responseSchema = "ReservationResponse",
                         tag = "Reservations",
                         summary = "예약 수정 (제공된 필드만 반영, reminderAt 변경 시 reminderSent 리셋)",
                         pathParameters = listOf(parameterWithName("id").description("예약 ID")),
@@ -656,6 +666,8 @@ class ReservationDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "reservation-complete-pickup",
+                        requestSchema = "PickupCompleteRequest",
+                        responseSchema = "ReservationResponse",
                         tag = "Reservations",
                         summary = "픽업 완료 처리",
                         pathParameters = listOf(parameterWithName("id").description("예약 ID")),
@@ -697,6 +709,8 @@ class ReservationDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "reservation-convert-to-sale",
+                        requestSchema = "SaleCreateRequest",
+                        responseSchema = "SaleResponse",
                         tag = "Reservations",
                         summary = "예약 → 매출 전환 (매출 생성 후 예약에 saleId 연결)",
                         pathParameters = listOf(parameterWithName("id").description("예약 ID")),
@@ -786,6 +800,8 @@ class ReservationDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "reservation-add-pickup",
+                        requestSchema = "AddPickupRequest",
+                        responseSchema = "ReservationResponse",
                         tag = "Reservations",
                         summary = "매출에 픽업 추가 (고객 정보는 매출에서 상속)",
                         pathParameters = listOf(parameterWithName("saleId").description("매출 ID")),

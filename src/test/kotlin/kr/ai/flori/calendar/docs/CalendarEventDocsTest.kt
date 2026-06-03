@@ -82,6 +82,8 @@ class CalendarEventDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "calendar-event-create",
+                        requestSchema = "CalendarEventCreateRequest",
+                        responseSchema = "CalendarEventResponse",
                         tag = "CalendarEvents",
                         summary = "캘린더 이벤트 생성",
                         requestFields =
@@ -126,6 +128,7 @@ class CalendarEventDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "calendar-event-list",
+                        responseSchema = "CalendarEventListResponse",
                         tag = "CalendarEvents",
                         summary = "월별 이벤트 목록 (월 범위와 겹치는 이벤트 포함)",
                         responseFields =
@@ -174,6 +177,7 @@ class CalendarEventDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "calendar-event-get",
+                        responseSchema = "CalendarEventResponse",
                         tag = "CalendarEvents",
                         summary = "캘린더 이벤트 단건 조회",
                         pathParameters = listOf(parameterWithName("id").description("이벤트 ID")),
@@ -207,6 +211,8 @@ class CalendarEventDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "calendar-event-update",
+                        requestSchema = "CalendarEventUpdateRequest",
+                        responseSchema = "CalendarEventResponse",
                         tag = "CalendarEvents",
                         summary = "캘린더 이벤트 수정 (제공된 필드만 반영)",
                         pathParameters = listOf(parameterWithName("id").description("이벤트 ID")),

@@ -157,6 +157,8 @@ class CommunityDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "community-post-create",
+                        requestSchema = "PostCreateRequest",
+                        responseSchema = "PostResponse",
                         tag = "Community",
                         summary = "게시글 생성 (notice는 관리자만)",
                         requestFields =
@@ -193,6 +195,7 @@ class CommunityDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "community-post-list",
+                        responseSchema = "PostsPageResponse",
                         tag = "Community",
                         summary = "게시글 목록 (고정글 우선 + 최신순, category/search/offset/limit)",
                         responseFields =
@@ -222,6 +225,7 @@ class CommunityDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "community-post-get",
+                        responseSchema = "PostResponse",
                         tag = "Community",
                         summary = "게시글 단건 조회 (비권한 비밀글은 마스킹)",
                         pathParameters = listOf(parameterWithName("id").description("게시글 ID")),
@@ -249,6 +253,8 @@ class CommunityDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "community-post-update",
+                        requestSchema = "PostUpdateRequest",
+                        responseSchema = "PostResponse",
                         tag = "Community",
                         summary = "게시글 수정 (작성자만, 제공된 필드만 반영)",
                         pathParameters = listOf(parameterWithName("id").description("게시글 ID")),
@@ -307,6 +313,7 @@ class CommunityDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "community-post-like",
+                        responseSchema = "LikeToggleResponse",
                         tag = "Community",
                         summary = "좋아요 토글",
                         pathParameters = listOf(parameterWithName("id").description("게시글 ID")),
@@ -344,6 +351,8 @@ class CommunityDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "community-upload-targets",
+                        requestSchema = "CommunityUploadTargetsRequest",
+                        responseSchema = "CommunityUploadTargetListResponse",
                         tag = "Community",
                         summary = "이미지 업로드 타깃 발급 (S3 presigned PUT URL). 글 작성 전 업로드해 imageUrls/본문에 사용",
                         requestFields =
@@ -382,6 +391,7 @@ class CommunityDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "community-comment-list",
+                        responseSchema = "CommentListResponse",
                         tag = "Community",
                         summary = "댓글 목록 (대댓글 parentId 포함, 비밀댓글/삭제 마스킹)",
                         pathParameters = listOf(parameterWithName("id").description("게시글 ID")),
@@ -410,6 +420,8 @@ class CommunityDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "community-comment-create",
+                        requestSchema = "CommentCreateRequest",
+                        responseSchema = "CommentResponse",
                         tag = "Community",
                         summary = "댓글 작성 (parentId로 대댓글, 부모가 비밀이면 자식도 비밀 강제)",
                         pathParameters = listOf(parameterWithName("id").description("게시글 ID")),

@@ -19,6 +19,7 @@ class HealthDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "health-check",
+                        responseSchema = "HealthResponse",
                         tag = "Health",
                         summary = "헬스체크 (서버 가용 여부 반환, 인증 불필요)",
                         responseFields =

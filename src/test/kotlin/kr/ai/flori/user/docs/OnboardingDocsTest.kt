@@ -39,6 +39,8 @@ class OnboardingDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "me-profile-update",
+                        requestSchema = "OnboardingRequest",
+                        responseSchema = "UserResponse",
                         tag = "Me",
                         summary = "가게 프로필 편집(upsert)",
                         requestFields =

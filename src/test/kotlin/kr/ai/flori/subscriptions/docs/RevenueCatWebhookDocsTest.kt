@@ -3,6 +3,7 @@ package kr.ai.flori.subscriptions.docs
 import com.epages.restdocs.apispec.MockMvcRestDocumentationWrapper
 import com.epages.restdocs.apispec.ResourceDocumentation.resource
 import com.epages.restdocs.apispec.ResourceSnippetParameters
+import com.epages.restdocs.apispec.Schema
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
@@ -62,10 +63,14 @@ class RevenueCatWebhookDocsTest {
         summary: String,
         requestFields: List<FieldDescriptor> = emptyList(),
         responseFields: List<FieldDescriptor> = emptyList(),
+        requestSchema: String? = null,
+        responseSchema: String? = null,
     ): ResultHandler {
         val params = ResourceSnippetParameters.builder().tag(tag).summary(summary)
         if (requestFields.isNotEmpty()) params.requestFields(*requestFields.toTypedArray())
         if (responseFields.isNotEmpty()) params.responseFields(*responseFields.toTypedArray())
+        if (requestSchema != null) params.requestSchema(Schema(requestSchema))
+        if (responseSchema != null) params.responseSchema(Schema(responseSchema))
         return MockMvcRestDocumentationWrapper.document(identifier, snippets = arrayOf(resource(params.build())))
     }
 
@@ -117,6 +122,8 @@ class RevenueCatWebhookDocsTest {
                 handle(
                     docs(
                         identifier = "webhook-revenuecat",
+                        requestSchema = "RevenueCatWebhookRequest",
+                        responseSchema = "WebhookAck",
                         tag = "Webhooks",
                         summary = "RevenueCat 구독 웹훅 (Bearer 시크릿 검증 후 이벤트 타입에 따라 구독 상태 갱신)",
                         requestFields =

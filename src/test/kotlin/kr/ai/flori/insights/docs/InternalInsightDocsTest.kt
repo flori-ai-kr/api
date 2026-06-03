@@ -3,6 +3,7 @@ package kr.ai.flori.insights.docs
 import com.epages.restdocs.apispec.MockMvcRestDocumentationWrapper
 import com.epages.restdocs.apispec.ResourceDocumentation.resource
 import com.epages.restdocs.apispec.ResourceSnippetParameters
+import com.epages.restdocs.apispec.Schema
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
@@ -62,11 +63,15 @@ class InternalInsightDocsTest {
         pathParameters: List<ParameterDescriptor> = emptyList(),
         requestFields: List<FieldDescriptor> = emptyList(),
         responseFields: List<FieldDescriptor> = emptyList(),
+        requestSchema: String? = null,
+        responseSchema: String? = null,
     ): ResultHandler {
         val params = ResourceSnippetParameters.builder().tag(tag).summary(summary)
         if (pathParameters.isNotEmpty()) params.pathParameters(*pathParameters.toTypedArray())
         if (requestFields.isNotEmpty()) params.requestFields(*requestFields.toTypedArray())
         if (responseFields.isNotEmpty()) params.responseFields(*responseFields.toTypedArray())
+        if (requestSchema != null) params.requestSchema(Schema(requestSchema))
+        if (responseSchema != null) params.responseSchema(Schema(responseSchema))
         return MockMvcRestDocumentationWrapper.document(identifier, snippets = arrayOf(resource(params.build())))
     }
 
@@ -142,6 +147,8 @@ class InternalInsightDocsTest {
                 handle(
                     docs(
                         identifier = "internal-ingest-trends",
+                        requestSchema = "TrendArticlesBulkRequest",
+                        responseSchema = "IngestResultResponse",
                         tag = "Internal",
                         summary = "[내부 API] 트렌드 기사 수집 (멱등 — source_url 중복 스킵, 신규 시 FCM 브로드캐스트)",
                         requestFields =
@@ -214,6 +221,8 @@ class InternalInsightDocsTest {
                 handle(
                     docs(
                         identifier = "internal-ingest-instagram-posts",
+                        requestSchema = "InstagramPostsBulkRequest",
+                        responseSchema = "IngestResultResponse",
                         tag = "Internal",
                         summary = "[내부 API] 인스타 포스트 수집 (멱등 — shortcode 중복 스킵)",
                         requestFields =
@@ -278,6 +287,8 @@ class InternalInsightDocsTest {
                 handle(
                     docs(
                         identifier = "internal-create-instagram-account",
+                        requestSchema = "InstagramAccountCreateRequest",
+                        responseSchema = "InstagramAccountResponse",
                         tag = "Internal",
                         summary = "[내부 API] 인스타 계정 등록 (201 Created)",
                         requestFields =
@@ -339,6 +350,8 @@ class InternalInsightDocsTest {
                 handle(
                     docs(
                         identifier = "internal-update-instagram-account",
+                        requestSchema = "InstagramAccountUpdateRequest",
+                        responseSchema = "InstagramAccountResponse",
                         tag = "Internal",
                         summary = "[내부 API] 인스타 계정 수정 (제공된 필드만 반영)",
                         pathParameters = listOf(parameterWithName("id").description("수정할 계정 ID")),

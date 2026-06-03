@@ -86,6 +86,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "settings-expense-category-list",
+                        responseSchema = "LabelSettingListResponse",
                         tag = "ExpenseSettings",
                         summary = "지출 카테고리 목록 (가입 시 시드 포함)",
                         responseFields =
@@ -133,6 +134,8 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "settings-expense-category-create",
+                        requestSchema = "LabelSettingCreateRequest",
+                        responseSchema = "LabelSettingResponse",
                         tag = "ExpenseSettings",
                         summary = "지출 카테고리 생성 (value 중복 불가)",
                         requestFields =
@@ -179,6 +182,8 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "settings-expense-category-update",
+                        requestSchema = "LabelSettingUpdateRequest",
+                        responseSchema = "LabelSettingResponse",
                         tag = "ExpenseSettings",
                         summary = "지출 카테고리 수정 (label·color 전체 교체)",
                         pathParameters = listOf(parameterWithName("id").description("지출 카테고리 ID")),
@@ -235,6 +240,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "settings-expense-payment-method-list",
+                        responseSchema = "LabelSettingListResponse",
                         tag = "ExpenseSettings",
                         summary = "지출 결제방식 목록 (가입 시 시드 포함)",
                         responseFields =
@@ -282,6 +288,8 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "settings-expense-payment-method-create",
+                        requestSchema = "LabelSettingCreateRequest",
+                        responseSchema = "LabelSettingResponse",
                         tag = "ExpenseSettings",
                         summary = "지출 결제방식 생성",
                         requestFields =
@@ -328,6 +336,8 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "settings-expense-payment-method-update",
+                        requestSchema = "LabelSettingUpdateRequest",
+                        responseSchema = "LabelSettingResponse",
                         tag = "ExpenseSettings",
                         summary = "지출 결제방식 수정 (label·color 전체 교체)",
                         pathParameters = listOf(parameterWithName("id").description("지출 결제방식 ID")),

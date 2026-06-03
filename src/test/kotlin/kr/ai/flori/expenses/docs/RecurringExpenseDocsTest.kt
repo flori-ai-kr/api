@@ -214,6 +214,8 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "recurring-expense-create",
+                        requestSchema = "RecurringExpenseRequest",
+                        responseSchema = "RecurringExpenseResponse",
                         tag = "RecurringExpenses",
                         summary = "고정비 생성 (weekly/monthly/yearly 반복 규칙)",
                         requestFields = recurringRequestFields,
@@ -238,6 +240,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "recurring-expense-list",
+                        responseSchema = "RecurringExpenseListResponse",
                         tag = "RecurringExpenses",
                         summary = "고정비 목록",
                         responseFields =
@@ -313,6 +316,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "recurring-expense-get",
+                        responseSchema = "RecurringExpenseResponse",
                         tag = "RecurringExpenses",
                         summary = "고정비 단건 조회",
                         pathParameters = listOf(parameterWithName("id").description("고정비 ID")),
@@ -352,6 +356,8 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "recurring-expense-update",
+                        requestSchema = "RecurringExpenseRequest",
+                        responseSchema = "RecurringExpenseResponse",
                         tag = "RecurringExpenses",
                         summary = "고정비 수정 (전체 교체 — PUT)",
                         pathParameters = listOf(parameterWithName("id").description("고정비 ID")),
@@ -380,6 +386,8 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "recurring-expense-toggle",
+                        requestSchema = "ToggleActiveRequest",
+                        responseSchema = "RecurringExpenseResponse",
                         tag = "RecurringExpenses",
                         summary = "고정비 활성/비활성 토글",
                         pathParameters = listOf(parameterWithName("id").description("고정비 ID")),
@@ -411,6 +419,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "recurring-expense-quick-add",
+                        responseSchema = "ExpenseResponse",
                         tag = "RecurringExpenses",
                         summary = "빠른 추가 (오늘 날짜로 즉시 지출 생성, 템플릿과 분리)",
                         pathParameters = listOf(parameterWithName("id").description("고정비 ID")),
@@ -500,6 +509,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "recurring-instance-update-this",
+                        requestSchema = "RecurringInstanceUpdateRequest",
                         tag = "RecurringExpenses",
                         summary = "고정비 인스턴스 수정 — 이것만 (scope=this, 해당 지출만 변경)",
                         pathParameters = listOf(parameterWithName("expenseId").description("지출 ID")),
@@ -573,6 +583,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "recurring-instance-update-all",
+                        requestSchema = "RecurringInstanceUpdateRequest",
                         tag = "RecurringExpenses",
                         summary = "고정비 인스턴스 수정 — 이후 모두 (scope=all, 템플릿+인스턴스 동시 변경)",
                         pathParameters = listOf(parameterWithName("expenseId").description("지출 ID")),
@@ -646,6 +657,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "recurring-instance-delete-this",
+                        requestSchema = "EmptyRequest",
                         tag = "RecurringExpenses",
                         summary = "고정비 인스턴스 삭제 — 이것만 (scope=this, skip 기록 후 지출 삭제)",
                         pathParameters = listOf(parameterWithName("expenseId").description("지출 ID")),
@@ -677,6 +689,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "recurring-instance-delete-all",
+                        requestSchema = "EmptyRequest",
                         tag = "RecurringExpenses",
                         summary = "고정비 인스턴스 삭제 — 이후 모두 (scope=all, 템플릿 종료일 단축)",
                         pathParameters = listOf(parameterWithName("expenseId").description("지출 ID")),

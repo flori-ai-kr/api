@@ -180,6 +180,7 @@ class DashboardDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "dashboard-today",
+                        responseSchema = "TodayDashboardResponse",
                         tag = "Dashboard",
                         summary = "오늘 대시보드 (매출 요약 + 다가오는 예약 + 발동 리마인더 + 최근 매출 + 카테고리)",
                         responseFields =
@@ -241,6 +242,7 @@ class DashboardDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "dashboard-month",
+                        responseSchema = "MonthDashboardResponse",
                         tag = "Dashboard",
                         summary = "월 통계 (매출/지출 요약 + 카테고리/결제수단/채널/고객/지출 통계, 네이티브 SQL 집계)",
                         responseFields =

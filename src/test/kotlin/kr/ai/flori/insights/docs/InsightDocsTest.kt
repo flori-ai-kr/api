@@ -111,6 +111,7 @@ class InsightDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "insight-trends-list",
+                        responseSchema = "TrendArticleListResponse",
                         tag = "Insights",
                         summary = "트렌드 목록 (category/limit/offset 필터)",
                         responseFields =
@@ -147,6 +148,7 @@ class InsightDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "insight-trends-recent",
+                        responseSchema = "RecentTrendsResponse",
                         tag = "Insights",
                         summary = "카테고리별 최신 트렌드 (카테고리명 → TrendArticleResponse[] 맵)",
                         responseFields =
@@ -190,6 +192,7 @@ class InsightDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "insight-trends-counts",
+                        responseSchema = "TrendCountsResponse",
                         tag = "Insights",
                         summary = "카테고리별 트렌드 개수 (since 이후 수집분만, 옵션). 모든 카테고리 키 포함(0 포함)",
                         responseFields =
@@ -219,6 +222,7 @@ class InsightDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "insight-instagram-latest",
+                        responseSchema = "InstagramLatestResponse",
                         tag = "Insights",
                         summary = "인스타 마지막 업데이트 (가장 최근 수집 시각, 없으면 null)",
                         responseFields =
@@ -249,6 +253,7 @@ class InsightDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "insight-accounts-list",
+                        responseSchema = "InstagramAccountListResponse",
                         tag = "Insights",
                         summary = "인스타 계정 목록 (activeOnly 필터)",
                         responseFields =
@@ -284,6 +289,7 @@ class InsightDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "insight-posts-list",
+                        responseSchema = "InstagramPostListResponse",
                         tag = "Insights",
                         summary = "인스타 포스트 목록 (accountId/region/sortBy/daysAgo/limit 필터)",
                         responseFields =

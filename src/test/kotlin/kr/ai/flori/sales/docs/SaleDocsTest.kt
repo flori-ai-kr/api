@@ -138,6 +138,8 @@ class SaleDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "sale-create",
+                        requestSchema = "SaleCreateRequest",
+                        responseSchema = "SaleResponse",
                         tag = "Sales",
                         summary = "매출 생성",
                         requestFields =
@@ -199,6 +201,7 @@ class SaleDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "sale-list",
+                        responseSchema = "SalesPageResponse",
                         tag = "Sales",
                         summary = "매출 목록 (무한스크롤 + 월·카테고리·결제방식·채널 필터 + 검색)",
                         responseFields = salesPageResponseFields,
@@ -223,6 +226,7 @@ class SaleDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "sale-summary",
+                        responseSchema = "SalesSummaryResponse",
                         tag = "Sales",
                         summary = "매출 요약 (페이지네이션 무관 전체 합산, /sales 와 동일 필터)",
                         responseFields =
@@ -255,6 +259,7 @@ class SaleDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "sale-get",
+                        responseSchema = "SaleResponse",
                         tag = "Sales",
                         summary = "매출 단건 조회",
                         pathParameters = listOf(parameterWithName("id").description("매출 ID")),
@@ -288,6 +293,8 @@ class SaleDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "sale-update",
+                        requestSchema = "SaleUpdateRequest",
+                        responseSchema = "SaleResponse",
                         tag = "Sales",
                         summary = "매출 수정 (제공된 필드만 반영)",
                         pathParameters = listOf(parameterWithName("id").description("매출 ID")),
@@ -376,6 +383,8 @@ class SaleDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "sale-complete-unpaid",
+                        requestSchema = "CompleteUnpaidRequest",
+                        responseSchema = "SaleResponse",
                         tag = "Sales",
                         summary = "미수 완료 (미수 매출의 결제방식 확정)",
                         pathParameters = listOf(parameterWithName("id").description("매출 ID")),
@@ -434,6 +443,7 @@ class SaleDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "sale-revert-unpaid",
+                        responseSchema = "SaleResponse",
                         tag = "Sales",
                         summary = "미수 되돌리기 (결제방식을 다시 미수로)",
                         pathParameters = listOf(parameterWithName("id").description("매출 ID")),
@@ -457,6 +467,7 @@ class SaleDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "sale-suggestions",
+                        responseSchema = "SaleSuggestionsResponse",
                         tag = "Sales",
                         summary = "비고 자동완성 (과거 비고를 빈도순으로 반환)",
                         responseFields =

@@ -25,7 +25,7 @@
 | 푸시 | FCM (Firebase Admin SDK, 모바일) + Web Push/VAPID (브라우저 PWA). 구독의 p256dh/auth 유무로 전송 경로 분기(`PushDispatcher`) |
 | 스케줄 | Spring `@Scheduled` (KST) |
 | 에러 | `@ControllerAdvice` 표준 응답(`E-{DOMAIN}-{NNN}` 코드 체계) + Discord 웹훅 |
-| API 문서 | Spring REST Docs → OpenAPI 3 (springdoc swagger-ui) — 테스트가 문서의 단일 출처 |
+| API 문서 | Spring REST Docs → OpenAPI 3 (springdoc swagger-ui) — 테스트가 문서의 단일 출처. `docs(...)` 호출 시 `requestSchema`/`responseSchema`에 DTO 클래스명을 **항상 명시** (미지정 시 해시 이름 생성 → mobile orval 코드젠 타입 깨짐). 배열 응답은 `XxxListResponse` 별도 이름 부여 |
 | 품질 | ktlint + detekt + JUnit(Zonky embedded PostgreSQL) + JaCoCo line 80% 게이트 |
 
 ---

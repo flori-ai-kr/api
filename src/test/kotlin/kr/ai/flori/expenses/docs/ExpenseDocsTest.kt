@@ -111,6 +111,8 @@ class ExpenseDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "expense-create",
+                        requestSchema = "ExpenseCreateRequest",
+                        responseSchema = "ExpenseResponse",
                         tag = "Expenses",
                         summary = "지출 생성 (총액은 단가 × 수량으로 서버 계산)",
                         requestFields =
@@ -169,6 +171,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "expense-list",
+                        responseSchema = "ExpenseListResponse",
                         tag = "Expenses",
                         summary = "지출 목록 (월 필터 선택, 미입력 시 전체)",
                         responseFields =
@@ -234,6 +237,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "expense-get",
+                        responseSchema = "ExpenseResponse",
                         tag = "Expenses",
                         summary = "지출 단건 조회",
                         pathParameters = listOf(parameterWithName("id").description("지출 ID")),
@@ -268,6 +272,8 @@ class ExpenseDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "expense-update",
+                        requestSchema = "ExpenseUpdateRequest",
+                        responseSchema = "ExpenseResponse",
                         tag = "Expenses",
                         summary = "지출 수정 (제공된 필드만 반영, 총액 재계산)",
                         pathParameters = listOf(parameterWithName("id").description("지출 ID")),
@@ -331,6 +337,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "expense-suggestions",
+                        responseSchema = "ExpenseSuggestionsResponse",
                         tag = "Expenses",
                         summary = "지출 자동완성 (물품명/거래처/비고 빈도순 반환)",
                         responseFields =

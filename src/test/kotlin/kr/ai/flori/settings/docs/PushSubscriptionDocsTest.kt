@@ -39,6 +39,7 @@ class PushSubscriptionDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "push-subscribe",
+                        requestSchema = "PushSubscribeRequest",
                         tag = "Push",
                         summary = "푸시 구독 등록 (endpoint 기준 upsert — FCM 토큰)",
                         requestFields =
@@ -86,6 +87,7 @@ class PushSubscriptionDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "push-status",
+                        responseSchema = "PushStatusResponse",
                         tag = "Push",
                         summary = "푸시 구독 상태 조회 (활성 구독 존재 여부)",
                         responseFields =
@@ -128,6 +130,7 @@ class PushSubscriptionDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "push-test",
+                        responseSchema = "PushTestResponse",
                         tag = "Push",
                         summary = "테스트 알림 발송 (현재 사용자 활성 구독에 발송, 영구 실패 구독 자동 비활성화)",
                         responseFields =
@@ -165,6 +168,7 @@ class PushSubscriptionDocsTest : RestDocsSupport() {
                 handle(
                     docs(
                         identifier = "push-unsubscribe",
+                        requestSchema = "EmptyRequest",
                         tag = "Push",
                         summary = "푸시 구독 해지 (endpoint로 구독 토큰 삭제)",
                     ),
