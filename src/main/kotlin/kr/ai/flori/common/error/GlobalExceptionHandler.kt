@@ -24,10 +24,20 @@ class GlobalExceptionHandler(
     private val log = LoggerFactory.getLogger(javaClass)
 
     @ExceptionHandler(AppException::class)
-    fun handleApp(ex: AppException): ResponseEntity<ErrorResponse> =
-        ResponseEntity
-            .status(ex.errorCode.status)
+    fun handleApp(ex: AppException): ResponseEntity<ErrorResponse> {
+        val status = ex.errorCode.status
+        when {
+            // 5xx(예상된 내부오류) → ERROR + 스택
+            status.is5xxServerError -> log.error("[{}] {} - {}", status.value(), ex.errorCode.code, ex.message, ex)
+            // 4xx인데 원인(cause)이 있으면(외부연동 실패 등) cause 체인까지 로깅 — 예: OAuth 토큰 교환 실패
+            ex.cause != null -> log.warn("[{}] {} - {}", status.value(), ex.errorCode.code, ex.message, ex)
+            // 그 외 일반 4xx → 한 줄 WARN
+            else -> log.warn("[{}] {} - {}", status.value(), ex.errorCode.code, ex.message)
+        }
+        return ResponseEntity
+            .status(status)
             .body(ErrorResponse(ex.errorCode.code, ex.message))
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidation(ex: MethodArgumentNotValidException): ResponseEntity<ErrorResponse> {
@@ -35,6 +45,7 @@ class GlobalExceptionHandler(
             ex.bindingResult.fieldErrors
                 .firstOrNull()
                 ?.let { "${it.field}: ${it.defaultMessage}" }
+        log.warn("검증 실패: {}", detail)
         return errorResponse(CommonErrorCode.VALIDATION, detail)
     }
 
