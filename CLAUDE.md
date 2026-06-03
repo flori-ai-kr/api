@@ -6,7 +6,7 @@
 
 ## 프로젝트 개요
 
-**Flori Server** — 꽃집 어드민(Flori)의 모바일/웹 백엔드. 기존 Next.js 웹의 비즈니스 로직을 **앱/웹이 호출 가능한 REST API**로 재구현하고, 자체 AWS 인프라 위에서 동작시킨다.
+**Flori API** — 꽃집 어드민(Flori)의 모바일/웹 백엔드. 기존 Next.js 웹의 비즈니스 로직을 **앱/웹이 호출 가능한 REST API**로 재구현하고, 자체 AWS 인프라 위에서 동작시킨다.
 
 자매 repo: `~/Desktop/flori-ai/mobile`(React Native / Expo), `~/Desktop/flori-ai/web`(Next.js).
 

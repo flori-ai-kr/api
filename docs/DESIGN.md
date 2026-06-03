@@ -1,4 +1,4 @@
-# Flori Server — 설계 (SSOT)
+# Flori API — 설계 (SSOT)
 
 > Flori 모바일 전환 프로그램 · 백엔드 파트 설계. 2026-05-23 작성.
 > 프로그램 전체 맥락은 `~/Desktop/flori-ai/web/docs/superpowers/specs/2026-05-23-flori-mobile-migration-design.md` 참조.
@@ -10,7 +10,7 @@
 ## 2. 전체 아키텍처
 
 ```
- React Native 앱 (flori-ai/mobile) ──REST+JWT──→ Flori Server (이 repo)
+ React Native 앱 (flori-ai/mobile) ──REST+JWT──→ Flori API (이 repo)
                                        ├ Spring Security + JWT
                                        ├ @Scheduled (Cron 대체)
                                        ├ S3 presigned 발급

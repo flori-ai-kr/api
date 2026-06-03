@@ -1,4 +1,4 @@
-# Flori Server — 아키텍처 & 기술 선정 이유
+# Flori API — 아키텍처 & 기술 선정 이유
 
 > 최종 업데이트: 2026-05-29
 
@@ -18,7 +18,7 @@ flowchart TB
     end
 
     subgraph AWS["AWS Cloud (ap-northeast-2)"]
-        subgraph Server["Flori Server · Spring Boot 3.5 (Kotlin / Java 21)"]
+        subgraph Server["Flori API · Spring Boot 3.5 (Kotlin / Java 21)"]
             Sec[Security Filter<br/>JWT → TenantContext]
             Ctrl[Controllers<br/>REST + @Valid]
             Svc[Services<br/>비즈니스 SSOT]

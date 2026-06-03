@@ -1,4 +1,4 @@
-# Flori Server
+# Flori API
 
 > 꽃집 어드민(Flori)의 모바일/웹 백엔드 — Spring Boot(Kotlin) REST API
 
@@ -107,7 +107,7 @@ flowchart TB
     end
 
     subgraph AWS["AWS Cloud (ap-northeast-2)"]
-        subgraph Server["Flori Server · Spring Boot 3.5 (Kotlin / Java 21)"]
+        subgraph Server["Flori API · Spring Boot 3.5 (Kotlin / Java 21)"]
             Sec["Security Filter<br/>JWT → TenantContext"]
             Ctrl["Controllers<br/>REST + @Valid"]
             Svc["Services<br/>비즈니스 SSOT"]

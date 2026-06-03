@@ -1,4 +1,4 @@
-# Flori Server — 데이터베이스 명세
+# Flori API — 데이터베이스 명세
 
 Flori 백엔드의 PostgreSQL 스키마 전체 명세. 각 테이블의 역할·컬럼·제약·인덱스·관계를 정리한다.
 
