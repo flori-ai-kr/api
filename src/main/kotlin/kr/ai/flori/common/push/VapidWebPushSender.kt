@@ -2,8 +2,10 @@ package kr.ai.flori.common.push
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import nl.martijndwars.webpush.Notification
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets
+import java.security.Security
 import nl.martijndwars.webpush.PushService as VapidPushService
 
 /**
@@ -17,6 +19,17 @@ class VapidWebPushSender(
     private val objectMapper: ObjectMapper,
 ) : WebPushSender {
     private val log = LoggerFactory.getLogger(javaClass)
+
+    init {
+        // web-push 라이브러리가 VAPID 키 파싱 시 KeyFactory.getInstance(..., "BC") 로
+        // BouncyCastle 프로바이더를 이름으로 요구한다. classpath 에 bcprov 가 있어도
+        // Security 에 런타임 등록이 안 되어 있으면 NoSuchProviderException("no such provider: BC").
+        // PushService 생성 전에 1회 등록(중복 등록은 no-op).
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+            Security.addProvider(BouncyCastleProvider())
+        }
+    }
+
     private val pushService = VapidPushService(publicKey, privateKey, subject)
 
     @Suppress("TooGenericExceptionCaught")
