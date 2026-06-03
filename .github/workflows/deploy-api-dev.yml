@@ -1,7 +1,7 @@
 # ==============================================================================
-# flori server (Spring Boot/Kotlin) CI/CD — DEV
+# flori api (Spring Boot/Kotlin) CI/CD — DEV
 # ==============================================================================
-# 배치: flori-ai-kr/server 리포 .github/workflows/deploy-server-dev.yml (별도 레포, 코드 루트)
+# 배치: flori-ai-kr/api 리포 .github/workflows/deploy-api-dev.yml (별도 레포, 코드 루트)
 # 흐름: ARM64 네이티브 Docker 빌드(bootJar -x test) → ECR(flori-dev/api) → SSH deploy.api.sh
 # 테스트는 ci.yml 이 전담(같은 push). deploy 는 빌드/배포만 — Zonky 통합테스트 중복 실행 제거로 단축.
 # 패턴: aws-infra/.github/workflows/api/deploy-optigen-dev.yml 과 동일 (ubuntu-24.04-arm, QEMU 불필요)
