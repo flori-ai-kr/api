@@ -56,3 +56,5 @@ application-local.yml
 .moai/reports/
 .moai/evolution/telemetry/*.jsonl
 !.moai/evolution/telemetry/.gitkeep
+
+/logs/

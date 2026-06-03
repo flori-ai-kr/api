@@ -1,6 +1,7 @@
 package kr.ai.flori.admin.controller
 
 import jakarta.validation.Valid
+import kr.ai.flori.admin.dto.AdminUserDetail
 import kr.ai.flori.admin.dto.AdminUserPage
 import kr.ai.flori.admin.dto.AdminUserRow
 import kr.ai.flori.admin.dto.SetActiveRequest
@@ -26,6 +27,11 @@ class AdminUserController(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "50") size: Int,
     ): AdminUserPage = service.list(query, page, size)
+
+    @GetMapping("/{id}")
+    fun detail(
+        @PathVariable id: Long,
+    ): AdminUserDetail = service.detail(id)
 
     @PostMapping("/{id}/active")
     fun setActive(
