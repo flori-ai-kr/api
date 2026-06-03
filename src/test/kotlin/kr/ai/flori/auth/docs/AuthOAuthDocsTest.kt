@@ -132,6 +132,15 @@ class AuthOAuthDocsTest : RestDocsSupport() {
     }
 
     @Test
+    fun `카카오 로그인 — accessToken·code 모두 없으면 검증 실패(400)`() {
+        mockMvc
+            .post("/auth/oauth/kakao") {
+                contentType = MediaType.APPLICATION_JSON
+                content = json(emptyMap<String, String>())
+            }.andExpect { status { isBadRequest() } }
+    }
+
+    @Test
     fun `구글 로그인 문서화 — 신규 신원이라 registerToken 반환`() {
         mockMvc
             .post("/auth/oauth/google") {

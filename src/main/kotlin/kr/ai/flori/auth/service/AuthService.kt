@@ -63,7 +63,7 @@ class AuthService(
      * @MX:REASON: 컨트롤러 3개 경로 + register/complete 신원 계약의 출처(fan_in>=3). 반환 계약 변경은 웹 세션에 파급된다.
      *
      * @Transactional 미적용: 외부 OAuth HTTP 호출(client.authenticate)이 DB 커넥션을 점유하지 않도록.
-     * 내부 DB 작업은 단건(findBy 조회, issueTokens의 refresh save)이라 각자 자체 트랜잭션으로 충분하다.
+     * DB 작업(find-or-create·토큰 발급)은 [loginOrRegister]로 분리됐고, 그 근거는 해당 메서드 주석 참조.
      */
     fun oauthLogin(
         provider: String,
@@ -100,7 +100,10 @@ class AuthService(
         return loginOrRegister(info)
     }
 
-    /** 소셜 신원 → 기존 사용자면 로그인 토큰(registered=true), 신규면 registerToken(registered=false). 웹·앱 공통. */
+    /**
+     * 소셜 신원 → 기존 사용자면 로그인 토큰(registered=true), 신규면 registerToken(registered=false). 웹(code)·앱(accessToken) 공통 합류점.
+     * @Transactional 미적용: DB 작업이 단건(findBy 조회, issueTokens의 refresh save)이라 각자 자체 트랜잭션으로 충분하다.
+     */
     private fun loginOrRegister(info: SocialUserInfo): OAuthResult {
         val existing = userRepository.findByProviderAndProviderId(info.provider, info.providerId)
         if (existing != null) {
