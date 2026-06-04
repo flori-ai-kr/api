@@ -51,8 +51,7 @@ class UserController(
     @PostMapping("/me/profile/upload-target")
     fun profileUploadTarget(
         @Valid @RequestBody request: ProfileUploadTargetRequest,
-    ): ProfileUploadTargetResponse =
-        profileService.createUploadTarget(TenantContext.currentUserId(), request.contentType)
+    ): ProfileUploadTargetResponse = profileService.createUploadTarget(TenantContext.currentUserId(), request.contentType)
 
     @DeleteMapping("/me")
     @ResponseStatus(HttpStatus.NO_CONTENT)
