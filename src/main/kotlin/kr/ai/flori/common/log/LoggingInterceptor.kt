@@ -2,6 +2,7 @@ package kr.ai.flori.common.log
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import kr.ai.flori.common.request.ClientContext
 import net.logstash.logback.argument.StructuredArguments.kv
 import org.slf4j.LoggerFactory
 import org.springframework.core.env.Environment
@@ -50,11 +51,12 @@ class LoggingInterceptor(
         val status = response.status
         val method = request.method
         val uri = request.requestURI
+        val client = ClientContext.current()?.clientId ?: "web"
 
         if (isLocal) {
-            logText(status, method, uri, duration)
+            logText(status, method, uri, duration, client)
         } else {
-            logStructured(status, method, uri, duration)
+            logStructured(status, method, uri, duration, client)
         }
     }
 
@@ -63,11 +65,12 @@ class LoggingInterceptor(
         method: String,
         uri: String,
         duration: Long,
+        client: String,
     ) {
         if (status >= CLIENT_ERROR_THRESHOLD) {
-            log.warn("$FAIL_ICON {} {} {} {}ms", method, uri, status, duration)
+            log.warn("$FAIL_ICON [$client] {} {} {} {}ms", method, uri, status, duration)
         } else {
-            log.info("$OK_ICON {} {} {} {}ms", method, uri, status, duration)
+            log.info("$OK_ICON [$client] {} {} {} {}ms", method, uri, status, duration)
         }
     }
 
@@ -76,9 +79,11 @@ class LoggingInterceptor(
         method: String,
         uri: String,
         duration: Long,
+        client: String,
     ) {
         val args =
             arrayOf(
+                kv("client", client),
                 kv("http_method", method),
                 kv("request_uri", uri),
                 kv("http_status", status),
