@@ -147,8 +147,16 @@ data class RegisterCompleteRequest(
     @field:Size(max = FieldLimits.AGE_RANGE, message = "나이대 값이 너무 깁니다")
     @field:Schema(description = "사장님 나이대(선택, 단일)", example = "30대")
     val ownerAgeRange: String? = null,
+    @field:Size(max = FieldLimits.PROFILE_LIST, message = "관심사가 너무 많습니다")
     @field:Schema(description = "관심사(선택, 복수)", example = "[\"웨딩\",\"개업화환\"]")
-    val interests: List<String>? = null,
+    val interests: List<
+        @Size(max = FieldLimits.LABEL, message = "관심사 값이 너무 깁니다")
+        String,
+    >? = null,
+    @field:Size(max = FieldLimits.PROFILE_LIST, message = "주력이 너무 많습니다")
     @field:Schema(description = "가게 주력(선택, 복수)", example = "[\"꽃다발\",\"화분\"]")
-    val specialties: List<String>? = null,
+    val specialties: List<
+        @Size(max = FieldLimits.LABEL, message = "주력 값이 너무 깁니다")
+        String,
+    >? = null,
 )

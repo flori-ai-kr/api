@@ -61,7 +61,8 @@ interface CommunityCommentRepository : JpaRepository<CommunityComment, Long> {
                 "SELECT id, parent_id, 1 AS depth FROM community_comments WHERE id = :commentId " +
                 "UNION ALL " +
                 "SELECT c.id, c.parent_id, chain.depth + 1 FROM community_comments c " +
-                "JOIN chain ON c.id = chain.parent_id) " +
+                // depth < 1000: 데이터 손상으로 parent_id에 사이클이 생겨도 재귀가 무한히 도는 것을 방지.
+                "JOIN chain ON c.id = chain.parent_id WHERE chain.depth < 1000) " +
                 "SELECT COALESCE(MAX(depth), 0) FROM chain",
         nativeQuery = true,
     )

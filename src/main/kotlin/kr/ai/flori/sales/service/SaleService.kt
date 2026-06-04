@@ -120,6 +120,8 @@ class SaleService(
         column: String,
         values: List<String>?,
     ) {
+        // column은 호출부의 컴파일타임 상수만 허용(식별자는 바인딩 불가) — 미래의 사용자 입력 주입을 원천 차단.
+        require(column in ALLOWED_SUMMARY_COLUMNS) { "허용되지 않은 집계 컬럼: $column" }
         if (values.isNullOrEmpty()) return
         sql
             .append(" AND ")
@@ -247,6 +249,9 @@ class SaleService(
 
         /** summary 검색 패턴이 적용되는 컬럼 수(product_category·product_name·customer_name). */
         const val SEARCH_FIELD_COUNT = 3
+
+        /** appendInClause가 SQL에 직접 끼워 넣어도 안전한 컬럼 화이트리스트(식별자 주입 방어). */
+        val ALLOWED_SUMMARY_COLUMNS = setOf("product_category", "payment_method", "reservation_channel")
         val EMPTY_SUMMARY = SalesSummaryResponse(0, 0, 0, 0, 0, 0)
         val SUMMARY_SELECT =
             """
