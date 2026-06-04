@@ -2,6 +2,8 @@ package kr.ai.flori.insights.dto
 
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Size
+import kr.ai.flori.common.validation.FieldLimits
 import kr.ai.flori.insights.entity.InsightScrap
 import kr.ai.flori.insights.entity.InstagramAccount
 import kr.ai.flori.insights.entity.InstagramPost
@@ -126,6 +128,7 @@ data class ScrapToggleRequest(
 data class ScrapMemoRequest(
     @field:NotBlank val targetType: String?,
     @field:NotNull val targetId: Long?,
+    @field:Size(max = FieldLimits.MEMO, message = "메모가 너무 깁니다")
     val memo: String? = null,
 )
 

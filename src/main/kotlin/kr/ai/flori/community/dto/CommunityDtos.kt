@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Size
+import kr.ai.flori.common.validation.FieldLimits
 import kr.ai.flori.community.entity.CommunityComment
 import kr.ai.flori.community.entity.CommunityPost
 import java.time.Instant
@@ -15,9 +17,11 @@ data class PostCreateRequest(
     @field:NotBlank(message = "카테고리는 필수입니다")
     val category: String?,
     @field:NotBlank(message = "제목은 필수입니다")
+    @field:Size(max = FieldLimits.TITLE, message = "제목이 너무 깁니다")
     val title: String?,
     @field:NotNull(message = "본문(contentJson)은 필수입니다")
     val contentJson: JsonNode?,
+    @field:Size(max = FieldLimits.CONTENT_TEXT, message = "본문이 너무 깁니다")
     val contentText: String = "",
     val isSecret: Boolean = false,
     val imageUrls: List<String> = emptyList(),
@@ -26,8 +30,10 @@ data class PostCreateRequest(
 /** 게시글 부분 수정. 제공된(non-null) 필드만 반영. */
 data class PostUpdateRequest(
     val category: String? = null,
+    @field:Size(max = FieldLimits.TITLE, message = "제목이 너무 깁니다")
     val title: String? = null,
     val contentJson: JsonNode? = null,
+    @field:Size(max = FieldLimits.CONTENT_TEXT, message = "본문이 너무 깁니다")
     val contentText: String? = null,
     val isSecret: Boolean? = null,
     val imageUrls: List<String>? = null,
@@ -35,6 +41,7 @@ data class PostUpdateRequest(
 
 data class CommentCreateRequest(
     @field:NotBlank(message = "내용은 필수입니다")
+    @field:Size(max = FieldLimits.COMMENT, message = "댓글이 너무 깁니다")
     val content: String?,
     val parentId: Long? = null,
     val isSecret: Boolean = false,

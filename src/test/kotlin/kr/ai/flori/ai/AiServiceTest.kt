@@ -82,8 +82,37 @@ class AiServiceTest {
     @Autowired
     lateinit var reservationRepository: ReservationRepository
 
+    @Autowired
+    lateinit var usageGuard: kr.ai.flori.ai.service.AiUsageGuard
+
     @AfterEach
     fun tearDown() = TenantContext.clear()
+
+    @Test
+    fun `admitChatMessage - 캡 미만이면 유저 메시지를 원자적으로 기록한다`() {
+        val userId = newTenant()
+        val session = sessionRepository.save(AiChatSession(userId, UUID.randomUUID().toString().replace("-", ""), "chat"))
+
+        usageGuard.admitChatMessage(userId, session.id!!, "안녕")
+
+        val messages = messageRepository.findBySessionIdAndUserIdOrderByCreatedAtAsc(session.id!!, userId)
+        assertThat(messages).hasSize(1)
+        assertThat(messages.first().role).isEqualTo("user")
+    }
+
+    @Test
+    fun `admitChatMessage - 캡 도달 시 403이고 메시지를 기록하지 않는다`() {
+        val userId = newTenant()
+        val session = sessionRepository.save(AiChatSession(userId, UUID.randomUUID().toString().replace("-", ""), "chat"))
+        repeat(5) { messageRepository.save(AiChatMessage(session.id!!, userId, "user", "기존 $it")) }
+
+        assertThatThrownBy { usageGuard.admitChatMessage(userId, session.id!!, "초과") }
+            .isInstanceOfSatisfying(AppException::class.java) {
+                assertThat(it.errorCode).isEqualTo(CommonErrorCode.FORBIDDEN)
+            }
+        // 롤백되어 새 메시지는 기록되지 않는다(기존 5건 유지)
+        assertThat(messageRepository.findBySessionIdAndUserIdOrderByCreatedAtAsc(session.id!!, userId)).hasSize(5)
+    }
 
     private fun newTenant(): Long {
         val email = "ai-${UUID.randomUUID()}@flori.dev"

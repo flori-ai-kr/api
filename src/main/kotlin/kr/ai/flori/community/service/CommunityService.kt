@@ -1,9 +1,11 @@
 package kr.ai.flori.community.service
 
+import com.fasterxml.jackson.databind.JsonNode
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.storage.S3PresignService
 import kr.ai.flori.common.tenant.TenantContext
+import kr.ai.flori.common.validation.FieldLimits
 import kr.ai.flori.community.domain.CommunityCategories
 import kr.ai.flori.community.dto.CommentCreateRequest
 import kr.ai.flori.community.dto.CommentResponse
@@ -106,7 +108,7 @@ class CommunityService(
                 category = category,
                 title = requireNotNull(request.title),
             )
-        post.content = requireNotNull(request.contentJson)
+        post.content = requireValidContent(requireNotNull(request.contentJson))
         post.contentText = request.contentText
         post.isSecret = request.isSecret
         post.imageUrls = request.imageUrls.toTypedArray()
@@ -125,7 +127,7 @@ class CommunityService(
         if (post.authorUserId != viewer.id) throw AppException(CommunityErrorCode.FORBIDDEN)
         request.category?.let { post.category = requireCategory(it, viewer) }
         request.title?.let { post.title = it }
-        request.contentJson?.let { post.content = it }
+        request.contentJson?.let { post.content = requireValidContent(it) }
         request.contentText?.let { post.contentText = it }
         request.isSecret?.let { post.isSecret = it }
         request.imageUrls?.let { post.imageUrls = it.toTypedArray() }
@@ -328,4 +330,12 @@ class CommunityService(
         const val MAX_FILES_PER_REQUEST = 10
         val ALLOWED_IMAGE_TYPES = setOf("image/jpeg", "image/png", "image/gif", "image/webp", "image/avif", "image/heic")
     }
+}
+
+/** jsonb 본문(content)의 직렬화 크기 상한 검증 — Bean Validation으로 못 거르는 거대 페이로드를 400으로 차단. */
+private fun requireValidContent(content: JsonNode): JsonNode {
+    if (content.toString().length > FieldLimits.CONTENT_JSON) {
+        throw AppException(CommonErrorCode.VALIDATION, "본문이 너무 깁니다")
+    }
+    return content
 }

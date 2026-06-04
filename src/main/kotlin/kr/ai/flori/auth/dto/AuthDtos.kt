@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Size
+import kr.ai.flori.common.validation.FieldLimits
 
 @Schema(description = "닉네임 사용 가능 응답. 사용 가능하면 available=true(200), 이미 사용 중이면 409(E-AUTH-003).")
 data class NicknameAvailabilityResponse(
@@ -85,6 +87,7 @@ data class NaverOAuthRequest(
 data class UpdateEmailRequest(
     @field:Email(message = "이메일 형식이 올바르지 않습니다")
     @field:NotBlank(message = "이메일은 필수입니다")
+    @field:Size(max = FieldLimits.EMAIL, message = "이메일이 너무 깁니다")
     @field:Schema(description = "설정할 이메일", example = "florist@flori.kr")
     val email: String,
 )
@@ -122,20 +125,26 @@ data class RegisterCompleteRequest(
     @field:Schema(description = "소셜 로그인이 반환한 registerToken(5분 TTL)")
     val registerToken: String,
     @field:NotBlank(message = "가게명은 필수입니다")
+    @field:Size(max = FieldLimits.STORE_NAME, message = "가게명이 너무 깁니다")
     @field:Schema(description = "가게명", example = "헤이즐 플라워")
     val storeName: String,
     @field:NotBlank(message = "닉네임은 필수입니다")
+    @field:Size(max = FieldLimits.NAME, message = "닉네임이 너무 깁니다")
     @field:Schema(description = "계정 표시명(기본값=소셜 닉네임, 수정 가능)", example = "헤이즐")
     val nickname: String,
     @field:Email(message = "이메일 형식이 올바르지 않습니다")
     @field:NotBlank(message = "이메일은 필수입니다")
+    @field:Size(max = FieldLimits.EMAIL, message = "이메일이 너무 깁니다")
     @field:Schema(description = "로그인 이메일(기본값=소셜 이메일, 수정 가능)", example = "florist@flori.kr")
     val email: String,
     @field:NotBlank(message = "시/도는 필수입니다")
+    @field:Size(max = FieldLimits.REGION, message = "시/도가 너무 깁니다")
     @field:Schema(description = "시/도(웹 enum 값 문자열)", example = "서울특별시")
     val regionSido: String,
+    @field:Size(max = FieldLimits.REGION, message = "시군구가 너무 깁니다")
     @field:Schema(description = "시군구(선택)", example = "강남구")
     val regionSigungu: String? = null,
+    @field:Size(max = FieldLimits.AGE_RANGE, message = "나이대 값이 너무 깁니다")
     @field:Schema(description = "사장님 나이대(선택, 단일)", example = "30대")
     val ownerAgeRange: String? = null,
     @field:Schema(description = "관심사(선택, 복수)", example = "[\"웨딩\",\"개업화환\"]")
