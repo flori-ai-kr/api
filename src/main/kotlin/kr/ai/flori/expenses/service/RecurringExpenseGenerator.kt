@@ -34,7 +34,7 @@ class RecurringExpenseGenerator(
     }
 
     fun generateForDate(date: LocalDate): Int {
-        val due = recurringRepository.findByIsActiveTrue().filter { RecurringScheduleEvaluator.isDue(it, date) }
+        val due = recurringRepository.findActiveDueCandidates(date).filter { RecurringScheduleEvaluator.isDue(it, date) }
         if (due.isEmpty()) return 0
 
         val skipped =

@@ -46,7 +46,7 @@ class TenantIsolationGuardTest {
             "UserRepository#findByProviderAndProviderId",
             "RefreshTokenRepository#findByTokenHash",
             // 스케줄러: 전체 테넌트 대상 시스템 작업(@Scheduled)
-            "RecurringExpenseRepository#findByIsActiveTrue",
+            "RecurringExpenseRepository#findActiveDueCandidates",
             "ReservationRepository#findDueReminders",
             "ReservationRepository#findByDateAndStatusNot",
             // 자식 엔티티: 이미 테넌트 검증된 부모(recurringId)로 접근
@@ -73,6 +73,8 @@ class TenantIsolationGuardTest {
             "CommunityPostRepository#adjustCommentCount",
             "CommunityCommentRepository#findByIdAndDeletedAtIsNull",
             "CommunityCommentRepository#findByPostIdOrderByCreatedAtAsc",
+            // 댓글 깊이 검증용 조상 체인 깊이(재귀 CTE) — 단일 커뮤니티(전역), 깊이만 계산하고 데이터 노출 없음
+            "CommunityCommentRepository#ancestorDepth",
             // 운영 콘솔(admin): 사업자 인증 심사 — 의도적 cross-tenant 조회.
             // @RequiresAdmin 인터셉터(User.isAdmin 재검증)로만 보호되며 일반 점주는 접근 불가.
             "BusinessVerificationRepository#findByStatusOrderByCreatedAtDesc",

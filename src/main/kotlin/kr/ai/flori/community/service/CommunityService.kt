@@ -214,14 +214,12 @@ class CommunityService(
         var secret = request.isSecret
         request.parentId?.let { parentId ->
             // 대댓글 부모 검증: 같은 글의 미삭제 댓글 + 깊이 +1이 MAX_COMMENT_DEPTH 이내(루트=1). 위반 시 INVALID_PARENT.
+            // 깊이는 단일 재귀 CTE(ancestorDepth)로 계산 — 조상 단건 반복조회(N+1) 제거.
             val parent = commentRepository.findByIdAndDeletedAtIsNull(parentId)
-            var depth = 1
-            var ancestorId = parent?.parentId
-            while (ancestorId != null) {
-                depth++
-                ancestorId = commentRepository.findById(ancestorId).orElse(null)?.parentId
-            }
-            if (parent == null || parent.postId != postId || depth + 1 > MAX_COMMENT_DEPTH) {
+            if (parent == null ||
+                parent.postId != postId ||
+                commentRepository.ancestorDepth(parentId) + 1 > MAX_COMMENT_DEPTH
+            ) {
                 throw AppException(CommunityErrorCode.INVALID_PARENT)
             }
             // 부모가 비밀이면 자식도 비밀 강제.
