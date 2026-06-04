@@ -26,6 +26,7 @@ class OnboardingService(
     private val userProfileRepository: UserProfileRepository,
 ) {
     /** 가게 프로필을 insert/update하고(닉네임이 오면 함께 변경) 갱신된 사용자 응답을 반환한다. */
+    @Suppress("ThrowsCount")
     @Transactional
     fun submit(
         userId: Long,
@@ -35,6 +36,15 @@ class OnboardingService(
             userRepository
                 .findById(userId)
                 .orElseThrow { AppException(CommonErrorCode.UNAUTHORIZED) }
+
+        // 이메일 변경 요청이 있을 때만 중복 검사 후 적용.
+        val newEmail = request.email?.takeIf { it.isNotBlank() }
+        if (newEmail != null && newEmail != user.email) {
+            if (userRepository.existsByEmail(newEmail)) {
+                throw AppException(AuthErrorCode.DUPLICATE_EMAIL, "이미 사용 중인 이메일입니다")
+            }
+            user.email = newEmail
+        }
 
         // 닉네임 변경 요청이 있을 때만 유일성 검사 후 적용. 본인 기존 닉네임 유지는 오탐하지 않는다.
         val newNickname = request.nickname?.takeIf { it.isNotBlank() }
@@ -67,6 +77,9 @@ class OnboardingService(
         profile.ownerAgeRange = request.ownerAgeRange
         profile.interests = request.interests?.toTypedArray() ?: emptyArray()
         profile.specialties = request.specialties?.toTypedArray() ?: emptyArray()
+        if (request.profileImageUrl != null) {
+            profile.profileImageUrl = request.profileImageUrl
+        }
         val saved = userProfileRepository.save(profile)
 
         return UserResponse(
@@ -91,4 +104,5 @@ fun UserProfile.toResponse(): ProfileResponse =
         ownerAgeRange = ownerAgeRange,
         interests = interests.toList(),
         specialties = specialties.toList(),
+        profileImageUrl = profileImageUrl,
     )

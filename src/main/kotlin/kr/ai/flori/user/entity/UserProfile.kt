@@ -27,6 +27,9 @@ class UserProfile(
     @Column(name = "region_sido", nullable = false)
     var regionSido: String,
 ) : BaseEntity() {
+    @Column(name = "profile_image_url")
+    var profileImageUrl: String? = null
+
     @Column(name = "region_sigungu")
     var regionSigungu: String? = null
 
