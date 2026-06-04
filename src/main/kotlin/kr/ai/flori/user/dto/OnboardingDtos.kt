@@ -20,6 +20,9 @@ data class OnboardingRequest(
     @field:Size(max = FieldLimits.REGION, message = "시/도가 너무 깁니다")
     @field:Schema(description = "시/도(웹 enum 값 문자열)", example = "서울특별시")
     val regionSido: String,
+    @field:Size(max = FieldLimits.EMAIL, message = "이메일이 너무 깁니다")
+    @field:Schema(description = "이메일. 보내면 변경, 생략하면 기존 이메일 유지.", example = "admin@example.com")
+    val email: String? = null,
     @field:Size(max = FieldLimits.NAME, message = "닉네임이 너무 깁니다")
     @field:Schema(
         description = "계정 표시명(닉네임). 보내면 변경, 생략하면 기존 닉네임 유지. 전역 유일.",
@@ -44,6 +47,9 @@ data class OnboardingRequest(
         @Size(max = FieldLimits.LABEL, message = "주력 값이 너무 깁니다")
         String,
     >? = null,
+    @field:Size(max = FieldLimits.IMAGE_URL, message = "이미지 URL이 너무 깁니다")
+    @field:Schema(description = "프로필 이미지 URL(선택)")
+    val profileImageUrl: String? = null,
 )
 
 /** 가게 프로필 응답. /me 응답에 포함되어 프로필 편집 화면에서 재사용한다. */
@@ -61,4 +67,47 @@ data class ProfileResponse(
     val interests: List<String>,
     @field:Schema(description = "가게 주력 목록")
     val specialties: List<String>,
+    @field:Schema(description = "프로필 이미지 URL(미설정 시 null)")
+    val profileImageUrl: String? = null,
+)
+
+/** GET /me/profile 전용 응답. 프로필 편집 화면에서 사용한다. */
+@Schema(description = "전체 프로필 정보")
+data class FullProfileResponse(
+    val id: Long,
+    val name: String,
+    val nickname: String,
+    val email: String,
+    val profileImageUrl: String?,
+    val regionSido: String,
+    val regionSigungu: String?,
+    val ownerAgeRange: String?,
+    val interests: List<String>,
+    val specialties: List<String>,
+)
+
+/** POST /me/profile/upload-target 요청. */
+@Schema(description = "프로필 이미지 업로드 대상 요청")
+data class ProfileUploadTargetRequest(
+    @field:NotBlank(message = "contentType은 필수입니다")
+    @field:Schema(description = "이미지 MIME 타입", example = "image/jpeg")
+    val contentType: String,
+)
+
+/** POST /me/profile/upload-target 응답. */
+@Schema(description = "프로필 이미지 업로드 URL")
+data class ProfileUploadTargetResponse(
+    val uploadUrl: String,
+    val publicUrl: String,
+)
+
+/** DELETE /me 요청 (탈퇴 사유). */
+@Schema(description = "계정 탈퇴 요청")
+data class DeleteAccountRequest(
+    @field:Size(max = FieldLimits.NOTE, message = "사유가 너무 깁니다")
+    @field:Schema(description = "탈퇴 사유(선택)")
+    val reason: String? = null,
+    @field:Size(max = FieldLimits.NOTE, message = "상세 사유가 너무 깁니다")
+    @field:Schema(description = "기타 상세 사유(선택)")
+    val detail: String? = null,
 )
