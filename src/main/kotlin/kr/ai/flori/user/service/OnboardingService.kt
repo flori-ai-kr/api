@@ -26,6 +26,7 @@ class OnboardingService(
     private val userProfileRepository: UserProfileRepository,
 ) {
     /** 가게 프로필을 insert/update하고(닉네임이 오면 함께 변경) 갱신된 사용자 응답을 반환한다. */
+    @Suppress("ThrowsCount")
     @Transactional
     fun submit(
         userId: Long,

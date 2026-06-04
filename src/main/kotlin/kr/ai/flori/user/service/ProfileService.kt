@@ -58,6 +58,7 @@ class ProfileService(
     }
 
     @Transactional
+    @Suppress("UnusedParameter")
     fun deleteAccount(
         userId: Long,
         reason: String?,
@@ -71,17 +72,17 @@ class ProfileService(
         // soft delete — 계정 비활성화
         user.isActive = false
         // 탈퇴 시 고유 제약(email/nickname) 해제: 임의 값으로 덮어쓰기
-        user.email = "withdrawn_${userId}_${UUID.randomUUID().toString().take(8)}@deleted"
-        user.nickname = "탈퇴회원_${userId}_${UUID.randomUUID().toString().take(8)}"
+        val suffix = UUID.randomUUID().toString().take(SUFFIX_LENGTH)
+        user.email = "withdrawn_${userId}_$suffix@deleted"
+        user.nickname = "탈퇴회원_${userId}_$suffix"
         userRepository.save(user)
 
         // 프로필 삭제
         userProfileRepository.deleteById(userId)
-
-        // TODO: reason/detail을 별도 withdrawal_reasons 테이블에 저장 (추후)
     }
 
     private companion object {
+        const val SUFFIX_LENGTH = 8
         val CONTENT_TYPE_EXT =
             mapOf(
                 "image/jpeg" to "jpg",
