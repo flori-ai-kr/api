@@ -1,25 +1,33 @@
 package kr.ai.flori.customers.dto
 
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Size
+import kr.ai.flori.common.validation.FieldLimits
 import kr.ai.flori.customers.entity.Customer
 import java.time.Instant
 import java.time.LocalDate
 
 data class CustomerCreateRequest(
     @field:NotBlank(message = "이름은 필수입니다")
+    @field:Size(max = FieldLimits.NAME, message = "이름이 너무 깁니다")
     val name: String?,
     @field:NotBlank(message = "전화번호는 필수입니다")
+    @field:Size(max = FieldLimits.PHONE, message = "전화번호가 너무 깁니다")
     val phone: String?,
     val grade: String? = null,
     val gender: String? = null,
+    @field:Size(max = FieldLimits.NOTE, message = "메모가 너무 깁니다")
     val note: String? = null,
 )
 
 data class CustomerUpdateRequest(
+    @field:Size(max = FieldLimits.NAME, message = "이름이 너무 깁니다")
     val name: String? = null,
+    @field:Size(max = FieldLimits.PHONE, message = "전화번호가 너무 깁니다")
     val phone: String? = null,
     val grade: String? = null,
     val gender: String? = null,
+    @field:Size(max = FieldLimits.NOTE, message = "메모가 너무 깁니다")
     val note: String? = null,
 )
 
@@ -30,8 +38,10 @@ data class UpdateGradeRequest(
 
 data class FindOrCreateCustomerRequest(
     @field:NotBlank(message = "이름은 필수입니다")
+    @field:Size(max = FieldLimits.NAME, message = "이름이 너무 깁니다")
     val name: String?,
     @field:NotBlank(message = "전화번호는 필수입니다")
+    @field:Size(max = FieldLimits.PHONE, message = "전화번호가 너무 깁니다")
     val phone: String?,
 )
 

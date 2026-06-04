@@ -82,7 +82,8 @@ src/main/kotlin/kr/ai/flori/
     ├── security/          # JWT, SecurityConfig, 내부 인증
     ├── storage/           # S3 presign
     ├── tenant/            # TenantContext (멀티테넌시)
-    └── util/              # DateRanges 등
+    ├── util/              # DateRanges 등
+    └── validation/        # 입력 길이 상한 SSOT (FieldLimits)
 ```
 
 ### 도메인별 레이어 패턴
@@ -154,6 +155,8 @@ src/main/kotlin/kr/ai/flori/
 | Discord 알림 | `common/notification/discord/DiscordNotifier.kt`, `DiscordChannel.kt`, `DiscordProperties.kt` |
 | CORS / OpenAPI 설정 | `common/config/CorsConfig.kt`, `OpenApiConfig.kt` |
 | 헬스체크 | `common/health/HealthController.kt` |
+| 입력 길이 상한 SSOT | `common/validation/FieldLimits.kt` |
+| AI 일일 사용량 캡 (원자적 강제) | `ai/service/AiUsageGuard.kt` |
 
 ---
 

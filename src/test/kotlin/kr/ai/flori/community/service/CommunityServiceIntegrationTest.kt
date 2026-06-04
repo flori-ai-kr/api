@@ -69,6 +69,17 @@ class CommunityServiceIntegrationTest {
     )
 
     @Test
+    fun `거대한 본문(contentJson)은 직렬화 크기 상한으로 거부된다`() {
+        val me = newUser()
+        switchTo(me)
+        val huge = post().copy(contentJson = content("가".repeat(100_001))) // FieldLimits.CONTENT_JSON 초과
+        assertThatThrownBy { communityService.createPost(huge) }
+            .isInstanceOfSatisfying(AppException::class.java) {
+                assertThat(it.errorCode).isEqualTo(kr.ai.flori.common.error.CommonErrorCode.VALIDATION)
+            }
+    }
+
+    @Test
     fun `게시글 생성·조회는 작성자에게 isMine·canView true`() {
         val me = newUser()
         switchTo(me)

@@ -89,6 +89,30 @@ class SaleApiIntegrationTest {
     }
 
     @Test
+    fun `과도하게 긴 자유입력(note)은 컨트롤러 경계에서 400으로 거부된다`() {
+        val token = signupToken()
+
+        mockMvc
+            .post("/sales") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    objectMapper.writeValueAsString(
+                        mapOf(
+                            "date" to "2026-05-22",
+                            "productCategory" to "basic_bouquet",
+                            "amount" to 100_000,
+                            "paymentMethod" to "card",
+                            "note" to "가".repeat(1_001), // FieldLimits.NOTE(1000) 초과
+                        ),
+                    )
+            }.andExpect {
+                status { isBadRequest() }
+                jsonPath("$.code") { value("E-CMN-001") }
+            }
+    }
+
+    @Test
     fun `다른 사용자의 매출은 조회되지 않는다`() {
         val ownerToken = signupToken()
         val saleId = createCardSale(ownerToken)

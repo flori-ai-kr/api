@@ -4,6 +4,7 @@ import kr.ai.flori.common.domain.PaymentMethods
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
+import kr.ai.flori.common.util.monthRange
 import kr.ai.flori.customers.repository.CustomerRepository
 import kr.ai.flori.photos.repository.PhotoCardRepository
 import kr.ai.flori.reservations.repository.ReservationRepository
@@ -17,8 +18,10 @@ import kr.ai.flori.sales.repository.SaleRepository
 import kr.ai.flori.sales.repository.SaleSpecifications
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.sql.Date
 
 /**
  * 매출 서비스. 모든 조회/변경은 TenantContext의 userId로 격리(멀티테넌시 HARD).
@@ -29,6 +32,7 @@ class SaleService(
     private val customerRepository: CustomerRepository,
     private val reservationRepository: ReservationRepository,
     private val photoCardRepository: PhotoCardRepository,
+    private val jdbcTemplate: JdbcTemplate,
 ) {
     @Transactional(readOnly = true)
     fun list(
@@ -49,8 +53,11 @@ class SaleService(
     }
 
     /**
-     * 매출 요약(페이지네이션 무관 전체 합산). list와 동일한 Specification으로 필터해 결제수단별 합산.
+     * 매출 요약(페이지네이션 무관 전체 합산). GET /sales 와 동일한 필터 규약으로 DB 집계(SUM/FILTER).
      * total/count는 전체(미수·kakaopay 포함), 명세 버킷(card/naverpay/transfer/cash)은 해당 결제수단만.
+     *
+     * 전체 행 로드 후 인메모리 합산 대신 DashboardService와 동일한 네이티브 SQL 집계로 처리한다
+     * (month=null 누적 조회 시에도 전체 매출을 메모리로 끌어오지 않는다).
      */
     @Transactional(readOnly = true)
     fun summary(
@@ -61,24 +68,68 @@ class SaleService(
         search: String?,
     ): SalesSummaryResponse {
         val userId = TenantContext.currentUserId()
-        val spec = SaleSpecifications.filter(userId, month, categories, payments, channels, search)
-        val rows = saleRepository.findAll(spec)
-        var total = 0L
-        var card = 0L
-        var naverpay = 0L
-        var transfer = 0L
-        var cash = 0L
-        rows.forEach { sale ->
-            val amount = sale.amount.toLong()
-            total += amount
-            when (sale.paymentMethod) {
-                "card" -> card += amount
-                "naverpay" -> naverpay += amount
-                "transfer" -> transfer += amount
-                "cash" -> cash += amount
-            }
+        val sql = StringBuilder(SUMMARY_SELECT)
+        val params = mutableListOf<Any>(userId)
+        appendFilters(sql, params, month, categories, payments, channels, search)
+        return jdbcTemplate.queryForObject(
+            sql.toString(),
+            { rs, _ ->
+                SalesSummaryResponse(
+                    rs.getLong("total"),
+                    rs.getLong("card"),
+                    rs.getLong("naverpay"),
+                    rs.getLong("transfer"),
+                    rs.getLong("cash"),
+                    rs.getLong("cnt"),
+                )
+            },
+            *params.toTypedArray(),
+        ) ?: EMPTY_SUMMARY
+    }
+
+    /** summary 의 동적 WHERE 절을 SaleSpecifications.filter 와 동일한 규약으로 구성한다. */
+    private fun appendFilters(
+        sql: StringBuilder,
+        params: MutableList<Any>,
+        month: String?,
+        categories: List<String>?,
+        payments: List<String>?,
+        channels: List<String>?,
+        search: String?,
+    ) {
+        monthRange(month)?.let { (start, end) ->
+            sql.append(" AND date BETWEEN ? AND ?")
+            params.add(Date.valueOf(start))
+            params.add(Date.valueOf(end))
         }
-        return SalesSummaryResponse(total, card, naverpay, transfer, cash, rows.size.toLong())
+        appendInClause(sql, params, "product_category", categories)
+        appendInClause(sql, params, "payment_method", payments)
+        appendInClause(sql, params, "reservation_channel", channels)
+        if (!search.isNullOrBlank()) {
+            val pattern = "%${search.lowercase().replace("%", "\\%").replace("_", "\\_")}%"
+            sql.append(
+                " AND (lower(product_category) LIKE ? OR lower(product_name) LIKE ? OR lower(customer_name) LIKE ?)",
+            )
+            repeat(SEARCH_FIELD_COUNT) { params.add(pattern) }
+        }
+    }
+
+    private fun appendInClause(
+        sql: StringBuilder,
+        params: MutableList<Any>,
+        column: String,
+        values: List<String>?,
+    ) {
+        // column은 호출부의 컴파일타임 상수만 허용(식별자는 바인딩 불가) — 미래의 사용자 입력 주입을 원천 차단.
+        require(column in ALLOWED_SUMMARY_COLUMNS) { "허용되지 않은 집계 컬럼: $column" }
+        if (values.isNullOrEmpty()) return
+        sql
+            .append(" AND ")
+            .append(column)
+            .append(" IN (")
+            .append(values.joinToString(",") { "?" })
+            .append(")")
+        params.addAll(values)
     }
 
     @Transactional(readOnly = true)
@@ -195,5 +246,23 @@ class SaleService(
 
     private companion object {
         const val DEFAULT_CHANNEL = "other"
+
+        /** summary 검색 패턴이 적용되는 컬럼 수(product_category·product_name·customer_name). */
+        const val SEARCH_FIELD_COUNT = 3
+
+        /** appendInClause가 SQL에 직접 끼워 넣어도 안전한 컬럼 화이트리스트(식별자 주입 방어). */
+        val ALLOWED_SUMMARY_COLUMNS = setOf("product_category", "payment_method", "reservation_channel")
+        val EMPTY_SUMMARY = SalesSummaryResponse(0, 0, 0, 0, 0, 0)
+        val SUMMARY_SELECT =
+            """
+            SELECT
+              COALESCE(SUM(amount), 0) AS total,
+              COALESCE(SUM(amount) FILTER (WHERE payment_method = 'card'), 0) AS card,
+              COALESCE(SUM(amount) FILTER (WHERE payment_method = 'naverpay'), 0) AS naverpay,
+              COALESCE(SUM(amount) FILTER (WHERE payment_method = 'transfer'), 0) AS transfer,
+              COALESCE(SUM(amount) FILTER (WHERE payment_method = 'cash'), 0) AS cash,
+              COUNT(*) AS cnt
+            FROM sales WHERE user_id = ?::bigint
+            """.trimIndent()
     }
 }

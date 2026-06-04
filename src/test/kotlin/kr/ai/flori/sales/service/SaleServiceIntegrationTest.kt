@@ -135,6 +135,52 @@ class SaleServiceIntegrationTest {
     }
 
     @Test
+    fun `요약은 DB 집계로 결제수단별 합계와 전체(미수 포함)를 계산하고 동일 필터를 지원한다`() {
+        newTenant()
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 1), "vase", 1_000, "card", customerName = "김하늘"))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 2), "basket", 2_000, "cash"))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 3), "vase", 3_000, "transfer"))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 4), "vase", 4_000, "naverpay"))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 5), "vase", 5_000, "unpaid"))
+
+        // 전체: total/count는 미수 포함, 버킷은 결제수단별
+        val all = saleService.summary("2026-05", null, null, null, null)
+        assertThat(all.total).isEqualTo(15_000L)
+        assertThat(all.card).isEqualTo(1_000L)
+        assertThat(all.cash).isEqualTo(2_000L)
+        assertThat(all.transfer).isEqualTo(3_000L)
+        assertThat(all.naverpay).isEqualTo(4_000L)
+        assertThat(all.count).isEqualTo(5L)
+
+        // 결제수단 IN
+        val cardOnly = saleService.summary("2026-05", null, listOf("card"), null, null)
+        assertThat(cardOnly.total).isEqualTo(1_000L)
+        assertThat(cardOnly.count).isEqualTo(1L)
+
+        // 카테고리 IN
+        val vaseOnly = saleService.summary("2026-05", listOf("vase"), null, null, null)
+        assertThat(vaseOnly.count).isEqualTo(4L)
+        assertThat(vaseOnly.total).isEqualTo(13_000L)
+
+        // 채널 IN (기본 채널 other)
+        val otherChannel = saleService.summary("2026-05", null, null, listOf("other"), null)
+        assertThat(otherChannel.count).isEqualTo(5L)
+
+        // 검색(고객명)
+        val searched = saleService.summary("2026-05", null, null, null, "김하늘")
+        assertThat(searched.count).isEqualTo(1L)
+        assertThat(searched.card).isEqualTo(1_000L)
+
+        // month=null 누적: 전체 기간 합산
+        assertThat(saleService.summary(null, null, null, null, null).count).isEqualTo(5L)
+
+        // 다른 달 → 빈 합계
+        val empty = saleService.summary("2026-04", null, null, null, null)
+        assertThat(empty.total).isEqualTo(0L)
+        assertThat(empty.count).isEqualTo(0L)
+    }
+
+    @Test
     fun `비고 자동완성은 빈도순으로 반환한다`() {
         newTenant()
         repeat(3) { saleService.create(cardSale().copy(note = "리본 포장")) }

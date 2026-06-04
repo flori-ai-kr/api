@@ -125,4 +125,28 @@ class RecurringExpenseGeneratorTest {
 
         assertThat(generatedCount(rule.id, date)).isZero()
     }
+
+    @Test
+    fun `유효기간(endDate) 종료 후에는 발생일이어도 생성하지 않는다`() {
+        newTenant()
+        val rule =
+            recurringService.create(
+                RecurringExpenseRequest(
+                    itemName = "월세",
+                    category = "rent",
+                    unitPrice = 500_000,
+                    quantity = 1,
+                    paymentMethod = "transfer",
+                    frequency = "monthly",
+                    daysOfMonth = listOf(15),
+                    startDate = LocalDate.of(2026, 1, 1),
+                    endDate = LocalDate.of(2026, 3, 31),
+                ),
+            )
+        val date = LocalDate.of(2026, 6, 15) // 매월 15일이지만 유효기간 종료 이후
+
+        generator.generateForDate(date)
+
+        assertThat(generatedCount(rule.id, date)).isZero()
+    }
 }

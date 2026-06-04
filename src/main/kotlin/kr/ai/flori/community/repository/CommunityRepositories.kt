@@ -50,6 +50,25 @@ interface CommunityCommentRepository : JpaRepository<CommunityComment, Long> {
 
     /** 글의 댓글 전체(삭제 포함 — 톰스톤으로 스레드 유지). 작성순. */
     fun findByPostIdOrderByCreatedAtAsc(postId: Long): List<CommunityComment>
+
+    /**
+     * 댓글의 조상 깊이(자신=1, 부모마다 +1)를 단일 재귀 CTE로 계산. 대댓글 깊이 검증에서 단건 반복조회(N+1)를 대체.
+     * 삭제된 조상도 깊이에 포함(스레드 구조 보존). 인자 댓글이 없으면 0.
+     */
+    @Query(
+        value =
+            "WITH RECURSIVE chain AS (" +
+                "SELECT id, parent_id, 1 AS depth FROM community_comments WHERE id = :commentId " +
+                "UNION ALL " +
+                "SELECT c.id, c.parent_id, chain.depth + 1 FROM community_comments c " +
+                // depth < 1000: 데이터 손상으로 parent_id에 사이클이 생겨도 재귀가 무한히 도는 것을 방지.
+                "JOIN chain ON c.id = chain.parent_id WHERE chain.depth < 1000) " +
+                "SELECT COALESCE(MAX(depth), 0) FROM chain",
+        nativeQuery = true,
+    )
+    fun ancestorDepth(
+        @Param("commentId") commentId: Long,
+    ): Int
 }
 
 interface CommunityLikeRepository : JpaRepository<CommunityLike, Long> {

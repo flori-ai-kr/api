@@ -29,8 +29,6 @@ import kr.ai.flori.reservations.service.ReservationService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
 import java.util.UUID
 
 /**
@@ -48,6 +46,7 @@ class AiService(
     private val reservationService: ReservationService,
     private val properties: AiGatewayProperties,
     private val objectMapper: ObjectMapper,
+    private val usageGuard: AiUsageGuard,
 ) {
     // @Transactional 미적용: aiClient 호출(최대 수십 초)이 DB 커넥션을 점유하지 않게 한다(풀 고갈 방지).
     // 각 저장은 독립 커밋 — 부분 실패 시에도 ai-server가 폴백 응답으로 200을 주므로 보통 양쪽이 기록된다.
@@ -56,11 +55,13 @@ class AiService(
         request: ChatRequest,
     ): ChatResponse {
         val userId = TenantContext.currentUserId()
-        enforceDailyCap(userId)
+        // 사전 차단(비원자적): 세션 생성·외부호출 전 빠른 거부. 최종 캡 강제는 admitChatMessage가 원자적으로 한다.
+        if (usageGuard.isOverCap(userId)) throw AppException(CommonErrorCode.FORBIDDEN, CAP_MESSAGE)
         val message = request.message.orEmpty().trim()
 
         val session = resolveSession(userId, request.sessionToken, FEATURE_CHAT)
-        messageRepository.save(AiChatMessage(session.id!!, userId, ROLE_USER, message))
+        // 캡 강제 + 유저 메시지 기록을 advisory lock 안에서 원자적으로(TOCTOU 방지).
+        usageGuard.admitChatMessage(userId, session.id!!, message)
 
         val history =
             messageRepository
@@ -118,7 +119,9 @@ class AiService(
         request: OcrReservationRequest,
     ): ConfirmationCardResponse {
         val userId = TenantContext.currentUserId()
-        enforceDailyCap(userId)
+        // OCR은 ai_chat_message를 기록하지 않아 카운트를 증가시키지 않음 → 캡은 best-effort(사전 차단만).
+        // 완전 원자화는 별도 usage 카운터 테이블이 필요(스키마 변경, 추후 결정).
+        if (usageGuard.isOverCap(userId)) throw AppException(CommonErrorCode.FORBIDDEN, CAP_MESSAGE)
         val start = System.nanoTime()
         val result = aiClient.ocrExtract(userJwt, userId, request.imageUrl!!)
         val draft = result.draft
@@ -213,18 +216,10 @@ class AiService(
         return sessionRepository.save(AiChatSession(userId, UUID.randomUUID().toString().replace("-", ""), feature))
     }
 
-    private fun enforceDailyCap(userId: Long) {
-        val startOfDay = LocalDate.now(SEOUL).atStartOfDay(SEOUL).toInstant()
-        if (messageRepository.countByUserIdAndCreatedAtAfter(userId, startOfDay) >= properties.usageCapPerDay) {
-            throw AppException(CommonErrorCode.FORBIDDEN, "오늘 AI 사용량을 모두 사용했어요. 내일 다시 이용해 주세요.")
-        }
-    }
-
     private fun elapsedMs(start: Long): Int = ((System.nanoTime() - start) / NANOS_PER_MS).toInt()
 
     private companion object {
         const val FEATURE_CHAT = "chat"
-        const val ROLE_USER = "user"
         const val ROLE_ASSISTANT = "assistant"
         const val ACTION_CREATE_RESERVATION = "create_reservation"
         const val STATUS_PENDING = "pending"
@@ -233,6 +228,6 @@ class AiService(
         const val TITLE_MAX = 40
         const val MAX_HISTORY = 30
         const val NANOS_PER_MS = 1_000_000L
-        val SEOUL: ZoneId = ZoneId.of("Asia/Seoul")
+        const val CAP_MESSAGE = "오늘 AI 사용량을 모두 사용했어요. 내일 다시 이용해 주세요."
     }
 }

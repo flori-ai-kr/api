@@ -2,6 +2,8 @@ package kr.ai.flori.reservations.dto
 
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Size
+import kr.ai.flori.common.validation.FieldLimits
 import kr.ai.flori.reservations.entity.Reservation
 import java.time.Instant
 import java.time.LocalDate
@@ -12,10 +14,14 @@ data class ReservationCreateRequest(
     val date: LocalDate?,
     val time: LocalTime? = null,
     @field:NotBlank(message = "고객명은 필수입니다")
+    @field:Size(max = FieldLimits.NAME, message = "고객명이 너무 깁니다")
     val customerName: String?,
+    @field:Size(max = FieldLimits.PHONE, message = "전화번호가 너무 깁니다")
     val customerPhone: String? = null,
     @field:NotBlank(message = "제목은 필수입니다")
+    @field:Size(max = FieldLimits.TITLE, message = "제목이 너무 깁니다")
     val title: String?,
+    @field:Size(max = FieldLimits.DESCRIPTION, message = "설명이 너무 깁니다")
     val description: String? = null,
     val amount: Int = 0,
     val status: String? = null,
@@ -25,9 +31,13 @@ data class ReservationCreateRequest(
 data class ReservationUpdateRequest(
     val date: LocalDate? = null,
     val time: LocalTime? = null,
+    @field:Size(max = FieldLimits.NAME, message = "고객명이 너무 깁니다")
     val customerName: String? = null,
+    @field:Size(max = FieldLimits.PHONE, message = "전화번호가 너무 깁니다")
     val customerPhone: String? = null,
+    @field:Size(max = FieldLimits.TITLE, message = "제목이 너무 깁니다")
     val title: String? = null,
+    @field:Size(max = FieldLimits.DESCRIPTION, message = "설명이 너무 깁니다")
     val description: String? = null,
     val amount: Int? = null,
     val status: String? = null,
@@ -41,6 +51,7 @@ data class AddPickupRequest(
     val date: LocalDate?,
     val time: LocalTime? = null,
     @field:NotBlank(message = "제목은 필수입니다")
+    @field:Size(max = FieldLimits.TITLE, message = "제목이 너무 깁니다")
     val title: String?,
     val amount: Int = 0,
     val reminderAt: Instant? = null,

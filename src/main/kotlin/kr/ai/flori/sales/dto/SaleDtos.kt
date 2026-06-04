@@ -3,6 +3,8 @@ package kr.ai.flori.sales.dto
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Size
+import kr.ai.flori.common.validation.FieldLimits
 import kr.ai.flori.sales.entity.Sale
 import java.time.Instant
 import java.time.LocalDate
@@ -14,6 +16,7 @@ data class SaleCreateRequest(
     @field:NotNull(message = "날짜는 필수입니다")
     val date: LocalDate?,
     @field:NotBlank(message = "상품 카테고리는 필수입니다")
+    @field:Size(max = FieldLimits.PRODUCT_CATEGORY, message = "상품 카테고리가 너무 깁니다")
     val productCategory: String?,
     @field:NotNull(message = "금액은 필수입니다")
     @field:Min(value = 0, message = "금액은 0 이상이어야 합니다")
@@ -21,23 +24,30 @@ data class SaleCreateRequest(
     @field:NotBlank(message = "결제방식은 필수입니다")
     val paymentMethod: String?,
     val reservationChannel: String? = null,
+    @field:Size(max = FieldLimits.NAME, message = "고객명이 너무 깁니다")
     val customerName: String? = null,
+    @field:Size(max = FieldLimits.PHONE, message = "전화번호가 너무 깁니다")
     val customerPhone: String? = null,
     val customerId: Long? = null,
+    @field:Size(max = FieldLimits.NOTE, message = "비고가 너무 깁니다")
     val note: String? = null,
 )
 
 /** 매출 부분 수정. 제공된(non-null) 필드만 반영. */
 data class SaleUpdateRequest(
     val date: LocalDate? = null,
+    @field:Size(max = FieldLimits.PRODUCT_CATEGORY, message = "상품 카테고리가 너무 깁니다")
     val productCategory: String? = null,
     @field:Min(value = 0, message = "금액은 0 이상이어야 합니다")
     val amount: Int? = null,
     val paymentMethod: String? = null,
     val reservationChannel: String? = null,
+    @field:Size(max = FieldLimits.NAME, message = "고객명이 너무 깁니다")
     val customerName: String? = null,
+    @field:Size(max = FieldLimits.PHONE, message = "전화번호가 너무 깁니다")
     val customerPhone: String? = null,
     val customerId: Long? = null,
+    @field:Size(max = FieldLimits.NOTE, message = "비고가 너무 깁니다")
     val note: String? = null,
     val hasReview: Boolean? = null,
 )
