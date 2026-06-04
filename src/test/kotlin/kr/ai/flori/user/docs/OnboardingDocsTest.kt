@@ -65,6 +65,7 @@ class OnboardingDocsTest : RestDocsSupport() {
                                 fieldWithPath("profile.ownerAgeRange").type(JsonFieldType.STRING).optional().description("나이대(미설정 시 null)"),
                                 fieldWithPath("profile.interests").type(JsonFieldType.ARRAY).description("관심사 목록"),
                                 fieldWithPath("profile.specialties").type(JsonFieldType.ARRAY).description("가게 주력 목록"),
+                                fieldWithPath("profile.profileImageUrl").type(JsonFieldType.STRING).optional().description("프로필 이미지 URL(미설정 시 null)"),
                             ),
                     ),
                 )
