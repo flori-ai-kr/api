@@ -47,15 +47,22 @@ class SaleApiIntegrationTest {
     private fun categoryId(
         token: String,
         value: String = "basic_bouquet",
+    ): Long = labelId(token, LabelKinds.CATEGORY, value)
+
+    /** 토큰 소유 유저의 시드된 매출 결제수단 value → id. */
+    private fun paymentId(
+        token: String,
+        value: String = "card",
+    ): Long = labelId(token, LabelKinds.PAYMENT, value)
+
+    private fun labelId(
+        token: String,
+        kind: String,
+        value: String,
     ): Long {
         val userId = requireNotNull(tokenProvider.parse(token)).userId
         return requireNotNull(
-            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
-                userId,
-                LabelDomains.SALE,
-                LabelKinds.CATEGORY,
-                value,
-            ),
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(userId, LabelDomains.SALE, kind, value),
         ).id!!
     }
 
@@ -71,7 +78,7 @@ class SaleApiIntegrationTest {
                                 "date" to "2026-05-22",
                                 "categoryId" to categoryId(token),
                                 "amount" to 100_000,
-                                "paymentMethod" to "card",
+                                "paymentMethodId" to paymentId(token),
                             ),
                         )
                 }.andReturn()
@@ -93,12 +100,13 @@ class SaleApiIntegrationTest {
                             "date" to "2026-05-22",
                             "categoryId" to categoryId(token),
                             "amount" to 100_000,
-                            "paymentMethod" to "card",
+                            "paymentMethodId" to paymentId(token),
                         ),
                     )
             }.andExpect {
                 status { isCreated() }
-                jsonPath("$.paymentMethod") { value("card") }
+                jsonPath("$.paymentMethodId") { value(paymentId(token).toInt()) }
+                jsonPath("$.isUnpaid") { value(false) }
             }
 
         mockMvc
@@ -124,7 +132,7 @@ class SaleApiIntegrationTest {
                             "date" to "2026-05-22",
                             "categoryId" to categoryId(token),
                             "amount" to 100_000,
-                            "paymentMethod" to "card",
+                            "paymentMethodId" to paymentId(token),
                             "memo" to "가".repeat(201), // FieldLimits.MEMO(200) 초과
                         ),
                     )

@@ -34,8 +34,8 @@ class RecurringExpense(
     var unitPrice: Int,
     @Column(name = "quantity", nullable = false)
     var quantity: Int,
-    @Column(name = "payment_method", nullable = false)
-    var paymentMethod: String,
+    @Column(name = "payment_method_id")
+    var paymentMethodId: Long?,
     @Column(name = "frequency", nullable = false)
     var frequency: String,
     @Column(name = "start_date", nullable = false)

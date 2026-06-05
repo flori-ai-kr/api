@@ -1,6 +1,5 @@
 package kr.ai.flori.expenses.service
 
-import kr.ai.flori.common.domain.PaymentMethods
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
@@ -37,13 +36,14 @@ class RecurringExpenseService(
     @Transactional(readOnly = true)
     fun list(): List<RecurringExpenseResponse> {
         val catMap = categoryLabels()
+        val payMap = paymentLabels()
         return recurringRepository
             .findByUserIdOrderByIsActiveDescCreatedAtDesc(TenantContext.currentUserId())
-            .map { ruleResponse(it, catMap) }
+            .map { ruleResponse(it, catMap, payMap) }
     }
 
     @Transactional(readOnly = true)
-    fun get(id: Long): RecurringExpenseResponse = ruleResponse(loadRule(id), categoryLabels())
+    fun get(id: Long): RecurringExpenseResponse = ruleResponse(loadRule(id), categoryLabels(), paymentLabels())
 
     @Transactional
     fun create(request: RecurringExpenseRequest): RecurringExpenseResponse {
@@ -59,12 +59,17 @@ class RecurringExpenseService(
                     ),
                 unitPrice = requireNotNull(request.unitPrice),
                 quantity = request.quantity,
-                paymentMethod = requireValidPayment(requireNotNull(request.paymentMethod)),
+                paymentMethodId =
+                    labelReader.requireOwned(
+                        requireNotNull(request.paymentMethodId),
+                        LabelDomains.EXPENSE,
+                        LabelKinds.PAYMENT,
+                    ),
                 frequency = requireValidFrequency(requireNotNull(request.frequency)),
                 startDate = requireNotNull(request.startDate),
             )
         applyRuleFields(rule, request)
-        return ruleResponse(recurringRepository.save(rule), categoryLabels())
+        return ruleResponse(recurringRepository.save(rule), categoryLabels(), paymentLabels())
     }
 
     @Transactional
@@ -78,11 +83,12 @@ class RecurringExpenseService(
             labelReader.requireOwned(requireNotNull(request.categoryId), LabelDomains.EXPENSE, LabelKinds.CATEGORY)
         rule.unitPrice = requireNotNull(request.unitPrice)
         rule.quantity = request.quantity
-        rule.paymentMethod = requireValidPayment(requireNotNull(request.paymentMethod))
+        rule.paymentMethodId =
+            labelReader.requireOwned(requireNotNull(request.paymentMethodId), LabelDomains.EXPENSE, LabelKinds.PAYMENT)
         rule.frequency = requireValidFrequency(requireNotNull(request.frequency))
         rule.startDate = requireNotNull(request.startDate)
         applyRuleFields(rule, request)
-        return ruleResponse(recurringRepository.save(rule), categoryLabels())
+        return ruleResponse(recurringRepository.save(rule), categoryLabels(), paymentLabels())
     }
 
     @Transactional
@@ -101,7 +107,7 @@ class RecurringExpenseService(
     ): RecurringExpenseResponse {
         val rule = loadRule(id)
         rule.isActive = isActive
-        return ruleResponse(recurringRepository.save(rule), categoryLabels())
+        return ruleResponse(recurringRepository.save(rule), categoryLabels(), paymentLabels())
     }
 
     /** 빠른 추가: 오늘 날짜로 즉시 지출 생성. 수동 추가이므로 recurring_id 미연결(자동생성 멱등 충돌 회피). */
@@ -117,11 +123,15 @@ class RecurringExpenseService(
                 unitPrice = rule.unitPrice,
                 quantity = rule.quantity,
                 totalAmount = rule.unitPrice * rule.quantity,
-                paymentMethod = rule.paymentMethod,
+                paymentMethodId = rule.paymentMethodId,
             )
         expense.vendor = rule.vendor
         expense.memo = rule.memo
-        return ExpenseResponse.from(expenseRepository.save(expense), rule.categoryId?.let { categoryLabels()[it] })
+        return ExpenseResponse.from(
+            expenseRepository.save(expense),
+            rule.categoryId?.let { categoryLabels()[it] },
+            rule.paymentMethodId?.let { paymentLabels()[it] },
+        )
     }
 
     /** 이것만 수정: 인스턴스만 변경하고 템플릿과 분리 표시. */
@@ -149,7 +159,9 @@ class RecurringExpenseService(
         fields.categoryId?.let { rule.categoryId = labelReader.requireOwned(it, LabelDomains.EXPENSE, LabelKinds.CATEGORY) }
         fields.unitPrice?.let { rule.unitPrice = it }
         fields.quantity?.let { rule.quantity = it }
-        fields.paymentMethod?.let { rule.paymentMethod = requireValidPayment(it) }
+        fields.paymentMethodId?.let {
+            rule.paymentMethodId = labelReader.requireOwned(it, LabelDomains.EXPENSE, LabelKinds.PAYMENT)
+        }
         fields.vendor?.let { rule.vendor = it }
         fields.memo?.let { rule.memo = it }
         recurringRepository.save(rule)
@@ -207,7 +219,9 @@ class RecurringExpenseService(
         }
         fields.unitPrice?.let { expense.unitPrice = it }
         fields.quantity?.let { expense.quantity = it }
-        fields.paymentMethod?.let { expense.paymentMethod = requireValidPayment(it) }
+        fields.paymentMethodId?.let {
+            expense.paymentMethodId = labelReader.requireOwned(it, LabelDomains.EXPENSE, LabelKinds.PAYMENT)
+        }
         fields.vendor?.let { expense.vendor = it }
         fields.memo?.let { expense.memo = it }
         expense.totalAmount = expense.unitPrice * expense.quantity
@@ -215,10 +229,18 @@ class RecurringExpenseService(
 
     private fun categoryLabels(): Map<Long, String> = labelReader.labelMap(LabelDomains.EXPENSE, LabelKinds.CATEGORY)
 
+    private fun paymentLabels(): Map<Long, String> = labelReader.labelMap(LabelDomains.EXPENSE, LabelKinds.PAYMENT)
+
     private fun ruleResponse(
         rule: RecurringExpense,
         catMap: Map<Long, String>,
-    ): RecurringExpenseResponse = RecurringExpenseResponse.from(rule, rule.categoryId?.let { catMap[it] })
+        payMap: Map<Long, String>,
+    ): RecurringExpenseResponse =
+        RecurringExpenseResponse.from(
+            rule,
+            rule.categoryId?.let { catMap[it] },
+            rule.paymentMethodId?.let { payMap[it] },
+        )
 
     private fun loadRule(id: Long): RecurringExpense =
         recurringRepository.findByIdAndUserId(id, TenantContext.currentUserId())
@@ -230,11 +252,6 @@ class RecurringExpenseService(
 
     private fun requireValidFrequency(value: String): String {
         if (value !in FREQUENCIES) throw AppException(CommonErrorCode.VALIDATION, "올바르지 않은 반복 주기입니다")
-        return value
-    }
-
-    private fun requireValidPayment(value: String): String {
-        if (value !in PaymentMethods.EXPENSE) throw AppException(CommonErrorCode.VALIDATION, "올바르지 않은 결제방식입니다")
         return value
     }
 

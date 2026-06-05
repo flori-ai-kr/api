@@ -1,7 +1,6 @@
 package kr.ai.flori.sales.dto
 
 import jakarta.validation.constraints.Min
-import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import kr.ai.flori.common.validation.FieldLimits
@@ -10,7 +9,8 @@ import java.time.Instant
 import java.time.LocalDate
 
 /**
- * 매출 생성. is_unpaid는 결제방식(unpaid)으로 서버가 결정하므로 요청에 포함하지 않는다.
+ * 매출 생성. 미수는 isUnpaid=true(모달 체크박스)로 표현하며, 이때 paymentMethodId는 무시되고 NULL로 저장된다.
+ * isUnpaid=false면 paymentMethodId가 필수다(서버 검증).
  */
 data class SaleCreateRequest(
     @field:NotNull(message = "날짜는 필수입니다")
@@ -20,8 +20,8 @@ data class SaleCreateRequest(
     @field:NotNull(message = "금액은 필수입니다")
     @field:Min(value = 0, message = "금액은 0 이상이어야 합니다")
     val amount: Int?,
-    @field:NotBlank(message = "결제방식은 필수입니다")
-    val paymentMethod: String?,
+    val paymentMethodId: Long? = null,
+    val isUnpaid: Boolean = false,
     val channelId: Long? = null,
     @field:Size(max = FieldLimits.NAME, message = "고객명이 너무 깁니다")
     val customerName: String? = null,
@@ -38,7 +38,7 @@ data class SaleUpdateRequest(
     val categoryId: Long? = null,
     @field:Min(value = 0, message = "금액은 0 이상이어야 합니다")
     val amount: Int? = null,
-    val paymentMethod: String? = null,
+    val paymentMethodId: Long? = null,
     val channelId: Long? = null,
     @field:Size(max = FieldLimits.NAME, message = "고객명이 너무 깁니다")
     val customerName: String? = null,
@@ -51,8 +51,8 @@ data class SaleUpdateRequest(
 )
 
 data class CompleteUnpaidRequest(
-    @field:NotBlank(message = "결제방식은 필수입니다")
-    val paymentMethod: String?,
+    @field:NotNull(message = "결제방식은 필수입니다")
+    val paymentMethodId: Long?,
 )
 
 data class SaleResponse(
@@ -61,7 +61,8 @@ data class SaleResponse(
     val categoryId: Long?,
     val categoryLabel: String?,
     val amount: Int,
-    val paymentMethod: String,
+    val paymentMethodId: Long?,
+    val paymentMethodLabel: String?,
     val channelId: Long?,
     val channelLabel: String?,
     val customerName: String?,
@@ -78,6 +79,7 @@ data class SaleResponse(
         fun from(
             sale: Sale,
             categoryLabel: String?,
+            paymentMethodLabel: String?,
             channelLabel: String?,
             photos: List<String> = emptyList(),
         ): SaleResponse =
@@ -87,7 +89,8 @@ data class SaleResponse(
                 categoryId = sale.categoryId,
                 categoryLabel = categoryLabel,
                 amount = sale.amount,
-                paymentMethod = sale.paymentMethod,
+                paymentMethodId = sale.paymentMethodId,
+                paymentMethodLabel = paymentMethodLabel,
                 channelId = sale.channelId,
                 channelLabel = channelLabel,
                 customerName = sale.customerName,

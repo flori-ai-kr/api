@@ -30,8 +30,8 @@ class Expense(
     var quantity: Int,
     @Column(name = "total_amount", nullable = false)
     var totalAmount: Int,
-    @Column(name = "payment_method", nullable = false)
-    var paymentMethod: String,
+    @Column(name = "payment_method_id")
+    var paymentMethodId: Long?,
 ) : BaseEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

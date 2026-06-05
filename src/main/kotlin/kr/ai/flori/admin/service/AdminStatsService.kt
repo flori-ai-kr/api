@@ -54,7 +54,7 @@ class AdminStatsService(
                     """
                     SELECT d::date AS day, COUNT(s.id) AS cnt
                     FROM generate_series(?::date, CURRENT_DATE, '1 day'::interval) d
-                    LEFT JOIN sales s ON s.date = d::date AND s.payment_method <> 'unpaid'
+                    LEFT JOIN sales s ON s.date = d::date AND s.payment_method_id IS NOT NULL
                     GROUP BY d ORDER BY d
                     """.trimIndent()
                 else -> throw AppException(CommonErrorCode.VALIDATION)
@@ -91,7 +91,7 @@ class AdminStatsService(
         to: LocalDate,
     ): Long =
         jdbc.queryForObject(
-            "SELECT COUNT(*) FROM sales WHERE date BETWEEN ? AND ? AND payment_method <> 'unpaid'",
+            "SELECT COUNT(*) FROM sales WHERE date BETWEEN ? AND ? AND payment_method_id IS NOT NULL",
             Long::class.java,
             Date.valueOf(from),
             Date.valueOf(to),
@@ -118,9 +118,9 @@ class AdminStatsService(
             """
             SELECT
               COUNT(*) AS entry_count,
-              COALESCE(SUM(amount) FILTER (WHERE payment_method <> 'unpaid'), 0) AS total_amount,
+              COALESCE(SUM(amount) FILTER (WHERE payment_method_id IS NOT NULL), 0) AS total_amount,
               COUNT(*) FILTER (WHERE date >= CURRENT_DATE - INTERVAL '30 days'
-                                 AND payment_method <> 'unpaid') AS last30d
+                                 AND payment_method_id IS NOT NULL) AS last30d
             FROM sales
             """.trimIndent(),
         ) { rs, _ -> SalesCounts(rs.getLong("entry_count"), rs.getLong("total_amount"), rs.getLong("last30d")) }!!

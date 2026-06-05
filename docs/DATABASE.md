@@ -176,7 +176,7 @@ JWT refresh 회전/무효화 추적. **원문이 아닌 SHA-256 해시만 저장
 | `product_name` | VARCHAR(200) | NOT NULL | |
 | `category_id` | BIGINT | | 매출 카테고리 → `label_settings`(domain=sale, kind=category) 논리참조 |
 | `amount` | INTEGER | NOT NULL | 금액(원) |
-| `payment_method` | VARCHAR(20) | NOT NULL, CHECK(cash/card/transfer/naverpay/kakaopay/unpaid) | |
+| `payment_method_id` | BIGINT | | 결제수단 → `label_settings`(domain=sale, kind=payment) 논리참조. **미수면 NULL**(is_unpaid=true) |
 | `channel_id` | BIGINT | | 매출 채널 → `label_settings`(domain=sale, kind=channel) 논리참조 |
 | `customer_name` | VARCHAR(100) | | |
 | `customer_phone` | VARCHAR(20) | | |
@@ -186,7 +186,7 @@ JWT refresh 회전/무효화 추적. **원문이 아닌 SHA-256 해시만 저장
 | `has_review` | BOOLEAN | DEFAULT FALSE | 리뷰 작성 여부 |
 | `created_at` / `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | 트리거 갱신 |
 
-- **인덱스**: `idx_sales_date`, `idx_sales_customer_id`, `idx_sales_payment_method`, `idx_sales_user_id`
+- **인덱스**: `idx_sales_date`, `idx_sales_customer_id`, `idx_sales_payment_method_id`, `idx_sales_category_id`, `idx_sales_channel_id`, `idx_sales_user_id`
 - **관계**: `reservations.sale_id`가 이 테이블을 참조(양방향), `photo_cards.sale_id`도 참조
 
 ### `label_settings` — 매출/지출 라벨 설정 (통합)
@@ -208,7 +208,7 @@ JWT refresh 회전/무효화 추적. **원문이 아닌 SHA-256 해시만 저장
 - **제약**: UNIQUE(user_id, domain, kind, value), INDEX(user_id, domain, kind)
 - **시드**(가입 시): 매출 카테고리 11 / 결제방식 4 / 채널 5, 지출 카테고리 7 / 결제방식 3
 - **채널**: 이전 `sales.reservation_channel` CHECK enum을 라벨 설정으로 편입(기본값 phone/kakaotalk/naver_booking/road/other). `sales.channel_id`가 이 행을 논리참조한다.
-- **참조 전환**: 매출/지출의 카테고리·채널은 value 문자열 → `label_settings.id` 간접참조로 전환 완료(응답은 id + label 동반). 결제수단(`payment_method`)은 문자열 유지(후속 단계).
+- **참조 전환**: 매출/지출의 카테고리·채널·결제수단 모두 value 문자열 → `label_settings.id` 간접참조로 전환 완료(응답은 id + label 동반). 미수(unpaid)는 결제수단 값이 아니라 `sales.payment_method_id=NULL` + `is_unpaid` 불린으로 표현한다.
 
 ---
 
@@ -228,7 +228,7 @@ JWT refresh 회전/무효화 추적. **원문이 아닌 SHA-256 해시만 저장
 | `unit_price` | INTEGER | NOT NULL | 단가 |
 | `quantity` | INTEGER | DEFAULT 1 | 수량 |
 | `total_amount` | INTEGER | NOT NULL | 서버 계산값 |
-| `payment_method` | VARCHAR(20) | NOT NULL, CHECK(cash/card/transfer/naverpay/kakaopay) | |
+| `payment_method_id` | BIGINT | | 결제수단 → `label_settings`(domain=expense, kind=payment) 논리참조 |
 | `card_company` | VARCHAR(50) | | |
 | `vendor` | VARCHAR(100) | | 거래처 |
 | `note` | TEXT | | |
@@ -251,7 +251,7 @@ JWT refresh 회전/무효화 추적. **원문이 아닌 SHA-256 해시만 저장
 | `category_id` | BIGINT | | 지출 카테고리 → `label_settings`(domain=expense, kind=category) 논리참조 |
 | `unit_price` | INTEGER | NOT NULL, CHECK(≥0) | |
 | `quantity` | INTEGER | NOT NULL, DEFAULT 1, CHECK(>0) | |
-| `payment_method` | VARCHAR(20) | NOT NULL | |
+| `payment_method_id` | BIGINT | | 결제수단 → `label_settings`(domain=expense, kind=payment) 논리참조 |
 | `vendor` / `note` | TEXT | | |
 | `frequency` | VARCHAR(10) | NOT NULL, CHECK(weekly/monthly/yearly) | 주기 |
 | `interval_count` | INTEGER | NOT NULL, DEFAULT 1, CHECK(>0) | 주기 간격 |

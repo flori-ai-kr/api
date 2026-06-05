@@ -78,10 +78,20 @@ abstract class RestDocsSupport {
         value: String = "kakaotalk",
     ): Long = labelId(token, LabelDomains.SALE, LabelKinds.CHANNEL, value)
 
+    protected fun salePaymentId(
+        token: String,
+        value: String = "card",
+    ): Long = labelId(token, LabelDomains.SALE, LabelKinds.PAYMENT, value)
+
     protected fun expenseCategoryId(
         token: String,
         value: String = "flower_purchase",
     ): Long = labelId(token, LabelDomains.EXPENSE, LabelKinds.CATEGORY, value)
+
+    protected fun expensePaymentId(
+        token: String,
+        value: String = "card",
+    ): Long = labelId(token, LabelDomains.EXPENSE, LabelKinds.PAYMENT, value)
 
     /**
      * 신규 소셜 가입을 완료하고 access 토큰을 발급한다(보호 엔드포인트 문서화용).

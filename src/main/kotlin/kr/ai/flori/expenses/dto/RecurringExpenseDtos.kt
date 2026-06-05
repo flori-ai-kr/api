@@ -18,8 +18,8 @@ data class RecurringExpenseRequest(
     val unitPrice: Int?,
     @field:Min(1, message = "수량은 1 이상이어야 합니다")
     val quantity: Int = 1,
-    @field:NotBlank(message = "결제방식은 필수입니다")
-    val paymentMethod: String?,
+    @field:NotNull(message = "결제방식은 필수입니다")
+    val paymentMethodId: Long?,
     val vendor: String? = null,
     val memo: String? = null,
     @field:NotBlank(message = "반복 주기는 필수입니다")
@@ -49,7 +49,7 @@ data class RecurringInstanceUpdateRequest(
     val unitPrice: Int? = null,
     @field:Min(1, message = "수량은 1 이상이어야 합니다")
     val quantity: Int? = null,
-    val paymentMethod: String? = null,
+    val paymentMethodId: Long? = null,
     val vendor: String? = null,
     val memo: String? = null,
 )
@@ -61,7 +61,8 @@ data class RecurringExpenseResponse(
     val categoryLabel: String?,
     val unitPrice: Int,
     val quantity: Int,
-    val paymentMethod: String,
+    val paymentMethodId: Long?,
+    val paymentMethodLabel: String?,
     val vendor: String?,
     val memo: String?,
     val frequency: String,
@@ -79,6 +80,7 @@ data class RecurringExpenseResponse(
         fun from(
             r: RecurringExpense,
             categoryLabel: String?,
+            paymentMethodLabel: String?,
         ): RecurringExpenseResponse =
             RecurringExpenseResponse(
                 id = requireNotNull(r.id),
@@ -87,7 +89,8 @@ data class RecurringExpenseResponse(
                 categoryLabel = categoryLabel,
                 unitPrice = r.unitPrice,
                 quantity = r.quantity,
-                paymentMethod = r.paymentMethod,
+                paymentMethodId = r.paymentMethodId,
+                paymentMethodLabel = paymentMethodLabel,
                 vendor = r.vendor,
                 memo = r.memo,
                 frequency = r.frequency,

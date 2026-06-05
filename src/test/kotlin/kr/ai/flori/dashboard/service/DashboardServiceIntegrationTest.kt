@@ -83,7 +83,11 @@ class DashboardServiceIntegrationTest {
 
     private fun saleChan(value: String) = labelId(LabelKinds.CHANNEL, value)
 
+    private fun salePay(value: String) = labelId(LabelKinds.PAYMENT, value)
+
     private fun expCat(value: String) = labelId(LabelKinds.CATEGORY, value, LabelDomains.EXPENSE)
+
+    private fun expPay(value: String) = labelId(LabelKinds.PAYMENT, value, LabelDomains.EXPENSE)
 
     private fun seedData() {
         saleService.create(
@@ -91,16 +95,23 @@ class DashboardServiceIntegrationTest {
                 today,
                 saleCat("basic_bouquet"),
                 100_000,
-                "card",
+                salePay("card"),
                 channelId = saleChan("phone"),
                 customerPhone = "01010001000",
             ),
         )
         saleService.create(
-            SaleCreateRequest(today, saleCat("vase"), 50_000, "cash", channelId = saleChan("road"), customerPhone = "01010001000"),
+            SaleCreateRequest(
+                today,
+                saleCat("vase"),
+                50_000,
+                salePay("cash"),
+                channelId = saleChan("road"),
+                customerPhone = "01010001000",
+            ),
         )
-        saleService.create(SaleCreateRequest(today, saleCat("reservation"), 30_000, "unpaid"))
-        expenseService.create(ExpenseCreateRequest(today, "장미", expCat("flower_purchase"), 5_000, 2, "card"))
+        saleService.create(SaleCreateRequest(today, saleCat("reservation"), 30_000, null, isUnpaid = true))
+        expenseService.create(ExpenseCreateRequest(today, "장미", expCat("flower_purchase"), 5_000, 2, expPay("card")))
         reservationService.create(ReservationCreateRequest(today, null, "홍길동", null, "픽업"))
     }
 
@@ -129,8 +140,8 @@ class DashboardServiceIntegrationTest {
 
         assertThat(result.categoryStats.first { it.categoryId == saleCat("basic_bouquet") }.amount).isEqualTo(100_000)
         assertThat(result.categoryStats.first { it.categoryId == saleCat("basic_bouquet") }.label).isEqualTo("기본 꽃다발")
-        assertThat(result.paymentStats.first { it.method == "card" }.amount).isEqualTo(100_000)
-        assertThat(result.paymentStats.first { it.method == "card" }.label).isEqualTo("카드")
+        assertThat(result.paymentStats.first { it.paymentMethodId == salePay("card") }.amount).isEqualTo(100_000)
+        assertThat(result.paymentStats.first { it.paymentMethodId == salePay("card") }.label).isEqualTo("카드")
         assertThat(result.channelStats.first { it.channelId == saleChan("phone") }.amount).isEqualTo(100_000)
         assertThat(result.channelStats.first { it.channelId == saleChan("phone") }.label).isEqualTo("전화")
         assertThat(result.expenseStats.first { it.categoryId == expCat("flower_purchase") }.amount).isEqualTo(10_000)

@@ -32,7 +32,8 @@ class SaleDocsTest : RestDocsSupport() {
                 .optional()
                 .description("상품 카테고리 표시 이름 (null 가능)"),
             fieldWithPath("amount").type(JsonFieldType.NUMBER).description("결제 금액(원)"),
-            fieldWithPath("paymentMethod").type(JsonFieldType.STRING).description("결제방식"),
+            fieldWithPath("paymentMethodId").type(JsonFieldType.NUMBER).optional().description("결제수단 ID (미수면 null)"),
+            fieldWithPath("paymentMethodLabel").type(JsonFieldType.STRING).optional().description("결제수단 표시 이름 (미수면 null)"),
             fieldWithPath("channelId").type(JsonFieldType.NUMBER).optional().description("매출 채널 ID (null 가능)"),
             fieldWithPath("channelLabel").type(JsonFieldType.STRING).optional().description("매출 채널 표시 이름 (null 가능)"),
             fieldWithPath("customerName")
@@ -72,7 +73,8 @@ class SaleDocsTest : RestDocsSupport() {
                 .optional()
                 .description("상품 카테고리 표시 이름 (null 가능)"),
             fieldWithPath("sales[].amount").type(JsonFieldType.NUMBER).description("결제 금액(원)"),
-            fieldWithPath("sales[].paymentMethod").type(JsonFieldType.STRING).description("결제방식"),
+            fieldWithPath("sales[].paymentMethodId").type(JsonFieldType.NUMBER).optional().description("결제수단 ID (미수면 null)"),
+            fieldWithPath("sales[].paymentMethodLabel").type(JsonFieldType.STRING).optional().description("결제수단 이름 (미수면 null)"),
             fieldWithPath("sales[].channelId")
                 .type(JsonFieldType.NUMBER)
                 .optional()
@@ -119,7 +121,7 @@ class SaleDocsTest : RestDocsSupport() {
                                 "date" to "2026-05-22",
                                 "categoryId" to saleCategoryId(token),
                                 "amount" to 100_000,
-                                "paymentMethod" to "card",
+                                "paymentMethodId" to salePaymentId(token),
                             ),
                         )
                 }.andReturn()
@@ -143,7 +145,7 @@ class SaleDocsTest : RestDocsSupport() {
                             "date" to "2026-05-22",
                             "categoryId" to saleCategoryId(token),
                             "amount" to 100_000,
-                            "paymentMethod" to "card",
+                            "paymentMethodId" to salePaymentId(token),
                             "channelId" to saleChannelId(token),
                             "customerName" to "김하늘",
                             "memo" to "웨딩 부케",
@@ -169,9 +171,14 @@ class SaleDocsTest : RestDocsSupport() {
                                 fieldWithPath("amount")
                                     .type(JsonFieldType.NUMBER)
                                     .description("결제 금액(원, 0 이상, 필수)"),
-                                fieldWithPath("paymentMethod")
-                                    .type(JsonFieldType.STRING)
-                                    .description("결제방식. 'unpaid' 이면 미수로 생성 (필수)"),
+                                fieldWithPath("paymentMethodId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("결제수단 ID (isUnpaid=false면 필수, 미수면 무시)"),
+                                fieldWithPath("isUnpaid")
+                                    .type(JsonFieldType.BOOLEAN)
+                                    .optional()
+                                    .description("미수 여부(체크박스). true면 결제수단 미지정으로 저장"),
                                 fieldWithPath("channelId")
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
@@ -328,10 +335,10 @@ class SaleDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("결제 금액 변경(원, 0 이상)"),
-                                fieldWithPath("paymentMethod")
-                                    .type(JsonFieldType.STRING)
+                                fieldWithPath("paymentMethodId")
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
-                                    .description("결제방식 변경"),
+                                    .description("결제수단 ID 변경"),
                                 fieldWithPath("channelId")
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
@@ -381,7 +388,7 @@ class SaleDocsTest : RestDocsSupport() {
                                 "date" to "2026-05-22",
                                 "categoryId" to saleCategoryId(token),
                                 "amount" to 80_000,
-                                "paymentMethod" to "unpaid",
+                                "isUnpaid" to true,
                             ),
                         )
                 }.andReturn()
@@ -393,7 +400,7 @@ class SaleDocsTest : RestDocsSupport() {
                 requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/sales/{id}/complete-unpaid")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
-                content = json(mapOf("paymentMethod" to "cash"))
+                content = json(mapOf("paymentMethodId" to salePaymentId(token)))
             }.andExpect { status { isOk() } }
             .andDo {
                 handle(
@@ -406,9 +413,9 @@ class SaleDocsTest : RestDocsSupport() {
                         pathParameters = listOf(parameterWithName("id").description("매출 ID")),
                         requestFields =
                             listOf(
-                                fieldWithPath("paymentMethod")
-                                    .type(JsonFieldType.STRING)
-                                    .description("확정할 결제방식 (unpaid 제외, 필수)"),
+                                fieldWithPath("paymentMethodId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .description("확정할 결제수단 ID (필수)"),
                             ),
                         responseFields = saleResponseFields,
                     ),
@@ -434,7 +441,7 @@ class SaleDocsTest : RestDocsSupport() {
                                 "date" to "2026-05-22",
                                 "categoryId" to saleCategoryId(token),
                                 "amount" to 60_000,
-                                "paymentMethod" to "unpaid",
+                                "isUnpaid" to true,
                             ),
                         )
                 }.andReturn()
@@ -446,7 +453,7 @@ class SaleDocsTest : RestDocsSupport() {
             .post("/sales/$id/complete-unpaid") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
-                content = json(mapOf("paymentMethod" to "cash"))
+                content = json(mapOf("paymentMethodId" to salePaymentId(token)))
             }.andReturn()
 
         // 되돌리기 문서화

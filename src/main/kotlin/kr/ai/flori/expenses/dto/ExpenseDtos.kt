@@ -21,8 +21,8 @@ data class ExpenseCreateRequest(
     val unitPrice: Int?,
     @field:Min(1, message = "수량은 1 이상이어야 합니다")
     val quantity: Int = 1,
-    @field:NotBlank(message = "결제방식은 필수입니다")
-    val paymentMethod: String?,
+    @field:NotNull(message = "결제방식은 필수입니다")
+    val paymentMethodId: Long?,
     @field:Size(max = FieldLimits.CARD_COMPANY, message = "카드사명이 너무 깁니다")
     val cardCompany: String? = null,
     @field:Size(max = FieldLimits.VENDOR, message = "거래처가 너무 깁니다")
@@ -40,7 +40,7 @@ data class ExpenseUpdateRequest(
     val unitPrice: Int? = null,
     @field:Min(1, message = "수량은 1 이상이어야 합니다")
     val quantity: Int? = null,
-    val paymentMethod: String? = null,
+    val paymentMethodId: Long? = null,
     @field:Size(max = FieldLimits.CARD_COMPANY, message = "카드사명이 너무 깁니다")
     val cardCompany: String? = null,
     @field:Size(max = FieldLimits.VENDOR, message = "거래처가 너무 깁니다")
@@ -58,7 +58,8 @@ data class ExpenseResponse(
     val unitPrice: Int,
     val quantity: Int,
     val totalAmount: Int,
-    val paymentMethod: String,
+    val paymentMethodId: Long?,
+    val paymentMethodLabel: String?,
     val cardCompany: String?,
     val vendor: String?,
     val memo: String?,
@@ -71,6 +72,7 @@ data class ExpenseResponse(
         fun from(
             e: Expense,
             categoryLabel: String?,
+            paymentMethodLabel: String?,
         ): ExpenseResponse =
             ExpenseResponse(
                 id = requireNotNull(e.id),
@@ -81,7 +83,8 @@ data class ExpenseResponse(
                 unitPrice = e.unitPrice,
                 quantity = e.quantity,
                 totalAmount = e.totalAmount,
-                paymentMethod = e.paymentMethod,
+                paymentMethodId = e.paymentMethodId,
+                paymentMethodLabel = paymentMethodLabel,
                 cardCompany = e.cardCompany,
                 vendor = e.vendor,
                 memo = e.memo,

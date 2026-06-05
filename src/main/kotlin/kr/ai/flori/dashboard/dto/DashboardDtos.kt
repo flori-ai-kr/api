@@ -22,7 +22,7 @@ data class CategoryStat(
 )
 
 data class PaymentMethodStat(
-    val method: String,
+    val paymentMethodId: Long?,
     val label: String,
     val count: Long,
     val amount: Long,

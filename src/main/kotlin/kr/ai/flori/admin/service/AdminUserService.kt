@@ -147,7 +147,7 @@ class AdminUserService(
         jdbc.queryForObject(
             """
             SELECT COUNT(*) AS cnt, COALESCE(SUM(amount), 0) AS total, MAX(date) AS last_date
-            FROM sales WHERE user_id = ? AND payment_method <> 'unpaid'
+            FROM sales WHERE user_id = ? AND payment_method_id IS NOT NULL
             """.trimIndent(),
             { rs, _ -> SalesSummary(rs.getLong("cnt"), rs.getLong("total"), rs.getDate("last_date")?.toLocalDate()) },
             id,

@@ -19,7 +19,7 @@ object SaleSpecifications {
         startDate: String? = null,
         endDate: String? = null,
         categories: List<Long>?,
-        payments: List<String>?,
+        payments: List<Long>?,
         channels: List<Long>?,
         search: String?,
     ): Specification<Sale> =
@@ -40,7 +40,7 @@ object SaleSpecifications {
                 predicates += root.get<Long>("categoryId").`in`(categories)
             }
             if (!payments.isNullOrEmpty()) {
-                predicates += root.get<String>("paymentMethod").`in`(payments)
+                predicates += root.get<Long>("paymentMethodId").`in`(payments)
             }
             if (!channels.isNullOrEmpty()) {
                 predicates += root.get<Long>("channelId").`in`(channels)

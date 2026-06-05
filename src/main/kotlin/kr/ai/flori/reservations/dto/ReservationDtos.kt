@@ -95,6 +95,7 @@ data class ReservationResponse(
             purchaseCount: Int? = null,
             categoryLabel: String? = null,
             channelLabel: String? = null,
+            paymentMethodLabel: String? = null,
         ): ReservationResponse =
             ReservationResponse(
                 id = requireNotNull(r.id),
@@ -116,7 +117,8 @@ data class ReservationResponse(
                 customerId = sale?.customerId,
                 purchaseCount = purchaseCount,
                 saleIsUnpaid = sale?.isUnpaid,
-                salePaymentMethod = sale?.paymentMethod,
+                // 연결 매출 결제수단은 label_settings.id → 라벨로 해석해 표시한다.
+                salePaymentMethod = paymentMethodLabel,
                 saleReservationChannel = channelLabel,
                 createdAt = r.createdAt,
                 updatedAt = r.updatedAt,

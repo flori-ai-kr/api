@@ -68,6 +68,17 @@ class CustomerServiceIntegrationTest {
             ),
         ).id!!
 
+    /** 시드된 매출 결제수단 value → label_settings id. */
+    private fun payId(value: String): Long =
+        requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
+                TenantContext.currentUserId(),
+                LabelDomains.SALE,
+                LabelKinds.PAYMENT,
+                value,
+            ),
+        ).id!!
+
     private fun create(
         name: String = "홍길동",
         phone: String = "01012345678",
@@ -173,7 +184,7 @@ class CustomerServiceIntegrationTest {
         date = date,
         categoryId = catId("basic_bouquet"),
         amount = amount,
-        paymentMethod = "cash",
+        paymentMethodId = payId("cash"),
         customerId = customerId,
     )
 }

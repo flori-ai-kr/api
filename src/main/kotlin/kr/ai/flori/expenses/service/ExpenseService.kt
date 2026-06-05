@@ -37,11 +37,12 @@ class ExpenseService(
                 expenseRepository.findByUserIdAndDateBetweenOrderByDateDesc(userId, range.first, range.second)
             }
         val catMap = categoryLabels()
-        return expenses.map { toResponse(it, catMap) }
+        val payMap = paymentLabels()
+        return expenses.map { toResponse(it, catMap, payMap) }
     }
 
     @Transactional(readOnly = true)
-    fun get(id: Long): ExpenseResponse = toResponse(load(id), categoryLabels())
+    fun get(id: Long): ExpenseResponse = toResponse(load(id), categoryLabels(), paymentLabels())
 
     @Transactional(readOnly = true)
     fun suggestions(): ExpenseSuggestionsResponse {
@@ -58,6 +59,8 @@ class ExpenseService(
         val unitPrice = requireNotNull(request.unitPrice)
         val categoryId =
             labelReader.requireOwned(requireNotNull(request.categoryId), LabelDomains.EXPENSE, LabelKinds.CATEGORY)
+        val paymentMethodId =
+            labelReader.requireOwned(requireNotNull(request.paymentMethodId), LabelDomains.EXPENSE, LabelKinds.PAYMENT)
         val expense =
             Expense(
                 userId = TenantContext.currentUserId(),
@@ -67,12 +70,12 @@ class ExpenseService(
                 unitPrice = unitPrice,
                 quantity = request.quantity,
                 totalAmount = unitPrice * request.quantity,
-                paymentMethod = requireNotNull(request.paymentMethod),
+                paymentMethodId = paymentMethodId,
             )
         expense.cardCompany = request.cardCompany
         expense.vendor = request.vendor
         expense.memo = request.memo
-        return toResponse(expenseRepository.save(expense), categoryLabels())
+        return toResponse(expenseRepository.save(expense), categoryLabels(), paymentLabels())
     }
 
     @Transactional
@@ -88,12 +91,14 @@ class ExpenseService(
         }
         request.unitPrice?.let { expense.unitPrice = it }
         request.quantity?.let { expense.quantity = it }
-        request.paymentMethod?.let { expense.paymentMethod = it }
+        request.paymentMethodId?.let {
+            expense.paymentMethodId = labelReader.requireOwned(it, LabelDomains.EXPENSE, LabelKinds.PAYMENT)
+        }
         request.cardCompany?.let { expense.cardCompany = it }
         request.vendor?.let { expense.vendor = it }
         request.memo?.let { expense.memo = it }
         expense.totalAmount = expense.unitPrice * expense.quantity
-        return toResponse(expenseRepository.save(expense), categoryLabels())
+        return toResponse(expenseRepository.save(expense), categoryLabels(), paymentLabels())
     }
 
     @Transactional
@@ -103,10 +108,13 @@ class ExpenseService(
 
     private fun categoryLabels(): Map<Long, String> = labelReader.labelMap(LabelDomains.EXPENSE, LabelKinds.CATEGORY)
 
+    private fun paymentLabels(): Map<Long, String> = labelReader.labelMap(LabelDomains.EXPENSE, LabelKinds.PAYMENT)
+
     private fun toResponse(
         e: Expense,
         catMap: Map<Long, String>,
-    ): ExpenseResponse = ExpenseResponse.from(e, e.categoryId?.let { catMap[it] })
+        payMap: Map<Long, String>,
+    ): ExpenseResponse = ExpenseResponse.from(e, e.categoryId?.let { catMap[it] }, e.paymentMethodId?.let { payMap[it] })
 
     private fun load(id: Long): Expense =
         expenseRepository.findByIdAndUserId(id, TenantContext.currentUserId())

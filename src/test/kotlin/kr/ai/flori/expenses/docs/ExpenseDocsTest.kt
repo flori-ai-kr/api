@@ -32,9 +32,8 @@ class ExpenseDocsTest : RestDocsSupport() {
             fieldWithPath("totalAmount")
                 .type(JsonFieldType.NUMBER)
                 .description("[서버 계산 SSOT] 총액 = 단가 × 수량"),
-            fieldWithPath("paymentMethod")
-                .type(JsonFieldType.STRING)
-                .description("결제방식. cash | card | transfer | naverpay | kakaopay"),
+            fieldWithPath("paymentMethodId").type(JsonFieldType.NUMBER).optional().description("결제수단 ID (null 가능)"),
+            fieldWithPath("paymentMethodLabel").type(JsonFieldType.STRING).optional().description("결제수단 이름 (null 가능)"),
             fieldWithPath("cardCompany")
                 .type(JsonFieldType.STRING)
                 .optional()
@@ -73,7 +72,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                                 "categoryId" to expenseCategoryId(token),
                                 "unitPrice" to 5_000,
                                 "quantity" to 3,
-                                "paymentMethod" to "card",
+                                "paymentMethodId" to expensePaymentId(token),
                                 "cardCompany" to "신한카드",
                                 "vendor" to "양재 꽃시장",
                             ),
@@ -101,7 +100,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                             "categoryId" to expenseCategoryId(token),
                             "unitPrice" to 5_000,
                             "quantity" to 3,
-                            "paymentMethod" to "card",
+                            "paymentMethodId" to expensePaymentId(token),
                             "cardCompany" to "신한카드",
                             "vendor" to "양재 꽃시장",
                             "memo" to "웨딩 준비",
@@ -134,9 +133,9 @@ class ExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("수량 (기본값 1, 1 이상)"),
-                                fieldWithPath("paymentMethod")
-                                    .type(JsonFieldType.STRING)
-                                    .description("결제방식. cash | card | transfer | naverpay | kakaopay (필수)"),
+                                fieldWithPath("paymentMethodId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .description("결제수단 ID (필수)"),
                                 fieldWithPath("cardCompany")
                                     .type(JsonFieldType.STRING)
                                     .optional()
@@ -189,9 +188,14 @@ class ExpenseDocsTest : RestDocsSupport() {
                                 fieldWithPath("[].totalAmount")
                                     .type(JsonFieldType.NUMBER)
                                     .description("[서버 계산 SSOT] 총액 = 단가 × 수량"),
-                                fieldWithPath("[].paymentMethod")
+                                fieldWithPath("[].paymentMethodId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("결제수단 ID"),
+                                fieldWithPath("[].paymentMethodLabel")
                                     .type(JsonFieldType.STRING)
-                                    .description("결제방식"),
+                                    .optional()
+                                    .description("결제수단 이름"),
                                 fieldWithPath("[].cardCompany")
                                     .type(JsonFieldType.STRING)
                                     .optional()
@@ -301,8 +305,8 @@ class ExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("수량 변경 (1 이상)"),
-                                fieldWithPath("paymentMethod")
-                                    .type(JsonFieldType.STRING)
+                                fieldWithPath("paymentMethodId")
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("결제방식 변경. cash | card | transfer | naverpay | kakaopay"),
                                 fieldWithPath("cardCompany")

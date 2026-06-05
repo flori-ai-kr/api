@@ -52,12 +52,20 @@ class ExpenseServiceIntegrationTest {
     }
 
     /** 시드된 지출 카테고리 value → label_settings id. */
-    private fun catId(value: String): Long =
+    private fun catId(value: String): Long = expLabelId(LabelKinds.CATEGORY, value)
+
+    /** 시드된 지출 결제수단 value → label_settings id. */
+    private fun payId(value: String): Long = expLabelId(LabelKinds.PAYMENT, value)
+
+    private fun expLabelId(
+        kind: String,
+        value: String,
+    ): Long =
         requireNotNull(
             labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
                 TenantContext.currentUserId(),
                 LabelDomains.EXPENSE,
-                LabelKinds.CATEGORY,
+                kind,
                 value,
             ),
         ).id!!
@@ -72,7 +80,7 @@ class ExpenseServiceIntegrationTest {
         categoryId = catId("flower_purchase"),
         unitPrice = unitPrice,
         quantity = quantity,
-        paymentMethod = "card",
+        paymentMethodId = payId("card"),
         vendor = "양재 꽃시장",
     )
 

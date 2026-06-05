@@ -140,7 +140,7 @@ CREATE TABLE recurring_expenses (
   category_id BIGINT,
   unit_price INTEGER NOT NULL CHECK (unit_price >= 0),
   quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
-  payment_method VARCHAR(20) NOT NULL,
+  payment_method_id BIGINT,
   vendor TEXT,
   memo TEXT,
   frequency VARCHAR(10) NOT NULL CHECK (frequency IN ('weekly', 'monthly', 'yearly')),
@@ -199,8 +199,7 @@ CREATE TABLE sales (
   date DATE NOT NULL,
   category_id BIGINT,
   amount INTEGER NOT NULL,
-  payment_method VARCHAR(20) NOT NULL
-    CHECK (payment_method IN ('cash', 'card', 'transfer', 'naverpay', 'kakaopay', 'unpaid')),
+  payment_method_id BIGINT,
   channel_id BIGINT,
   customer_name VARCHAR(100),
   customer_phone VARCHAR(20),
@@ -214,7 +213,7 @@ CREATE TABLE sales (
 
 CREATE INDEX idx_sales_date ON sales(date);
 CREATE INDEX idx_sales_customer_id ON sales(customer_id);
-CREATE INDEX idx_sales_payment_method ON sales(payment_method);
+CREATE INDEX idx_sales_payment_method_id ON sales(payment_method_id);
 CREATE INDEX idx_sales_category_id ON sales(category_id);
 CREATE INDEX idx_sales_channel_id ON sales(channel_id);
 CREATE INDEX idx_sales_user_id ON sales(user_id);
@@ -234,8 +233,7 @@ CREATE TABLE expenses (
   unit_price INTEGER NOT NULL,
   quantity INTEGER DEFAULT 1,
   total_amount INTEGER NOT NULL,
-  payment_method VARCHAR(20) NOT NULL
-    CHECK (payment_method IN ('cash', 'card', 'transfer', 'naverpay', 'kakaopay')),
+  payment_method_id BIGINT,
   card_company VARCHAR(50),
   vendor VARCHAR(100),
   memo TEXT,

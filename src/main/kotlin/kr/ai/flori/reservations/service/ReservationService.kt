@@ -58,6 +58,7 @@ class ReservationService(
         val purchaseCounts = customerService.purchaseCountsByCustomer()
         val catMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.CATEGORY)
         val chMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.CHANNEL)
+        val payMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.PAYMENT)
 
         return reservations.map { r ->
             val sale = r.saleId?.let { salesById[it] }
@@ -68,6 +69,7 @@ class ReservationService(
                 purchaseCount,
                 sale?.categoryId?.let { catMap[it] },
                 sale?.channelId?.let { chMap[it] },
+                sale?.paymentMethodId?.let { payMap[it] },
             )
         }
     }

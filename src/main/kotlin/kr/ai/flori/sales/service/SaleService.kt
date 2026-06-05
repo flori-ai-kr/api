@@ -1,6 +1,5 @@
 package kr.ai.flori.sales.service
 
-import kr.ai.flori.common.domain.PaymentMethods
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
@@ -29,7 +28,8 @@ import java.time.LocalDate
 
 /**
  * 매출 서비스. 모든 조회/변경은 TenantContext의 userId로 격리(멀티테넌시 HARD).
- * 카테고리/채널은 label_settings.id 간접참조 — 쓰기 시 소유권 검증, 응답 시 id→label 해석.
+ * 카테고리/결제수단/채널은 label_settings.id 간접참조 — 쓰기 시 소유권 검증, 응답 시 id→label 해석.
+ * 미수는 payment_method_id=NULL + is_unpaid=true 로 표현한다(결제수단 값 'unpaid' 폐지).
  */
 @Service
 class SaleService(
@@ -49,7 +49,7 @@ class SaleService(
         offset: Int,
         limit: Int,
         categories: List<Long>?,
-        payments: List<String>?,
+        payments: List<Long>?,
         channels: List<Long>?,
         search: String?,
     ): SalesPageResponse {
@@ -71,17 +71,16 @@ class SaleService(
                     .associate { card -> card.saleId!! to card.photos.map { it.url } }
             }
 
-        val catMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.CATEGORY)
-        val chMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.CHANNEL)
+        val labels = saleLabels()
         return SalesPageResponse(
-            page.content.map { sale -> toResponse(sale, catMap, chMap, photosBySaleId[sale.id] ?: emptyList()) },
+            page.content.map { sale -> toResponse(sale, labels, photosBySaleId[sale.id] ?: emptyList()) },
             page.hasNext(),
         )
     }
 
     /**
      * 매출 요약(페이지네이션 무관 전체 합산). GET /sales 와 동일한 필터 규약으로 DB 집계(SUM/FILTER).
-     * total/count는 전체(미수·kakaopay 포함), 명세 버킷(card/naverpay/transfer/cash)은 해당 결제수단만.
+     * total/count는 전체(미수 포함), 명세 버킷(card/naverpay/transfer/cash)은 결제수단 라벨 value 기준.
      */
     @Suppress("LongParameterList")
     @Transactional(readOnly = true)
@@ -90,7 +89,7 @@ class SaleService(
         startDate: String?,
         endDate: String?,
         categories: List<Long>?,
-        payments: List<String>?,
+        payments: List<Long>?,
         channels: List<Long>?,
         search: String?,
     ): SalesSummaryResponse {
@@ -123,28 +122,28 @@ class SaleService(
         startDate: String?,
         endDate: String?,
         categories: List<Long>?,
-        payments: List<String>?,
+        payments: List<Long>?,
         channels: List<Long>?,
         search: String?,
     ) {
         if (!startDate.isNullOrBlank() && !endDate.isNullOrBlank()) {
-            sql.append(" AND date BETWEEN ? AND ?")
+            sql.append(" AND s.date BETWEEN ? AND ?")
             params.add(Date.valueOf(LocalDate.parse(startDate)))
             params.add(Date.valueOf(LocalDate.parse(endDate)))
         } else {
             monthRange(month)?.let { (start, end) ->
-                sql.append(" AND date BETWEEN ? AND ?")
+                sql.append(" AND s.date BETWEEN ? AND ?")
                 params.add(Date.valueOf(start))
                 params.add(Date.valueOf(end))
             }
         }
-        appendInClause(sql, params, "category_id", categories)
-        appendInClause(sql, params, "payment_method", payments)
-        appendInClause(sql, params, "channel_id", channels)
+        appendInClause(sql, params, "s.category_id", categories)
+        appendInClause(sql, params, "s.payment_method_id", payments)
+        appendInClause(sql, params, "s.channel_id", channels)
         if (!search.isNullOrBlank()) {
             val pattern = "%${search.lowercase().replace("%", "\\%").replace("_", "\\_")}%"
             sql.append(
-                " AND (lower(customer_name) LIKE ? OR lower(memo) LIKE ?)",
+                " AND (lower(s.customer_name) LIKE ? OR lower(s.memo) LIKE ?)",
             )
             repeat(SEARCH_FIELD_COUNT) { params.add(pattern) }
         }
@@ -177,25 +176,30 @@ class SaleService(
     @Transactional
     fun create(request: SaleCreateRequest): SaleResponse {
         val userId = TenantContext.currentUserId()
-        val paymentMethod = requireValidPaymentMethod(requireNotNull(request.paymentMethod), allowUnpaid = true)
         val categoryId = labelReader.requireOwned(requireNotNull(request.categoryId), LabelDomains.SALE, LabelKinds.CATEGORY)
         val date = requireNotNull(request.date)
         val amount = requireNotNull(request.amount)
         request.customerId?.let { verifyCustomerOwnership(userId, it) }
 
-        val isUnpaid = paymentMethod == PaymentMethods.UNPAID
+        // 미수면 결제수단 미지정(NULL), 아니면 결제수단 id 필수·소유권 검증.
+        val paymentMethodId =
+            if (request.isUnpaid) {
+                null
+            } else {
+                labelReader.requireOwned(requirePaymentId(request.paymentMethodId), LabelDomains.SALE, LabelKinds.PAYMENT)
+            }
         val sale =
             Sale(
                 userId = userId,
                 date = date,
                 categoryId = categoryId,
                 amount = amount,
-                paymentMethod = paymentMethod,
+                paymentMethodId = paymentMethodId,
             )
         sale.channelId =
             request.channelId?.let { labelReader.requireOwned(it, LabelDomains.SALE, LabelKinds.CHANNEL) }
                 ?: labelReader.defaultSaleChannelId()
-        sale.isUnpaid = isUnpaid
+        sale.isUnpaid = request.isUnpaid
         sale.customerName = request.customerName
         sale.customerPhone = request.customerPhone
         sale.customerId = request.customerId
@@ -210,7 +214,7 @@ class SaleService(
     ): SaleResponse {
         val userId = TenantContext.currentUserId()
         val sale = load(id)
-        request.paymentMethod?.let { sale.paymentMethod = requireValidPaymentMethod(it, allowUnpaid = true) }
+        request.paymentMethodId?.let { sale.paymentMethodId = labelReader.requireOwned(it, LabelDomains.SALE, LabelKinds.PAYMENT) }
         request.date?.let { sale.date = it }
         request.amount?.let { sale.amount = it }
         request.categoryId?.let { sale.categoryId = labelReader.requireOwned(it, LabelDomains.SALE, LabelKinds.CATEGORY) }
@@ -230,11 +234,12 @@ class SaleService(
     @Transactional
     fun completeUnpaid(
         id: Long,
-        paymentMethod: String,
+        paymentMethodId: Long,
     ): SaleResponse {
         val sale = load(id)
         if (!sale.isUnpaid) throw AppException(CommonErrorCode.VALIDATION, "미수 매출이 아닙니다")
-        sale.paymentMethod = requireValidPaymentMethod(paymentMethod, allowUnpaid = false)
+        // 미수 완료: 실제 결제수단 확정(미수 마커 is_unpaid는 유지 — '미수였던 건' 추적용)
+        sale.paymentMethodId = labelReader.requireOwned(paymentMethodId, LabelDomains.SALE, LabelKinds.PAYMENT)
         return single(saleRepository.save(sale))
     }
 
@@ -242,7 +247,7 @@ class SaleService(
     fun revertUnpaid(id: Long): SaleResponse {
         val sale = load(id)
         if (!sale.isUnpaid) throw AppException(CommonErrorCode.VALIDATION, "미수 매출이 아닙니다")
-        sale.paymentMethod = PaymentMethods.UNPAID
+        sale.paymentMethodId = null
         return single(saleRepository.save(sale))
     }
 
@@ -255,26 +260,35 @@ class SaleService(
         saleRepository.delete(sale)
     }
 
-    /** 단건 응답 — 현재 테넌트의 카테고리/채널 라벨을 해석해 채운다. */
-    private fun single(sale: Sale): SaleResponse =
-        toResponse(
-            sale,
-            labelReader.labelMap(LabelDomains.SALE, LabelKinds.CATEGORY),
-            labelReader.labelMap(LabelDomains.SALE, LabelKinds.CHANNEL),
-        )
+    /** 단건 응답 — 현재 테넌트의 카테고리/결제수단/채널 라벨을 해석해 채운다. */
+    private fun single(sale: Sale): SaleResponse = toResponse(sale, saleLabels())
 
     private fun toResponse(
         sale: Sale,
-        catMap: Map<Long, String>,
-        chMap: Map<Long, String>,
+        labels: SaleLabels,
         photos: List<String> = emptyList(),
     ): SaleResponse =
         SaleResponse.from(
             sale,
-            sale.categoryId?.let { catMap[it] },
-            sale.channelId?.let { chMap[it] },
+            sale.categoryId?.let { labels.categories[it] },
+            sale.paymentMethodId?.let { labels.payments[it] },
+            sale.channelId?.let { labels.channels[it] },
             photos,
         )
+
+    /** 현재 테넌트의 매출 라벨(카테고리·결제수단·채널) id→label 맵 묶음. */
+    private fun saleLabels(): SaleLabels =
+        SaleLabels(
+            labelReader.labelMap(LabelDomains.SALE, LabelKinds.CATEGORY),
+            labelReader.labelMap(LabelDomains.SALE, LabelKinds.PAYMENT),
+            labelReader.labelMap(LabelDomains.SALE, LabelKinds.CHANNEL),
+        )
+
+    private data class SaleLabels(
+        val categories: Map<Long, String>,
+        val payments: Map<Long, String>,
+        val channels: Map<Long, String>,
+    )
 
     private fun load(id: Long): Sale =
         saleRepository.findByIdAndUserId(id, TenantContext.currentUserId())
@@ -290,32 +304,29 @@ class SaleService(
         }
     }
 
-    private fun requireValidPaymentMethod(
-        value: String,
-        allowUnpaid: Boolean,
-    ): String {
-        val allowed = if (allowUnpaid) PaymentMethods.SALE else PaymentMethods.SALE - PaymentMethods.UNPAID
-        if (value !in allowed) throw AppException(CommonErrorCode.VALIDATION, "올바르지 않은 결제방식입니다")
-        return value
-    }
+    private fun requirePaymentId(id: Long?): Long = id ?: throw AppException(CommonErrorCode.VALIDATION, "결제방식은 필수입니다(미수가 아니면 결제수단을 지정하세요)")
 
     private companion object {
         /** summary 검색 패턴이 적용되는 컬럼 수(customer_name·memo). */
         const val SEARCH_FIELD_COUNT = 2
 
         /** appendInClause가 SQL에 직접 끼워 넣어도 안전한 컬럼 화이트리스트(식별자 주입 방어). */
-        val ALLOWED_SUMMARY_COLUMNS = setOf("category_id", "payment_method", "channel_id")
+        val ALLOWED_SUMMARY_COLUMNS = setOf("s.category_id", "s.payment_method_id", "s.channel_id")
         val EMPTY_SUMMARY = SalesSummaryResponse(0, 0, 0, 0, 0, 0)
+
+        // 고정 버킷(card/naverpay/transfer/cash)은 결제수단 라벨의 value 로 매핑(label_settings JOIN).
+        // total/cnt 는 전체(미수 포함), 버킷은 해당 value 만 합산.
         val SUMMARY_SELECT =
             """
             SELECT
-              COALESCE(SUM(amount), 0) AS total,
-              COALESCE(SUM(amount) FILTER (WHERE payment_method = 'card'), 0) AS card,
-              COALESCE(SUM(amount) FILTER (WHERE payment_method = 'naverpay'), 0) AS naverpay,
-              COALESCE(SUM(amount) FILTER (WHERE payment_method = 'transfer'), 0) AS transfer,
-              COALESCE(SUM(amount) FILTER (WHERE payment_method = 'cash'), 0) AS cash,
+              COALESCE(SUM(s.amount), 0) AS total,
+              COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'card'), 0) AS card,
+              COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'naverpay'), 0) AS naverpay,
+              COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'transfer'), 0) AS transfer,
+              COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'cash'), 0) AS cash,
               COUNT(*) AS cnt
-            FROM sales WHERE user_id = ?::bigint
+            FROM sales s LEFT JOIN label_settings ls ON ls.id = s.payment_method_id
+            WHERE s.user_id = ?::bigint
             """.trimIndent()
     }
 }

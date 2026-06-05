@@ -23,8 +23,8 @@ class Sale(
     var categoryId: Long?,
     @Column(name = "amount", nullable = false)
     var amount: Int,
-    @Column(name = "payment_method", nullable = false)
-    var paymentMethod: String,
+    @Column(name = "payment_method_id")
+    var paymentMethodId: Long?,
 ) : BaseEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -74,13 +74,14 @@ class DashboardService(
         jdbcTemplate.queryForObject(
             """
             SELECT
-              COALESCE(SUM(amount) FILTER (WHERE payment_method <> 'unpaid'), 0) AS total,
-              COALESCE(SUM(amount) FILTER (WHERE payment_method = 'card'), 0) AS card,
-              COALESCE(SUM(amount) FILTER (WHERE payment_method = 'cash'), 0) AS cash,
-              COALESCE(SUM(amount) FILTER (WHERE payment_method = 'transfer'), 0) AS transfer,
-              COALESCE(SUM(amount) FILTER (WHERE payment_method = 'naverpay'), 0) AS naverpay,
-              COALESCE(SUM(amount) FILTER (WHERE payment_method = 'kakaopay'), 0) AS kakaopay
-            FROM sales WHERE user_id = ?::bigint AND date BETWEEN ? AND ?
+              COALESCE(SUM(s.amount) FILTER (WHERE s.payment_method_id IS NOT NULL), 0) AS total,
+              COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'card'), 0) AS card,
+              COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'cash'), 0) AS cash,
+              COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'transfer'), 0) AS transfer,
+              COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'naverpay'), 0) AS naverpay,
+              COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'kakaopay'), 0) AS kakaopay
+            FROM sales s LEFT JOIN label_settings ls ON ls.id = s.payment_method_id
+            WHERE s.user_id = ?::bigint AND s.date BETWEEN ? AND ?
             """.trimIndent(),
             { rs, _ ->
                 DashboardSummary(
@@ -118,7 +119,7 @@ class DashboardService(
         val rows =
             jdbcTemplate.query(
                 "SELECT category_id AS cid, COUNT(*) AS cnt, SUM(amount) AS amount " +
-                    "FROM sales WHERE user_id = ?::bigint AND date BETWEEN ? AND ? AND payment_method <> 'unpaid' " +
+                    "FROM sales WHERE user_id = ?::bigint AND date BETWEEN ? AND ? AND payment_method_id IS NOT NULL " +
                     "GROUP BY category_id ORDER BY amount DESC",
                 { rs, _ -> Triple(rs.getLong("cid").takeUnless { rs.wasNull() }, rs.getLong("cnt"), rs.getLong("amount")) },
                 userId,
@@ -139,17 +140,18 @@ class DashboardService(
     ): List<PaymentMethodStat> {
         val rows =
             jdbcTemplate.query(
-                "SELECT payment_method AS m, COUNT(*) AS cnt, SUM(amount) AS amount " +
-                    "FROM sales WHERE user_id = ?::bigint AND date BETWEEN ? AND ? AND payment_method <> 'unpaid' " +
-                    "GROUP BY payment_method ORDER BY amount DESC",
-                { rs, _ -> Triple(rs.getString("m"), rs.getLong("cnt"), rs.getLong("amount")) },
+                "SELECT payment_method_id AS pid, COUNT(*) AS cnt, SUM(amount) AS amount " +
+                    "FROM sales WHERE user_id = ?::bigint AND date BETWEEN ? AND ? AND payment_method_id IS NOT NULL " +
+                    "GROUP BY payment_method_id ORDER BY amount DESC",
+                { rs, _ -> Triple(rs.getLong("pid").takeUnless { rs.wasNull() }, rs.getLong("cnt"), rs.getLong("amount")) },
                 userId,
                 Date.valueOf(start),
                 Date.valueOf(end),
             )
+        val labels = labelReader.labelMap(LabelDomains.SALE, LabelKinds.PAYMENT)
         val total = rows.sumOf { it.third }
         return rows.map {
-            PaymentMethodStat(it.first, PAYMENT_LABELS[it.first] ?: it.first, it.second, it.third, percentage(it.third, total))
+            PaymentMethodStat(it.first, it.first?.let { id -> labels[id] } ?: ETC, it.second, it.third, percentage(it.third, total))
         }
     }
 
@@ -161,7 +163,7 @@ class DashboardService(
         val rows =
             jdbcTemplate.query(
                 "SELECT channel_id AS cid, COUNT(*) AS cnt, SUM(amount) AS amount " +
-                    "FROM sales WHERE user_id = ?::bigint AND date BETWEEN ? AND ? AND payment_method <> 'unpaid' " +
+                    "FROM sales WHERE user_id = ?::bigint AND date BETWEEN ? AND ? AND payment_method_id IS NOT NULL " +
                     "GROUP BY channel_id ORDER BY amount DESC",
                 { rs, _ -> Triple(rs.getLong("cid").takeUnless { rs.wasNull() }, rs.getLong("cnt"), rs.getLong("amount")) },
                 userId,
@@ -237,7 +239,5 @@ class DashboardService(
         /** id가 null인(설정에서 삭제됐거나 미지정) 집계 버킷의 표시 라벨. */
         const val ETC = "기타"
         val EMPTY_SUMMARY = DashboardSummary(0, 0, 0, 0, 0, 0)
-        val PAYMENT_LABELS =
-            mapOf("card" to "카드", "cash" to "현금", "transfer" to "계좌이체", "naverpay" to "네이버페이", "kakaopay" to "카카오페이")
     }
 }

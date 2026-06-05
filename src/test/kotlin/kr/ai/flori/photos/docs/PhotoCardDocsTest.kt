@@ -246,7 +246,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                                 "date" to "2026-05-22",
                                 "categoryId" to saleCategoryId(token),
                                 "amount" to 50_000,
-                                "paymentMethod" to "cash",
+                                "paymentMethodId" to salePaymentId(token),
                             ),
                         )
                 }.andReturn()
@@ -287,7 +287,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                                 "date" to "2026-05-22",
                                 "categoryId" to saleCategoryId(token),
                                 "amount" to 50_000,
-                                "paymentMethod" to "cash",
+                                "paymentMethodId" to salePaymentId(token),
                             ),
                         )
                 }.andReturn()

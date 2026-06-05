@@ -81,9 +81,14 @@ class CustomerDocsTest : RestDocsSupport() {
                 .optional()
                 .description("상품 카테고리 이름 (null 가능)"),
             fieldWithPath("sales[].amount").type(JsonFieldType.NUMBER).description("결제 금액(원)"),
-            fieldWithPath("sales[].paymentMethod")
+            fieldWithPath("sales[].paymentMethodId")
+                .type(JsonFieldType.NUMBER)
+                .optional()
+                .description("결제수단 ID (미수면 null)"),
+            fieldWithPath("sales[].paymentMethodLabel")
                 .type(JsonFieldType.STRING)
-                .description("결제방식"),
+                .optional()
+                .description("결제수단 이름 (미수면 null)"),
             fieldWithPath("sales[].channelId")
                 .type(JsonFieldType.NUMBER)
                 .optional()
@@ -151,7 +156,7 @@ class CustomerDocsTest : RestDocsSupport() {
                             "date" to "2026-05-22",
                             "categoryId" to saleCategoryId(token),
                             "amount" to 50_000,
-                            "paymentMethod" to "cash",
+                            "paymentMethodId" to salePaymentId(token),
                             "customerId" to customerId,
                         ),
                     )

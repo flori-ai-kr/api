@@ -87,12 +87,23 @@ class SaleServiceIntegrationTest {
             ),
         ).id!!
 
+    /** 시드된 매출 결제수단 value → label_settings id. */
+    private fun payId(value: String): Long =
+        requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
+                TenantContext.currentUserId(),
+                LabelDomains.SALE,
+                LabelKinds.PAYMENT,
+                value,
+            ),
+        ).id!!
+
     private fun cardSale(date: LocalDate = LocalDate.of(2026, 5, 22)) =
         SaleCreateRequest(
             date = date,
             categoryId = catId("basic_bouquet"),
             amount = 100_000,
-            paymentMethod = "card",
+            paymentMethodId = payId("card"),
         )
 
     @Test
@@ -100,7 +111,7 @@ class SaleServiceIntegrationTest {
         newTenant()
         val sale = saleService.create(cardSale())
 
-        assertThat(sale.paymentMethod).isEqualTo("card")
+        assertThat(sale.paymentMethodId).isEqualTo(payId("card"))
         assertThat(sale.amount).isEqualTo(100_000)
         assertThat(sale.isUnpaid).isFalse()
     }
@@ -110,9 +121,9 @@ class SaleServiceIntegrationTest {
         newTenant()
         val sale =
             saleService.create(
-                SaleCreateRequest(LocalDate.of(2026, 5, 22), catId("vase"), 30_000, "cash"),
+                SaleCreateRequest(LocalDate.of(2026, 5, 22), catId("vase"), 30_000, payId("cash")),
             )
-        assertThat(sale.paymentMethod).isEqualTo("cash")
+        assertThat(sale.paymentMethodId).isEqualTo(payId("cash"))
         assertThat(sale.isUnpaid).isFalse()
     }
 
@@ -121,34 +132,36 @@ class SaleServiceIntegrationTest {
         newTenant()
         val unpaid =
             saleService.create(
-                SaleCreateRequest(LocalDate.of(2026, 5, 22), catId("reservation"), 50_000, "unpaid"),
+                SaleCreateRequest(LocalDate.of(2026, 5, 22), catId("reservation"), 50_000, null, isUnpaid = true),
             )
         assertThat(unpaid.isUnpaid).isTrue()
+        assertThat(unpaid.paymentMethodId).isNull()
 
-        val completed = saleService.completeUnpaid(unpaid.id, "card")
-        assertThat(completed.paymentMethod).isEqualTo("card")
+        val completed = saleService.completeUnpaid(unpaid.id, payId("card"))
+        assertThat(completed.paymentMethodId).isEqualTo(payId("card"))
         assertThat(completed.isUnpaid).isTrue() // 마커 유지
 
         val reverted = saleService.revertUnpaid(unpaid.id)
-        assertThat(reverted.paymentMethod).isEqualTo("unpaid")
+        assertThat(reverted.paymentMethodId).isNull()
+        assertThat(reverted.isUnpaid).isTrue()
     }
 
     @Test
     fun `미수가 아닌 매출의 완료 시도는 거부된다`() {
         newTenant()
         val sale = saleService.create(cardSale())
-        assertThatThrownBy { saleService.completeUnpaid(sale.id, "cash") }
+        assertThatThrownBy { saleService.completeUnpaid(sale.id, payId("cash")) }
             .isInstanceOf(AppException::class.java)
     }
 
     @Test
     fun `목록은 다중선택 필터와 무한스크롤을 지원한다`() {
         newTenant()
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 1), catId("vase"), 1_000, "cash"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 2), catId("basket"), 2_000, "card"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 3), catId("vase"), 3_000, "transfer"))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 1), catId("vase"), 1_000, payId("cash")))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 2), catId("basket"), 2_000, payId("card")))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 3), catId("vase"), 3_000, payId("transfer")))
 
-        val cashOnly = saleService.list(null, null, null, 0, 100, null, listOf("cash"), null, null)
+        val cashOnly = saleService.list(null, null, null, 0, 100, null, listOf(payId("cash")), null, null)
         assertThat(cashOnly.sales).hasSize(1)
 
         val vaseCategory = saleService.list(null, null, null, 0, 100, listOf(catId("vase")), null, null, null)
@@ -165,11 +178,13 @@ class SaleServiceIntegrationTest {
     @Test
     fun `요약은 DB 집계로 결제수단별 합계와 전체(미수 포함)를 계산하고 동일 필터를 지원한다`() {
         newTenant()
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 1), catId("vase"), 1_000, "card", customerName = "김하늘"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 2), catId("basket"), 2_000, "cash"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 3), catId("vase"), 3_000, "transfer"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 4), catId("vase"), 4_000, "naverpay"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 5), catId("vase"), 5_000, "unpaid"))
+        saleService.create(
+            SaleCreateRequest(LocalDate.of(2026, 5, 1), catId("vase"), 1_000, payId("card"), customerName = "김하늘"),
+        )
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 2), catId("basket"), 2_000, payId("cash")))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 3), catId("vase"), 3_000, payId("transfer")))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 4), catId("vase"), 4_000, payId("naverpay")))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 5), catId("vase"), 5_000, null, isUnpaid = true))
 
         // 전체: total/count는 미수 포함, 버킷은 결제수단별
         val all = saleService.summary("2026-05", null, null, null, null, null, null)
@@ -181,7 +196,7 @@ class SaleServiceIntegrationTest {
         assertThat(all.count).isEqualTo(5L)
 
         // 결제수단 IN
-        val cardOnly = saleService.summary("2026-05", null, null, null, listOf("card"), null, null)
+        val cardOnly = saleService.summary("2026-05", null, null, null, listOf(payId("card")), null, null)
         assertThat(cardOnly.total).isEqualTo(1_000L)
         assertThat(cardOnly.count).isEqualTo(1L)
 

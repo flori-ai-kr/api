@@ -74,6 +74,17 @@ class RecurringExpenseServiceIntegrationTest {
             ),
         ).id!!
 
+    /** 시드된 지출 결제수단 value → label_settings id. */
+    private fun payId(value: String): Long =
+        requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
+                TenantContext.currentUserId(),
+                LabelDomains.EXPENSE,
+                LabelKinds.PAYMENT,
+                value,
+            ),
+        ).id!!
+
     private fun newTenant(): Long {
         val email = "rec-${UUID.randomUUID()}@flori.dev"
         TestAccounts.register(authService, tokenProvider, email)
@@ -89,7 +100,7 @@ class RecurringExpenseServiceIntegrationTest {
                 categoryId = catId("rent"),
                 unitPrice = 500_000,
                 quantity = 1,
-                paymentMethod = "transfer",
+                paymentMethodId = payId("transfer"),
                 frequency = "monthly",
                 daysOfMonth = listOf(day),
                 startDate = LocalDate.of(2026, 1, 1),

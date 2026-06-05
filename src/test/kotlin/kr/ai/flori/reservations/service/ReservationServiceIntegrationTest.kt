@@ -69,6 +69,17 @@ class ReservationServiceIntegrationTest {
             ),
         ).id!!
 
+    /** 시드된 매출 결제수단 value → label_settings id. */
+    private fun payId(value: String): Long =
+        requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
+                TenantContext.currentUserId(),
+                LabelDomains.SALE,
+                LabelKinds.PAYMENT,
+                value,
+            ),
+        ).id!!
+
     private fun create(date: LocalDate = LocalDate.of(2026, 6, 1)) =
         service.create(
             ReservationCreateRequest(
@@ -109,7 +120,7 @@ class ReservationServiceIntegrationTest {
         val sale =
             service.convertToSale(
                 r.id,
-                SaleCreateRequest(LocalDate.of(2026, 6, 1), catId("basic_bouquet"), 50_000, "cash"),
+                SaleCreateRequest(LocalDate.of(2026, 6, 1), catId("basic_bouquet"), 50_000, payId("cash")),
             )
         assertThat(service.get(r.id).saleId).isEqualTo(sale.id)
     }
@@ -123,7 +134,7 @@ class ReservationServiceIntegrationTest {
                     date = LocalDate.of(2026, 6, 1),
                     categoryId = catId("basket"),
                     amount = 30_000,
-                    paymentMethod = "cash",
+                    paymentMethodId = payId("cash"),
                     customerName = "김영희",
                     customerPhone = "01055556666",
                 ),

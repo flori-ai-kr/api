@@ -95,10 +95,16 @@ class CustomerService(
         val pageable = PageRequest.of(page.coerceAtLeast(0), size.coerceIn(1, MAX_PAGE_SIZE), Sort.by(Sort.Order.desc("date")))
         val result = saleRepository.findByUserIdAndCustomerId(userId, customerId, pageable)
         val catMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.CATEGORY)
+        val payMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.PAYMENT)
         val chMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.CHANNEL)
         return SalesPageResponse(
             result.content.map { sale ->
-                SaleResponse.from(sale, sale.categoryId?.let { catMap[it] }, sale.channelId?.let { chMap[it] })
+                SaleResponse.from(
+                    sale,
+                    sale.categoryId?.let { catMap[it] },
+                    sale.paymentMethodId?.let { payMap[it] },
+                    sale.channelId?.let { chMap[it] },
+                )
             },
             result.hasNext(),
         )

@@ -36,7 +36,8 @@ class DashboardDocsTest : RestDocsSupport() {
             fieldWithPath("$prefix.categoryId").type(JsonFieldType.NUMBER).optional().description("상품 카테고리 ID (null 가능)"),
             fieldWithPath("$prefix.categoryLabel").type(JsonFieldType.STRING).optional().description("상품 카테고리 이름 (null 가능)"),
             fieldWithPath("$prefix.amount").type(JsonFieldType.NUMBER).optional().description("결제 금액(원)"),
-            fieldWithPath("$prefix.paymentMethod").type(JsonFieldType.STRING).optional().description("결제방식"),
+            fieldWithPath("$prefix.paymentMethodId").type(JsonFieldType.NUMBER).optional().description("결제수단 ID (미수면 null)"),
+            fieldWithPath("$prefix.paymentMethodLabel").type(JsonFieldType.STRING).optional().description("결제수단 이름 (미수면 null)"),
             fieldWithPath("$prefix.channelId").type(JsonFieldType.NUMBER).optional().description("매출 채널 ID (null 가능)"),
             fieldWithPath("$prefix.channelLabel").type(JsonFieldType.STRING).optional().description("매출 채널 이름 (null 가능)"),
             fieldWithPath("$prefix.customerName").type(JsonFieldType.STRING).optional().description("고객명"),
@@ -98,7 +99,7 @@ class DashboardDocsTest : RestDocsSupport() {
                             "date" to today,
                             "categoryId" to saleCategoryId(token),
                             "amount" to 100_000,
-                            "paymentMethod" to "card",
+                            "paymentMethodId" to salePaymentId(token),
                             "channelId" to saleChannelId(token),
                             "customerPhone" to "01012345678",
                         ),
@@ -116,7 +117,7 @@ class DashboardDocsTest : RestDocsSupport() {
                             "date" to today,
                             "categoryId" to saleCategoryId(token, "vase"),
                             "amount" to 50_000,
-                            "paymentMethod" to "cash",
+                            "paymentMethodId" to salePaymentId(token, "cash"),
                             "channelId" to saleChannelId(token, "phone"),
                         ),
                     )
@@ -135,7 +136,7 @@ class DashboardDocsTest : RestDocsSupport() {
                             "categoryId" to expenseCategoryId(token),
                             "unitPrice" to 5_000,
                             "quantity" to 2,
-                            "paymentMethod" to "card",
+                            "paymentMethodId" to expensePaymentId(token),
                         ),
                     )
             }.andReturn()
@@ -286,8 +287,8 @@ class DashboardDocsTest : RestDocsSupport() {
                                     fieldWithPath("paymentStats")
                                         .type(JsonFieldType.ARRAY)
                                         .description("결제수단별 통계 목록"),
-                                    fieldWithPath("paymentStats[].method")
-                                        .type(JsonFieldType.STRING)
+                                    fieldWithPath("paymentStats[].paymentMethodId")
+                                        .type(JsonFieldType.NUMBER)
                                         .optional()
                                         .description("결제수단 값(식별자)"),
                                     fieldWithPath("paymentStats[].label")

@@ -35,7 +35,7 @@ class SaleController(
         @RequestParam(defaultValue = "0") offset: Int,
         @RequestParam(defaultValue = "100") limit: Int,
         @RequestParam(required = false) category: List<Long>?,
-        @RequestParam(required = false) payment: List<String>?,
+        @RequestParam(required = false) payment: List<Long>?,
         @RequestParam(required = false) channel: List<Long>?,
         @RequestParam(required = false) search: String?,
     ): SalesPageResponse {
@@ -50,7 +50,7 @@ class SaleController(
         @RequestParam(required = false) startDate: String?,
         @RequestParam(required = false) endDate: String?,
         @RequestParam(required = false) category: List<Long>?,
-        @RequestParam(required = false) payment: List<String>?,
+        @RequestParam(required = false) payment: List<Long>?,
         @RequestParam(required = false) channel: List<Long>?,
         @RequestParam(required = false) search: String?,
     ): SalesSummaryResponse = saleService.summary(month, startDate, endDate, category, payment, channel, search)
@@ -79,7 +79,7 @@ class SaleController(
     fun completeUnpaid(
         @PathVariable id: Long,
         @Valid @RequestBody request: CompleteUnpaidRequest,
-    ): SaleResponse = saleService.completeUnpaid(id, requireNotNull(request.paymentMethod))
+    ): SaleResponse = saleService.completeUnpaid(id, requireNotNull(request.paymentMethodId))
 
     @PostMapping("/{id}/revert-unpaid")
     fun revertUnpaid(

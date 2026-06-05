@@ -79,7 +79,8 @@ class ReservationDocsTest : RestDocsSupport() {
                 .optional()
                 .description("상품 카테고리 이름 (null 가능)"),
             fieldWithPath("amount").type(JsonFieldType.NUMBER).description("결제 금액(원)"),
-            fieldWithPath("paymentMethod").type(JsonFieldType.STRING).description("결제방식"),
+            fieldWithPath("paymentMethodId").type(JsonFieldType.NUMBER).optional().description("결제수단 ID (미수면 null)"),
+            fieldWithPath("paymentMethodLabel").type(JsonFieldType.STRING).optional().description("결제수단 이름 (미수면 null)"),
             fieldWithPath("channelId").type(JsonFieldType.NUMBER).optional().description("매출 채널 ID (null 가능)"),
             fieldWithPath("channelLabel").type(JsonFieldType.STRING).optional().description("매출 채널 이름 (null 가능)"),
             fieldWithPath("customerName")
@@ -558,7 +559,7 @@ class ReservationDocsTest : RestDocsSupport() {
                                 "date" to "2026-06-01",
                                 "categoryId" to saleCategoryId(token),
                                 "amount" to 80_000,
-                                "paymentMethod" to "cash",
+                                "paymentMethodId" to salePaymentId(token),
                             ),
                         )
                 }.andReturn()
@@ -825,7 +826,7 @@ class ReservationDocsTest : RestDocsSupport() {
                             "date" to "2026-06-01",
                             "categoryId" to saleCategoryId(token),
                             "amount" to 100_000,
-                            "paymentMethod" to "cash",
+                            "paymentMethodId" to salePaymentId(token),
                         ),
                     )
             }.andExpect { status { isCreated() } }
@@ -849,9 +850,14 @@ class ReservationDocsTest : RestDocsSupport() {
                                 fieldWithPath("amount")
                                     .type(JsonFieldType.NUMBER)
                                     .description("결제 금액(원, 0 이상, 필수)"),
-                                fieldWithPath("paymentMethod")
-                                    .type(JsonFieldType.STRING)
-                                    .description("결제방식. cash | card | transfer | naverpay | kakaopay | unpaid (필수)"),
+                                fieldWithPath("paymentMethodId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("결제수단 ID (isUnpaid=false면 필수)"),
+                                fieldWithPath("isUnpaid")
+                                    .type(JsonFieldType.BOOLEAN)
+                                    .optional()
+                                    .description("미수 여부(체크박스)"),
                                 fieldWithPath("channelId")
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
@@ -897,7 +903,7 @@ class ReservationDocsTest : RestDocsSupport() {
                                 "date" to "2026-06-01",
                                 "categoryId" to saleCategoryId(token, "basket"),
                                 "amount" to 50_000,
-                                "paymentMethod" to "cash",
+                                "paymentMethodId" to salePaymentId(token),
                                 "customerName" to "이민준",
                                 "customerPhone" to "010-9876-5432",
                             ),

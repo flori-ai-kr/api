@@ -40,9 +40,8 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
             fieldWithPath("categoryLabel").type(JsonFieldType.STRING).optional().description("지출 카테고리 이름 (null 가능)"),
             fieldWithPath("unitPrice").type(JsonFieldType.NUMBER).description("단가(원)"),
             fieldWithPath("quantity").type(JsonFieldType.NUMBER).description("수량"),
-            fieldWithPath("paymentMethod")
-                .type(JsonFieldType.STRING)
-                .description("결제방식. cash | card | transfer | naverpay | kakaopay"),
+            fieldWithPath("paymentMethodId").type(JsonFieldType.NUMBER).optional().description("결제수단 ID (null 가능)"),
+            fieldWithPath("paymentMethodLabel").type(JsonFieldType.STRING).optional().description("결제수단 이름 (null 가능)"),
             fieldWithPath("vendor")
                 .type(JsonFieldType.STRING)
                 .optional()
@@ -94,9 +93,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.NUMBER)
                 .optional()
                 .description("수량 (기본값 1, 1 이상)"),
-            fieldWithPath("paymentMethod")
-                .type(JsonFieldType.STRING)
-                .description("결제방식. cash | card | transfer | naverpay | kakaopay (필수)"),
+            fieldWithPath("paymentMethodId").type(JsonFieldType.NUMBER).description("결제수단 ID (필수)"),
             fieldWithPath("vendor")
                 .type(JsonFieldType.STRING)
                 .optional()
@@ -157,7 +154,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                                 "categoryId" to expenseCategoryId(token),
                                 "unitPrice" to 500_000,
                                 "quantity" to 1,
-                                "paymentMethod" to "transfer",
+                                "paymentMethodId" to expensePaymentId(token, "transfer"),
                                 "frequency" to "monthly",
                                 "daysOfMonth" to listOf(15),
                                 "startDate" to "2026-01-01",
@@ -204,7 +201,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                             "categoryId" to expenseCategoryId(token),
                             "unitPrice" to 500_000,
                             "quantity" to 1,
-                            "paymentMethod" to "transfer",
+                            "paymentMethodId" to expensePaymentId(token, "transfer"),
                             "frequency" to "monthly",
                             "daysOfMonth" to listOf(15),
                             "startDate" to "2026-01-01",
@@ -258,9 +255,14 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                                     .description("지출 카테고리 이름"),
                                 fieldWithPath("[].unitPrice").type(JsonFieldType.NUMBER).description("단가(원)"),
                                 fieldWithPath("[].quantity").type(JsonFieldType.NUMBER).description("수량"),
-                                fieldWithPath("[].paymentMethod")
+                                fieldWithPath("[].paymentMethodId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("결제수단 ID"),
+                                fieldWithPath("[].paymentMethodLabel")
                                     .type(JsonFieldType.STRING)
-                                    .description("결제방식"),
+                                    .optional()
+                                    .description("결제수단 이름"),
                                 fieldWithPath("[].vendor")
                                     .type(JsonFieldType.STRING)
                                     .optional()
@@ -351,7 +353,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                             "categoryId" to expenseCategoryId(token),
                             "unitPrice" to 550_000,
                             "quantity" to 1,
-                            "paymentMethod" to "transfer",
+                            "paymentMethodId" to expensePaymentId(token, "transfer"),
                             "frequency" to "monthly",
                             "daysOfMonth" to listOf(15),
                             "startDate" to "2026-01-01",
@@ -443,9 +445,11 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                                 fieldWithPath("totalAmount")
                                     .type(JsonFieldType.NUMBER)
                                     .description("[서버 계산 SSOT] 총액 = 단가 × 수량"),
-                                fieldWithPath("paymentMethod")
+                                fieldWithPath("paymentMethodId").type(JsonFieldType.NUMBER).optional().description("결제수단 ID"),
+                                fieldWithPath("paymentMethodLabel")
                                     .type(JsonFieldType.STRING)
-                                    .description("결제방식"),
+                                    .optional()
+                                    .description("결제수단 이름"),
                                 fieldWithPath("cardCompany")
                                     .type(JsonFieldType.STRING)
                                     .optional()
@@ -542,8 +546,8 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("수량 변경 (1 이상)"),
-                                fieldWithPath("paymentMethod")
-                                    .type(JsonFieldType.STRING)
+                                fieldWithPath("paymentMethodId")
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("결제방식 변경"),
                                 fieldWithPath("vendor")
@@ -616,8 +620,8 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("수량 변경 (1 이상)"),
-                                fieldWithPath("paymentMethod")
-                                    .type(JsonFieldType.STRING)
+                                fieldWithPath("paymentMethodId")
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("결제방식 변경"),
                                 fieldWithPath("vendor")
