@@ -61,13 +61,11 @@ src/main/kotlin/kr/ai/flori/
 ├── reservations/          # 예약 (판매 전환, 픽업)
 ├── schedules/             # 일정 (리마인더 푸시)
 ├── photos/                # 갤러리 (presigned 업로드) · 태그
-├── insights/              # 트렌드/공유 조회 · 스크랩 · 내부 ingest
 ├── settings/              # 카드사 · 매출/지출 설정 · 하단바 · 푸시 구독
-├── subscriptions/         # 구독 + 게이팅(gating/) · 구독 보안(security/)
 ├── community/             # 커뮤니티 게시판(단일 공유) · 비밀글/댓글·대댓글·좋아요·soft delete
 ├── verification/          # 사업자 인증 (신청·상태조회·presigned 업로드·게이팅)
 ├── dashboard/             # 오늘/월 집계 · 네이티브 SQL 통계
-├── admin/                 # 운영자 콘솔 API (/admin/**, @RequiresAdmin · cross-tenant) — 통계·인증심사·유저/구독·AI헬스 프록시
+├── admin/                 # 운영자 콘솔 API (/admin/**, @RequiresAdmin · cross-tenant) — 통계·인증심사·유저·AI헬스 프록시
 ├── ai/                    # AI 게이트웨이 (/ai/**) — web↔ai-server(FastAPI) 중개 + 모든 AI 호출 DB 로깅. 채팅/proactive/OCR예약/confirm. ai-server는 내부망 stateless
 └── common/                # 횡단 관심사
     ├── config/            # CORS, OpenAPI, Async, Schedule, Web
@@ -149,7 +147,6 @@ src/main/kotlin/kr/ai/flori/
 | Auditing 베이스 엔티티 | `common/entity/BaseEntity.kt` |
 | S3 presign | `common/storage/S3PresignService.kt` |
 | 푸시 | `common/push/PushService.kt`, `FirebasePushService.kt` |
-| 구독 게이팅 | `subscriptions/gating/`, `subscriptions/security/` |
 | 사업자 인증 게이팅 | `verification/gating/RequiresBusinessVerified.kt`, `BusinessVerifiedInterceptor.kt` |
 | 운영자 콘솔 게이팅 | `admin/gating/RequiresAdmin.kt`, `AdminInterceptor.kt` (User.isAdmin 재검증, `/admin/**`) |
 | Discord 알림 | `common/notification/discord/DiscordNotifier.kt`, `DiscordChannel.kt`, `DiscordProperties.kt` |

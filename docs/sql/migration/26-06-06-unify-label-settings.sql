@@ -40,7 +40,7 @@ CROSS JOIN (VALUES
   ('phone', '전화', 1),
   ('kakaotalk', '카카오톡', 2),
   ('naver_booking', '네이버예약', 3),
-  ('road', '길거리', 4),
+  ('road', '로드', 4),
   ('other', '기타', 5)
 ) AS c(value, label, sort_order)
 ON CONFLICT (user_id, domain, kind, value) DO NOTHING;

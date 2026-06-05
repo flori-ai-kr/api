@@ -84,18 +84,6 @@ class AdminUserIntegrationTest {
     }
 
     @Test
-    fun `운영자는 구독 목록을 조회한다`() {
-        val tokens = TestAccounts.register(authService, tokenProvider)
-        val user = userRepository.findById(tokenProvider.parse(tokens.accessToken)!!.userId).orElseThrow()
-        user.isAdmin = true
-        userRepository.save(user)
-
-        mockMvc
-            .get("/admin/subscriptions") { header(HttpHeaders.AUTHORIZATION, "Bearer ${tokens.accessToken}") }
-            .andExpect { status { isOk() } }
-    }
-
-    @Test
     fun `운영자는 유저 상세를 조회한다`() {
         val tokens = TestAccounts.register(authService, tokenProvider)
         val uid = tokenProvider.parse(tokens.accessToken)!!.userId

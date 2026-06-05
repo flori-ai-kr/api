@@ -72,7 +72,7 @@ class DefaultDataSeeder(
                 Setting("phone", "전화"),
                 Setting("kakaotalk", "카카오톡"),
                 Setting("naver_booking", "네이버예약"),
-                Setting("road", "길거리"),
+                Setting("road", "로드"),
                 Setting("other", "기타"),
             )
 

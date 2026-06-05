@@ -80,7 +80,6 @@ class AdminDocsTest : RestDocsSupport() {
             fieldWithPath("storeName").type(JsonFieldType.STRING).optional().description("가게명"),
             fieldWithPath("isActive").type(JsonFieldType.BOOLEAN).description("활성 여부"),
             fieldWithPath("isAdmin").type(JsonFieldType.BOOLEAN).description("운영자 여부"),
-            fieldWithPath("subscriptionStatus").type(JsonFieldType.STRING).optional().description("구독 상태(없으면 null)"),
             fieldWithPath("verificationStatus").type(JsonFieldType.STRING).optional().description("사업자 인증 상태(없으면 null)"),
             fieldWithPath("createdAt").type(JsonFieldType.STRING).optional().description("가입 시각(ISO-8601)"),
         )
@@ -250,10 +249,6 @@ class AdminDocsTest : RestDocsSupport() {
                                 fieldWithPath("sales.entryCount").type(JsonFieldType.NUMBER).description("매출 건수"),
                                 fieldWithPath("sales.totalAmount").type(JsonFieldType.NUMBER).description("매출 합계(원)"),
                                 fieldWithPath("sales.last30dCount").type(JsonFieldType.NUMBER).description("최근 30일 매출 건수"),
-                                fieldWithPath("subscriptions.active").type(JsonFieldType.NUMBER).description("활성 구독 수"),
-                                fieldWithPath("subscriptions.inGrace").type(JsonFieldType.NUMBER).description("유예 구독 수"),
-                                fieldWithPath("subscriptions.expired").type(JsonFieldType.NUMBER).description("만료 구독 수"),
-                                fieldWithPath("subscriptions.none").type(JsonFieldType.NUMBER).description("구독 없음 수"),
                                 fieldWithPath("verifications.pending").type(JsonFieldType.NUMBER).description("인증 대기 수"),
                                 fieldWithPath("verifications.approved").type(JsonFieldType.NUMBER).description("인증 승인 수"),
                                 fieldWithPath("verifications.rejected").type(JsonFieldType.NUMBER).description("인증 거절 수"),
@@ -358,7 +353,6 @@ class AdminDocsTest : RestDocsSupport() {
                                 fieldWithPath("storeName").type(JsonFieldType.STRING).optional().description("가게명"),
                                 fieldWithPath("regionSido").type(JsonFieldType.STRING).optional().description("시/도"),
                                 fieldWithPath("regionSigungu").type(JsonFieldType.STRING).optional().description("시군구"),
-                                fieldWithPath("subscriptionStatus").type(JsonFieldType.STRING).optional().description("구독 상태"),
                                 fieldWithPath("verifications").type(JsonFieldType.ARRAY).description("사업자 인증 이력"),
                                 fieldWithPath("verifications[].status").type(JsonFieldType.STRING).optional().description("상태"),
                                 fieldWithPath("verifications[].submittedAt").type(JsonFieldType.STRING).optional().description("신청 시각"),
@@ -399,37 +393,6 @@ class AdminDocsTest : RestDocsSupport() {
                                 fieldWithPath("active").type(JsonFieldType.BOOLEAN).description("활성 여부"),
                             ),
                         responseFields = userRowFields,
-                    ),
-                )
-            }
-    }
-
-    @Test
-    fun `구독 목록 문서화`() {
-        val token = adminToken()
-
-        mockMvc
-            .get("/admin/subscriptions?page=0&size=50") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") }
-            .andExpect { status { isOk() } }
-            .andDo {
-                handle(
-                    docs(
-                        identifier = "admin-subscription-list",
-                        responseSchema = "AdminSubscriptionListResponse",
-                        tag = "Admin",
-                        summary = "구독 목록(상태 필터·페이지)",
-                        responseFields =
-                            listOf(
-                                fieldWithPath("[]").type(JsonFieldType.ARRAY).description("구독 행 목록"),
-                                fieldWithPath("[].userId").type(JsonFieldType.NUMBER).optional().description("유저 ID"),
-                                fieldWithPath("[].status").type(JsonFieldType.STRING).optional().description("구독 상태"),
-                                fieldWithPath("[].store").type(JsonFieldType.STRING).optional().description("가게명"),
-                                fieldWithPath("[].productId").type(JsonFieldType.STRING).optional().description("상품 ID"),
-                                fieldWithPath("[].entitlement").type(JsonFieldType.STRING).optional().description("엔타이틀먼트"),
-                                fieldWithPath(
-                                    "[].currentPeriodEnd",
-                                ).type(JsonFieldType.STRING).optional().description("현재 주기 종료(ISO-8601)"),
-                            ),
                     ),
                 )
             }

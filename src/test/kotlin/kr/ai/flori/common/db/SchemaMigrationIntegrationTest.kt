@@ -13,7 +13,6 @@ import org.springframework.jdbc.core.JdbcTemplate
  * - 모든 도메인 테이블 생성 확인
  * - 멀티테넌시 전제: RLS 정책 부재(애플리케이션이 격리 책임)
  * - user_id가 자체 users 테이블을 참조(원본 auth 스키마 제거)
- * - 공유 시드(instagram_accounts) 적재
  */
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @SpringBootTest
@@ -44,11 +43,7 @@ class SchemaMigrationIntegrationTest {
                 "photo_cards",
                 "push_subscriptions",
                 "schedules",
-                "trend_articles",
-                "instagram_accounts",
-                "instagram_posts",
                 "user_preferences",
-                "insight_scraps",
             )
         assertThat(tables).containsAll(expected)
     }
@@ -96,11 +91,5 @@ class SchemaMigrationIntegrationTest {
             )
         }
         assertThat(runCatching { insert() }.isSuccess).isTrue()
-    }
-
-    @Test
-    fun `공유 인스타그램 계정 시드가 적재된다`() {
-        val count = jdbcTemplate.queryForObject("SELECT count(*) FROM instagram_accounts", Long::class.java)
-        assertThat(count).isEqualTo(15)
     }
 }

@@ -34,6 +34,6 @@ class UserPreferenceService(
     }
 
     private companion object {
-        val DEFAULT_BOTTOM_NAV = listOf("dashboard", "sales", "expenses", "customers", "insights")
+        val DEFAULT_BOTTOM_NAV = listOf("dashboard", "sales", "expenses", "customers")
     }
 }

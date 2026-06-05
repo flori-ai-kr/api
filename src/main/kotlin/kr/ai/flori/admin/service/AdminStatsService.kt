@@ -3,7 +3,6 @@ package kr.ai.flori.admin.service
 import kr.ai.flori.admin.dto.AdminOverviewResponse
 import kr.ai.flori.admin.dto.OverviewComparison
 import kr.ai.flori.admin.dto.SalesCounts
-import kr.ai.flori.admin.dto.SubscriptionCounts
 import kr.ai.flori.admin.dto.TimeseriesPoint
 import kr.ai.flori.admin.dto.UserCounts
 import kr.ai.flori.admin.dto.VerificationCounts
@@ -29,7 +28,6 @@ class AdminStatsService(
         AdminOverviewResponse(
             users = userCounts(),
             sales = salesCounts(),
-            subscriptions = subscriptionCounts(),
             verifications = verificationCounts(),
             comparison = comparison(range),
         )
@@ -124,20 +122,6 @@ class AdminStatsService(
             FROM sales
             """.trimIndent(),
         ) { rs, _ -> SalesCounts(rs.getLong("entry_count"), rs.getLong("total_amount"), rs.getLong("last30d")) }!!
-
-    private fun subscriptionCounts(): SubscriptionCounts =
-        jdbc.queryForObject(
-            """
-            SELECT
-              COUNT(*) FILTER (WHERE status = 'active') AS active,
-              COUNT(*) FILTER (WHERE status = 'in_grace') AS in_grace,
-              COUNT(*) FILTER (WHERE status = 'expired') AS expired,
-              COUNT(*) FILTER (WHERE status = 'none') AS none
-            FROM subscriptions
-            """.trimIndent(),
-        ) { rs, _ ->
-            SubscriptionCounts(rs.getLong("active"), rs.getLong("in_grace"), rs.getLong("expired"), rs.getLong("none"))
-        }!!
 
     private fun verificationCounts(): VerificationCounts =
         jdbc.queryForObject(

@@ -52,19 +52,6 @@ class TenantIsolationGuardTest {
             // 자식 엔티티: 이미 테넌트 검증된 부모(recurringId)로 접근
             "RecurringSkipRepository#existsByRecurringIdAndSkipDate",
             "RecurringSkipRepository#findByRecurringIdInAndSkipDate",
-            // 인사이트 공유 콘텐츠: 트렌드/인스타는 전체 사용자 공유 데이터(엔티티에 user_id 없음) — 읽기/수집 전역(SPEC-011)
-            "TrendArticleRepository#findByOrderByCollectedAtDescCreatedAtDesc",
-            "TrendArticleRepository#findByCategoryOrderByCollectedAtDescCreatedAtDesc",
-            "TrendArticleRepository#existsBySourceUrl",
-            "TrendArticleRepository#countByCategory",
-            "InstagramAccountRepository#findByActiveTrueOrderBySortOrderAscUsernameAsc",
-            "InstagramAccountRepository#findAllByOrderBySortOrderAscUsernameAsc",
-            "InstagramPostRepository#findFeed",
-            "InstagramPostRepository#findFeedByAccount",
-            "InstagramPostRepository#findByIdIn",
-            "InstagramPostRepository#existsByShortcode",
-            "InstagramPostRepository#findLatestScrapedAt",
-            "TrendArticleRepository#countByCategoryAndCollectedAtGreaterThanEqual",
             // 커뮤니티: 단일 커뮤니티(테넌트 간 공유) — 엔티티에 user_id 격리가 없고,
             // 비밀글/소유권/마스킹은 서비스가 뷰어(JWT)+author_user_id로 계산한다(설계상 전역 읽기/쓰기).
             "CommunityPostRepository#findByIdAndDeletedAtIsNull",
