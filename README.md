@@ -7,7 +7,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 ![AWS](https://img.shields.io/badge/AWS-RDS%20%7C%20S3%20%7C%20CloudFront%20%7C%20ECR-FF9900?logo=amazonwebservices)
 
-이 repo는 Flori 시스템 전체의 **단일 진실 공급원(Source of Truth)** 이다. 매출·지출·고객·예약·갤러리·통계를 독립 꽃집들에게 제공하며, 자체 AWS 인프라 위에서 모바일이 호출 가능한 REST API로 동작한다. 멀티테넌시와 구독 게이팅이 모두 여기서 강제된다 — 모든 쿼리는 호출자의 JWT에서 추출한 `user_id`로 격리되고, DB RLS가 없으므로 애플리케이션이 유일한 방어선이다.
+이 repo는 Flori 시스템 전체의 **단일 진실 공급원(Source of Truth)** 이다. 매출·지출·고객·예약·갤러리·통계를 독립 꽃집들에게 제공하며, 자체 AWS 인프라 위에서 모바일이 호출 가능한 REST API로 동작한다. 멀티테넌시가 여기서 강제된다 — 모든 쿼리는 호출자의 JWT에서 추출한 `user_id`로 격리되고, DB RLS가 없으므로 애플리케이션이 유일한 방어선이다.
 
 ---
 
@@ -141,7 +141,7 @@ flowchart TB
 
 | 레이어 | 책임 |
 |--------|------|
-| **flori-ai/server (이 프로젝트)** | Spring REST API. 데이터·멀티테넌시·구독 게이팅의 SSOT, `user_id` 격리. AI 도구가 감싸는 검증된 표면 |
+| **flori-ai/server (이 프로젝트)** | Spring REST API. 데이터·멀티테넌시의 SSOT, `user_id` 격리. AI 도구가 감싸는 검증된 표면 |
 | flori-ai/ai | AI 오케스트레이션 — tool-call 루프, 비전 OCR, 음성 세션, 확인 카드. DB 접근 없음, 사용자 JWT로 이 API 호출 |
 | flori-ai/mobile | React Native 앱. JWT 발급(로그인 UI), 확인 카드 UI, 음성 I/O |
 | flori-ai/web | 동일 꽃집용 Next.js PWA 어드민 |
@@ -160,9 +160,7 @@ src/main/kotlin/kr/ai/flori/
 ├── reservations/          # 예약 (판매 전환, 픽업)
 ├── schedules/             # 일정 (리마인더 푸시)
 ├── photos/                # 갤러리 (presigned 업로드) · 태그
-├── insights/              # 트렌드/공유 조회 · 스크랩 · 내부 ingest
 ├── settings/              # 카드사 · 매출/지출 설정 · 하단바 · 푸시 구독
-├── subscriptions/         # 구독 + 게이팅 · 구독 보안
 ├── dashboard/             # 오늘/월 집계 · 네이티브 SQL 통계
 └── common/                # 횡단 관심사 (security, error, tenant, storage, push, config, ...)
 ```
@@ -204,9 +202,7 @@ src/main/kotlin/kr/ai/flori/
 | **customers** | 고객 (find-or-create, 실시간 통계) |
 | **reservations / schedules** | 예약(판매 전환, 픽업) · 일정(리마인더 푸시) |
 | **photos** | 갤러리(presigned 업로드) · 태그 |
-| **insights** | 트렌드/공유 조회 · 스크랩 · 내부 ingest |
 | **settings** | 카드사 · 매출/지출 설정 · 하단바 · 푸시 구독 |
-| **subscriptions** | 구독 + 게이팅 |
 | **dashboard** | 오늘/월 집계 · 네이티브 SQL 통계 |
 
 ---

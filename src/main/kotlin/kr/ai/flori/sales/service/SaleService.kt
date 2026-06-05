@@ -325,7 +325,7 @@ class SaleService(
               COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'transfer'), 0) AS transfer,
               COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'cash'), 0) AS cash,
               COUNT(*) AS cnt
-            FROM sales s LEFT JOIN label_settings ls ON ls.id = s.payment_method_id
+            FROM sales s LEFT JOIN label_settings ls ON ls.id = s.payment_method_id AND ls.user_id = s.user_id
             WHERE s.user_id = ?::bigint
             """.trimIndent()
     }

@@ -80,7 +80,7 @@ class DashboardService(
               COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'transfer'), 0) AS transfer,
               COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'naverpay'), 0) AS naverpay,
               COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'kakaopay'), 0) AS kakaopay
-            FROM sales s LEFT JOIN label_settings ls ON ls.id = s.payment_method_id
+            FROM sales s LEFT JOIN label_settings ls ON ls.id = s.payment_method_id AND ls.user_id = s.user_id
             WHERE s.user_id = ?::bigint AND s.date BETWEEN ? AND ?
             """.trimIndent(),
             { rs, _ ->

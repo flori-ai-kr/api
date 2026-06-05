@@ -21,7 +21,10 @@ class UserPreferenceService(
     @Transactional(readOnly = true)
     fun get(): UserPreferencesResponse {
         val pref = repository.findByUserIdAndKey(TenantContext.currentUserId(), BOTTOM_NAV_KEY)
-        val items = pref?.let { objectMapper.readValue<List<String>>(it.value) } ?: DEFAULT_BOTTOM_NAV
+        // value(jsonb)가 손상/형식 불일치여도 조회가 500으로 깨지지 않도록 기본값으로 폴백.
+        val items =
+            pref?.let { runCatching { objectMapper.readValue<List<String>>(it.value) }.getOrNull() }
+                ?: DEFAULT_BOTTOM_NAV
         return UserPreferencesResponse(items)
     }
 
