@@ -25,15 +25,15 @@ class ExpenseDocsTest : RestDocsSupport() {
             fieldWithPath("id").type(JsonFieldType.NUMBER).description("지출 ID"),
             fieldWithPath("date").type(JsonFieldType.STRING).description("지출 발생일 (yyyy-MM-dd)"),
             fieldWithPath("itemName").type(JsonFieldType.STRING).description("물품명"),
-            fieldWithPath("category").type(JsonFieldType.STRING).description("지출 카테고리"),
+            fieldWithPath("categoryId").type(JsonFieldType.NUMBER).optional().description("지출 카테고리 ID (null 가능)"),
+            fieldWithPath("categoryLabel").type(JsonFieldType.STRING).optional().description("지출 카테고리 표시 이름 (null 가능)"),
             fieldWithPath("unitPrice").type(JsonFieldType.NUMBER).description("단가(원)"),
             fieldWithPath("quantity").type(JsonFieldType.NUMBER).description("수량"),
             fieldWithPath("totalAmount")
                 .type(JsonFieldType.NUMBER)
                 .description("[서버 계산 SSOT] 총액 = 단가 × 수량"),
-            fieldWithPath("paymentMethod")
-                .type(JsonFieldType.STRING)
-                .description("결제방식. cash | card | transfer | naverpay | kakaopay"),
+            fieldWithPath("paymentMethodId").type(JsonFieldType.NUMBER).optional().description("결제수단 ID (null 가능)"),
+            fieldWithPath("paymentMethodLabel").type(JsonFieldType.STRING).optional().description("결제수단 이름 (null 가능)"),
             fieldWithPath("cardCompany")
                 .type(JsonFieldType.STRING)
                 .optional()
@@ -42,7 +42,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.STRING)
                 .optional()
                 .description("거래처 (null 가능)"),
-            fieldWithPath("note")
+            fieldWithPath("memo")
                 .type(JsonFieldType.STRING)
                 .optional()
                 .description("비고 (null 가능)"),
@@ -69,10 +69,10 @@ class ExpenseDocsTest : RestDocsSupport() {
                             mapOf(
                                 "date" to "2026-05-10",
                                 "itemName" to "장미 100송이",
-                                "category" to "flower_purchase",
+                                "categoryId" to expenseCategoryId(token),
                                 "unitPrice" to 5_000,
                                 "quantity" to 3,
-                                "paymentMethod" to "card",
+                                "paymentMethodId" to expensePaymentId(token),
                                 "cardCompany" to "신한카드",
                                 "vendor" to "양재 꽃시장",
                             ),
@@ -97,13 +97,13 @@ class ExpenseDocsTest : RestDocsSupport() {
                         mapOf(
                             "date" to "2026-05-10",
                             "itemName" to "장미 100송이",
-                            "category" to "flower_purchase",
+                            "categoryId" to expenseCategoryId(token),
                             "unitPrice" to 5_000,
                             "quantity" to 3,
-                            "paymentMethod" to "card",
+                            "paymentMethodId" to expensePaymentId(token),
                             "cardCompany" to "신한카드",
                             "vendor" to "양재 꽃시장",
-                            "note" to "웨딩 준비",
+                            "memo" to "웨딩 준비",
                         ),
                     )
             }.andExpect { status { isCreated() } }
@@ -123,9 +123,9 @@ class ExpenseDocsTest : RestDocsSupport() {
                                 fieldWithPath("itemName")
                                     .type(JsonFieldType.STRING)
                                     .description("물품명 (필수)"),
-                                fieldWithPath("category")
-                                    .type(JsonFieldType.STRING)
-                                    .description("지출 카테고리 (필수)"),
+                                fieldWithPath("categoryId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .description("지출 카테고리 ID (필수)"),
                                 fieldWithPath("unitPrice")
                                     .type(JsonFieldType.NUMBER)
                                     .description("단가(원, 0 이상, 필수)"),
@@ -133,9 +133,9 @@ class ExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("수량 (기본값 1, 1 이상)"),
-                                fieldWithPath("paymentMethod")
-                                    .type(JsonFieldType.STRING)
-                                    .description("결제방식. cash | card | transfer | naverpay | kakaopay (필수)"),
+                                fieldWithPath("paymentMethodId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .description("결제수단 ID (필수)"),
                                 fieldWithPath("cardCompany")
                                     .type(JsonFieldType.STRING)
                                     .optional()
@@ -144,7 +144,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("거래처"),
-                                fieldWithPath("note")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("비고"),
@@ -181,15 +181,21 @@ class ExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .description("지출 발생일 (yyyy-MM-dd)"),
                                 fieldWithPath("[].itemName").type(JsonFieldType.STRING).description("물품명"),
-                                fieldWithPath("[].category").type(JsonFieldType.STRING).description("지출 카테고리"),
+                                fieldWithPath("[].categoryId").type(JsonFieldType.NUMBER).optional().description("지출 카테고리 ID"),
+                                fieldWithPath("[].categoryLabel").type(JsonFieldType.STRING).optional().description("지출 카테고리 이름"),
                                 fieldWithPath("[].unitPrice").type(JsonFieldType.NUMBER).description("단가(원)"),
                                 fieldWithPath("[].quantity").type(JsonFieldType.NUMBER).description("수량"),
                                 fieldWithPath("[].totalAmount")
                                     .type(JsonFieldType.NUMBER)
                                     .description("[서버 계산 SSOT] 총액 = 단가 × 수량"),
-                                fieldWithPath("[].paymentMethod")
+                                fieldWithPath("[].paymentMethodId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("결제수단 ID"),
+                                fieldWithPath("[].paymentMethodLabel")
                                     .type(JsonFieldType.STRING)
-                                    .description("결제방식"),
+                                    .optional()
+                                    .description("결제수단 이름"),
                                 fieldWithPath("[].cardCompany")
                                     .type(JsonFieldType.STRING)
                                     .optional()
@@ -198,7 +204,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("거래처"),
-                                fieldWithPath("[].note")
+                                fieldWithPath("[].memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("비고"),
@@ -264,7 +270,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                         mapOf(
                             "unitPrice" to 10_000,
                             "quantity" to 2,
-                            "note" to "수정된 비고",
+                            "memo" to "수정된 비고",
                         ),
                     )
             }.andExpect { status { isOk() } }
@@ -287,8 +293,8 @@ class ExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("물품명 변경"),
-                                fieldWithPath("category")
-                                    .type(JsonFieldType.STRING)
+                                fieldWithPath("categoryId")
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("카테고리 변경"),
                                 fieldWithPath("unitPrice")
@@ -299,8 +305,8 @@ class ExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("수량 변경 (1 이상)"),
-                                fieldWithPath("paymentMethod")
-                                    .type(JsonFieldType.STRING)
+                                fieldWithPath("paymentMethodId")
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("결제방식 변경. cash | card | transfer | naverpay | kakaopay"),
                                 fieldWithPath("cardCompany")
@@ -311,7 +317,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("거래처 변경"),
-                                fieldWithPath("note")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("비고 변경"),
@@ -348,7 +354,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                                 fieldWithPath("vendors")
                                     .type(JsonFieldType.ARRAY)
                                     .description("거래처 자동완성 목록 (빈도 내림차순)"),
-                                fieldWithPath("notes")
+                                fieldWithPath("memos")
                                     .type(JsonFieldType.ARRAY)
                                     .description("비고 자동완성 목록 (빈도 내림차순)"),
                             ),

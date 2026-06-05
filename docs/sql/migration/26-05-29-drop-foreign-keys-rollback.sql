@@ -25,7 +25,7 @@ ALTER TABLE photo_tags              ADD CONSTRAINT photo_tags_user_id_fkey      
 ALTER TABLE photo_cards             ADD CONSTRAINT photo_cards_user_id_fkey             FOREIGN KEY (user_id)        REFERENCES users(id)               ON DELETE CASCADE;
 ALTER TABLE photo_cards             ADD CONSTRAINT photo_cards_sale_id_fkey             FOREIGN KEY (sale_id)        REFERENCES sales(id)               ON DELETE SET NULL;
 ALTER TABLE push_subscriptions      ADD CONSTRAINT push_subscriptions_user_id_fkey      FOREIGN KEY (user_id)        REFERENCES users(id)               ON DELETE CASCADE;
-ALTER TABLE calendar_events         ADD CONSTRAINT calendar_events_user_id_fkey         FOREIGN KEY (user_id)        REFERENCES users(id)               ON DELETE CASCADE;
+ALTER TABLE schedules               ADD CONSTRAINT schedules_user_id_fkey               FOREIGN KEY (user_id)        REFERENCES users(id)               ON DELETE CASCADE;
 ALTER TABLE instagram_posts         ADD CONSTRAINT instagram_posts_account_id_fkey      FOREIGN KEY (account_id)     REFERENCES instagram_accounts(id)  ON DELETE CASCADE;
 ALTER TABLE user_preferences        ADD CONSTRAINT user_preferences_user_id_fkey        FOREIGN KEY (user_id)        REFERENCES users(id)               ON DELETE CASCADE;
 ALTER TABLE insight_scraps          ADD CONSTRAINT insight_scraps_user_id_fkey          FOREIGN KEY (user_id)        REFERENCES users(id)               ON DELETE CASCADE;

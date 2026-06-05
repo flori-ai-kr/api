@@ -33,8 +33,8 @@ class PhotoCard(
     @Column(name = "id")
     var id: Long? = null
 
-    @Column(name = "description")
-    var description: String? = null
+    @Column(name = "memo")
+    var memo: String? = null
 
     // Array<String>(네이티브 ARRAY) — List<String>(JSON)과 다른 자바 타입이라 전역 타입 충돌 회피
     @JdbcTypeCode(SqlTypes.ARRAY)

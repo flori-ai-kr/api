@@ -16,8 +16,8 @@ data class CustomerCreateRequest(
     val phone: String?,
     val grade: String? = null,
     val gender: String? = null,
-    @field:Size(max = FieldLimits.NOTE, message = "메모가 너무 깁니다")
-    val note: String? = null,
+    @field:Size(max = FieldLimits.MEMO, message = "메모가 너무 깁니다")
+    val memo: String? = null,
 )
 
 data class CustomerUpdateRequest(
@@ -27,8 +27,8 @@ data class CustomerUpdateRequest(
     val phone: String? = null,
     val grade: String? = null,
     val gender: String? = null,
-    @field:Size(max = FieldLimits.NOTE, message = "메모가 너무 깁니다")
-    val note: String? = null,
+    @field:Size(max = FieldLimits.MEMO, message = "메모가 너무 깁니다")
+    val memo: String? = null,
 )
 
 data class UpdateGradeRequest(
@@ -52,7 +52,7 @@ data class CustomerResponse(
     val phone: String,
     val grade: String,
     val gender: String?,
-    val note: String?,
+    val memo: String?,
     val totalPurchaseCount: Int,
     val totalPurchaseAmount: Long,
     val firstPurchaseDate: LocalDate?,
@@ -71,7 +71,7 @@ data class CustomerResponse(
                 phone = c.phone,
                 grade = c.grade,
                 gender = c.gender,
-                note = c.note,
+                memo = c.memo,
                 totalPurchaseCount = stats.count,
                 totalPurchaseAmount = stats.total,
                 firstPurchaseDate = stats.firstDate,

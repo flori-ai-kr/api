@@ -53,8 +53,8 @@ class SecurityConfig(
                 authorize("/swagger-ui/**", permitAll)
                 authorize("/swagger-ui.html", permitAll)
                 authorize("/docs/open-api-3.0.1.json", permitAll) // 테스트 생성 OpenAPI 스펙(이 파일만 공개)
-                authorize("/internal/**", permitAll) // 내부 API는 InternalAuthVerifier(Bearer 키)로 별도 인증
-                authorize("/webhooks/**", permitAll) // 외부 웹훅은 사전 공유 Bearer 시크릿으로 별도 인증
+                // /internal/**·/webhooks/**: 해당 컨트롤러(인사이트 ingest·RevenueCat 웹훅) 제거됨 → 공개 경로도 제거.
+                // 향후 내부/웹훅 엔드포인트 추가 시 별도 인증과 함께 명시적으로 다시 연다.
                 authorize(anyRequest, authenticated)
             }
             exceptionHandling {

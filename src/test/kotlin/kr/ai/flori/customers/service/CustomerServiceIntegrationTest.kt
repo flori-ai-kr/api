@@ -11,6 +11,9 @@ import kr.ai.flori.customers.dto.CustomerCreateRequest
 import kr.ai.flori.customers.dto.CustomerUpdateRequest
 import kr.ai.flori.sales.dto.SaleCreateRequest
 import kr.ai.flori.sales.service.SaleService
+import kr.ai.flori.settings.entity.LabelDomains
+import kr.ai.flori.settings.entity.LabelKinds
+import kr.ai.flori.settings.repository.LabelSettingRepository
 import kr.ai.flori.support.TestAccounts
 import kr.ai.flori.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
@@ -40,6 +43,9 @@ class CustomerServiceIntegrationTest {
     @Autowired
     lateinit var userRepository: UserRepository
 
+    @Autowired
+    lateinit var labelSettingRepository: LabelSettingRepository
+
     @AfterEach
     fun tearDown() = TenantContext.clear()
 
@@ -50,6 +56,28 @@ class CustomerServiceIntegrationTest {
         TenantContext.set(userId)
         return userId
     }
+
+    /** 시드된 매출 카테고리 value → label_settings id. */
+    private fun catId(value: String): Long =
+        requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
+                TenantContext.currentUserId(),
+                LabelDomains.SALE,
+                LabelKinds.CATEGORY,
+                value,
+            ),
+        ).id!!
+
+    /** 시드된 매출 결제수단 value → label_settings id. */
+    private fun payId(value: String): Long =
+        requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
+                TenantContext.currentUserId(),
+                LabelDomains.SALE,
+                LabelKinds.PAYMENT,
+                value,
+            ),
+        ).id!!
 
     private fun create(
         name: String = "홍길동",
@@ -79,7 +107,7 @@ class CustomerServiceIntegrationTest {
         newTenant()
         val c = create()
         assertThat(customerService.updateGrade(c.id, "vip").grade).isEqualTo("vip")
-        assertThat(customerService.update(c.id, CustomerUpdateRequest(note = "단골")).note).isEqualTo("단골")
+        assertThat(customerService.update(c.id, CustomerUpdateRequest(memo = "단골")).memo).isEqualTo("단골")
     }
 
     @Test
@@ -154,9 +182,9 @@ class CustomerServiceIntegrationTest {
         amount: Int,
     ) = SaleCreateRequest(
         date = date,
-        productCategory = "basic_bouquet",
+        categoryId = catId("basic_bouquet"),
         amount = amount,
-        paymentMethod = "cash",
+        paymentMethodId = payId("cash"),
         customerId = customerId,
     )
 }

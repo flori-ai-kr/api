@@ -4,47 +4,40 @@ import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.settings.dto.LabelSettingResponse
-import kr.ai.flori.settings.entity.ExpenseCategory
-import kr.ai.flori.settings.entity.ExpensePaymentMethod
+import kr.ai.flori.settings.entity.LabelDomains
+import kr.ai.flori.settings.entity.LabelKinds
 import kr.ai.flori.settings.entity.LabelSetting
-import kr.ai.flori.settings.entity.SaleCategory
-import kr.ai.flori.settings.entity.SalePaymentMethod
-import kr.ai.flori.settings.repository.ExpenseCategoryRepository
-import kr.ai.flori.settings.repository.ExpensePaymentMethodRepository
 import kr.ai.flori.settings.repository.LabelSettingRepository
-import kr.ai.flori.settings.repository.SaleCategoryRepository
-import kr.ai.flori.settings.repository.SalePaymentMethodRepository
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * value/label 설정 공통 CRUD. 모든 쿼리 TenantContext 격리(HARD).
- * value 미지정 시 label에서 영문 슬러그 생성. (value,user_id) 중복은 409.
+ * value/label 설정 공통 CRUD. (domain, kind)로 용도를 고정한 단일 테이블(label_settings) 위에서 동작한다.
+ * 모든 쿼리 TenantContext 격리(HARD). value 미지정 시 label에서 영문 슬러그 생성.
+ * (user_id, domain, kind, value) 중복은 409.
  */
-abstract class LabelSettingService<T : LabelSetting>(
-    private val repository: LabelSettingRepository<T>,
+abstract class LabelSettingService(
+    private val repository: LabelSettingRepository,
+    private val domain: String,
+    private val kind: String,
 ) {
-    protected abstract fun instantiate(userId: Long): T
-
-    protected abstract val defaultColor: String
-
     @Transactional(readOnly = true)
     open fun list(): List<LabelSettingResponse> =
-        repository.findByUserIdOrderBySortOrderAsc(TenantContext.currentUserId()).map(::toResponse)
+        repository
+            .findByUserIdAndDomainAndKindOrderBySortOrderAsc(TenantContext.currentUserId(), domain, kind)
+            .map(::toResponse)
 
     @Transactional
     open fun add(
         label: String,
-        color: String?,
         value: String?,
     ): LabelSettingResponse {
         val userId = TenantContext.currentUserId()
-        val existing = repository.findByUserIdOrderBySortOrderAsc(userId)
-        val entity = instantiate(userId)
+        val existing = repository.findByUserIdAndDomainAndKindOrderBySortOrderAsc(userId, domain, kind)
+        val entity = LabelSetting(userId, domain, kind)
         entity.value = value?.takeIf { it.isNotBlank() } ?: slugify(label)
         entity.label = label
-        entity.color = color ?: defaultColor
         entity.sortOrder = (existing.maxOfOrNull { it.sortOrder } ?: 0) + 1
         return toResponse(saveUnique(entity))
     }
@@ -53,11 +46,9 @@ abstract class LabelSettingService<T : LabelSetting>(
     open fun update(
         id: Long,
         label: String,
-        color: String,
     ): LabelSettingResponse {
         val entity = load(id)
         entity.label = label
-        entity.color = color
         return toResponse(saveUnique(entity))
     }
 
@@ -66,19 +57,19 @@ abstract class LabelSettingService<T : LabelSetting>(
         repository.delete(load(id))
     }
 
-    private fun load(id: Long): T =
-        repository.findByIdAndUserId(id, TenantContext.currentUserId())
+    private fun load(id: Long): LabelSetting =
+        repository.findByIdAndUserIdAndDomainAndKind(id, TenantContext.currentUserId(), domain, kind)
             ?: throw AppException(CommonErrorCode.NOT_FOUND, "설정을 찾을 수 없습니다")
 
-    private fun saveUnique(entity: T): T =
+    private fun saveUnique(entity: LabelSetting): LabelSetting =
         try {
             repository.saveAndFlush(entity)
         } catch (_: DataIntegrityViolationException) {
             throw AppException(CommonErrorCode.CONFLICT, "이미 존재하는 항목입니다")
         }
 
-    private fun toResponse(entity: T): LabelSettingResponse =
-        LabelSettingResponse(requireNotNull(entity.id), entity.value, entity.label, entity.color, entity.sortOrder)
+    private fun toResponse(entity: LabelSetting): LabelSettingResponse =
+        LabelSettingResponse(requireNotNull(entity.id), entity.value, entity.label, entity.sortOrder)
 
     private fun slugify(label: String): String =
         label
@@ -90,36 +81,25 @@ abstract class LabelSettingService<T : LabelSetting>(
 
 @Service
 class SaleCategorySettingService(
-    repository: SaleCategoryRepository,
-) : LabelSettingService<SaleCategory>(repository) {
-    override fun instantiate(userId: Long) = SaleCategory(userId)
-
-    override val defaultColor = "#f43f5e"
-}
+    repository: LabelSettingRepository,
+) : LabelSettingService(repository, LabelDomains.SALE, LabelKinds.CATEGORY)
 
 @Service
 class SalePaymentMethodSettingService(
-    repository: SalePaymentMethodRepository,
-) : LabelSettingService<SalePaymentMethod>(repository) {
-    override fun instantiate(userId: Long) = SalePaymentMethod(userId)
+    repository: LabelSettingRepository,
+) : LabelSettingService(repository, LabelDomains.SALE, LabelKinds.PAYMENT)
 
-    override val defaultColor = "#3b82f6"
-}
+@Service
+class SaleChannelSettingService(
+    repository: LabelSettingRepository,
+) : LabelSettingService(repository, LabelDomains.SALE, LabelKinds.CHANNEL)
 
 @Service
 class ExpenseCategorySettingService(
-    repository: ExpenseCategoryRepository,
-) : LabelSettingService<ExpenseCategory>(repository) {
-    override fun instantiate(userId: Long) = ExpenseCategory(userId)
-
-    override val defaultColor = "#6b7280"
-}
+    repository: LabelSettingRepository,
+) : LabelSettingService(repository, LabelDomains.EXPENSE, LabelKinds.CATEGORY)
 
 @Service
 class ExpensePaymentMethodSettingService(
-    repository: ExpensePaymentMethodRepository,
-) : LabelSettingService<ExpensePaymentMethod>(repository) {
-    override fun instantiate(userId: Long) = ExpensePaymentMethod(userId)
-
-    override val defaultColor = "#3b82f6"
-}
+    repository: LabelSettingRepository,
+) : LabelSettingService(repository, LabelDomains.EXPENSE, LabelKinds.PAYMENT)

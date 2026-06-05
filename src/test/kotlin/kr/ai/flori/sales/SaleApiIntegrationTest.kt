@@ -5,6 +5,9 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
 import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.security.JwtTokenProvider
+import kr.ai.flori.settings.entity.LabelDomains
+import kr.ai.flori.settings.entity.LabelKinds
+import kr.ai.flori.settings.repository.LabelSettingRepository
 import kr.ai.flori.support.TestAccounts
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -35,7 +38,33 @@ class SaleApiIntegrationTest {
     @Autowired
     lateinit var tokenProvider: JwtTokenProvider
 
+    @Autowired
+    lateinit var labelSettingRepository: LabelSettingRepository
+
     private fun signupToken(): String = TestAccounts.register(authService, tokenProvider).accessToken
+
+    /** 토큰 소유 유저의 시드된 매출 카테고리 value → id. */
+    private fun categoryId(
+        token: String,
+        value: String = "basic_bouquet",
+    ): Long = labelId(token, LabelKinds.CATEGORY, value)
+
+    /** 토큰 소유 유저의 시드된 매출 결제수단 value → id. */
+    private fun paymentId(
+        token: String,
+        value: String = "card",
+    ): Long = labelId(token, LabelKinds.PAYMENT, value)
+
+    private fun labelId(
+        token: String,
+        kind: String,
+        value: String,
+    ): Long {
+        val userId = requireNotNull(tokenProvider.parse(token)).userId
+        return requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(userId, LabelDomains.SALE, kind, value),
+        ).id!!
+    }
 
     private fun createCardSale(token: String): String {
         val response =
@@ -47,9 +76,9 @@ class SaleApiIntegrationTest {
                         objectMapper.writeValueAsString(
                             mapOf(
                                 "date" to "2026-05-22",
-                                "productCategory" to "basic_bouquet",
+                                "categoryId" to categoryId(token),
                                 "amount" to 100_000,
-                                "paymentMethod" to "card",
+                                "paymentMethodId" to paymentId(token),
                             ),
                         )
                 }.andReturn()
@@ -69,14 +98,15 @@ class SaleApiIntegrationTest {
                     objectMapper.writeValueAsString(
                         mapOf(
                             "date" to "2026-05-22",
-                            "productCategory" to "basic_bouquet",
+                            "categoryId" to categoryId(token),
                             "amount" to 100_000,
-                            "paymentMethod" to "card",
+                            "paymentMethodId" to paymentId(token),
                         ),
                     )
             }.andExpect {
                 status { isCreated() }
-                jsonPath("$.paymentMethod") { value("card") }
+                jsonPath("$.paymentMethodId") { value(paymentId(token).toInt()) }
+                jsonPath("$.isUnpaid") { value(false) }
             }
 
         mockMvc
@@ -100,10 +130,10 @@ class SaleApiIntegrationTest {
                     objectMapper.writeValueAsString(
                         mapOf(
                             "date" to "2026-05-22",
-                            "productCategory" to "basic_bouquet",
+                            "categoryId" to categoryId(token),
                             "amount" to 100_000,
-                            "paymentMethod" to "card",
-                            "note" to "가".repeat(1_001), // FieldLimits.NOTE(1000) 초과
+                            "paymentMethodId" to paymentId(token),
+                            "memo" to "가".repeat(201), // FieldLimits.MEMO(200) 초과
                         ),
                     )
             }.andExpect {
@@ -142,7 +172,7 @@ class SaleApiIntegrationTest {
             .post("/sales") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
-                content = objectMapper.writeValueAsString(mapOf("productCategory" to "x"))
+                content = objectMapper.writeValueAsString(mapOf("amount" to 100_000))
             }.andExpect { status { isBadRequest() } }
     }
 }

@@ -104,9 +104,8 @@ flowchart LR
 | `sales` | 매출 CRUD·무한스크롤·필터·**요약(GET /sales/summary)**·미수·**서버 입금계산** |
 | `expenses` | 지출 + 고정비(this/all 분기·**@Scheduled 자동생성**) |
 | `customers` | 고객 CRUD·findOrCreate·**실시간 구매통계** |
-| `reservations` / `calendar` | 예약(매출 전환·픽업)·캘린더 이벤트·**리마인더/요약 푸시** |
+| `reservations` / `schedules` | 예약(매출 전환·픽업)·일정·**리마인더/요약 푸시** |
 | `photos` | 사진카드(presigned 업로드·삭제·**다운로드**)·태그 |
-| `insights` | 트렌드/인스타 공유 읽기(**카테고리별 개수·최근 수집 시각**)·스크랩·**내부 수집 API** |
 | `community` | 단일 커뮤니티 게시판(게시글·댓글·대댓글·좋아요·비밀글·soft delete)·이미지 업로드. **`@RequiresBusinessVerified` 게이팅 적용** |
 | `verification` | 사업자 인증 신청·상태 조회(PENDING/APPROVED/REJECTED/NONE)·presigned 업로드·게이팅(`@RequiresBusinessVerified`) |
 | `settings` | 매출/지출 설정·하단바·사용자 설정·푸시 구독·**테스트 발송** |
@@ -265,7 +264,7 @@ flowchart TB
 3. **교차 참조 검증**: 매출의 `customer_id`, 예약·사진의 `saleId` 등 외부에서 받은 식별자는 **소유권을 재확인**한 뒤에만 사용.
 4. **테스트**: 도메인마다 "다른 user의 데이터 접근 차단" 케이스를 필수로 포함.
 
-> **공유 읽기 예외**: 인사이트 트렌드/인스타 계정·포스트는 테넌트 무관 공유 데이터(인증만 요구). 스크랩(`insight_scraps`)만 `user_id` 격리. **커뮤니티**(`community_posts`/`community_comments`/`community_likes`)도 공유 데이터 — `user_id` 행 격리 대상이 아니며, 비밀글·소유권·마스킹은 서비스가 뷰어(JWT) + `author_user_id`로 계산한다.
+> **공유 읽기 예외**: **커뮤니티**(`community_posts`/`community_comments`/`community_likes`)는 공유 데이터 — `user_id` 행 격리 대상이 아니며, 비밀글·소유권·마스킹은 서비스가 뷰어(JWT) + `author_user_id`로 계산한다.
 
 ---
 
@@ -401,7 +400,6 @@ erDiagram
     USERS ||--o{ RESERVATIONS : "user_id"
     USERS ||--o{ CALENDAR_EVENTS : "user_id"
     USERS ||--o{ PHOTO_CARDS : "user_id"
-    USERS ||--o{ INSIGHT_SCRAPS : "user_id"
     USERS ||--o{ REFRESH_TOKENS : "user_id"
     USERS ||--o{ PUSH_SUBSCRIPTIONS : "user_id"
     USERS ||--o{ COMMUNITY_POSTS : "author_user_id"
@@ -413,7 +411,6 @@ erDiagram
     SALES ||--o{ PHOTO_CARDS : "sale_id"
     RECURRING_EXPENSES ||--o{ EXPENSES : "recurring_id"
     RECURRING_EXPENSES ||--o{ RECURRING_SKIPS : "recurring_id"
-    INSTAGRAM_ACCOUNTS ||--o{ INSTAGRAM_POSTS : "account_id"
     COMMUNITY_POSTS ||--o{ COMMUNITY_COMMENTS : "post_id"
     COMMUNITY_POSTS ||--o{ COMMUNITY_LIKES : "post_id"
     COMMUNITY_COMMENTS ||--o{ COMMUNITY_COMMENTS : "parent_id(대댓글)"
@@ -472,12 +469,6 @@ erDiagram
         jsonb photos "[{url,originalName}]"
         bigint sale_id FK
     }
-    INSIGHT_SCRAPS {
-        bigint id PK
-        bigint user_id FK
-        string target_type "trend|post"
-        bigint target_id "polymorphic"
-    }
     COMMUNITY_POSTS {
         bigint id PK
         bigint author_user_id FK
@@ -510,7 +501,7 @@ erDiagram
 - **예약 → 매출 논리참조**: `reservations.sale_id`가 `sales`를 논리 참조(예약→매출 전환). DB FK 제약 없음 — 매출 삭제 시 앱이 `sale_id`를 NULL 처리. (`sales.reservation_id`는 보유하지 않음 — 통계는 sales에서 집계.)
 - **고정비 멱등 자동생성**: `expenses(recurring_id, date)` UNIQUE + `recurring_skips`("이것만 삭제" 시 재발 방지).
 - **polymorphic 스크랩**: `(user_id, target_type, target_id)` 복합 unique. FK 없이 트렌드/포스트 공용.
-- **드리프트 반영**: 원본 `schema.sql`이 누락했던 `sales.is_unpaid`, `reservations.reminder_sent/pickup_completed`, `calendar_events`까지 실제 운영 스키마 기준으로 이식.
+- **드리프트 반영**: 원본 `schema.sql`이 누락했던 `sales.is_unpaid`, `reservations.reminder_sent/pickup_completed`, `schedules`까지 실제 운영 스키마 기준으로 이식.
 
 ---
 
@@ -522,10 +513,8 @@ erDiagram
 | 매출 | `GET/POST/PATCH/DELETE /sales`, `GET /sales/summary`, `/sales/{id}/complete-unpaid`·`/revert-unpaid`, `/sales/suggestions` | Auth |
 | 지출·고정비 | `/expenses`, `/recurring-expenses`(+`/toggle`·`/quick-add`·`/instances/{id}?scope=this\|all`) | Auth |
 | 고객 | `/customers`(+`/search`·`/check-phone`·`/{id}/sales`·`/find-or-create`·`/{id}/grade`) | Auth |
-| 예약·캘린더 | `/reservations`(+`/upcoming`·`/reminders`·`/convert-to-sale`·`/add-pickup`), `/calendar-events` | Auth |
+| 예약·일정 | `/reservations`(+`/upcoming`·`/reminders`·`/convert-to-sale`·`/add-pickup`), `/schedules` | Auth |
 | 사진첩 | `GET/POST/PATCH/DELETE /photo-cards`, `POST /photo-cards/upload-targets`(신규 카드용), `POST /photo-cards/{id}/upload-targets`, `GET /photo-cards/{id}/photos/download`, `/photos/reorder`, `/photo-tags` | Auth |
-| 인사이트 | `GET /insights/{trends,accounts,posts}`, `GET /insights/trends/counts`, `GET /insights/instagram/latest`, `/insights/scraps/*` | Auth |
-| 내부 수집 | `POST /internal/{trends,instagram-posts,instagram-accounts}` | **Internal 키** |
 | 커뮤니티 | `GET/POST /community/posts`, `GET/PATCH/DELETE /community/posts/{id}`, `POST /community/posts/{id}/like`, `GET/POST /community/posts/{id}/comments`, `DELETE /community/comments/{id}`, `POST /community/upload-targets` | Auth + **사업자 인증** |
 | 사업자 인증 | `POST /verification/business/upload-target`, `POST /verification/business`, `GET /verification/business/me` | Auth |
 | 설정 | `/settings/{sale-categories,payment-methods,expense-*,preferences}`, `/push/{subscribe,unsubscribe,status,test}` | Auth |

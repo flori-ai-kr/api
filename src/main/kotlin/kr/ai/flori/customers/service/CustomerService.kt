@@ -13,6 +13,9 @@ import kr.ai.flori.customers.repository.CustomerRepository
 import kr.ai.flori.sales.dto.SaleResponse
 import kr.ai.flori.sales.dto.SalesPageResponse
 import kr.ai.flori.sales.repository.SaleRepository
+import kr.ai.flori.settings.entity.LabelDomains
+import kr.ai.flori.settings.entity.LabelKinds
+import kr.ai.flori.settings.service.LabelSettingReader
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -28,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional
 class CustomerService(
     private val customerRepository: CustomerRepository,
     private val saleRepository: SaleRepository,
+    private val labelReader: LabelSettingReader,
     private val jdbcTemplate: JdbcTemplate,
 ) {
     @Transactional(readOnly = true)
@@ -45,6 +49,17 @@ class CustomerService(
         val customer = load(id)
         return CustomerResponse.from(customer, statsFor(customer.userId, id))
     }
+
+    /** 고객별 구매(매출) 건수 일괄 조회. 예약 카드의 'N번 방문' 배지 등 enrichment 용도. */
+    @Transactional(readOnly = true)
+    fun purchaseCountsByCustomer(): Map<Long, Int> =
+        jdbcTemplate
+            .query(
+                "SELECT customer_id, count(*) AS cnt FROM sales " +
+                    "WHERE user_id = ?::bigint AND customer_id IS NOT NULL GROUP BY customer_id",
+                { rs, _ -> rs.getLong("customer_id") to rs.getInt("cnt") },
+                TenantContext.currentUserId(),
+            ).toMap()
 
     @Transactional(readOnly = true)
     fun searchByName(query: String): List<CustomerSearchResult> {
@@ -79,7 +94,20 @@ class CustomerService(
         load(customerId) // 소유권 확인
         val pageable = PageRequest.of(page.coerceAtLeast(0), size.coerceIn(1, MAX_PAGE_SIZE), Sort.by(Sort.Order.desc("date")))
         val result = saleRepository.findByUserIdAndCustomerId(userId, customerId, pageable)
-        return SalesPageResponse(result.content.map(SaleResponse::from), result.hasNext())
+        val catMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.CATEGORY)
+        val payMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.PAYMENT)
+        val chMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.CHANNEL)
+        return SalesPageResponse(
+            result.content.map { sale ->
+                SaleResponse.from(
+                    sale,
+                    sale.categoryId?.let { catMap[it] },
+                    sale.paymentMethodId?.let { payMap[it] },
+                    sale.channelId?.let { chMap[it] },
+                )
+            },
+            result.hasNext(),
+        )
     }
 
     @Transactional
@@ -92,7 +120,7 @@ class CustomerService(
         val customer = Customer(userId, requireNotNull(request.name), phone)
         customer.grade = validGrade(request.grade ?: DEFAULT_GRADE)
         customer.gender = validGender(request.gender)
-        customer.note = request.note
+        customer.memo = request.memo
         return CustomerResponse.from(customerRepository.save(customer), CustomerStats.EMPTY)
     }
 
@@ -106,7 +134,7 @@ class CustomerService(
         request.phone?.let { customer.phone = it }
         request.grade?.let { customer.grade = validGrade(it) }
         request.gender?.let { customer.gender = validGender(it) }
-        request.note?.let { customer.note = it }
+        request.memo?.let { customer.memo = it }
         return CustomerResponse.from(saveUnique(customer), statsFor(customer.userId, id))
     }
 

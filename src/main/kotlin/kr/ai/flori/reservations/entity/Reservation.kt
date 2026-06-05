@@ -40,8 +40,8 @@ class Reservation(
     @Column(name = "title", nullable = false)
     var title: String = ""
 
-    @Column(name = "description")
-    var description: String? = null
+    @Column(name = "memo")
+    var memo: String? = null
 
     @Column(name = "status", nullable = false)
     var status: String = "pending"

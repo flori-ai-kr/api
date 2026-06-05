@@ -15,71 +15,79 @@ data class ExpenseCreateRequest(
     @field:NotBlank(message = "물품명은 필수입니다")
     @field:Size(max = FieldLimits.ITEM_NAME, message = "물품명이 너무 깁니다")
     val itemName: String?,
-    @field:NotBlank(message = "카테고리는 필수입니다")
-    val category: String?,
+    @field:NotNull(message = "카테고리는 필수입니다")
+    val categoryId: Long?,
     @field:NotNull @field:Min(0, message = "단가는 0 이상이어야 합니다")
     val unitPrice: Int?,
     @field:Min(1, message = "수량은 1 이상이어야 합니다")
     val quantity: Int = 1,
-    @field:NotBlank(message = "결제방식은 필수입니다")
-    val paymentMethod: String?,
+    @field:NotNull(message = "결제방식은 필수입니다")
+    val paymentMethodId: Long?,
     @field:Size(max = FieldLimits.CARD_COMPANY, message = "카드사명이 너무 깁니다")
     val cardCompany: String? = null,
     @field:Size(max = FieldLimits.VENDOR, message = "거래처가 너무 깁니다")
     val vendor: String? = null,
-    @field:Size(max = FieldLimits.NOTE, message = "메모가 너무 깁니다")
-    val note: String? = null,
+    @field:Size(max = FieldLimits.MEMO, message = "메모가 너무 깁니다")
+    val memo: String? = null,
 )
 
 data class ExpenseUpdateRequest(
     val date: LocalDate? = null,
     @field:Size(max = FieldLimits.ITEM_NAME, message = "물품명이 너무 깁니다")
     val itemName: String? = null,
-    val category: String? = null,
+    val categoryId: Long? = null,
     @field:Min(0, message = "단가는 0 이상이어야 합니다")
     val unitPrice: Int? = null,
     @field:Min(1, message = "수량은 1 이상이어야 합니다")
     val quantity: Int? = null,
-    val paymentMethod: String? = null,
+    val paymentMethodId: Long? = null,
     @field:Size(max = FieldLimits.CARD_COMPANY, message = "카드사명이 너무 깁니다")
     val cardCompany: String? = null,
     @field:Size(max = FieldLimits.VENDOR, message = "거래처가 너무 깁니다")
     val vendor: String? = null,
-    @field:Size(max = FieldLimits.NOTE, message = "메모가 너무 깁니다")
-    val note: String? = null,
+    @field:Size(max = FieldLimits.MEMO, message = "메모가 너무 깁니다")
+    val memo: String? = null,
 )
 
 data class ExpenseResponse(
     val id: Long,
     val date: LocalDate,
     val itemName: String,
-    val category: String,
+    val categoryId: Long?,
+    val categoryLabel: String?,
     val unitPrice: Int,
     val quantity: Int,
     val totalAmount: Int,
-    val paymentMethod: String,
+    val paymentMethodId: Long?,
+    val paymentMethodLabel: String?,
     val cardCompany: String?,
     val vendor: String?,
-    val note: String?,
+    val memo: String?,
     val recurringId: Long?,
     val isRecurringModified: Boolean,
     val createdAt: Instant,
     val updatedAt: Instant,
 ) {
     companion object {
-        fun from(e: Expense): ExpenseResponse =
+        fun from(
+            e: Expense,
+            categoryLabel: String?,
+            paymentMethodLabel: String?,
+        ): ExpenseResponse =
             ExpenseResponse(
                 id = requireNotNull(e.id),
                 date = e.date,
                 itemName = e.itemName,
-                category = e.category,
+                categoryId = e.categoryId,
+                categoryLabel = categoryLabel,
                 unitPrice = e.unitPrice,
                 quantity = e.quantity,
                 totalAmount = e.totalAmount,
-                paymentMethod = e.paymentMethod,
+                paymentMethodId = e.paymentMethodId,
+                paymentMethodLabel = paymentMethodLabel,
                 cardCompany = e.cardCompany,
                 vendor = e.vendor,
-                note = e.note,
+                memo = e.memo,
                 recurringId = e.recurringId,
                 isRecurringModified = e.isRecurringModified,
                 createdAt = e.createdAt,
@@ -91,5 +99,5 @@ data class ExpenseResponse(
 data class ExpenseSuggestionsResponse(
     val itemNames: List<String>,
     val vendors: List<String>,
-    val notes: List<String>,
+    val memos: List<String>,
 )

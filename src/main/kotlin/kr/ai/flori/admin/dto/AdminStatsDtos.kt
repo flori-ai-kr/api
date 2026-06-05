@@ -12,13 +12,6 @@ data class SalesCounts(
     val last30dCount: Long,
 )
 
-data class SubscriptionCounts(
-    val active: Long,
-    val inGrace: Long,
-    val expired: Long,
-    val none: Long,
-)
-
 data class VerificationCounts(
     val pending: Long,
     val approved: Long,
@@ -29,7 +22,6 @@ data class VerificationCounts(
 data class AdminOverviewResponse(
     val users: UserCounts,
     val sales: SalesCounts,
-    val subscriptions: SubscriptionCounts,
     val verifications: VerificationCounts,
     val comparison: OverviewComparison?,
 )

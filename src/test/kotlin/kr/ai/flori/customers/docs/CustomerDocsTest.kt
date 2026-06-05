@@ -33,7 +33,7 @@ class CustomerDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.STRING)
                 .optional()
                 .description("성별 (미입력이면 null)"),
-            fieldWithPath("note")
+            fieldWithPath("memo")
                 .type(JsonFieldType.STRING)
                 .optional()
                 .description("메모 (미입력이면 null)"),
@@ -72,20 +72,31 @@ class CustomerDocsTest : RestDocsSupport() {
             fieldWithPath("sales").type(JsonFieldType.ARRAY).description("매출 목록"),
             fieldWithPath("sales[].id").type(JsonFieldType.NUMBER).description("매출 ID"),
             fieldWithPath("sales[].date").type(JsonFieldType.STRING).description("매출 발생일 (yyyy-MM-dd)"),
-            fieldWithPath("sales[].productName")
-                .type(JsonFieldType.STRING)
-                .description("상품명"),
-            fieldWithPath("sales[].productCategory")
+            fieldWithPath("sales[].categoryId")
+                .type(JsonFieldType.NUMBER)
+                .optional()
+                .description("상품 카테고리 ID (null 가능)"),
+            fieldWithPath("sales[].categoryLabel")
                 .type(JsonFieldType.STRING)
                 .optional()
-                .description("상품 카테고리 (null 가능)"),
+                .description("상품 카테고리 이름 (null 가능)"),
             fieldWithPath("sales[].amount").type(JsonFieldType.NUMBER).description("결제 금액(원)"),
-            fieldWithPath("sales[].paymentMethod")
+            fieldWithPath("sales[].paymentMethodId")
+                .type(JsonFieldType.NUMBER)
+                .optional()
+                .description("결제수단 ID (미수면 null)"),
+            fieldWithPath("sales[].paymentMethodLabel")
                 .type(JsonFieldType.STRING)
-                .description("결제방식"),
-            fieldWithPath("sales[].reservationChannel")
+                .optional()
+                .description("결제수단 이름 (미수면 null)"),
+            fieldWithPath("sales[].channelId")
+                .type(JsonFieldType.NUMBER)
+                .optional()
+                .description("매출 채널 ID (null 가능)"),
+            fieldWithPath("sales[].channelLabel")
                 .type(JsonFieldType.STRING)
-                .description("예약 채널"),
+                .optional()
+                .description("매출 채널 이름 (null 가능)"),
             fieldWithPath("sales[].customerName")
                 .type(JsonFieldType.STRING)
                 .optional()
@@ -98,11 +109,14 @@ class CustomerDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.NUMBER)
                 .optional()
                 .description("연결된 고객 ID"),
-            fieldWithPath("sales[].note").type(JsonFieldType.STRING).optional().description("비고"),
+            fieldWithPath("sales[].memo").type(JsonFieldType.STRING).optional().description("비고"),
             fieldWithPath("sales[].isUnpaid").type(JsonFieldType.BOOLEAN).description("미수 여부"),
             fieldWithPath("sales[].hasReview")
                 .type(JsonFieldType.BOOLEAN)
                 .description("리뷰 보유 여부"),
+            fieldWithPath("sales[].photos")
+                .type(JsonFieldType.ARRAY)
+                .description("연결된 사진 URL 목록 (없으면 빈 배열)"),
             fieldWithPath("sales[].createdAt")
                 .type(JsonFieldType.STRING)
                 .description("생성 시각 (ISO-8601)"),
@@ -140,9 +154,9 @@ class CustomerDocsTest : RestDocsSupport() {
                     json(
                         mapOf(
                             "date" to "2026-05-22",
-                            "productCategory" to "basic_bouquet",
+                            "categoryId" to saleCategoryId(token),
                             "amount" to 50_000,
-                            "paymentMethod" to "cash",
+                            "paymentMethodId" to salePaymentId(token),
                             "customerId" to customerId,
                         ),
                     )
@@ -187,7 +201,7 @@ class CustomerDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("성별 (미입력이면 null)"),
-                                fieldWithPath("[].note")
+                                fieldWithPath("[].memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("메모 (미입력이면 null)"),
@@ -385,7 +399,7 @@ class CustomerDocsTest : RestDocsSupport() {
                             "phone" to "010-5555-6666",
                             "grade" to "regular",
                             "gender" to "female",
-                            "note" to "VIP 예비 고객",
+                            "memo" to "VIP 예비 고객",
                         ),
                     )
             }.andExpect { status { isCreated() } }
@@ -413,7 +427,7 @@ class CustomerDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("성별. male | female"),
-                                fieldWithPath("note")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("메모"),
@@ -480,7 +494,7 @@ class CustomerDocsTest : RestDocsSupport() {
                 content =
                     json(
                         mapOf(
-                            "note" to "수정된 메모",
+                            "memo" to "수정된 메모",
                             "gender" to "male",
                         ),
                     )
@@ -512,7 +526,7 @@ class CustomerDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("성별 변경. male | female"),
-                                fieldWithPath("note")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("메모 변경"),

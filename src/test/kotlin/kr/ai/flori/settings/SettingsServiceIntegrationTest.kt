@@ -57,11 +57,11 @@ class SettingsServiceIntegrationTest {
         newTenant()
         assertThat(saleCategoryService.list()).hasSize(11)
 
-        val added = saleCategoryService.add("발렌타인 꽃다발", null, "valentine")
+        val added = saleCategoryService.add("발렌타인 꽃다발", "valentine")
         assertThat(added.value).isEqualTo("valentine")
         assertThat(saleCategoryService.list()).hasSize(12)
 
-        val updated = saleCategoryService.update(added.id, "발렌타인 특별", "#ffffff")
+        val updated = saleCategoryService.update(added.id, "발렌타인 특별")
         assertThat(updated.label).isEqualTo("발렌타인 특별")
 
         saleCategoryService.delete(added.id)
@@ -71,8 +71,8 @@ class SettingsServiceIntegrationTest {
     @Test
     fun `중복 value 카테고리는 409`() {
         newTenant()
-        saleCategoryService.add("커스텀", null, "custom_x")
-        assertThatThrownBy { saleCategoryService.add("다른이름", null, "custom_x") }
+        saleCategoryService.add("커스텀", "custom_x")
+        assertThatThrownBy { saleCategoryService.add("다른이름", "custom_x") }
             .isInstanceOfSatisfying(AppException::class.java) {
                 assertThat(it.errorCode).isEqualTo(CommonErrorCode.CONFLICT)
             }
@@ -98,7 +98,7 @@ class SettingsServiceIntegrationTest {
     @Test
     fun `다른 테넌트의 설정은 격리된다`() {
         newTenant()
-        saleCategoryService.add("내것", null, "mine_only")
+        saleCategoryService.add("내것", "mine_only")
         newTenant() // 다른 사용자
         assertThat(saleCategoryService.list().map { it.value }).doesNotContain("mine_only")
         assertThat(saleCategoryService.list()).hasSize(11) // 본인 시드만

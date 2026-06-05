@@ -10,7 +10,6 @@ spring:
     init:
       mode: always
       schema-locations: file:docs/sql/all-tables-ddl.sql
-      data-locations: file:docs/sql/seed.sql
       # plpgsql 트리거 함수의 $$ 본문에 든 세미콜론을 ScriptUtils가 statement 구분자로
       # 오해하지 않도록, 파일 전체를 한 statement로 PG에 전달한다(서버가 dollar-quote를 파싱).
       separator: "^^^ END OF SCRIPT ^^^"

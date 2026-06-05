@@ -36,7 +36,7 @@ class UserPreferenceDocsTest : RestDocsSupport() {
                             listOf(
                                 fieldWithPath("bottomNavItems")
                                     .type(JsonFieldType.ARRAY)
-                                    .description("하단바 항목 키 목록 (예: dashboard, sales, expenses, customers, insights)"),
+                                    .description("하단바 항목 키 목록 (예: dashboard, sales, expenses, customers, calendar)"),
                             ),
                     ),
                 )
@@ -53,7 +53,7 @@ class UserPreferenceDocsTest : RestDocsSupport() {
             .put("/settings/preferences/bottom-nav") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
-                content = json(mapOf("items" to listOf("dashboard", "sales", "expenses", "insights")))
+                content = json(mapOf("items" to listOf("dashboard", "sales", "expenses", "customers")))
             }.andExpect { status { isOk() } }
             .andDo {
                 handle(

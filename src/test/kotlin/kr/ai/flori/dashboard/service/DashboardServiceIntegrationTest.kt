@@ -11,6 +11,9 @@ import kr.ai.flori.reservations.dto.ReservationCreateRequest
 import kr.ai.flori.reservations.service.ReservationService
 import kr.ai.flori.sales.dto.SaleCreateRequest
 import kr.ai.flori.sales.service.SaleService
+import kr.ai.flori.settings.entity.LabelDomains
+import kr.ai.flori.settings.entity.LabelKinds
+import kr.ai.flori.settings.repository.LabelSettingRepository
 import kr.ai.flori.support.TestAccounts
 import kr.ai.flori.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
@@ -46,6 +49,9 @@ class DashboardServiceIntegrationTest {
     @Autowired
     lateinit var userRepository: UserRepository
 
+    @Autowired
+    lateinit var labelSettingRepository: LabelSettingRepository
+
     private val today: LocalDate = LocalDate.now(ZoneId.of("Asia/Seoul"))
 
     @AfterEach
@@ -59,22 +65,53 @@ class DashboardServiceIntegrationTest {
         return userId
     }
 
+    private fun labelId(
+        kind: String,
+        value: String,
+        domain: String = LabelDomains.SALE,
+    ): Long =
+        requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
+                TenantContext.currentUserId(),
+                domain,
+                kind,
+                value,
+            ),
+        ).id!!
+
+    private fun saleCat(value: String) = labelId(LabelKinds.CATEGORY, value)
+
+    private fun saleChan(value: String) = labelId(LabelKinds.CHANNEL, value)
+
+    private fun salePay(value: String) = labelId(LabelKinds.PAYMENT, value)
+
+    private fun expCat(value: String) = labelId(LabelKinds.CATEGORY, value, LabelDomains.EXPENSE)
+
+    private fun expPay(value: String) = labelId(LabelKinds.PAYMENT, value, LabelDomains.EXPENSE)
+
     private fun seedData() {
         saleService.create(
             SaleCreateRequest(
                 today,
-                "basic_bouquet",
+                saleCat("basic_bouquet"),
                 100_000,
-                "card",
-                reservationChannel = "phone",
+                salePay("card"),
+                channelId = saleChan("phone"),
                 customerPhone = "01010001000",
             ),
         )
         saleService.create(
-            SaleCreateRequest(today, "vase", 50_000, "cash", reservationChannel = "road", customerPhone = "01010001000"),
+            SaleCreateRequest(
+                today,
+                saleCat("vase"),
+                50_000,
+                salePay("cash"),
+                channelId = saleChan("road"),
+                customerPhone = "01010001000",
+            ),
         )
-        saleService.create(SaleCreateRequest(today, "reservation", 30_000, "unpaid"))
-        expenseService.create(ExpenseCreateRequest(today, "장미", "flower_purchase", 5_000, 2, "card"))
+        saleService.create(SaleCreateRequest(today, saleCat("reservation"), 30_000, null, isUnpaid = true))
+        expenseService.create(ExpenseCreateRequest(today, "장미", expCat("flower_purchase"), 5_000, 2, expPay("card")))
         reservationService.create(ReservationCreateRequest(today, null, "홍길동", null, "픽업"))
     }
 
@@ -101,11 +138,13 @@ class DashboardServiceIntegrationTest {
         assertThat(result.summary.totalAmount).isEqualTo(150_000)
         assertThat(result.expenseTotal).isEqualTo(10_000) // 5000 * 2
 
-        assertThat(result.categoryStats.first { it.name == "basic_bouquet" }.amount).isEqualTo(100_000)
-        assertThat(result.paymentStats.first { it.method == "card" }.amount).isEqualTo(100_000)
-        assertThat(result.paymentStats.first { it.method == "card" }.label).isEqualTo("카드")
-        assertThat(result.channelStats.first { it.channel == "phone" }.amount).isEqualTo(100_000)
-        assertThat(result.expenseStats.first { it.category == "flower_purchase" }.amount).isEqualTo(10_000)
+        assertThat(result.categoryStats.first { it.categoryId == saleCat("basic_bouquet") }.amount).isEqualTo(100_000)
+        assertThat(result.categoryStats.first { it.categoryId == saleCat("basic_bouquet") }.label).isEqualTo("기본 꽃다발")
+        assertThat(result.paymentStats.first { it.paymentMethodId == salePay("card") }.amount).isEqualTo(100_000)
+        assertThat(result.paymentStats.first { it.paymentMethodId == salePay("card") }.label).isEqualTo("카드")
+        assertThat(result.channelStats.first { it.channelId == saleChan("phone") }.amount).isEqualTo(100_000)
+        assertThat(result.channelStats.first { it.channelId == saleChan("phone") }.label).isEqualTo("전화")
+        assertThat(result.expenseStats.first { it.categoryId == expCat("flower_purchase") }.amount).isEqualTo(10_000)
 
         // 동일 전화번호 1명, 이전 매출 없음 → 신규 1
         assertThat(result.customerStats.totalCustomers).isEqualTo(1)

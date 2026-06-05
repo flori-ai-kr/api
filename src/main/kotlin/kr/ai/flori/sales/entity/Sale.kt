@@ -19,22 +19,20 @@ class Sale(
     var userId: Long,
     @Column(name = "date", nullable = false)
     var date: LocalDate,
-    @Column(name = "product_name", nullable = false)
-    var productName: String,
-    @Column(name = "product_category")
-    var productCategory: String?,
+    @Column(name = "category_id")
+    var categoryId: Long?,
     @Column(name = "amount", nullable = false)
     var amount: Int,
-    @Column(name = "payment_method", nullable = false)
-    var paymentMethod: String,
+    @Column(name = "payment_method_id")
+    var paymentMethodId: Long?,
 ) : BaseEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     var id: Long? = null
 
-    @Column(name = "reservation_channel")
-    var reservationChannel: String = "other"
+    @Column(name = "channel_id")
+    var channelId: Long? = null
 
     @Column(name = "is_unpaid", nullable = false)
     var isUnpaid: Boolean = false
@@ -48,8 +46,8 @@ class Sale(
     @Column(name = "customer_id")
     var customerId: Long? = null
 
-    @Column(name = "note")
-    var note: String? = null
+    @Column(name = "memo")
+    var memo: String? = null
 
     @Column(name = "has_review")
     var hasReview: Boolean = false

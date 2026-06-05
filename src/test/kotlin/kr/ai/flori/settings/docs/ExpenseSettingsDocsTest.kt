@@ -26,47 +26,46 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.STRING)
                 .description("식별 값 (영문 snake_case, 지출 기록 시 참조 키)"),
             fieldWithPath("label").type(JsonFieldType.STRING).description("화면 표시 이름"),
-            fieldWithPath("color").type(JsonFieldType.STRING).description("표시 색상 (hex)"),
             fieldWithPath("sortOrder").type(JsonFieldType.NUMBER).description("정렬 순서"),
         )
 
-    /** 테스트용 지출 카테고리 생성 → 생성된 id 반환 (value는 varchar(20) 제한 준수) */
-    private fun createExpenseCategory(token: String): String {
-        val suffix = System.nanoTime().toString().takeLast(6)
-        val res =
-            mockMvc
-                .post("/settings/expense-categories") {
-                    header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-                    contentType = MediaType.APPLICATION_JSON
-                    content =
-                        json(
-                            mapOf(
-                                "label" to "테스트지출카테고리",
-                                "color" to "#aabbcc",
-                                "value" to "ecat_$suffix",
-                            ),
-                        )
-                }.andReturn()
-                .response.contentAsString
-        return objectMapper.readTree(res).get("id").asText()
-    }
+    private val labelListResponseFields =
+        listOf(
+            fieldWithPath("[]").type(JsonFieldType.ARRAY).description("설정 목록"),
+            fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("설정 항목 ID"),
+            fieldWithPath("[].value").type(JsonFieldType.STRING).description("식별 값 (영문 snake_case)"),
+            fieldWithPath("[].label").type(JsonFieldType.STRING).description("화면 표시 이름"),
+            fieldWithPath("[].sortOrder").type(JsonFieldType.NUMBER).description("정렬 순서"),
+        )
 
-    /** 테스트용 지출 결제방식 생성 → 생성된 id 반환 (value는 varchar(20) 제한 준수) */
-    private fun createExpensePayment(token: String): String {
+    private val createRequestFields =
+        listOf(
+            fieldWithPath("label").type(JsonFieldType.STRING).description("화면 표시 이름 (필수)"),
+            fieldWithPath("value")
+                .type(JsonFieldType.STRING)
+                .optional()
+                .description("식별 값 (영문 snake_case, 없으면 자동 생성)"),
+        )
+
+    private val updateRequestFields =
+        listOf(
+            fieldWithPath("label").type(JsonFieldType.STRING).description("변경할 화면 표시 이름 (필수)"),
+        )
+
+    /** 테스트용 항목 생성 → 생성된 id 반환 (value는 varchar 제한 준수) */
+    private fun createItem(
+        token: String,
+        path: String,
+        labelText: String,
+        valuePrefix: String,
+    ): String {
         val suffix = System.nanoTime().toString().takeLast(6)
         val res =
             mockMvc
-                .post("/settings/expense-payment-methods") {
+                .post(path) {
                     header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                     contentType = MediaType.APPLICATION_JSON
-                    content =
-                        json(
-                            mapOf(
-                                "label" to "테스트지출결제",
-                                "color" to "#001122",
-                                "value" to "epay_$suffix",
-                            ),
-                        )
+                    content = json(mapOf("label" to labelText, "value" to "${valuePrefix}_$suffix"))
                 }.andReturn()
                 .response.contentAsString
         return objectMapper.readTree(res).get("id").asText()
@@ -89,23 +88,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                         responseSchema = "LabelSettingListResponse",
                         tag = "ExpenseSettings",
                         summary = "지출 카테고리 목록 (가입 시 시드 포함)",
-                        responseFields =
-                            listOf(
-                                fieldWithPath("[]").type(JsonFieldType.ARRAY).description("지출 카테고리 목록"),
-                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("설정 항목 ID"),
-                                fieldWithPath("[].value")
-                                    .type(JsonFieldType.STRING)
-                                    .description("식별 값 (영문 snake_case)"),
-                                fieldWithPath("[].label")
-                                    .type(JsonFieldType.STRING)
-                                    .description("화면 표시 이름"),
-                                fieldWithPath("[].color")
-                                    .type(JsonFieldType.STRING)
-                                    .description("표시 색상 (hex)"),
-                                fieldWithPath("[].sortOrder")
-                                    .type(JsonFieldType.NUMBER)
-                                    .description("정렬 순서"),
-                            ),
+                        responseFields = labelListResponseFields,
                     ),
                 )
             }
@@ -121,14 +104,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
             .post("/settings/expense-categories") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
-                content =
-                    json(
-                        mapOf(
-                            "label" to "인건비",
-                            "color" to "#6a1b9a",
-                            "value" to "labor_cost",
-                        ),
-                    )
+                content = json(mapOf("label" to "인건비", "value" to "labor_cost"))
             }.andExpect { status { isCreated() } }
             .andDo {
                 handle(
@@ -138,20 +114,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                         responseSchema = "LabelSettingResponse",
                         tag = "ExpenseSettings",
                         summary = "지출 카테고리 생성 (value 중복 불가)",
-                        requestFields =
-                            listOf(
-                                fieldWithPath("label")
-                                    .type(JsonFieldType.STRING)
-                                    .description("화면 표시 이름 (필수)"),
-                                fieldWithPath("color")
-                                    .type(JsonFieldType.STRING)
-                                    .optional()
-                                    .description("표시 색상 hex (없으면 기본값 적용)"),
-                                fieldWithPath("value")
-                                    .type(JsonFieldType.STRING)
-                                    .optional()
-                                    .description("식별 값 (영문 snake_case, 없으면 자동 생성)"),
-                            ),
+                        requestFields = createRequestFields,
                         responseFields = labelResponseFields,
                     ),
                 )
@@ -163,20 +126,14 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
     @Test
     fun `지출 카테고리 수정 문서화`() {
         val token = signupAndToken()
-        val id = createExpenseCategory(token)
+        val id = createItem(token, "/settings/expense-categories", "테스트지출카테고리", "ecat")
 
         mockMvc
             .put("/settings/expense-categories/$id") {
                 requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/settings/expense-categories/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
-                content =
-                    json(
-                        mapOf(
-                            "label" to "수정된 지출 카테고리",
-                            "color" to "#ffffff",
-                        ),
-                    )
+                content = json(mapOf("label" to "수정된 지출 카테고리"))
             }.andExpect { status { isOk() } }
             .andDo {
                 handle(
@@ -185,17 +142,9 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                         requestSchema = "LabelSettingUpdateRequest",
                         responseSchema = "LabelSettingResponse",
                         tag = "ExpenseSettings",
-                        summary = "지출 카테고리 수정 (label·color 전체 교체)",
+                        summary = "지출 카테고리 수정 (label 교체)",
                         pathParameters = listOf(parameterWithName("id").description("지출 카테고리 ID")),
-                        requestFields =
-                            listOf(
-                                fieldWithPath("label")
-                                    .type(JsonFieldType.STRING)
-                                    .description("변경할 화면 표시 이름 (필수)"),
-                                fieldWithPath("color")
-                                    .type(JsonFieldType.STRING)
-                                    .description("변경할 색상 hex (필수)"),
-                            ),
+                        requestFields = updateRequestFields,
                         responseFields = labelResponseFields,
                     ),
                 )
@@ -207,7 +156,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
     @Test
     fun `지출 카테고리 삭제 문서화`() {
         val token = signupAndToken()
-        val id = createExpenseCategory(token)
+        val id = createItem(token, "/settings/expense-categories", "테스트지출카테고리", "ecat")
 
         mockMvc
             .delete("/settings/expense-categories/$id") {
@@ -243,23 +192,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                         responseSchema = "LabelSettingListResponse",
                         tag = "ExpenseSettings",
                         summary = "지출 결제방식 목록 (가입 시 시드 포함)",
-                        responseFields =
-                            listOf(
-                                fieldWithPath("[]").type(JsonFieldType.ARRAY).description("지출 결제방식 목록"),
-                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("설정 항목 ID"),
-                                fieldWithPath("[].value")
-                                    .type(JsonFieldType.STRING)
-                                    .description("식별 값 (영문 snake_case)"),
-                                fieldWithPath("[].label")
-                                    .type(JsonFieldType.STRING)
-                                    .description("화면 표시 이름"),
-                                fieldWithPath("[].color")
-                                    .type(JsonFieldType.STRING)
-                                    .description("표시 색상 (hex)"),
-                                fieldWithPath("[].sortOrder")
-                                    .type(JsonFieldType.NUMBER)
-                                    .description("정렬 순서"),
-                            ),
+                        responseFields = labelListResponseFields,
                     ),
                 )
             }
@@ -275,14 +208,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
             .post("/settings/expense-payment-methods") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
-                content =
-                    json(
-                        mapOf(
-                            "label" to "법인카드",
-                            "color" to "#0277bd",
-                            "value" to "corporate_card",
-                        ),
-                    )
+                content = json(mapOf("label" to "법인카드", "value" to "corporate_card"))
             }.andExpect { status { isCreated() } }
             .andDo {
                 handle(
@@ -292,20 +218,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                         responseSchema = "LabelSettingResponse",
                         tag = "ExpenseSettings",
                         summary = "지출 결제방식 생성",
-                        requestFields =
-                            listOf(
-                                fieldWithPath("label")
-                                    .type(JsonFieldType.STRING)
-                                    .description("화면 표시 이름 (필수)"),
-                                fieldWithPath("color")
-                                    .type(JsonFieldType.STRING)
-                                    .optional()
-                                    .description("표시 색상 hex"),
-                                fieldWithPath("value")
-                                    .type(JsonFieldType.STRING)
-                                    .optional()
-                                    .description("식별 값 (영문 snake_case, 없으면 자동 생성)"),
-                            ),
+                        requestFields = createRequestFields,
                         responseFields = labelResponseFields,
                     ),
                 )
@@ -317,20 +230,14 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
     @Test
     fun `지출 결제방식 수정 문서화`() {
         val token = signupAndToken()
-        val id = createExpensePayment(token)
+        val id = createItem(token, "/settings/expense-payment-methods", "테스트지출결제", "epay")
 
         mockMvc
             .put("/settings/expense-payment-methods/$id") {
                 requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/settings/expense-payment-methods/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
-                content =
-                    json(
-                        mapOf(
-                            "label" to "수정된 지출 결제방식",
-                            "color" to "#000000",
-                        ),
-                    )
+                content = json(mapOf("label" to "수정된 지출 결제방식"))
             }.andExpect { status { isOk() } }
             .andDo {
                 handle(
@@ -339,17 +246,9 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
                         requestSchema = "LabelSettingUpdateRequest",
                         responseSchema = "LabelSettingResponse",
                         tag = "ExpenseSettings",
-                        summary = "지출 결제방식 수정 (label·color 전체 교체)",
+                        summary = "지출 결제방식 수정 (label 교체)",
                         pathParameters = listOf(parameterWithName("id").description("지출 결제방식 ID")),
-                        requestFields =
-                            listOf(
-                                fieldWithPath("label")
-                                    .type(JsonFieldType.STRING)
-                                    .description("변경할 화면 표시 이름 (필수)"),
-                                fieldWithPath("color")
-                                    .type(JsonFieldType.STRING)
-                                    .description("변경할 색상 hex (필수)"),
-                            ),
+                        requestFields = updateRequestFields,
                         responseFields = labelResponseFields,
                     ),
                 )
@@ -361,7 +260,7 @@ class ExpenseSettingsDocsTest : RestDocsSupport() {
     @Test
     fun `지출 결제방식 삭제 문서화`() {
         val token = signupAndToken()
-        val id = createExpensePayment(token)
+        val id = createItem(token, "/settings/expense-payment-methods", "테스트지출결제", "epay")
 
         mockMvc
             .delete("/settings/expense-payment-methods/$id") {

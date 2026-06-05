@@ -5,6 +5,7 @@ import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.common.util.KST
+import kr.ai.flori.customers.service.CustomerService
 import kr.ai.flori.reservations.dto.AddPickupRequest
 import kr.ai.flori.reservations.dto.ReservationCreateRequest
 import kr.ai.flori.reservations.dto.ReservationResponse
@@ -14,7 +15,11 @@ import kr.ai.flori.reservations.entity.Reservation
 import kr.ai.flori.reservations.repository.ReservationRepository
 import kr.ai.flori.sales.dto.SaleCreateRequest
 import kr.ai.flori.sales.dto.SaleResponse
+import kr.ai.flori.sales.repository.SaleRepository
 import kr.ai.flori.sales.service.SaleService
+import kr.ai.flori.settings.entity.LabelDomains
+import kr.ai.flori.settings.entity.LabelKinds
+import kr.ai.flori.settings.service.LabelSettingReader
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Duration
@@ -30,13 +35,43 @@ import java.time.YearMonth
 class ReservationService(
     private val reservationRepository: ReservationRepository,
     private val saleService: SaleService,
+    private val saleRepository: SaleRepository,
+    private val customerService: CustomerService,
+    private val labelReader: LabelSettingReader,
 ) {
     @Transactional(readOnly = true)
     fun listByMonth(month: String): List<ReservationResponse> {
+        val userId = TenantContext.currentUserId()
         val ym = YearMonth.parse(month)
-        return reservationRepository
-            .findByUserIdAndDateBetweenOrderByDateAscTimeAsc(TenantContext.currentUserId(), ym.atDay(1), ym.atEndOfMonth())
-            .map(ReservationResponse::from)
+        val reservations =
+            reservationRepository
+                .findByUserIdAndDateBetweenOrderByDateAscTimeAsc(userId, ym.atDay(1), ym.atEndOfMonth())
+
+        // 매출 조인 enrichment: 연결된 매출/고객 구매횟수를 일괄 조회해 카드 표시 필드를 채운다.
+        val saleIds = reservations.mapNotNull { it.saleId }.distinct()
+        val salesById =
+            if (saleIds.isEmpty()) {
+                emptyMap()
+            } else {
+                saleRepository.findAllById(saleIds).filter { it.userId == userId }.associateBy { it.id }
+            }
+        val purchaseCounts = customerService.purchaseCountsByCustomer()
+        val catMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.CATEGORY)
+        val chMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.CHANNEL)
+        val payMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.PAYMENT)
+
+        return reservations.map { r ->
+            val sale = r.saleId?.let { salesById[it] }
+            val purchaseCount = sale?.customerId?.let { purchaseCounts[it] }
+            ReservationResponse.from(
+                r,
+                sale,
+                purchaseCount,
+                sale?.categoryId?.let { catMap[it] },
+                sale?.channelId?.let { chMap[it] },
+                sale?.paymentMethodId?.let { payMap[it] },
+            )
+        }
     }
 
     @Transactional(readOnly = true)
@@ -70,21 +105,27 @@ class ReservationService(
         val userId = TenantContext.currentUserId()
         return ReservationSuggestionsResponse(
             titles = reservationRepository.findTitlesByFrequency(userId),
-            descriptions = reservationRepository.findDescriptionsByFrequency(userId),
+            memos = reservationRepository.findMemosByFrequency(userId),
         )
     }
 
     @Transactional
     fun create(request: ReservationCreateRequest): ReservationResponse {
+        val customerName = requireNotNull(request.customerName)
         val reservation = Reservation(TenantContext.currentUserId(), requireNotNull(request.date))
         reservation.time = request.time
-        reservation.customerName = requireNotNull(request.customerName)
+        reservation.customerName = customerName
         reservation.customerPhone = request.customerPhone
         reservation.title = requireNotNull(request.title)
-        reservation.description = request.description
+        reservation.memo = request.memo
         reservation.amount = request.amount
         reservation.status = validStatus(request.status ?: ReservationStatuses.PENDING)
         reservation.reminderAt = request.reminderAt
+
+        request.customerPhone?.takeIf { it.isNotBlank() }?.let { phone ->
+            customerService.findOrCreate(customerName, phone)
+        }
+
         return ReservationResponse.from(reservationRepository.save(reservation))
     }
 
@@ -99,7 +140,7 @@ class ReservationService(
         request.customerName?.let { reservation.customerName = it }
         request.customerPhone?.let { reservation.customerPhone = it }
         request.title?.let { reservation.title = it }
-        request.description?.let { reservation.description = it }
+        request.memo?.let { reservation.memo = it }
         request.amount?.let { reservation.amount = it }
         request.status?.let { reservation.status = validStatus(it) }
         request.saleId?.let {

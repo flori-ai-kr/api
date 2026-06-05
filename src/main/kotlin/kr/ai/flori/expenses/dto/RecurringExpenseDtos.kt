@@ -12,16 +12,16 @@ import java.time.LocalDate
 data class RecurringExpenseRequest(
     @field:NotBlank(message = "물품명은 필수입니다")
     val itemName: String?,
-    @field:NotBlank(message = "카테고리는 필수입니다")
-    val category: String?,
+    @field:NotNull(message = "카테고리는 필수입니다")
+    val categoryId: Long?,
     @field:NotNull @field:Min(0, message = "단가는 0 이상이어야 합니다")
     val unitPrice: Int?,
     @field:Min(1, message = "수량은 1 이상이어야 합니다")
     val quantity: Int = 1,
-    @field:NotBlank(message = "결제방식은 필수입니다")
-    val paymentMethod: String?,
+    @field:NotNull(message = "결제방식은 필수입니다")
+    val paymentMethodId: Long?,
     val vendor: String? = null,
-    val note: String? = null,
+    val memo: String? = null,
     @field:NotBlank(message = "반복 주기는 필수입니다")
     val frequency: String?,
     @field:Min(1, message = "간격은 1 이상이어야 합니다")
@@ -44,25 +44,27 @@ data class ToggleActiveRequest(
 data class RecurringInstanceUpdateRequest(
     val date: LocalDate? = null,
     val itemName: String? = null,
-    val category: String? = null,
+    val categoryId: Long? = null,
     @field:Min(0, message = "단가는 0 이상이어야 합니다")
     val unitPrice: Int? = null,
     @field:Min(1, message = "수량은 1 이상이어야 합니다")
     val quantity: Int? = null,
-    val paymentMethod: String? = null,
+    val paymentMethodId: Long? = null,
     val vendor: String? = null,
-    val note: String? = null,
+    val memo: String? = null,
 )
 
 data class RecurringExpenseResponse(
     val id: Long,
     val itemName: String,
-    val category: String,
+    val categoryId: Long?,
+    val categoryLabel: String?,
     val unitPrice: Int,
     val quantity: Int,
-    val paymentMethod: String,
+    val paymentMethodId: Long?,
+    val paymentMethodLabel: String?,
     val vendor: String?,
-    val note: String?,
+    val memo: String?,
     val frequency: String,
     val intervalCount: Int,
     val daysOfWeek: List<Int>,
@@ -75,16 +77,22 @@ data class RecurringExpenseResponse(
     val updatedAt: Instant,
 ) {
     companion object {
-        fun from(r: RecurringExpense): RecurringExpenseResponse =
+        fun from(
+            r: RecurringExpense,
+            categoryLabel: String?,
+            paymentMethodLabel: String?,
+        ): RecurringExpenseResponse =
             RecurringExpenseResponse(
                 id = requireNotNull(r.id),
                 itemName = r.itemName,
-                category = r.category,
+                categoryId = r.categoryId,
+                categoryLabel = categoryLabel,
                 unitPrice = r.unitPrice,
                 quantity = r.quantity,
-                paymentMethod = r.paymentMethod,
+                paymentMethodId = r.paymentMethodId,
+                paymentMethodLabel = paymentMethodLabel,
                 vendor = r.vendor,
-                note = r.note,
+                memo = r.memo,
                 frequency = r.frequency,
                 intervalCount = r.intervalCount,
                 daysOfWeek = r.daysOfWeek,

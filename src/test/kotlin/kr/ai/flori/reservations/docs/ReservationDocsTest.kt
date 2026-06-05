@@ -34,7 +34,7 @@ class ReservationDocsTest : RestDocsSupport() {
                 .optional()
                 .description("고객 전화번호 (미입력이면 null)"),
             fieldWithPath("title").type(JsonFieldType.STRING).description("예약 제목"),
-            fieldWithPath("description")
+            fieldWithPath("memo")
                 .type(JsonFieldType.STRING)
                 .optional()
                 .description("상세 메모 (미입력이면 null)"),
@@ -54,6 +54,13 @@ class ReservationDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.BOOLEAN)
                 .description("리마인더 발송 여부 (reminderAt 변경 시 false로 리셋)"),
             fieldWithPath("pickupCompleted").type(JsonFieldType.BOOLEAN).description("픽업 완료 여부"),
+            fieldWithPath("saleDate").type(JsonFieldType.STRING).optional().description("연결된 매출 결제일 (매출 미연결 시 null)"),
+            fieldWithPath("productCategory").type(JsonFieldType.STRING).optional().description("연결된 매출 상품 카테고리"),
+            fieldWithPath("customerId").type(JsonFieldType.NUMBER).optional().description("연결된 고객 ID (딥링크용)"),
+            fieldWithPath("purchaseCount").type(JsonFieldType.NUMBER).optional().description("고객 누적 구매 건수"),
+            fieldWithPath("saleIsUnpaid").type(JsonFieldType.BOOLEAN).optional().description("연결된 매출 미수 여부"),
+            fieldWithPath("salePaymentMethod").type(JsonFieldType.STRING).optional().description("연결된 매출 결제방식"),
+            fieldWithPath("saleReservationChannel").type(JsonFieldType.STRING).optional().description("연결된 매출 예약 채널"),
             fieldWithPath("createdAt").type(JsonFieldType.STRING).description("생성 시각 (ISO-8601)"),
             fieldWithPath("updatedAt").type(JsonFieldType.STRING).description("최종 수정 시각 (ISO-8601)"),
         )
@@ -63,14 +70,19 @@ class ReservationDocsTest : RestDocsSupport() {
         listOf(
             fieldWithPath("id").type(JsonFieldType.NUMBER).description("매출 ID"),
             fieldWithPath("date").type(JsonFieldType.STRING).description("매출 발생일 (yyyy-MM-dd)"),
-            fieldWithPath("productName").type(JsonFieldType.STRING).description("상품명"),
-            fieldWithPath("productCategory")
+            fieldWithPath("categoryId")
+                .type(JsonFieldType.NUMBER)
+                .optional()
+                .description("상품 카테고리 ID (null 가능)"),
+            fieldWithPath("categoryLabel")
                 .type(JsonFieldType.STRING)
                 .optional()
-                .description("상품 카테고리 (null 가능)"),
+                .description("상품 카테고리 이름 (null 가능)"),
             fieldWithPath("amount").type(JsonFieldType.NUMBER).description("결제 금액(원)"),
-            fieldWithPath("paymentMethod").type(JsonFieldType.STRING).description("결제방식"),
-            fieldWithPath("reservationChannel").type(JsonFieldType.STRING).description("예약 채널"),
+            fieldWithPath("paymentMethodId").type(JsonFieldType.NUMBER).optional().description("결제수단 ID (미수면 null)"),
+            fieldWithPath("paymentMethodLabel").type(JsonFieldType.STRING).optional().description("결제수단 이름 (미수면 null)"),
+            fieldWithPath("channelId").type(JsonFieldType.NUMBER).optional().description("매출 채널 ID (null 가능)"),
+            fieldWithPath("channelLabel").type(JsonFieldType.STRING).optional().description("매출 채널 이름 (null 가능)"),
             fieldWithPath("customerName")
                 .type(JsonFieldType.STRING)
                 .optional()
@@ -83,9 +95,10 @@ class ReservationDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.NUMBER)
                 .optional()
                 .description("연결된 고객 ID (미연결이면 null)"),
-            fieldWithPath("note").type(JsonFieldType.STRING).optional().description("비고"),
+            fieldWithPath("memo").type(JsonFieldType.STRING).optional().description("비고"),
             fieldWithPath("isUnpaid").type(JsonFieldType.BOOLEAN).description("미수 여부"),
             fieldWithPath("hasReview").type(JsonFieldType.BOOLEAN).description("리뷰 보유 여부"),
+            fieldWithPath("photos").type(JsonFieldType.ARRAY).description("연결된 사진 URL 목록 (없으면 빈 배열)"),
             fieldWithPath("createdAt").type(JsonFieldType.STRING).description("생성 시각 (ISO-8601)"),
             fieldWithPath("updatedAt").type(JsonFieldType.STRING).description("최종 수정 시각 (ISO-8601)"),
         )
@@ -128,7 +141,7 @@ class ReservationDocsTest : RestDocsSupport() {
                             "customerName" to "김하늘",
                             "customerPhone" to "010-1234-5678",
                             "title" to "웨딩 부케",
-                            "description" to "흰 장미 위주",
+                            "memo" to "흰 장미 위주",
                             "amount" to 150_000,
                             "status" to "confirmed",
                         ),
@@ -161,7 +174,7 @@ class ReservationDocsTest : RestDocsSupport() {
                                 fieldWithPath("title")
                                     .type(JsonFieldType.STRING)
                                     .description("예약 제목 (필수)"),
-                                fieldWithPath("description")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("상세 메모"),
@@ -220,7 +233,7 @@ class ReservationDocsTest : RestDocsSupport() {
                                     .optional()
                                     .description("고객 전화번호"),
                                 fieldWithPath("[].title").type(JsonFieldType.STRING).description("예약 제목"),
-                                fieldWithPath("[].description")
+                                fieldWithPath("[].memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("상세 메모"),
@@ -242,6 +255,34 @@ class ReservationDocsTest : RestDocsSupport() {
                                 fieldWithPath("[].pickupCompleted")
                                     .type(JsonFieldType.BOOLEAN)
                                     .description("픽업 완료 여부"),
+                                fieldWithPath("[].saleDate")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 결제일 (매출 미연결 시 null)"),
+                                fieldWithPath("[].productCategory")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 상품 카테고리"),
+                                fieldWithPath("[].customerId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("연결된 고객 ID (딥링크용)"),
+                                fieldWithPath("[].purchaseCount")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("고객 누적 구매 건수"),
+                                fieldWithPath("[].saleIsUnpaid")
+                                    .type(JsonFieldType.BOOLEAN)
+                                    .optional()
+                                    .description("연결된 매출 미수 여부"),
+                                fieldWithPath("[].salePaymentMethod")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 결제방식"),
+                                fieldWithPath("[].saleReservationChannel")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 예약 채널"),
                                 fieldWithPath("[].createdAt")
                                     .type(JsonFieldType.STRING)
                                     .description("생성 시각 (ISO-8601)"),
@@ -300,7 +341,7 @@ class ReservationDocsTest : RestDocsSupport() {
                                     .optional()
                                     .description("고객 전화번호"),
                                 fieldWithPath("[].title").type(JsonFieldType.STRING).description("예약 제목"),
-                                fieldWithPath("[].description")
+                                fieldWithPath("[].memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("상세 메모"),
@@ -322,6 +363,34 @@ class ReservationDocsTest : RestDocsSupport() {
                                 fieldWithPath("[].pickupCompleted")
                                     .type(JsonFieldType.BOOLEAN)
                                     .description("픽업 완료 여부"),
+                                fieldWithPath("[].saleDate")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 결제일 (매출 미연결 시 null)"),
+                                fieldWithPath("[].productCategory")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 상품 카테고리"),
+                                fieldWithPath("[].customerId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("연결된 고객 ID (딥링크용)"),
+                                fieldWithPath("[].purchaseCount")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("고객 누적 구매 건수"),
+                                fieldWithPath("[].saleIsUnpaid")
+                                    .type(JsonFieldType.BOOLEAN)
+                                    .optional()
+                                    .description("연결된 매출 미수 여부"),
+                                fieldWithPath("[].salePaymentMethod")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 결제방식"),
+                                fieldWithPath("[].saleReservationChannel")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 예약 채널"),
                                 fieldWithPath("[].createdAt")
                                     .type(JsonFieldType.STRING)
                                     .description("생성 시각 (ISO-8601)"),
@@ -379,7 +448,7 @@ class ReservationDocsTest : RestDocsSupport() {
                                     .optional()
                                     .description("고객 전화번호"),
                                 fieldWithPath("[].title").type(JsonFieldType.STRING).description("예약 제목"),
-                                fieldWithPath("[].description")
+                                fieldWithPath("[].memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("상세 메모"),
@@ -401,6 +470,34 @@ class ReservationDocsTest : RestDocsSupport() {
                                 fieldWithPath("[].pickupCompleted")
                                     .type(JsonFieldType.BOOLEAN)
                                     .description("픽업 완료 여부"),
+                                fieldWithPath("[].saleDate")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 결제일 (매출 미연결 시 null)"),
+                                fieldWithPath("[].productCategory")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 상품 카테고리"),
+                                fieldWithPath("[].customerId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("연결된 고객 ID (딥링크용)"),
+                                fieldWithPath("[].purchaseCount")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("고객 누적 구매 건수"),
+                                fieldWithPath("[].saleIsUnpaid")
+                                    .type(JsonFieldType.BOOLEAN)
+                                    .optional()
+                                    .description("연결된 매출 미수 여부"),
+                                fieldWithPath("[].salePaymentMethod")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 결제방식"),
+                                fieldWithPath("[].saleReservationChannel")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 예약 채널"),
                                 fieldWithPath("[].createdAt")
                                     .type(JsonFieldType.STRING)
                                     .description("생성 시각 (ISO-8601)"),
@@ -435,7 +532,7 @@ class ReservationDocsTest : RestDocsSupport() {
                                 fieldWithPath("titles")
                                     .type(JsonFieldType.ARRAY)
                                     .description("제목 자동완성 목록 (빈도 내림차순)"),
-                                fieldWithPath("descriptions")
+                                fieldWithPath("memos")
                                     .type(JsonFieldType.ARRAY)
                                     .description("메모 자동완성 목록 (빈도 내림차순)"),
                             ),
@@ -460,9 +557,9 @@ class ReservationDocsTest : RestDocsSupport() {
                         json(
                             mapOf(
                                 "date" to "2026-06-01",
-                                "productCategory" to "basic_bouquet",
+                                "categoryId" to saleCategoryId(token),
                                 "amount" to 80_000,
-                                "paymentMethod" to "cash",
+                                "paymentMethodId" to salePaymentId(token),
                             ),
                         )
                 }.andReturn()
@@ -506,7 +603,7 @@ class ReservationDocsTest : RestDocsSupport() {
                                     .optional()
                                     .description("고객 전화번호"),
                                 fieldWithPath("[].title").type(JsonFieldType.STRING).description("예약 제목"),
-                                fieldWithPath("[].description")
+                                fieldWithPath("[].memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("상세 메모"),
@@ -528,6 +625,34 @@ class ReservationDocsTest : RestDocsSupport() {
                                 fieldWithPath("[].pickupCompleted")
                                     .type(JsonFieldType.BOOLEAN)
                                     .description("픽업 완료 여부"),
+                                fieldWithPath("[].saleDate")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 결제일 (매출 미연결 시 null)"),
+                                fieldWithPath("[].productCategory")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 상품 카테고리"),
+                                fieldWithPath("[].customerId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("연결된 고객 ID (딥링크용)"),
+                                fieldWithPath("[].purchaseCount")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("고객 누적 구매 건수"),
+                                fieldWithPath("[].saleIsUnpaid")
+                                    .type(JsonFieldType.BOOLEAN)
+                                    .optional()
+                                    .description("연결된 매출 미수 여부"),
+                                fieldWithPath("[].salePaymentMethod")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 결제방식"),
+                                fieldWithPath("[].saleReservationChannel")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 예약 채널"),
                                 fieldWithPath("[].createdAt")
                                     .type(JsonFieldType.STRING)
                                     .description("생성 시각 (ISO-8601)"),
@@ -582,7 +707,7 @@ class ReservationDocsTest : RestDocsSupport() {
                     json(
                         mapOf(
                             "status" to "confirmed",
-                            "description" to "수정된 메모",
+                            "memo" to "수정된 메모",
                         ),
                     )
             }.andExpect { status { isOk() } }
@@ -617,7 +742,7 @@ class ReservationDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("제목 변경"),
-                                fieldWithPath("description")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("메모 변경"),
@@ -699,9 +824,9 @@ class ReservationDocsTest : RestDocsSupport() {
                     json(
                         mapOf(
                             "date" to "2026-06-01",
-                            "productCategory" to "basic_bouquet",
+                            "categoryId" to saleCategoryId(token),
                             "amount" to 100_000,
-                            "paymentMethod" to "cash",
+                            "paymentMethodId" to salePaymentId(token),
                         ),
                     )
             }.andExpect { status { isCreated() } }
@@ -719,19 +844,24 @@ class ReservationDocsTest : RestDocsSupport() {
                                 fieldWithPath("date")
                                     .type(JsonFieldType.STRING)
                                     .description("매출 발생일 (yyyy-MM-dd, 필수)"),
-                                fieldWithPath("productCategory")
-                                    .type(JsonFieldType.STRING)
-                                    .description("상품 카테고리 (필수)"),
+                                fieldWithPath("categoryId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .description("상품 카테고리 ID (필수)"),
                                 fieldWithPath("amount")
                                     .type(JsonFieldType.NUMBER)
                                     .description("결제 금액(원, 0 이상, 필수)"),
-                                fieldWithPath("paymentMethod")
-                                    .type(JsonFieldType.STRING)
-                                    .description("결제방식. cash | card | transfer | naverpay | kakaopay | unpaid (필수)"),
-                                fieldWithPath("reservationChannel")
-                                    .type(JsonFieldType.STRING)
+                                fieldWithPath("paymentMethodId")
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
-                                    .description("예약 채널. phone | kakaotalk | naver_booking | road | other"),
+                                    .description("결제수단 ID (isUnpaid=false면 필수)"),
+                                fieldWithPath("isUnpaid")
+                                    .type(JsonFieldType.BOOLEAN)
+                                    .optional()
+                                    .description("미수 여부(체크박스)"),
+                                fieldWithPath("channelId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("매출 채널 ID (미지정 시 기본 채널 'other')"),
                                 fieldWithPath("customerName")
                                     .type(JsonFieldType.STRING)
                                     .optional()
@@ -744,7 +874,7 @@ class ReservationDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("연결할 고객 ID (본인 소유 검증)"),
-                                fieldWithPath("note")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("비고"),
@@ -771,9 +901,9 @@ class ReservationDocsTest : RestDocsSupport() {
                         json(
                             mapOf(
                                 "date" to "2026-06-01",
-                                "productCategory" to "basket",
+                                "categoryId" to saleCategoryId(token, "basket"),
                                 "amount" to 50_000,
-                                "paymentMethod" to "cash",
+                                "paymentMethodId" to salePaymentId(token),
                                 "customerName" to "이민준",
                                 "customerPhone" to "010-9876-5432",
                             ),

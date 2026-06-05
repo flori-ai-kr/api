@@ -13,6 +13,9 @@ import kr.ai.flori.reservations.entity.Reservation
 import kr.ai.flori.reservations.repository.ReservationRepository
 import kr.ai.flori.sales.dto.SaleCreateRequest
 import kr.ai.flori.sales.dto.SaleUpdateRequest
+import kr.ai.flori.settings.entity.LabelDomains
+import kr.ai.flori.settings.entity.LabelKinds
+import kr.ai.flori.settings.repository.LabelSettingRepository
 import kr.ai.flori.support.TestAccounts
 import kr.ai.flori.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
@@ -45,6 +48,9 @@ class SaleServiceIntegrationTest {
     @Autowired
     lateinit var photoCardRepository: PhotoCardRepository
 
+    @Autowired
+    lateinit var labelSettingRepository: LabelSettingRepository
+
     @AfterEach
     fun tearDown() {
         TenantContext.clear()
@@ -59,12 +65,45 @@ class SaleServiceIntegrationTest {
         return userId
     }
 
+    /** 시드된 매출 카테고리 value → label_settings id. */
+    private fun catId(value: String): Long =
+        requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
+                TenantContext.currentUserId(),
+                LabelDomains.SALE,
+                LabelKinds.CATEGORY,
+                value,
+            ),
+        ).id!!
+
+    /** 시드된 매출 채널 value → label_settings id. */
+    private fun channelId(value: String): Long =
+        requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
+                TenantContext.currentUserId(),
+                LabelDomains.SALE,
+                LabelKinds.CHANNEL,
+                value,
+            ),
+        ).id!!
+
+    /** 시드된 매출 결제수단 value → label_settings id. */
+    private fun payId(value: String): Long =
+        requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
+                TenantContext.currentUserId(),
+                LabelDomains.SALE,
+                LabelKinds.PAYMENT,
+                value,
+            ),
+        ).id!!
+
     private fun cardSale(date: LocalDate = LocalDate.of(2026, 5, 22)) =
         SaleCreateRequest(
             date = date,
-            productCategory = "basic_bouquet",
+            categoryId = catId("basic_bouquet"),
             amount = 100_000,
-            paymentMethod = "card",
+            paymentMethodId = payId("card"),
         )
 
     @Test
@@ -72,7 +111,7 @@ class SaleServiceIntegrationTest {
         newTenant()
         val sale = saleService.create(cardSale())
 
-        assertThat(sale.paymentMethod).isEqualTo("card")
+        assertThat(sale.paymentMethodId).isEqualTo(payId("card"))
         assertThat(sale.amount).isEqualTo(100_000)
         assertThat(sale.isUnpaid).isFalse()
     }
@@ -82,9 +121,9 @@ class SaleServiceIntegrationTest {
         newTenant()
         val sale =
             saleService.create(
-                SaleCreateRequest(LocalDate.of(2026, 5, 22), "vase", 30_000, "cash"),
+                SaleCreateRequest(LocalDate.of(2026, 5, 22), catId("vase"), 30_000, payId("cash")),
             )
-        assertThat(sale.paymentMethod).isEqualTo("cash")
+        assertThat(sale.paymentMethodId).isEqualTo(payId("cash"))
         assertThat(sale.isUnpaid).isFalse()
     }
 
@@ -93,43 +132,45 @@ class SaleServiceIntegrationTest {
         newTenant()
         val unpaid =
             saleService.create(
-                SaleCreateRequest(LocalDate.of(2026, 5, 22), "reservation", 50_000, "unpaid"),
+                SaleCreateRequest(LocalDate.of(2026, 5, 22), catId("reservation"), 50_000, null, isUnpaid = true),
             )
         assertThat(unpaid.isUnpaid).isTrue()
+        assertThat(unpaid.paymentMethodId).isNull()
 
-        val completed = saleService.completeUnpaid(unpaid.id, "card")
-        assertThat(completed.paymentMethod).isEqualTo("card")
+        val completed = saleService.completeUnpaid(unpaid.id, payId("card"))
+        assertThat(completed.paymentMethodId).isEqualTo(payId("card"))
         assertThat(completed.isUnpaid).isTrue() // 마커 유지
 
         val reverted = saleService.revertUnpaid(unpaid.id)
-        assertThat(reverted.paymentMethod).isEqualTo("unpaid")
+        assertThat(reverted.paymentMethodId).isNull()
+        assertThat(reverted.isUnpaid).isTrue()
     }
 
     @Test
     fun `미수가 아닌 매출의 완료 시도는 거부된다`() {
         newTenant()
         val sale = saleService.create(cardSale())
-        assertThatThrownBy { saleService.completeUnpaid(sale.id, "cash") }
+        assertThatThrownBy { saleService.completeUnpaid(sale.id, payId("cash")) }
             .isInstanceOf(AppException::class.java)
     }
 
     @Test
     fun `목록은 다중선택 필터와 무한스크롤을 지원한다`() {
         newTenant()
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 1), "vase", 1_000, "cash"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 2), "basket", 2_000, "card"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 3), "vase", 3_000, "transfer"))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 1), catId("vase"), 1_000, payId("cash")))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 2), catId("basket"), 2_000, payId("card")))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 3), catId("vase"), 3_000, payId("transfer")))
 
-        val cashOnly = saleService.list(null, 0, 100, null, listOf("cash"), null, null)
+        val cashOnly = saleService.list(null, null, null, 0, 100, null, listOf(payId("cash")), null, null)
         assertThat(cashOnly.sales).hasSize(1)
 
-        val vaseCategory = saleService.list(null, 0, 100, listOf("vase"), null, null, null)
+        val vaseCategory = saleService.list(null, null, null, 0, 100, listOf(catId("vase")), null, null, null)
         assertThat(vaseCategory.sales).hasSize(2)
 
-        val firstPage = saleService.list(null, 0, 2, null, null, null, null)
+        val firstPage = saleService.list(null, null, null, 0, 2, null, null, null, null)
         assertThat(firstPage.sales).hasSize(2)
         assertThat(firstPage.hasMore).isTrue()
-        val secondPage = saleService.list(null, 2, 2, null, null, null, null)
+        val secondPage = saleService.list(null, null, null, 2, 2, null, null, null, null)
         assertThat(secondPage.sales).hasSize(1)
         assertThat(secondPage.hasMore).isFalse()
     }
@@ -137,14 +178,16 @@ class SaleServiceIntegrationTest {
     @Test
     fun `요약은 DB 집계로 결제수단별 합계와 전체(미수 포함)를 계산하고 동일 필터를 지원한다`() {
         newTenant()
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 1), "vase", 1_000, "card", customerName = "김하늘"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 2), "basket", 2_000, "cash"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 3), "vase", 3_000, "transfer"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 4), "vase", 4_000, "naverpay"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 5), "vase", 5_000, "unpaid"))
+        saleService.create(
+            SaleCreateRequest(LocalDate.of(2026, 5, 1), catId("vase"), 1_000, payId("card"), customerName = "김하늘"),
+        )
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 2), catId("basket"), 2_000, payId("cash")))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 3), catId("vase"), 3_000, payId("transfer")))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 4), catId("vase"), 4_000, payId("naverpay")))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 5), catId("vase"), 5_000, null, isUnpaid = true))
 
         // 전체: total/count는 미수 포함, 버킷은 결제수단별
-        val all = saleService.summary("2026-05", null, null, null, null)
+        val all = saleService.summary("2026-05", null, null, null, null, null, null)
         assertThat(all.total).isEqualTo(15_000L)
         assertThat(all.card).isEqualTo(1_000L)
         assertThat(all.cash).isEqualTo(2_000L)
@@ -153,29 +196,29 @@ class SaleServiceIntegrationTest {
         assertThat(all.count).isEqualTo(5L)
 
         // 결제수단 IN
-        val cardOnly = saleService.summary("2026-05", null, listOf("card"), null, null)
+        val cardOnly = saleService.summary("2026-05", null, null, null, listOf(payId("card")), null, null)
         assertThat(cardOnly.total).isEqualTo(1_000L)
         assertThat(cardOnly.count).isEqualTo(1L)
 
         // 카테고리 IN
-        val vaseOnly = saleService.summary("2026-05", listOf("vase"), null, null, null)
+        val vaseOnly = saleService.summary("2026-05", null, null, listOf(catId("vase")), null, null, null)
         assertThat(vaseOnly.count).isEqualTo(4L)
         assertThat(vaseOnly.total).isEqualTo(13_000L)
 
         // 채널 IN (기본 채널 other)
-        val otherChannel = saleService.summary("2026-05", null, null, listOf("other"), null)
+        val otherChannel = saleService.summary("2026-05", null, null, null, null, listOf(channelId("other")), null)
         assertThat(otherChannel.count).isEqualTo(5L)
 
         // 검색(고객명)
-        val searched = saleService.summary("2026-05", null, null, null, "김하늘")
+        val searched = saleService.summary("2026-05", null, null, null, null, null, "김하늘")
         assertThat(searched.count).isEqualTo(1L)
         assertThat(searched.card).isEqualTo(1_000L)
 
         // month=null 누적: 전체 기간 합산
-        assertThat(saleService.summary(null, null, null, null, null).count).isEqualTo(5L)
+        assertThat(saleService.summary(null, null, null, null, null, null, null).count).isEqualTo(5L)
 
         // 다른 달 → 빈 합계
-        val empty = saleService.summary("2026-04", null, null, null, null)
+        val empty = saleService.summary("2026-04", null, null, null, null, null, null)
         assertThat(empty.total).isEqualTo(0L)
         assertThat(empty.count).isEqualTo(0L)
     }
@@ -183,11 +226,11 @@ class SaleServiceIntegrationTest {
     @Test
     fun `비고 자동완성은 빈도순으로 반환한다`() {
         newTenant()
-        repeat(3) { saleService.create(cardSale().copy(note = "리본 포장")) }
-        saleService.create(cardSale().copy(note = "당일 픽업"))
+        repeat(3) { saleService.create(cardSale().copy(memo = "리본 포장")) }
+        saleService.create(cardSale().copy(memo = "당일 픽업"))
 
-        val notes = saleService.suggestions()
-        assertThat(notes).containsExactly("리본 포장", "당일 픽업")
+        val memos = saleService.suggestions()
+        assertThat(memos).containsExactly("리본 포장", "당일 픽업")
     }
 
     @Test
@@ -226,6 +269,6 @@ class SaleServiceIntegrationTest {
             }
         assertThatThrownBy { saleService.update(saleA.id, SaleUpdateRequest(amount = 1)) }
             .isInstanceOf(AppException::class.java)
-        assertThat(saleService.list(null, 0, 100, null, null, null, null).sales).isEmpty()
+        assertThat(saleService.list(null, null, null, 0, 100, null, null, null, null).sales).isEmpty()
     }
 }

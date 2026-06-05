@@ -146,17 +146,22 @@ class AuthServiceIntegrationTest {
         authService.registerComplete(completeRequest(registerToken, email))
         val userId = userRepository.findByProviderAndProviderId("GOOGLE", pid)!!.id
 
-        fun count(table: String) =
-            jdbcTemplate.queryForObject(
-                "SELECT count(*) FROM $table WHERE user_id = ?::bigint",
-                Long::class.java,
-                userId,
-            )
+        fun count(
+            domain: String,
+            kind: String,
+        ) = jdbcTemplate.queryForObject(
+            "SELECT count(*) FROM label_settings WHERE user_id = ?::bigint AND domain = ? AND kind = ?",
+            Long::class.java,
+            userId,
+            domain,
+            kind,
+        )
 
-        assertThat(count("sale_categories")).isEqualTo(11)
-        assertThat(count("payment_methods")).isEqualTo(4)
-        assertThat(count("expense_categories")).isEqualTo(7)
-        assertThat(count("expense_payment_methods")).isEqualTo(3)
+        assertThat(count("sale", "category")).isEqualTo(11)
+        assertThat(count("sale", "payment")).isEqualTo(4)
+        assertThat(count("sale", "channel")).isEqualTo(5)
+        assertThat(count("expense", "category")).isEqualTo(7)
+        assertThat(count("expense", "payment")).isEqualTo(3)
     }
 
     @Test

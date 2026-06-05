@@ -45,7 +45,6 @@ kr.ai.flori
 ├── customers/
 ├── reservations/    (예약 + 캘린더)
 ├── photos/          (사진카드 + 태그)
-├── insights/        (트렌드/인스타/스크랩 + 내부 API)
 ├── settings/        (매출설정/지출설정/사용자설정/푸시구독)
 └── dashboard/       (대시보드 + 통계)
 ```
@@ -72,10 +71,9 @@ kr.ai.flori
 원본 `~/Desktop/flori-ai/web/src/lib/actions/`의 함수들을 REST 리소스로 옮긴다. 비즈니스 규칙은 원본 그대로:
 - 지출 총액 `unit_price * quantity`
 - 고정비: 주/월/연 + 다중 일자, recurring_skips, `(recurring_id,date)` unique, this/future/all 분기
-- 미수: `payment_method='unpaid' + is_unpaid=true`, 완료/되돌리기
+- 미수: `payment_method_id=NULL + is_unpaid=true`, 완료(결제수단 id 확정)/되돌리기
 - 사진: presigned PUT 직접 업로드(소유권/메타 검증), 카드당 최대 10장
-- 다중선택 필터: category/payment/channel = 배열 → SQL IN
-- 인사이트 스크랩: polymorphic(target_type+target_id), `(user_id,target_type,target_id)` unique
+- 다중선택 필터: category/payment/channel = label_settings id 배열 → SQL IN
 
 상세 필드는 원본 `docs/ARCHITECTURE.md`의 ERD/타입 정의 참조.
 

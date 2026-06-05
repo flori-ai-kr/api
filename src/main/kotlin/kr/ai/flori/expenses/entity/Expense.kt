@@ -22,16 +22,16 @@ class Expense(
     var date: LocalDate,
     @Column(name = "item_name", nullable = false)
     var itemName: String,
-    @Column(name = "category", nullable = false)
-    var category: String,
+    @Column(name = "category_id")
+    var categoryId: Long?,
     @Column(name = "unit_price", nullable = false)
     var unitPrice: Int,
     @Column(name = "quantity", nullable = false)
     var quantity: Int,
     @Column(name = "total_amount", nullable = false)
     var totalAmount: Int,
-    @Column(name = "payment_method", nullable = false)
-    var paymentMethod: String,
+    @Column(name = "payment_method_id")
+    var paymentMethodId: Long?,
 ) : BaseEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,8 +44,8 @@ class Expense(
     @Column(name = "vendor")
     var vendor: String? = null
 
-    @Column(name = "note")
-    var note: String? = null
+    @Column(name = "memo")
+    var memo: String? = null
 
     @Column(name = "recurring_id")
     var recurringId: Long? = null

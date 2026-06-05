@@ -10,7 +10,7 @@ import java.time.Instant
 data class PhotoCardCreateRequest(
     @field:NotBlank(message = "제목은 필수입니다")
     val title: String?,
-    val description: String? = null,
+    val memo: String? = null,
     val tags: List<String> = emptyList(),
     val photos: List<PhotoFile> = emptyList(),
     val saleId: Long? = null,
@@ -18,7 +18,7 @@ data class PhotoCardCreateRequest(
 
 data class PhotoCardUpdateRequest(
     val title: String? = null,
-    val description: String? = null,
+    val memo: String? = null,
     val tags: List<String>? = null,
     val photos: List<PhotoFile>? = null,
     val saleId: Long? = null,
@@ -54,7 +54,7 @@ data class PhotoDownloadResponse(
 data class PhotoCardResponse(
     val id: Long,
     val title: String,
-    val description: String?,
+    val memo: String?,
     val tags: List<String>,
     val photos: List<PhotoFile>,
     val saleId: Long?,
@@ -66,7 +66,7 @@ data class PhotoCardResponse(
             PhotoCardResponse(
                 id = requireNotNull(c.id),
                 title = c.title,
-                description = c.description,
+                memo = c.memo,
                 tags = c.tags.toList(),
                 photos = c.photos,
                 saleId = c.saleId,

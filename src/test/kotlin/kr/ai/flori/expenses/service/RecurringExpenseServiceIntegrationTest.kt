@@ -11,6 +11,9 @@ import kr.ai.flori.expenses.dto.RecurringInstanceUpdateRequest
 import kr.ai.flori.expenses.repository.ExpenseRepository
 import kr.ai.flori.expenses.repository.RecurringExpenseRepository
 import kr.ai.flori.expenses.repository.RecurringSkipRepository
+import kr.ai.flori.settings.entity.LabelDomains
+import kr.ai.flori.settings.entity.LabelKinds
+import kr.ai.flori.settings.repository.LabelSettingRepository
 import kr.ai.flori.support.TestAccounts
 import kr.ai.flori.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
@@ -54,8 +57,33 @@ class RecurringExpenseServiceIntegrationTest {
     @Autowired
     lateinit var jdbcTemplate: JdbcTemplate
 
+    @Autowired
+    lateinit var labelSettingRepository: LabelSettingRepository
+
     @AfterEach
     fun tearDown() = TenantContext.clear()
+
+    /** 시드된 지출 카테고리 value → label_settings id. */
+    private fun catId(value: String): Long =
+        requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
+                TenantContext.currentUserId(),
+                LabelDomains.EXPENSE,
+                LabelKinds.CATEGORY,
+                value,
+            ),
+        ).id!!
+
+    /** 시드된 지출 결제수단 value → label_settings id. */
+    private fun payId(value: String): Long =
+        requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
+                TenantContext.currentUserId(),
+                LabelDomains.EXPENSE,
+                LabelKinds.PAYMENT,
+                value,
+            ),
+        ).id!!
 
     private fun newTenant(): Long {
         val email = "rec-${UUID.randomUUID()}@flori.dev"
@@ -69,10 +97,10 @@ class RecurringExpenseServiceIntegrationTest {
         service.create(
             RecurringExpenseRequest(
                 itemName = "월세",
-                category = "rent",
+                categoryId = catId("rent"),
                 unitPrice = 500_000,
                 quantity = 1,
-                paymentMethod = "transfer",
+                paymentMethodId = payId("transfer"),
                 frequency = "monthly",
                 daysOfMonth = listOf(day),
                 startDate = LocalDate.of(2026, 1, 1),

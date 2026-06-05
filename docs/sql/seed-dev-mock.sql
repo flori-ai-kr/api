@@ -35,40 +35,40 @@ BEGIN
     (v_uid,'정하늘','010-1111-2225','new','female',NULL) RETURNING id INTO c_jung;
 
   -- ── 매출 (3~5월, 카테고리/결제수단/채널 다양) ─────────────
-  INSERT INTO sales(user_id,date,product_name,product_category,amount,payment_method,reservation_channel,customer_name,customer_phone,customer_id,note,is_unpaid,has_review) VALUES
+  INSERT INTO sales(user_id,date,product_category,amount,payment_method,reservation_channel,customer_name,customer_phone,customer_id,memo,is_unpaid,has_review) VALUES
     -- 3월
-    (v_uid,'2026-03-03','기본 꽃다발','basic_bouquet',45000,'card','kakaotalk','김민지','010-1111-2221',c_kim,'생일 선물',false,true),
-    (v_uid,'2026-03-07','화병꽂이','vase',60000,'transfer','phone','김민지','010-1111-2221',c_kim,NULL,false,false),
-    (v_uid,'2026-03-12','미니 꽃다발','mini_bouquet',25000,'cash','road',NULL,NULL,NULL,NULL,false,false),
-    (v_uid,'2026-03-14','꽃바구니','basket',80000,'naverpay','naver_booking','최유나','010-1111-2224',c_choi,'화이트데이',false,true),
-    (v_uid,'2026-03-18','중형 꽃다발','medium_bouquet',55000,'card','kakaotalk',NULL,NULL,NULL,NULL,false,false),
-    (v_uid,'2026-03-21','촬영부케','photo_bouquet',120000,'transfer','phone','이서준','010-1111-2222',c_lee,'스냅 촬영용',false,false),
-    (v_uid,'2026-03-25','기본 꽃다발','basic_bouquet',45000,'card','road',NULL,NULL,NULL,NULL,false,false),
-    (v_uid,'2026-03-28','예약','reservation',70000,'unpaid','kakaotalk','박지후','010-1111-2223',c_park,'미수 - 월말 정산',true,false),
-    (v_uid,'2026-03-30','대형 꽃다발','large_bouquet',90000,'card','naver_booking',NULL,NULL,NULL,NULL,false,false),
+    (v_uid,'2026-03-03','basic_bouquet',45000,'card','kakaotalk','김민지','010-1111-2221',c_kim,'생일 선물',false,true),
+    (v_uid,'2026-03-07','vase',60000,'transfer','phone','김민지','010-1111-2221',c_kim,NULL,false,false),
+    (v_uid,'2026-03-12','mini_bouquet',25000,'cash','road',NULL,NULL,NULL,NULL,false,false),
+    (v_uid,'2026-03-14','basket',80000,'naverpay','naver_booking','최유나','010-1111-2224',c_choi,'화이트데이',false,true),
+    (v_uid,'2026-03-18','medium_bouquet',55000,'card','kakaotalk',NULL,NULL,NULL,NULL,false,false),
+    (v_uid,'2026-03-21','photo_bouquet',120000,'transfer','phone','이서준','010-1111-2222',c_lee,'스냅 촬영용',false,false),
+    (v_uid,'2026-03-25','basic_bouquet',45000,'card','road',NULL,NULL,NULL,NULL,false,false),
+    (v_uid,'2026-03-28','reservation',70000,'unpaid','kakaotalk','박지후','010-1111-2223',c_park,'미수 - 월말 정산',true,false),
+    (v_uid,'2026-03-30','large_bouquet',90000,'card','naver_booking',NULL,NULL,NULL,NULL,false,false),
     -- 4월
-    (v_uid,'2026-04-02','미니 꽃다발','mini_bouquet',25000,'cash','road',NULL,NULL,NULL,NULL,false,false),
-    (v_uid,'2026-04-05','프로포즈 꽃다발','proposal_bouquet',150000,'card','phone','이서준','010-1111-2222',c_lee,'프로포즈',false,true),
-    (v_uid,'2026-04-09','화병꽂이','vase',60000,'naverpay','kakaotalk','김민지','010-1111-2221',c_kim,'정기',false,false),
-    (v_uid,'2026-04-12','꽃바구니','basket',85000,'transfer','naver_booking',NULL,NULL,NULL,NULL,false,false),
-    (v_uid,'2026-04-15','기본 꽃다발','basic_bouquet',45000,'card','road','최유나','010-1111-2224',c_choi,NULL,false,false),
-    (v_uid,'2026-04-19','스페셜 꽃다발','special_bouquet',110000,'card','kakaotalk',NULL,NULL,NULL,NULL,false,false),
-    (v_uid,'2026-04-22','단체꽃다발','group_bouquet',200000,'transfer','phone','박지후','010-1111-2223',c_park,'개업 화환 대체',false,false),
-    (v_uid,'2026-04-25','미니 꽃다발','mini_bouquet',25000,'cash','road',NULL,NULL,NULL,NULL,false,false),
-    (v_uid,'2026-04-27','예약','reservation',65000,'unpaid','kakaotalk',NULL,NULL,NULL,'미수',true,false),
-    (v_uid,'2026-04-29','중형 꽃다발','medium_bouquet',55000,'naverpay','naver_booking',NULL,NULL,NULL,NULL,false,true),
+    (v_uid,'2026-04-02','mini_bouquet',25000,'cash','road',NULL,NULL,NULL,NULL,false,false),
+    (v_uid,'2026-04-05','proposal_bouquet',150000,'card','phone','이서준','010-1111-2222',c_lee,'프로포즈',false,true),
+    (v_uid,'2026-04-09','vase',60000,'naverpay','kakaotalk','김민지','010-1111-2221',c_kim,'정기',false,false),
+    (v_uid,'2026-04-12','basket',85000,'transfer','naver_booking',NULL,NULL,NULL,NULL,false,false),
+    (v_uid,'2026-04-15','basic_bouquet',45000,'card','road','최유나','010-1111-2224',c_choi,NULL,false,false),
+    (v_uid,'2026-04-19','special_bouquet',110000,'card','kakaotalk',NULL,NULL,NULL,NULL,false,false),
+    (v_uid,'2026-04-22','group_bouquet',200000,'transfer','phone','박지후','010-1111-2223',c_park,'개업 화환 대체',false,false),
+    (v_uid,'2026-04-25','mini_bouquet',25000,'cash','road',NULL,NULL,NULL,NULL,false,false),
+    (v_uid,'2026-04-27','reservation',65000,'unpaid','kakaotalk',NULL,NULL,NULL,'미수',true,false),
+    (v_uid,'2026-04-29','medium_bouquet',55000,'naverpay','naver_booking',NULL,NULL,NULL,NULL,false,true),
     -- 5월 (어버이날 성수기)
-    (v_uid,'2026-05-02','꽃바구니','basket',90000,'card','kakaotalk','김민지','010-1111-2221',c_kim,'어버이날',false,true),
-    (v_uid,'2026-05-06','기본 꽃다발','basic_bouquet',48000,'naverpay','naver_booking',NULL,NULL,NULL,'카네이션 포함',false,false),
-    (v_uid,'2026-05-08','대형 꽃다발','large_bouquet',95000,'card','phone','이서준','010-1111-2222',c_lee,'어버이날',false,true),
-    (v_uid,'2026-05-08','꽃바구니','basket',88000,'card','road',NULL,NULL,NULL,'어버이날',false,false),
-    (v_uid,'2026-05-08','미니 꽃다발','mini_bouquet',30000,'cash','road',NULL,NULL,NULL,'카네이션',false,false),
-    (v_uid,'2026-05-11','화병꽂이','vase',60000,'transfer','kakaotalk','김민지','010-1111-2221',c_kim,NULL,false,false),
-    (v_uid,'2026-05-14','스페셜 꽃다발','special_bouquet',130000,'card','naver_booking','최유나','010-1111-2224',c_choi,'기념일',false,false),
-    (v_uid,'2026-05-17','기본 꽃다발','basic_bouquet',45000,'card','road',NULL,NULL,NULL,NULL,false,false),
-    (v_uid,'2026-05-20','촬영부케','photo_bouquet',120000,'transfer','phone',NULL,NULL,NULL,'웨딩 스냅',false,false),
-    (v_uid,'2026-05-23','예약','reservation',75000,'unpaid','kakaotalk','박지후','010-1111-2223',c_park,'미수 - 픽업예정',true,false),
-    (v_uid,'2026-05-26','중형 꽃다발','medium_bouquet',55000,'naverpay','kakaotalk',NULL,NULL,NULL,NULL,false,false);
+    (v_uid,'2026-05-02','basket',90000,'card','kakaotalk','김민지','010-1111-2221',c_kim,'어버이날',false,true),
+    (v_uid,'2026-05-06','basic_bouquet',48000,'naverpay','naver_booking',NULL,NULL,NULL,'카네이션 포함',false,false),
+    (v_uid,'2026-05-08','large_bouquet',95000,'card','phone','이서준','010-1111-2222',c_lee,'어버이날',false,true),
+    (v_uid,'2026-05-08','basket',88000,'card','road',NULL,NULL,NULL,'어버이날',false,false),
+    (v_uid,'2026-05-08','mini_bouquet',30000,'cash','road',NULL,NULL,NULL,'카네이션',false,false),
+    (v_uid,'2026-05-11','vase',60000,'transfer','kakaotalk','김민지','010-1111-2221',c_kim,NULL,false,false),
+    (v_uid,'2026-05-14','special_bouquet',130000,'card','naver_booking','최유나','010-1111-2224',c_choi,'기념일',false,false),
+    (v_uid,'2026-05-17','basic_bouquet',45000,'card','road',NULL,NULL,NULL,NULL,false,false),
+    (v_uid,'2026-05-20','photo_bouquet',120000,'transfer','phone',NULL,NULL,NULL,'웨딩 스냅',false,false),
+    (v_uid,'2026-05-23','reservation',75000,'unpaid','kakaotalk','박지후','010-1111-2223',c_park,'미수 - 픽업예정',true,false),
+    (v_uid,'2026-05-26','medium_bouquet',55000,'naverpay','kakaotalk',NULL,NULL,NULL,NULL,false,false);
 
   -- ── 지출 (total_amount = unit_price*quantity) ────────────
   INSERT INTO expenses(user_id,date,item_name,category,unit_price,quantity,total_amount,payment_method,vendor,note) VALUES
@@ -91,8 +91,8 @@ BEGIN
     (v_uid,'2026-05-31','11:00','최유나','010-1111-2224','기념일 꽃다발','파스텔 톤','pending',60000,NULL),
     (v_uid,'2026-06-02','16:30','박지후','010-1111-2223','개업 화분','다육+관엽','confirmed',120000,NULL);
 
-  -- ── 캘린더 일정 ─────────────────────────────────────────
-  INSERT INTO calendar_events(user_id,title,start_date,end_date,color,description) VALUES
+  -- ── 일정 ─────────────────────────────────────────
+  INSERT INTO schedules(user_id,title,start_date,end_date,color,description) VALUES
     (v_uid,'어버이날 성수기','2026-05-06','2026-05-08','#f43f5e','카네이션 물량 확보'),
     (v_uid,'화훼공판장 정기 사입','2026-05-19','2026-05-19','#3b82f6',NULL);
 

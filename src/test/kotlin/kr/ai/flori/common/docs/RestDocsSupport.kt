@@ -9,6 +9,9 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
 import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.security.JwtTokenProvider
+import kr.ai.flori.settings.entity.LabelDomains
+import kr.ai.flori.settings.entity.LabelKinds
+import kr.ai.flori.settings.repository.LabelSettingRepository
 import kr.ai.flori.support.TestAccounts
 import kr.ai.flori.verification.entity.BusinessVerification
 import kr.ai.flori.verification.repository.BusinessVerificationRepository
@@ -47,7 +50,48 @@ abstract class RestDocsSupport {
     @Autowired
     protected lateinit var businessVerificationRepository: BusinessVerificationRepository
 
+    @Autowired
+    protected lateinit var labelSettingRepository: LabelSettingRepository
+
     protected fun json(value: Any): String = objectMapper.writeValueAsString(value)
+
+    /** 토큰 소유 유저의 시드된 라벨 설정 value → id. 매출/지출 요청 본문의 categoryId/channelId 용도. */
+    protected fun labelId(
+        token: String,
+        domain: String,
+        kind: String,
+        value: String,
+    ): Long {
+        val userId = requireNotNull(tokenProvider.parse(token)).userId
+        return requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(userId, domain, kind, value),
+        ).id!!
+    }
+
+    protected fun saleCategoryId(
+        token: String,
+        value: String = "basic_bouquet",
+    ): Long = labelId(token, LabelDomains.SALE, LabelKinds.CATEGORY, value)
+
+    protected fun saleChannelId(
+        token: String,
+        value: String = "kakaotalk",
+    ): Long = labelId(token, LabelDomains.SALE, LabelKinds.CHANNEL, value)
+
+    protected fun salePaymentId(
+        token: String,
+        value: String = "card",
+    ): Long = labelId(token, LabelDomains.SALE, LabelKinds.PAYMENT, value)
+
+    protected fun expenseCategoryId(
+        token: String,
+        value: String = "flower_purchase",
+    ): Long = labelId(token, LabelDomains.EXPENSE, LabelKinds.CATEGORY, value)
+
+    protected fun expensePaymentId(
+        token: String,
+        value: String = "card",
+    ): Long = labelId(token, LabelDomains.EXPENSE, LabelKinds.PAYMENT, value)
 
     /**
      * 신규 소셜 가입을 완료하고 access 토큰을 발급한다(보호 엔드포인트 문서화용).

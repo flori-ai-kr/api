@@ -9,8 +9,6 @@ data class LabelSettingCreateRequest(
     @field:NotBlank(message = "이름(label)은 필수입니다")
     @field:Size(max = FieldLimits.LABEL, message = "이름이 너무 깁니다")
     val label: String?,
-    @field:Size(max = FieldLimits.COLOR, message = "색상 값이 올바르지 않습니다")
-    val color: String? = null,
     @field:Size(max = FieldLimits.VALUE, message = "값이 너무 깁니다")
     val value: String? = null,
 )
@@ -19,16 +17,12 @@ data class LabelSettingUpdateRequest(
     @field:NotBlank(message = "이름(label)은 필수입니다")
     @field:Size(max = FieldLimits.LABEL, message = "이름이 너무 깁니다")
     val label: String?,
-    @field:NotBlank(message = "색상은 필수입니다")
-    @field:Size(max = FieldLimits.COLOR, message = "색상 값이 올바르지 않습니다")
-    val color: String?,
 )
 
 data class LabelSettingResponse(
     val id: Long,
     val value: String,
     val label: String,
-    val color: String,
     val sortOrder: Int,
 )
 

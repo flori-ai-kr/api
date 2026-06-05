@@ -36,7 +36,7 @@ ALTER TABLE photo_tags              DROP CONSTRAINT IF EXISTS photo_tags_user_id
 ALTER TABLE photo_cards             DROP CONSTRAINT IF EXISTS photo_cards_user_id_fkey;
 ALTER TABLE photo_cards             DROP CONSTRAINT IF EXISTS photo_cards_sale_id_fkey;
 ALTER TABLE push_subscriptions      DROP CONSTRAINT IF EXISTS push_subscriptions_user_id_fkey;
-ALTER TABLE calendar_events         DROP CONSTRAINT IF EXISTS calendar_events_user_id_fkey;
+ALTER TABLE schedules               DROP CONSTRAINT IF EXISTS schedules_user_id_fkey;
 ALTER TABLE instagram_posts         DROP CONSTRAINT IF EXISTS instagram_posts_account_id_fkey;
 ALTER TABLE user_preferences        DROP CONSTRAINT IF EXISTS user_preferences_user_id_fkey;
 ALTER TABLE insight_scraps          DROP CONSTRAINT IF EXISTS insight_scraps_user_id_fkey;
