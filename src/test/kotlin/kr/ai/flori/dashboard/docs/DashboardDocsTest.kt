@@ -43,6 +43,7 @@ class DashboardDocsTest : RestDocsSupport() {
             fieldWithPath("$prefix.memo").type(JsonFieldType.STRING).optional().description("비고"),
             fieldWithPath("$prefix.isUnpaid").type(JsonFieldType.BOOLEAN).optional().description("미수 여부"),
             fieldWithPath("$prefix.hasReview").type(JsonFieldType.BOOLEAN).optional().description("리뷰 보유 여부"),
+            fieldWithPath("$prefix.photos").type(JsonFieldType.ARRAY).optional().description("연결된 사진 URL 목록 (없으면 빈 배열)"),
             fieldWithPath("$prefix.createdAt").type(JsonFieldType.STRING).optional().description("생성 시각 (ISO-8601)"),
             fieldWithPath("$prefix.updatedAt").type(JsonFieldType.STRING).optional().description("최종 수정 시각 (ISO-8601)"),
         )

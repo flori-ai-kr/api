@@ -70,11 +70,15 @@ data class SaleResponse(
     val memo: String?,
     val isUnpaid: Boolean,
     val hasReview: Boolean,
+    val photos: List<String>,
     val createdAt: Instant,
     val updatedAt: Instant,
 ) {
     companion object {
-        fun from(sale: Sale): SaleResponse =
+        fun from(
+            sale: Sale,
+            photos: List<String> = emptyList(),
+        ): SaleResponse =
             SaleResponse(
                 id = requireNotNull(sale.id),
                 date = sale.date,
@@ -88,6 +92,7 @@ data class SaleResponse(
                 memo = sale.memo,
                 isUnpaid = sale.isUnpaid,
                 hasReview = sale.hasReview,
+                photos = photos,
                 createdAt = sale.createdAt,
                 updatedAt = sale.updatedAt,
             )

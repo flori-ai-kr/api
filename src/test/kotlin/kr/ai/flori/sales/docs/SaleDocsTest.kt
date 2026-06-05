@@ -47,6 +47,7 @@ class SaleDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.BOOLEAN)
                 .description("미수 여부 (paymentMethod=unpaid 이면 true)"),
             fieldWithPath("hasReview").type(JsonFieldType.BOOLEAN).description("리뷰 보유 여부"),
+            fieldWithPath("photos").type(JsonFieldType.ARRAY).description("연결된 사진 URL 목록 (없으면 빈 배열)"),
             fieldWithPath("createdAt").type(JsonFieldType.STRING).description("생성 시각 (ISO-8601)"),
             fieldWithPath("updatedAt").type(JsonFieldType.STRING).description("최종 수정 시각 (ISO-8601)"),
         )
@@ -81,6 +82,9 @@ class SaleDocsTest : RestDocsSupport() {
             fieldWithPath("sales[].memo").type(JsonFieldType.STRING).optional().description("비고"),
             fieldWithPath("sales[].isUnpaid").type(JsonFieldType.BOOLEAN).description("미수 여부"),
             fieldWithPath("sales[].hasReview").type(JsonFieldType.BOOLEAN).description("리뷰 보유 여부"),
+            fieldWithPath("sales[].photos")
+                .type(JsonFieldType.ARRAY)
+                .description("연결된 사진 URL 목록 (없으면 빈 배열)"),
             fieldWithPath("sales[].createdAt").type(JsonFieldType.STRING).description("생성 시각 (ISO-8601)"),
             fieldWithPath("sales[].updatedAt").type(JsonFieldType.STRING).description("최종 수정 시각 (ISO-8601)"),
             fieldWithPath("hasMore")

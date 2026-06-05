@@ -17,6 +17,12 @@ interface PhotoCardRepository : JpaRepository<PhotoCard, Long> {
         saleId: Long,
     ): PhotoCard?
 
+    /** 매출 목록의 썸네일 표시용: 여러 sale_id에 연결된 사진 카드 일괄 조회. */
+    fun findByUserIdAndSaleIdIn(
+        userId: Long,
+        saleIds: Collection<Long>,
+    ): List<PhotoCard>
+
     /**
      * 커서 페이지네이션(updated_at desc) + 선택 필터(tag 포함, 고객별 sales 조인).
      * NULL 파라미터는 CAST...IS NULL 로 필터 미적용 처리.

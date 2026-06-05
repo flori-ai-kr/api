@@ -53,7 +53,23 @@ class SaleService(
         val sort = Sort.by(Sort.Order.desc("date"), Sort.Order.desc("createdAt"))
         val pageable = PageRequest.of(offset / limit, limit, sort)
         val page = saleRepository.findAll(spec, pageable)
-        return SalesPageResponse(page.content.map(SaleResponse::from), page.hasNext())
+
+        // 목록 썸네일 표시용: 현재 페이지 매출들의 사진을 한 번에 조회해 saleId -> URL 목록으로 매핑
+        val saleIds = page.content.mapNotNull { it.id }
+        val photosBySaleId =
+            if (saleIds.isEmpty()) {
+                emptyMap()
+            } else {
+                photoCardRepository
+                    .findByUserIdAndSaleIdIn(userId, saleIds)
+                    .filter { it.saleId != null }
+                    .associate { card -> card.saleId!! to card.photos.map { it.url } }
+            }
+
+        return SalesPageResponse(
+            page.content.map { sale -> SaleResponse.from(sale, photosBySaleId[sale.id] ?: emptyList()) },
+            page.hasNext(),
+        )
     }
 
     /**
