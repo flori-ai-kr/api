@@ -33,7 +33,6 @@ class DashboardDocsTest : RestDocsSupport() {
         listOf(
             fieldWithPath("$prefix.id").type(JsonFieldType.NUMBER).optional().description("매출 ID"),
             fieldWithPath("$prefix.date").type(JsonFieldType.STRING).optional().description("매출 발생일 (yyyy-MM-dd)"),
-            fieldWithPath("$prefix.productName").type(JsonFieldType.STRING).optional().description("상품명"),
             fieldWithPath("$prefix.productCategory").type(JsonFieldType.STRING).optional().description("상품 카테고리 (null 가능)"),
             fieldWithPath("$prefix.amount").type(JsonFieldType.NUMBER).optional().description("결제 금액(원)"),
             fieldWithPath("$prefix.paymentMethod").type(JsonFieldType.STRING).optional().description("결제방식"),

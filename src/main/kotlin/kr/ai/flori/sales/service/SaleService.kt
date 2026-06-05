@@ -22,6 +22,7 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.sql.Date
+import java.time.LocalDate
 
 /**
  * 매출 서비스. 모든 조회/변경은 TenantContext의 userId로 격리(멀티테넌시 HARD).
@@ -34,9 +35,12 @@ class SaleService(
     private val photoCardRepository: PhotoCardRepository,
     private val jdbcTemplate: JdbcTemplate,
 ) {
+    @Suppress("LongParameterList")
     @Transactional(readOnly = true)
     fun list(
         month: String?,
+        startDate: String?,
+        endDate: String?,
         offset: Int,
         limit: Int,
         categories: List<String>?,
@@ -45,7 +49,7 @@ class SaleService(
         search: String?,
     ): SalesPageResponse {
         val userId = TenantContext.currentUserId()
-        val spec = SaleSpecifications.filter(userId, month, categories, payments, channels, search)
+        val spec = SaleSpecifications.filter(userId, month, startDate, endDate, categories, payments, channels, search)
         val sort = Sort.by(Sort.Order.desc("date"), Sort.Order.desc("createdAt"))
         val pageable = PageRequest.of(offset / limit, limit, sort)
         val page = saleRepository.findAll(spec, pageable)
@@ -62,6 +66,8 @@ class SaleService(
     @Transactional(readOnly = true)
     fun summary(
         month: String?,
+        startDate: String?,
+        endDate: String?,
         categories: List<String>?,
         payments: List<String>?,
         channels: List<String>?,
@@ -70,7 +76,7 @@ class SaleService(
         val userId = TenantContext.currentUserId()
         val sql = StringBuilder(SUMMARY_SELECT)
         val params = mutableListOf<Any>(userId)
-        appendFilters(sql, params, month, categories, payments, channels, search)
+        appendFilters(sql, params, month, startDate, endDate, categories, payments, channels, search)
         return jdbcTemplate.queryForObject(
             sql.toString(),
             { rs, _ ->
@@ -88,19 +94,28 @@ class SaleService(
     }
 
     /** summary 의 동적 WHERE 절을 SaleSpecifications.filter 와 동일한 규약으로 구성한다. */
+    @Suppress("LongParameterList")
     private fun appendFilters(
         sql: StringBuilder,
         params: MutableList<Any>,
         month: String?,
+        startDate: String?,
+        endDate: String?,
         categories: List<String>?,
         payments: List<String>?,
         channels: List<String>?,
         search: String?,
     ) {
-        monthRange(month)?.let { (start, end) ->
+        if (!startDate.isNullOrBlank() && !endDate.isNullOrBlank()) {
             sql.append(" AND date BETWEEN ? AND ?")
-            params.add(Date.valueOf(start))
-            params.add(Date.valueOf(end))
+            params.add(Date.valueOf(LocalDate.parse(startDate)))
+            params.add(Date.valueOf(LocalDate.parse(endDate)))
+        } else {
+            monthRange(month)?.let { (start, end) ->
+                sql.append(" AND date BETWEEN ? AND ?")
+                params.add(Date.valueOf(start))
+                params.add(Date.valueOf(end))
+            }
         }
         appendInClause(sql, params, "product_category", categories)
         appendInClause(sql, params, "payment_method", payments)
@@ -108,7 +123,7 @@ class SaleService(
         if (!search.isNullOrBlank()) {
             val pattern = "%${search.lowercase().replace("%", "\\%").replace("_", "\\_")}%"
             sql.append(
-                " AND (lower(product_category) LIKE ? OR lower(product_name) LIKE ? OR lower(customer_name) LIKE ?)",
+                " AND (lower(customer_name) LIKE ? OR lower(memo) LIKE ?)",
             )
             repeat(SEARCH_FIELD_COUNT) { params.add(pattern) }
         }
@@ -152,7 +167,6 @@ class SaleService(
             Sale(
                 userId = userId,
                 date = date,
-                productName = category,
                 productCategory = category,
                 amount = amount,
                 paymentMethod = paymentMethod,
@@ -176,10 +190,7 @@ class SaleService(
         request.paymentMethod?.let { sale.paymentMethod = requireValidPaymentMethod(it, allowUnpaid = true) }
         request.date?.let { sale.date = it }
         request.amount?.let { sale.amount = it }
-        request.productCategory?.let {
-            sale.productCategory = it
-            sale.productName = it
-        }
+        request.productCategory?.let { sale.productCategory = it }
         request.reservationChannel?.let { sale.reservationChannel = it }
         request.customerName?.let { sale.customerName = it }
         request.customerPhone?.let { sale.customerPhone = it }
@@ -247,8 +258,8 @@ class SaleService(
     private companion object {
         const val DEFAULT_CHANNEL = "other"
 
-        /** summary 검색 패턴이 적용되는 컬럼 수(product_category·product_name·customer_name). */
-        const val SEARCH_FIELD_COUNT = 3
+        /** summary 검색 패턴이 적용되는 컬럼 수(customer_name·memo). */
+        const val SEARCH_FIELD_COUNT = 2
 
         /** appendInClause가 SQL에 직접 끼워 넣어도 안전한 컬럼 화이트리스트(식별자 주입 방어). */
         val ALLOWED_SUMMARY_COLUMNS = setOf("product_category", "payment_method", "reservation_channel")

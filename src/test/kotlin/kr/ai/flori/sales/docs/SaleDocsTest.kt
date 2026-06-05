@@ -23,7 +23,6 @@ class SaleDocsTest : RestDocsSupport() {
         listOf(
             fieldWithPath("id").type(JsonFieldType.NUMBER).description("매출 ID"),
             fieldWithPath("date").type(JsonFieldType.STRING).description("매출 발생일 (yyyy-MM-dd)"),
-            fieldWithPath("productName").type(JsonFieldType.STRING).description("상품명"),
             fieldWithPath("productCategory")
                 .type(JsonFieldType.STRING)
                 .optional()
@@ -58,7 +57,6 @@ class SaleDocsTest : RestDocsSupport() {
             fieldWithPath("sales").type(JsonFieldType.ARRAY).description("매출 목록"),
             fieldWithPath("sales[].id").type(JsonFieldType.NUMBER).description("매출 ID"),
             fieldWithPath("sales[].date").type(JsonFieldType.STRING).description("매출 발생일 (yyyy-MM-dd)"),
-            fieldWithPath("sales[].productName").type(JsonFieldType.STRING).description("상품명"),
             fieldWithPath("sales[].productCategory")
                 .type(JsonFieldType.STRING)
                 .optional()

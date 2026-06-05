@@ -40,7 +40,7 @@ class DashboardService(
             summary = summary(TenantContext.currentUserId(), today, today),
             upcomingReservations = reservationService.upcoming(),
             triggeredReminders = reservationService.triggeredReminders(),
-            recentSales = saleService.list(null, 0, RECENT_LIMIT, null, null, null, null).sales,
+            recentSales = saleService.list(null, null, null, 0, RECENT_LIMIT, null, null, null, null).sales,
             saleCategories = saleCategoryService.list().map { CategoryOption(it.value, it.label) },
         )
     }

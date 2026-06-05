@@ -63,7 +63,6 @@ class ReservationDocsTest : RestDocsSupport() {
         listOf(
             fieldWithPath("id").type(JsonFieldType.NUMBER).description("매출 ID"),
             fieldWithPath("date").type(JsonFieldType.STRING).description("매출 발생일 (yyyy-MM-dd)"),
-            fieldWithPath("productName").type(JsonFieldType.STRING).description("상품명"),
             fieldWithPath("productCategory")
                 .type(JsonFieldType.STRING)
                 .optional()

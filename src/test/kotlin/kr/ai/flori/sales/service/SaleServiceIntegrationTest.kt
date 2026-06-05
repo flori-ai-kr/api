@@ -120,16 +120,16 @@ class SaleServiceIntegrationTest {
         saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 2), "basket", 2_000, "card"))
         saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 3), "vase", 3_000, "transfer"))
 
-        val cashOnly = saleService.list(null, 0, 100, null, listOf("cash"), null, null)
+        val cashOnly = saleService.list(null, null, null, 0, 100, null, listOf("cash"), null, null)
         assertThat(cashOnly.sales).hasSize(1)
 
-        val vaseCategory = saleService.list(null, 0, 100, listOf("vase"), null, null, null)
+        val vaseCategory = saleService.list(null, null, null, 0, 100, listOf("vase"), null, null, null)
         assertThat(vaseCategory.sales).hasSize(2)
 
-        val firstPage = saleService.list(null, 0, 2, null, null, null, null)
+        val firstPage = saleService.list(null, null, null, 0, 2, null, null, null, null)
         assertThat(firstPage.sales).hasSize(2)
         assertThat(firstPage.hasMore).isTrue()
-        val secondPage = saleService.list(null, 2, 2, null, null, null, null)
+        val secondPage = saleService.list(null, null, null, 2, 2, null, null, null, null)
         assertThat(secondPage.sales).hasSize(1)
         assertThat(secondPage.hasMore).isFalse()
     }
@@ -144,7 +144,7 @@ class SaleServiceIntegrationTest {
         saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 5), "vase", 5_000, "unpaid"))
 
         // 전체: total/count는 미수 포함, 버킷은 결제수단별
-        val all = saleService.summary("2026-05", null, null, null, null)
+        val all = saleService.summary("2026-05", null, null, null, null, null, null)
         assertThat(all.total).isEqualTo(15_000L)
         assertThat(all.card).isEqualTo(1_000L)
         assertThat(all.cash).isEqualTo(2_000L)
@@ -153,29 +153,29 @@ class SaleServiceIntegrationTest {
         assertThat(all.count).isEqualTo(5L)
 
         // 결제수단 IN
-        val cardOnly = saleService.summary("2026-05", null, listOf("card"), null, null)
+        val cardOnly = saleService.summary("2026-05", null, null, null, listOf("card"), null, null)
         assertThat(cardOnly.total).isEqualTo(1_000L)
         assertThat(cardOnly.count).isEqualTo(1L)
 
         // 카테고리 IN
-        val vaseOnly = saleService.summary("2026-05", listOf("vase"), null, null, null)
+        val vaseOnly = saleService.summary("2026-05", null, null, listOf("vase"), null, null, null)
         assertThat(vaseOnly.count).isEqualTo(4L)
         assertThat(vaseOnly.total).isEqualTo(13_000L)
 
         // 채널 IN (기본 채널 other)
-        val otherChannel = saleService.summary("2026-05", null, null, listOf("other"), null)
+        val otherChannel = saleService.summary("2026-05", null, null, null, null, listOf("other"), null)
         assertThat(otherChannel.count).isEqualTo(5L)
 
         // 검색(고객명)
-        val searched = saleService.summary("2026-05", null, null, null, "김하늘")
+        val searched = saleService.summary("2026-05", null, null, null, null, null, "김하늘")
         assertThat(searched.count).isEqualTo(1L)
         assertThat(searched.card).isEqualTo(1_000L)
 
         // month=null 누적: 전체 기간 합산
-        assertThat(saleService.summary(null, null, null, null, null).count).isEqualTo(5L)
+        assertThat(saleService.summary(null, null, null, null, null, null, null).count).isEqualTo(5L)
 
         // 다른 달 → 빈 합계
-        val empty = saleService.summary("2026-04", null, null, null, null)
+        val empty = saleService.summary("2026-04", null, null, null, null, null, null)
         assertThat(empty.total).isEqualTo(0L)
         assertThat(empty.count).isEqualTo(0L)
     }
@@ -226,6 +226,6 @@ class SaleServiceIntegrationTest {
             }
         assertThatThrownBy { saleService.update(saleA.id, SaleUpdateRequest(amount = 1)) }
             .isInstanceOf(AppException::class.java)
-        assertThat(saleService.list(null, 0, 100, null, null, null, null).sales).isEmpty()
+        assertThat(saleService.list(null, null, null, 0, 100, null, null, null, null).sales).isEmpty()
     }
 }

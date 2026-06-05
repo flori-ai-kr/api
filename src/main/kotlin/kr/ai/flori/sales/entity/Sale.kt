@@ -19,8 +19,6 @@ class Sale(
     var userId: Long,
     @Column(name = "date", nullable = false)
     var date: LocalDate,
-    @Column(name = "product_name", nullable = false)
-    var productName: String,
     @Column(name = "product_category")
     var productCategory: String?,
     @Column(name = "amount", nullable = false)

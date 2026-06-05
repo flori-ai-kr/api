@@ -26,9 +26,12 @@ import org.springframework.web.bind.annotation.RestController
 class SaleController(
     private val saleService: SaleService,
 ) {
+    @Suppress("LongParameterList")
     @GetMapping
     fun list(
         @RequestParam(required = false) month: String?,
+        @RequestParam(required = false) startDate: String?,
+        @RequestParam(required = false) endDate: String?,
         @RequestParam(defaultValue = "0") offset: Int,
         @RequestParam(defaultValue = "100") limit: Int,
         @RequestParam(required = false) category: List<String>?,
@@ -38,17 +41,19 @@ class SaleController(
     ): SalesPageResponse {
         val safeLimit = limit.coerceIn(MIN_LIMIT, MAX_LIMIT)
         val safeOffset = offset.coerceAtLeast(0)
-        return saleService.list(month, safeOffset, safeLimit, category, payment, channel, search)
+        return saleService.list(month, startDate, endDate, safeOffset, safeLimit, category, payment, channel, search)
     }
 
     @GetMapping("/summary")
     fun summary(
         @RequestParam(required = false) month: String?,
+        @RequestParam(required = false) startDate: String?,
+        @RequestParam(required = false) endDate: String?,
         @RequestParam(required = false) category: List<String>?,
         @RequestParam(required = false) payment: List<String>?,
         @RequestParam(required = false) channel: List<String>?,
         @RequestParam(required = false) search: String?,
-    ): SalesSummaryResponse = saleService.summary(month, category, payment, channel, search)
+    ): SalesSummaryResponse = saleService.summary(month, startDate, endDate, category, payment, channel, search)
 
     @GetMapping("/suggestions")
     fun suggestions(): SaleSuggestionsResponse = SaleSuggestionsResponse(saleService.suggestions())

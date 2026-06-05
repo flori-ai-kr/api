@@ -60,7 +60,6 @@ data class CompleteUnpaidRequest(
 data class SaleResponse(
     val id: Long,
     val date: LocalDate,
-    val productName: String,
     val productCategory: String?,
     val amount: Int,
     val paymentMethod: String,
@@ -79,7 +78,6 @@ data class SaleResponse(
             SaleResponse(
                 id = requireNotNull(sale.id),
                 date = sale.date,
-                productName = sale.productName,
                 productCategory = sale.productCategory,
                 amount = sale.amount,
                 paymentMethod = sale.paymentMethod,
