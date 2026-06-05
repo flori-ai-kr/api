@@ -91,8 +91,8 @@ BEGIN
     (v_uid,'2026-05-31','11:00','최유나','010-1111-2224','기념일 꽃다발','파스텔 톤','pending',60000,NULL),
     (v_uid,'2026-06-02','16:30','박지후','010-1111-2223','개업 화분','다육+관엽','confirmed',120000,NULL);
 
-  -- ── 캘린더 일정 ─────────────────────────────────────────
-  INSERT INTO calendar_events(user_id,title,start_date,end_date,color,description) VALUES
+  -- ── 일정 ─────────────────────────────────────────
+  INSERT INTO schedules(user_id,title,start_date,end_date,color,description) VALUES
     (v_uid,'어버이날 성수기','2026-05-06','2026-05-08','#f43f5e','카네이션 물량 확보'),
     (v_uid,'화훼공판장 정기 사입','2026-05-19','2026-05-19','#3b82f6',NULL);
 

@@ -1,10 +1,10 @@
-package kr.ai.flori.calendar.controller
+package kr.ai.flori.schedules.controller
 
 import jakarta.validation.Valid
-import kr.ai.flori.calendar.dto.CalendarEventCreateRequest
-import kr.ai.flori.calendar.dto.CalendarEventResponse
-import kr.ai.flori.calendar.dto.CalendarEventUpdateRequest
-import kr.ai.flori.calendar.service.CalendarEventService
+import kr.ai.flori.schedules.dto.ScheduleCreateRequest
+import kr.ai.flori.schedules.dto.ScheduleResponse
+import kr.ai.flori.schedules.dto.ScheduleUpdateRequest
+import kr.ai.flori.schedules.service.ScheduleService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -18,31 +18,31 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/calendar-events")
-class CalendarEventController(
-    private val service: CalendarEventService,
+@RequestMapping("/schedules")
+class ScheduleController(
+    private val service: ScheduleService,
 ) {
     @GetMapping
     fun list(
         @RequestParam month: String,
-    ): List<CalendarEventResponse> = service.listByMonth(month)
+    ): List<ScheduleResponse> = service.listByMonth(month)
 
     @GetMapping("/{id}")
     fun get(
         @PathVariable id: Long,
-    ): CalendarEventResponse = service.get(id)
+    ): ScheduleResponse = service.get(id)
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     fun create(
-        @Valid @RequestBody request: CalendarEventCreateRequest,
-    ): CalendarEventResponse = service.create(request)
+        @Valid @RequestBody request: ScheduleCreateRequest,
+    ): ScheduleResponse = service.create(request)
 
     @PatchMapping("/{id}")
     fun update(
         @PathVariable id: Long,
-        @Valid @RequestBody request: CalendarEventUpdateRequest,
-    ): CalendarEventResponse = service.update(id, request)
+        @Valid @RequestBody request: ScheduleUpdateRequest,
+    ): ScheduleResponse = service.update(id, request)
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

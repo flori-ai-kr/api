@@ -59,7 +59,7 @@ src/main/kotlin/kr/ai/flori/
 ├── expenses/              # 지출 + 고정비 자동 생성(@Scheduled)
 ├── customers/             # 고객 (find-or-create, 실시간 통계)
 ├── reservations/          # 예약 (판매 전환, 픽업)
-├── calendar/              # 캘린더 (리마인더 푸시)
+├── schedules/             # 일정 (리마인더 푸시)
 ├── photos/                # 갤러리 (presigned 업로드) · 태그
 ├── insights/              # 트렌드/공유 조회 · 스크랩 · 내부 ingest
 ├── settings/              # 카드사 · 매출/지출 설정 · 하단바 · 푸시 구독

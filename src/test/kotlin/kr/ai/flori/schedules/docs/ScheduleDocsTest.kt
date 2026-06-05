@@ -1,4 +1,4 @@
-package kr.ai.flori.calendar.docs
+package kr.ai.flori.schedules.docs
 
 import kr.ai.flori.common.docs.RestDocsSupport
 import org.junit.jupiter.api.Test
@@ -14,34 +14,30 @@ import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
 
 /**
- * CalendarEvents API RestDocs 문서화.
- * 실제 보안 체인 + Zonky PG에서 각 엔드포인트를 1회 호출하며 OpenAPI 스펙을 생성한다.
- * endDate는 startDate 이상이어야 한다(서버 검증).
+ * Schedules API RestDocs 문서화.
  */
-class CalendarEventDocsTest : RestDocsSupport() {
-    /** CalendarEventResponse 공통 응답 필드 — 단건 조회/생성/수정에서 재사용 */
-    private val calendarEventResponseFields =
+class ScheduleDocsTest : RestDocsSupport() {
+    private val scheduleResponseFields =
         listOf(
-            fieldWithPath("id").type(JsonFieldType.NUMBER).description("이벤트 ID"),
-            fieldWithPath("title").type(JsonFieldType.STRING).description("이벤트 제목"),
+            fieldWithPath("id").type(JsonFieldType.NUMBER).description("일정 ID"),
+            fieldWithPath("title").type(JsonFieldType.STRING).description("일정 제목"),
             fieldWithPath("startDate").type(JsonFieldType.STRING).description("시작일 (yyyy-MM-dd)"),
             fieldWithPath("endDate").type(JsonFieldType.STRING).description("종료일 (yyyy-MM-dd)"),
             fieldWithPath("color")
                 .type(JsonFieldType.STRING)
-                .description("표시 색상 (기본값 #4CAF50)"),
-            fieldWithPath("description")
+                .description("표시 색상 (기본값 #f43f5e)"),
+            fieldWithPath("memo")
                 .type(JsonFieldType.STRING)
                 .optional()
-                .description("이벤트 설명 (미입력이면 null)"),
+                .description("일정 메모 (미입력이면 null)"),
             fieldWithPath("createdAt").type(JsonFieldType.STRING).description("생성 시각 (ISO-8601)"),
             fieldWithPath("updatedAt").type(JsonFieldType.STRING).description("최종 수정 시각 (ISO-8601)"),
         )
 
-    /** 테스트용 이벤트 생성 → 생성된 id 반환 */
-    private fun createEvent(token: String): String {
+    private fun createSchedule(token: String): String {
         val res =
             mockMvc
-                .post("/calendar-events") {
+                .post("/schedules") {
                     header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                     contentType = MediaType.APPLICATION_JSON
                     content =
@@ -57,14 +53,14 @@ class CalendarEventDocsTest : RestDocsSupport() {
         return objectMapper.readTree(res).get("id").asText()
     }
 
-    // ── 1. 이벤트 생성 ─────────────────────────────────────────────────────────
+    // ── 1. 일정 생성 ─────────────────────────────────────────────────────────
 
     @Test
-    fun `이벤트 생성 문서화`() {
+    fun `일정 생성 문서화`() {
         val token = signupAndToken()
 
         mockMvc
-            .post("/calendar-events") {
+            .post("/schedules") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
@@ -74,23 +70,23 @@ class CalendarEventDocsTest : RestDocsSupport() {
                             "startDate" to "2026-06-10",
                             "endDate" to "2026-06-12",
                             "color" to "#1565C0",
-                            "description" to "꽃꽂이 심화 과정",
+                            "memo" to "꽃꽂이 심화 과정",
                         ),
                     )
             }.andExpect { status { isCreated() } }
             .andDo {
                 handle(
                     docs(
-                        identifier = "calendar-event-create",
-                        requestSchema = "CalendarEventCreateRequest",
-                        responseSchema = "CalendarEventResponse",
-                        tag = "CalendarEvents",
-                        summary = "캘린더 이벤트 생성",
+                        identifier = "schedule-create",
+                        requestSchema = "ScheduleCreateRequest",
+                        responseSchema = "ScheduleResponse",
+                        tag = "Schedules",
+                        summary = "일정 생성",
                         requestFields =
                             listOf(
                                 fieldWithPath("title")
                                     .type(JsonFieldType.STRING)
-                                    .description("이벤트 제목 (필수)"),
+                                    .description("일정 제목 (필수)"),
                                 fieldWithPath("startDate")
                                     .type(JsonFieldType.STRING)
                                     .description("시작일 (yyyy-MM-dd, 필수)"),
@@ -100,42 +96,42 @@ class CalendarEventDocsTest : RestDocsSupport() {
                                 fieldWithPath("color")
                                     .type(JsonFieldType.STRING)
                                     .optional()
-                                    .description("표시 색상 (hex, 기본값 #4CAF50)"),
-                                fieldWithPath("description")
+                                    .description("표시 색상 (hex, 기본값 #f43f5e)"),
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
-                                    .description("이벤트 설명"),
+                                    .description("일정 메모"),
                             ),
-                        responseFields = calendarEventResponseFields,
+                        responseFields = scheduleResponseFields,
                     ),
                 )
             }
     }
 
-    // ── 2. 월별 이벤트 목록 ────────────────────────────────────────────────────
+    // ── 2. 월별 일정 목록 ────────────────────────────────────────────────────
 
     @Test
-    fun `월별 이벤트 목록 문서화`() {
+    fun `월별 일정 목록 문서화`() {
         val token = signupAndToken()
-        createEvent(token)
+        createSchedule(token)
 
         mockMvc
-            .get("/calendar-events") {
+            .get("/schedules") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 param("month", "2026-06")
             }.andExpect { status { isOk() } }
             .andDo {
                 handle(
                     docs(
-                        identifier = "calendar-event-list",
-                        responseSchema = "CalendarEventListResponse",
-                        tag = "CalendarEvents",
-                        summary = "월별 이벤트 목록 (월 범위와 겹치는 이벤트 포함)",
+                        identifier = "schedule-list",
+                        responseSchema = "ScheduleListResponse",
+                        tag = "Schedules",
+                        summary = "월별 일정 목록 (월 범위와 겹치는 일정 포함)",
                         responseFields =
                             listOf(
-                                fieldWithPath("[]").type(JsonFieldType.ARRAY).description("이벤트 목록"),
-                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("이벤트 ID"),
-                                fieldWithPath("[].title").type(JsonFieldType.STRING).description("이벤트 제목"),
+                                fieldWithPath("[]").type(JsonFieldType.ARRAY).description("일정 목록"),
+                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("일정 ID"),
+                                fieldWithPath("[].title").type(JsonFieldType.STRING).description("일정 제목"),
                                 fieldWithPath("[].startDate")
                                     .type(JsonFieldType.STRING)
                                     .description("시작일 (yyyy-MM-dd)"),
@@ -145,10 +141,10 @@ class CalendarEventDocsTest : RestDocsSupport() {
                                 fieldWithPath("[].color")
                                     .type(JsonFieldType.STRING)
                                     .description("표시 색상 (hex)"),
-                                fieldWithPath("[].description")
+                                fieldWithPath("[].memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
-                                    .description("이벤트 설명 (미입력이면 null)"),
+                                    .description("일정 메모 (미입력이면 null)"),
                                 fieldWithPath("[].createdAt")
                                     .type(JsonFieldType.STRING)
                                     .description("생성 시각 (ISO-8601)"),
@@ -161,48 +157,48 @@ class CalendarEventDocsTest : RestDocsSupport() {
             }
     }
 
-    // ── 3. 이벤트 단건 조회 ────────────────────────────────────────────────────
+    // ── 3. 일정 단건 조회 ────────────────────────────────────────────────────
 
     @Test
-    fun `이벤트 단건 조회 문서화`() {
+    fun `일정 단건 조회 문서화`() {
         val token = signupAndToken()
-        val id = createEvent(token)
+        val id = createSchedule(token)
 
         mockMvc
-            .get("/calendar-events/$id") {
-                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/calendar-events/{id}")
+            .get("/schedules/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/schedules/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isOk() } }
             .andDo {
                 handle(
                     docs(
-                        identifier = "calendar-event-get",
-                        responseSchema = "CalendarEventResponse",
-                        tag = "CalendarEvents",
-                        summary = "캘린더 이벤트 단건 조회",
-                        pathParameters = listOf(parameterWithName("id").description("이벤트 ID")),
-                        responseFields = calendarEventResponseFields,
+                        identifier = "schedule-get",
+                        responseSchema = "ScheduleResponse",
+                        tag = "Schedules",
+                        summary = "일정 단건 조회",
+                        pathParameters = listOf(parameterWithName("id").description("일정 ID")),
+                        responseFields = scheduleResponseFields,
                     ),
                 )
             }
     }
 
-    // ── 4. 이벤트 수정 ─────────────────────────────────────────────────────────
+    // ── 4. 일정 수정 ─────────────────────────────────────────────────────────
 
     @Test
-    fun `이벤트 수정 문서화`() {
+    fun `일정 수정 문서화`() {
         val token = signupAndToken()
-        val id = createEvent(token)
+        val id = createSchedule(token)
 
         mockMvc
-            .patch("/calendar-events/$id") {
-                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/calendar-events/{id}")
+            .patch("/schedules/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/schedules/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
                     json(
                         mapOf(
-                            "title" to "수정된 이벤트",
+                            "title" to "수정된 일정",
                             "color" to "#C62828",
                         ),
                     )
@@ -210,12 +206,12 @@ class CalendarEventDocsTest : RestDocsSupport() {
             .andDo {
                 handle(
                     docs(
-                        identifier = "calendar-event-update",
-                        requestSchema = "CalendarEventUpdateRequest",
-                        responseSchema = "CalendarEventResponse",
-                        tag = "CalendarEvents",
-                        summary = "캘린더 이벤트 수정 (제공된 필드만 반영)",
-                        pathParameters = listOf(parameterWithName("id").description("이벤트 ID")),
+                        identifier = "schedule-update",
+                        requestSchema = "ScheduleUpdateRequest",
+                        responseSchema = "ScheduleResponse",
+                        tag = "Schedules",
+                        summary = "일정 수정 (제공된 필드만 반영)",
+                        pathParameters = listOf(parameterWithName("id").description("일정 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("title")
@@ -234,36 +230,36 @@ class CalendarEventDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("색상 변경 (hex)"),
-                                fieldWithPath("description")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
-                                    .description("설명 변경"),
+                                    .description("메모 변경"),
                             ),
-                        responseFields = calendarEventResponseFields,
+                        responseFields = scheduleResponseFields,
                     ),
                 )
             }
     }
 
-    // ── 5. 이벤트 삭제 ─────────────────────────────────────────────────────────
+    // ── 5. 일정 삭제 ─────────────────────────────────────────────────────────
 
     @Test
-    fun `이벤트 삭제 문서화`() {
+    fun `일정 삭제 문서화`() {
         val token = signupAndToken()
-        val id = createEvent(token)
+        val id = createSchedule(token)
 
         mockMvc
-            .delete("/calendar-events/$id") {
-                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/calendar-events/{id}")
+            .delete("/schedules/$id") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/schedules/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
             }.andExpect { status { isNoContent() } }
             .andDo {
                 handle(
                     docs(
-                        identifier = "calendar-event-delete",
-                        tag = "CalendarEvents",
-                        summary = "캘린더 이벤트 삭제",
-                        pathParameters = listOf(parameterWithName("id").description("이벤트 ID")),
+                        identifier = "schedule-delete",
+                        tag = "Schedules",
+                        summary = "일정 삭제",
+                        pathParameters = listOf(parameterWithName("id").description("일정 ID")),
                     ),
                 )
             }

@@ -46,7 +46,7 @@ class SchemaMigrationIntegrationTest {
                 "photo_tags",
                 "photo_cards",
                 "push_subscriptions",
-                "calendar_events",
+                "schedules",
                 "trend_articles",
                 "instagram_accounts",
                 "instagram_posts",
