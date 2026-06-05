@@ -5,6 +5,7 @@ import kr.ai.flori.settings.dto.LabelSettingCreateRequest
 import kr.ai.flori.settings.dto.LabelSettingResponse
 import kr.ai.flori.settings.dto.LabelSettingUpdateRequest
 import kr.ai.flori.settings.service.SaleCategorySettingService
+import kr.ai.flori.settings.service.SaleChannelSettingService
 import kr.ai.flori.settings.service.SalePaymentMethodSettingService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController
 class SaleSettingsController(
     private val categoryService: SaleCategorySettingService,
     private val paymentService: SalePaymentMethodSettingService,
+    private val channelService: SaleChannelSettingService,
 ) {
     @GetMapping("/sale-categories")
     fun categories(): List<LabelSettingResponse> = categoryService.list()
@@ -30,13 +32,13 @@ class SaleSettingsController(
     @ResponseStatus(HttpStatus.CREATED)
     fun createCategory(
         @Valid @RequestBody request: LabelSettingCreateRequest,
-    ): LabelSettingResponse = categoryService.add(requireNotNull(request.label), request.color, request.value)
+    ): LabelSettingResponse = categoryService.add(requireNotNull(request.label), request.value)
 
     @PutMapping("/sale-categories/{id}")
     fun updateCategory(
         @PathVariable id: Long,
         @Valid @RequestBody request: LabelSettingUpdateRequest,
-    ): LabelSettingResponse = categoryService.update(id, requireNotNull(request.label), requireNotNull(request.color))
+    ): LabelSettingResponse = categoryService.update(id, requireNotNull(request.label))
 
     @DeleteMapping("/sale-categories/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -53,13 +55,13 @@ class SaleSettingsController(
     @ResponseStatus(HttpStatus.CREATED)
     fun createPayment(
         @Valid @RequestBody request: LabelSettingCreateRequest,
-    ): LabelSettingResponse = paymentService.add(requireNotNull(request.label), request.color, request.value)
+    ): LabelSettingResponse = paymentService.add(requireNotNull(request.label), request.value)
 
     @PutMapping("/payment-methods/{id}")
     fun updatePayment(
         @PathVariable id: Long,
         @Valid @RequestBody request: LabelSettingUpdateRequest,
-    ): LabelSettingResponse = paymentService.update(id, requireNotNull(request.label), requireNotNull(request.color))
+    ): LabelSettingResponse = paymentService.update(id, requireNotNull(request.label))
 
     @DeleteMapping("/payment-methods/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -67,5 +69,28 @@ class SaleSettingsController(
         @PathVariable id: Long,
     ) {
         paymentService.delete(id)
+    }
+
+    @GetMapping("/sale-channels")
+    fun channels(): List<LabelSettingResponse> = channelService.list()
+
+    @PostMapping("/sale-channels")
+    @ResponseStatus(HttpStatus.CREATED)
+    fun createChannel(
+        @Valid @RequestBody request: LabelSettingCreateRequest,
+    ): LabelSettingResponse = channelService.add(requireNotNull(request.label), request.value)
+
+    @PutMapping("/sale-channels/{id}")
+    fun updateChannel(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: LabelSettingUpdateRequest,
+    ): LabelSettingResponse = channelService.update(id, requireNotNull(request.label))
+
+    @DeleteMapping("/sale-channels/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteChannel(
+        @PathVariable id: Long,
+    ) {
+        channelService.delete(id)
     }
 }

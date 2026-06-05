@@ -39,7 +39,7 @@ class MigrationRulesTest {
     @Test
     fun `핵심 복합 unique 제약이 유지된다`() {
         assertThat(sql).contains("UNIQUE (phone, user_id)")
-        assertThat(sql).contains("UNIQUE (value, user_id)")
+        assertThat(sql).contains("UNIQUE (user_id, domain, kind, value)")
         assertThat(sql).contains("UNIQUE (user_id, target_type, target_id)")
     }
 

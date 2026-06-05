@@ -30,13 +30,13 @@ class ExpenseSettingsController(
     @ResponseStatus(HttpStatus.CREATED)
     fun createCategory(
         @Valid @RequestBody request: LabelSettingCreateRequest,
-    ): LabelSettingResponse = categoryService.add(requireNotNull(request.label), request.color, request.value)
+    ): LabelSettingResponse = categoryService.add(requireNotNull(request.label), request.value)
 
     @PutMapping("/expense-categories/{id}")
     fun updateCategory(
         @PathVariable id: Long,
         @Valid @RequestBody request: LabelSettingUpdateRequest,
-    ): LabelSettingResponse = categoryService.update(id, requireNotNull(request.label), requireNotNull(request.color))
+    ): LabelSettingResponse = categoryService.update(id, requireNotNull(request.label))
 
     @DeleteMapping("/expense-categories/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -53,13 +53,13 @@ class ExpenseSettingsController(
     @ResponseStatus(HttpStatus.CREATED)
     fun createPayment(
         @Valid @RequestBody request: LabelSettingCreateRequest,
-    ): LabelSettingResponse = paymentService.add(requireNotNull(request.label), request.color, request.value)
+    ): LabelSettingResponse = paymentService.add(requireNotNull(request.label), request.value)
 
     @PutMapping("/expense-payment-methods/{id}")
     fun updatePayment(
         @PathVariable id: Long,
         @Valid @RequestBody request: LabelSettingUpdateRequest,
-    ): LabelSettingResponse = paymentService.update(id, requireNotNull(request.label), requireNotNull(request.color))
+    ): LabelSettingResponse = paymentService.update(id, requireNotNull(request.label))
 
     @DeleteMapping("/expense-payment-methods/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
