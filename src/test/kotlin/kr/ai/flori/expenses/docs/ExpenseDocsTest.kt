@@ -25,7 +25,8 @@ class ExpenseDocsTest : RestDocsSupport() {
             fieldWithPath("id").type(JsonFieldType.NUMBER).description("지출 ID"),
             fieldWithPath("date").type(JsonFieldType.STRING).description("지출 발생일 (yyyy-MM-dd)"),
             fieldWithPath("itemName").type(JsonFieldType.STRING).description("물품명"),
-            fieldWithPath("category").type(JsonFieldType.STRING).description("지출 카테고리"),
+            fieldWithPath("categoryId").type(JsonFieldType.NUMBER).optional().description("지출 카테고리 ID (null 가능)"),
+            fieldWithPath("categoryLabel").type(JsonFieldType.STRING).optional().description("지출 카테고리 표시 이름 (null 가능)"),
             fieldWithPath("unitPrice").type(JsonFieldType.NUMBER).description("단가(원)"),
             fieldWithPath("quantity").type(JsonFieldType.NUMBER).description("수량"),
             fieldWithPath("totalAmount")
@@ -69,7 +70,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                             mapOf(
                                 "date" to "2026-05-10",
                                 "itemName" to "장미 100송이",
-                                "category" to "flower_purchase",
+                                "categoryId" to expenseCategoryId(token),
                                 "unitPrice" to 5_000,
                                 "quantity" to 3,
                                 "paymentMethod" to "card",
@@ -97,7 +98,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                         mapOf(
                             "date" to "2026-05-10",
                             "itemName" to "장미 100송이",
-                            "category" to "flower_purchase",
+                            "categoryId" to expenseCategoryId(token),
                             "unitPrice" to 5_000,
                             "quantity" to 3,
                             "paymentMethod" to "card",
@@ -123,9 +124,9 @@ class ExpenseDocsTest : RestDocsSupport() {
                                 fieldWithPath("itemName")
                                     .type(JsonFieldType.STRING)
                                     .description("물품명 (필수)"),
-                                fieldWithPath("category")
-                                    .type(JsonFieldType.STRING)
-                                    .description("지출 카테고리 (필수)"),
+                                fieldWithPath("categoryId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .description("지출 카테고리 ID (필수)"),
                                 fieldWithPath("unitPrice")
                                     .type(JsonFieldType.NUMBER)
                                     .description("단가(원, 0 이상, 필수)"),
@@ -181,7 +182,8 @@ class ExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .description("지출 발생일 (yyyy-MM-dd)"),
                                 fieldWithPath("[].itemName").type(JsonFieldType.STRING).description("물품명"),
-                                fieldWithPath("[].category").type(JsonFieldType.STRING).description("지출 카테고리"),
+                                fieldWithPath("[].categoryId").type(JsonFieldType.NUMBER).optional().description("지출 카테고리 ID"),
+                                fieldWithPath("[].categoryLabel").type(JsonFieldType.STRING).optional().description("지출 카테고리 이름"),
                                 fieldWithPath("[].unitPrice").type(JsonFieldType.NUMBER).description("단가(원)"),
                                 fieldWithPath("[].quantity").type(JsonFieldType.NUMBER).description("수량"),
                                 fieldWithPath("[].totalAmount")
@@ -287,8 +289,8 @@ class ExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("물품명 변경"),
-                                fieldWithPath("category")
-                                    .type(JsonFieldType.STRING)
+                                fieldWithPath("categoryId")
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("카테고리 변경"),
                                 fieldWithPath("unitPrice")

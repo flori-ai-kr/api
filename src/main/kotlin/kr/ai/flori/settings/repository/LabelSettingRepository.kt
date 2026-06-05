@@ -16,4 +16,11 @@ interface LabelSettingRepository : JpaRepository<LabelSetting, Long> {
         domain: String,
         kind: String,
     ): LabelSetting?
+
+    fun findByUserIdAndDomainAndKindAndValue(
+        userId: Long,
+        domain: String,
+        kind: String,
+        value: String,
+    ): LabelSetting?
 }

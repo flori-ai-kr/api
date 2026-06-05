@@ -60,14 +60,14 @@ class RecurringExpenseGenerator(
         date: LocalDate,
     ): Int =
         jdbcTemplate.update(
-            "INSERT INTO expenses (user_id, date, item_name, category, unit_price, quantity, total_amount, " +
+            "INSERT INTO expenses (user_id, date, item_name, category_id, unit_price, quantity, total_amount, " +
                 "payment_method, vendor, memo, recurring_id, is_recurring_modified) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE) " +
                 "ON CONFLICT (recurring_id, date) DO NOTHING",
             rule.userId,
             Date.valueOf(date),
             rule.itemName,
-            rule.category,
+            rule.categoryId,
             rule.unitPrice,
             rule.quantity,
             rule.unitPrice * rule.quantity,

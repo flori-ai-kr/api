@@ -14,7 +14,8 @@ data class DashboardSummary(
 )
 
 data class CategoryStat(
-    val name: String,
+    val categoryId: Long?,
+    val label: String,
     val count: Long,
     val amount: Long,
     val percentage: Int,
@@ -29,7 +30,7 @@ data class PaymentMethodStat(
 )
 
 data class ChannelStat(
-    val channel: String,
+    val channelId: Long?,
     val label: String,
     val count: Long,
     val amount: Long,
@@ -37,7 +38,7 @@ data class ChannelStat(
 )
 
 data class ExpenseCategoryStat(
-    val category: String,
+    val categoryId: Long?,
     val label: String,
     val amount: Long,
     val percentage: Int,

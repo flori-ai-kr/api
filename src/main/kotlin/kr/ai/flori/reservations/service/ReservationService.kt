@@ -17,6 +17,9 @@ import kr.ai.flori.sales.dto.SaleCreateRequest
 import kr.ai.flori.sales.dto.SaleResponse
 import kr.ai.flori.sales.repository.SaleRepository
 import kr.ai.flori.sales.service.SaleService
+import kr.ai.flori.settings.entity.LabelDomains
+import kr.ai.flori.settings.entity.LabelKinds
+import kr.ai.flori.settings.service.LabelSettingReader
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Duration
@@ -34,6 +37,7 @@ class ReservationService(
     private val saleService: SaleService,
     private val saleRepository: SaleRepository,
     private val customerService: CustomerService,
+    private val labelReader: LabelSettingReader,
 ) {
     @Transactional(readOnly = true)
     fun listByMonth(month: String): List<ReservationResponse> {
@@ -52,11 +56,19 @@ class ReservationService(
                 saleRepository.findAllById(saleIds).filter { it.userId == userId }.associateBy { it.id }
             }
         val purchaseCounts = customerService.purchaseCountsByCustomer()
+        val catMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.CATEGORY)
+        val chMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.CHANNEL)
 
         return reservations.map { r ->
             val sale = r.saleId?.let { salesById[it] }
             val purchaseCount = sale?.customerId?.let { purchaseCounts[it] }
-            ReservationResponse.from(r, sale, purchaseCount)
+            ReservationResponse.from(
+                r,
+                sale,
+                purchaseCount,
+                sale?.categoryId?.let { catMap[it] },
+                sale?.channelId?.let { chMap[it] },
+            )
         }
     }
 

@@ -18,9 +18,9 @@ object SaleSpecifications {
         month: String?,
         startDate: String? = null,
         endDate: String? = null,
-        categories: List<String>?,
+        categories: List<Long>?,
         payments: List<String>?,
-        channels: List<String>?,
+        channels: List<Long>?,
         search: String?,
     ): Specification<Sale> =
         Specification { root, _, cb ->
@@ -37,13 +37,13 @@ object SaleSpecifications {
                 }
             }
             if (!categories.isNullOrEmpty()) {
-                predicates += root.get<String>("productCategory").`in`(categories)
+                predicates += root.get<Long>("categoryId").`in`(categories)
             }
             if (!payments.isNullOrEmpty()) {
                 predicates += root.get<String>("paymentMethod").`in`(payments)
             }
             if (!channels.isNullOrEmpty()) {
-                predicates += root.get<String>("reservationChannel").`in`(channels)
+                predicates += root.get<Long>("channelId").`in`(channels)
             }
             if (!search.isNullOrBlank()) {
                 val pattern = "%${search.lowercase().replace("%", "\\%").replace("_", "\\_")}%"

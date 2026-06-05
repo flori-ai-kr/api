@@ -174,10 +174,10 @@ JWT refresh 회전/무효화 추적. **원문이 아닌 SHA-256 해시만 저장
 | `user_id` | BIGINT | NOT NULL | 논리참조(FK 제약 없음) |
 | `date` | DATE | NOT NULL | 매출일 |
 | `product_name` | VARCHAR(200) | NOT NULL | |
-| `product_category` | VARCHAR(100) | | |
+| `category_id` | BIGINT | | 매출 카테고리 → `label_settings`(domain=sale, kind=category) 논리참조 |
 | `amount` | INTEGER | NOT NULL | 금액(원) |
 | `payment_method` | VARCHAR(20) | NOT NULL, CHECK(cash/card/transfer/naverpay/kakaopay/unpaid) | |
-| `reservation_channel` | VARCHAR(20) | DEFAULT 'other', CHECK(phone/kakaotalk/naver_booking/road/other) | 예약 경로 |
+| `channel_id` | BIGINT | | 매출 채널 → `label_settings`(domain=sale, kind=channel) 논리참조 |
 | `customer_name` | VARCHAR(100) | | |
 | `customer_phone` | VARCHAR(20) | | |
 | `customer_id` | BIGINT | | 연결 고객(선택, 논리참조). 고객 삭제 시 앱이 NULL 처리 |
@@ -207,7 +207,8 @@ JWT refresh 회전/무효화 추적. **원문이 아닌 SHA-256 해시만 저장
 
 - **제약**: UNIQUE(user_id, domain, kind, value), INDEX(user_id, domain, kind)
 - **시드**(가입 시): 매출 카테고리 11 / 결제방식 4 / 채널 5, 지출 카테고리 7 / 결제방식 3
-- **채널**: 이전 `sales.reservation_channel` CHECK enum을 라벨 설정으로 편입(기본값 phone/kakaotalk/naver_booking/road/other). `sales` 컬럼의 id 참조 전환은 후속 단계.
+- **채널**: 이전 `sales.reservation_channel` CHECK enum을 라벨 설정으로 편입(기본값 phone/kakaotalk/naver_booking/road/other). `sales.channel_id`가 이 행을 논리참조한다.
+- **참조 전환**: 매출/지출의 카테고리·채널은 value 문자열 → `label_settings.id` 간접참조로 전환 완료(응답은 id + label 동반). 결제수단(`payment_method`)은 문자열 유지(후속 단계).
 
 ---
 
@@ -223,7 +224,7 @@ JWT refresh 회전/무효화 추적. **원문이 아닌 SHA-256 해시만 저장
 | `user_id` | BIGINT | NOT NULL | 논리참조(FK 제약 없음) |
 | `date` | DATE | NOT NULL | |
 | `item_name` | VARCHAR(200) | NOT NULL | |
-| `category` | VARCHAR(30) | NOT NULL | 커스텀 허용 |
+| `category_id` | BIGINT | | 지출 카테고리 → `label_settings`(domain=expense, kind=category) 논리참조 |
 | `unit_price` | INTEGER | NOT NULL | 단가 |
 | `quantity` | INTEGER | DEFAULT 1 | 수량 |
 | `total_amount` | INTEGER | NOT NULL | 서버 계산값 |
@@ -247,7 +248,7 @@ JWT refresh 회전/무효화 추적. **원문이 아닌 SHA-256 해시만 저장
 | `id` | BIGINT | PK, IDENTITY | |
 | `user_id` | BIGINT | NOT NULL | 논리참조(FK 제약 없음) |
 | `item_name` | TEXT | NOT NULL | |
-| `category` | VARCHAR(30) | NOT NULL | |
+| `category_id` | BIGINT | | 지출 카테고리 → `label_settings`(domain=expense, kind=category) 논리참조 |
 | `unit_price` | INTEGER | NOT NULL, CHECK(≥0) | |
 | `quantity` | INTEGER | NOT NULL, DEFAULT 1, CHECK(>0) | |
 | `payment_method` | VARCHAR(20) | NOT NULL | |

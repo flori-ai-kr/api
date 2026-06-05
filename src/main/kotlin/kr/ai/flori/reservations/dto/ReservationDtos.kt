@@ -93,6 +93,8 @@ data class ReservationResponse(
             r: Reservation,
             sale: Sale? = null,
             purchaseCount: Int? = null,
+            categoryLabel: String? = null,
+            channelLabel: String? = null,
         ): ReservationResponse =
             ReservationResponse(
                 id = requireNotNull(r.id),
@@ -109,12 +111,13 @@ data class ReservationResponse(
                 reminderSent = r.reminderSent,
                 pickupCompleted = r.pickupCompleted,
                 saleDate = sale?.date,
-                productCategory = sale?.productCategory,
+                // 연결된 매출 카테고리/채널은 label_settings.id → 라벨로 해석해 표시한다.
+                productCategory = categoryLabel,
                 customerId = sale?.customerId,
                 purchaseCount = purchaseCount,
                 saleIsUnpaid = sale?.isUnpaid,
                 salePaymentMethod = sale?.paymentMethod,
-                saleReservationChannel = sale?.reservationChannel,
+                saleReservationChannel = channelLabel,
                 createdAt = r.createdAt,
                 updatedAt = r.updatedAt,
             )

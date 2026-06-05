@@ -16,7 +16,7 @@ class RecurringScheduleEvaluatorTest {
         daysOfMonth: List<Int> = emptyList(),
         yearlyDates: List<YearlyDate> = emptyList(),
     ): RecurringExpense =
-        RecurringExpense(1L, "임대료", "rent", 1000, 1, "transfer", frequency, startDate).apply {
+        RecurringExpense(1L, "임대료", 1L, 1000, 1, "transfer", frequency, startDate).apply {
             this.intervalCount = intervalCount
             this.endDate = endDate
             this.daysOfWeek = daysOfWeek

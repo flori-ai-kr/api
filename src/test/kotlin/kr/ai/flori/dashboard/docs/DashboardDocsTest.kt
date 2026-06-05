@@ -33,10 +33,12 @@ class DashboardDocsTest : RestDocsSupport() {
         listOf(
             fieldWithPath("$prefix.id").type(JsonFieldType.NUMBER).optional().description("매출 ID"),
             fieldWithPath("$prefix.date").type(JsonFieldType.STRING).optional().description("매출 발생일 (yyyy-MM-dd)"),
-            fieldWithPath("$prefix.productCategory").type(JsonFieldType.STRING).optional().description("상품 카테고리 (null 가능)"),
+            fieldWithPath("$prefix.categoryId").type(JsonFieldType.NUMBER).optional().description("상품 카테고리 ID (null 가능)"),
+            fieldWithPath("$prefix.categoryLabel").type(JsonFieldType.STRING).optional().description("상품 카테고리 이름 (null 가능)"),
             fieldWithPath("$prefix.amount").type(JsonFieldType.NUMBER).optional().description("결제 금액(원)"),
             fieldWithPath("$prefix.paymentMethod").type(JsonFieldType.STRING).optional().description("결제방식"),
-            fieldWithPath("$prefix.reservationChannel").type(JsonFieldType.STRING).optional().description("예약 채널"),
+            fieldWithPath("$prefix.channelId").type(JsonFieldType.NUMBER).optional().description("매출 채널 ID (null 가능)"),
+            fieldWithPath("$prefix.channelLabel").type(JsonFieldType.STRING).optional().description("매출 채널 이름 (null 가능)"),
             fieldWithPath("$prefix.customerName").type(JsonFieldType.STRING).optional().description("고객명"),
             fieldWithPath("$prefix.customerPhone").type(JsonFieldType.STRING).optional().description("고객 전화번호"),
             fieldWithPath("$prefix.customerId").type(JsonFieldType.NUMBER).optional().description("연결된 고객 ID"),
@@ -64,6 +66,13 @@ class DashboardDocsTest : RestDocsSupport() {
             fieldWithPath("$prefix.reminderAt").type(JsonFieldType.STRING).optional().description("리마인더 시각 (ISO-8601, null 가능)"),
             fieldWithPath("$prefix.reminderSent").type(JsonFieldType.BOOLEAN).optional().description("리마인더 전송 여부"),
             fieldWithPath("$prefix.pickupCompleted").type(JsonFieldType.BOOLEAN).optional().description("픽업 완료 여부"),
+            fieldWithPath("$prefix.saleDate").type(JsonFieldType.STRING).optional().description("연결 매출 결제일 (null 가능)"),
+            fieldWithPath("$prefix.productCategory").type(JsonFieldType.STRING).optional().description("연결 매출 카테고리 이름 (null 가능)"),
+            fieldWithPath("$prefix.customerId").type(JsonFieldType.NUMBER).optional().description("연결 고객 ID (null 가능)"),
+            fieldWithPath("$prefix.purchaseCount").type(JsonFieldType.NUMBER).optional().description("고객 누적 구매 건수 (null 가능)"),
+            fieldWithPath("$prefix.saleIsUnpaid").type(JsonFieldType.BOOLEAN).optional().description("연결 매출 미수 여부 (null 가능)"),
+            fieldWithPath("$prefix.salePaymentMethod").type(JsonFieldType.STRING).optional().description("연결 매출 결제방식 (null 가능)"),
+            fieldWithPath("$prefix.saleReservationChannel").type(JsonFieldType.STRING).optional().description("연결 매출 채널 이름 (null 가능)"),
             fieldWithPath("$prefix.createdAt").type(JsonFieldType.STRING).optional().description("생성 시각 (ISO-8601)"),
             fieldWithPath("$prefix.updatedAt").type(JsonFieldType.STRING).optional().description("최종 수정 시각 (ISO-8601)"),
         )
@@ -87,10 +96,10 @@ class DashboardDocsTest : RestDocsSupport() {
                     json(
                         mapOf(
                             "date" to today,
-                            "productCategory" to "basic_bouquet",
+                            "categoryId" to saleCategoryId(token),
                             "amount" to 100_000,
                             "paymentMethod" to "card",
-                            "reservationChannel" to "kakaotalk",
+                            "channelId" to saleChannelId(token),
                             "customerPhone" to "01012345678",
                         ),
                     )
@@ -105,10 +114,10 @@ class DashboardDocsTest : RestDocsSupport() {
                     json(
                         mapOf(
                             "date" to today,
-                            "productCategory" to "vase",
+                            "categoryId" to saleCategoryId(token, "vase"),
                             "amount" to 50_000,
                             "paymentMethod" to "cash",
-                            "reservationChannel" to "phone",
+                            "channelId" to saleChannelId(token, "phone"),
                         ),
                     )
             }.andReturn()
@@ -122,8 +131,8 @@ class DashboardDocsTest : RestDocsSupport() {
                     json(
                         mapOf(
                             "date" to today,
-                            "name" to "장미",
-                            "category" to "flower_purchase",
+                            "itemName" to "장미",
+                            "categoryId" to expenseCategoryId(token),
                             "unitPrice" to 5_000,
                             "quantity" to 2,
                             "paymentMethod" to "card",
@@ -254,10 +263,14 @@ class DashboardDocsTest : RestDocsSupport() {
                                     fieldWithPath("categoryStats")
                                         .type(JsonFieldType.ARRAY)
                                         .description("카테고리별 통계 목록"),
-                                    fieldWithPath("categoryStats[].name")
+                                    fieldWithPath("categoryStats[].categoryId")
+                                        .type(JsonFieldType.NUMBER)
+                                        .optional()
+                                        .description("카테고리 ID (미지정/삭제 시 null)"),
+                                    fieldWithPath("categoryStats[].label")
                                         .type(JsonFieldType.STRING)
                                         .optional()
-                                        .description("카테고리 값(식별자)"),
+                                        .description("카테고리 표시명 (null이면 '기타')"),
                                     fieldWithPath("categoryStats[].count")
                                         .type(JsonFieldType.NUMBER)
                                         .optional()
@@ -296,10 +309,10 @@ class DashboardDocsTest : RestDocsSupport() {
                                     fieldWithPath("channelStats")
                                         .type(JsonFieldType.ARRAY)
                                         .description("예약 채널별 통계 목록"),
-                                    fieldWithPath("channelStats[].channel")
-                                        .type(JsonFieldType.STRING)
+                                    fieldWithPath("channelStats[].channelId")
+                                        .type(JsonFieldType.NUMBER)
                                         .optional()
-                                        .description("채널 값(식별자)"),
+                                        .description("채널 ID (미지정/삭제 시 null)"),
                                     fieldWithPath("channelStats[].label")
                                         .type(JsonFieldType.STRING)
                                         .optional()
@@ -328,10 +341,10 @@ class DashboardDocsTest : RestDocsSupport() {
                                     fieldWithPath("expenseStats")
                                         .type(JsonFieldType.ARRAY)
                                         .description("지출 카테고리별 통계 목록"),
-                                    fieldWithPath("expenseStats[].category")
-                                        .type(JsonFieldType.STRING)
+                                    fieldWithPath("expenseStats[].categoryId")
+                                        .type(JsonFieldType.NUMBER)
                                         .optional()
-                                        .description("지출 카테고리 값(식별자)"),
+                                        .description("지출 카테고리 ID (미지정/삭제 시 null)"),
                                     fieldWithPath("expenseStats[].label")
                                         .type(JsonFieldType.STRING)
                                         .optional()

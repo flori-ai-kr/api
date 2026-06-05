@@ -15,8 +15,8 @@ data class ExpenseCreateRequest(
     @field:NotBlank(message = "물품명은 필수입니다")
     @field:Size(max = FieldLimits.ITEM_NAME, message = "물품명이 너무 깁니다")
     val itemName: String?,
-    @field:NotBlank(message = "카테고리는 필수입니다")
-    val category: String?,
+    @field:NotNull(message = "카테고리는 필수입니다")
+    val categoryId: Long?,
     @field:NotNull @field:Min(0, message = "단가는 0 이상이어야 합니다")
     val unitPrice: Int?,
     @field:Min(1, message = "수량은 1 이상이어야 합니다")
@@ -35,7 +35,7 @@ data class ExpenseUpdateRequest(
     val date: LocalDate? = null,
     @field:Size(max = FieldLimits.ITEM_NAME, message = "물품명이 너무 깁니다")
     val itemName: String? = null,
-    val category: String? = null,
+    val categoryId: Long? = null,
     @field:Min(0, message = "단가는 0 이상이어야 합니다")
     val unitPrice: Int? = null,
     @field:Min(1, message = "수량은 1 이상이어야 합니다")
@@ -53,7 +53,8 @@ data class ExpenseResponse(
     val id: Long,
     val date: LocalDate,
     val itemName: String,
-    val category: String,
+    val categoryId: Long?,
+    val categoryLabel: String?,
     val unitPrice: Int,
     val quantity: Int,
     val totalAmount: Int,
@@ -67,12 +68,16 @@ data class ExpenseResponse(
     val updatedAt: Instant,
 ) {
     companion object {
-        fun from(e: Expense): ExpenseResponse =
+        fun from(
+            e: Expense,
+            categoryLabel: String?,
+        ): ExpenseResponse =
             ExpenseResponse(
                 id = requireNotNull(e.id),
                 date = e.date,
                 itemName = e.itemName,
-                category = e.category,
+                categoryId = e.categoryId,
+                categoryLabel = categoryLabel,
                 unitPrice = e.unitPrice,
                 quantity = e.quantity,
                 totalAmount = e.totalAmount,

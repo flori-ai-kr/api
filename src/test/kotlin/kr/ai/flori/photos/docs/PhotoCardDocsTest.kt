@@ -244,7 +244,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                         json(
                             mapOf(
                                 "date" to "2026-05-22",
-                                "productCategory" to "basic_bouquet",
+                                "categoryId" to saleCategoryId(token),
                                 "amount" to 50_000,
                                 "paymentMethod" to "cash",
                             ),
@@ -285,7 +285,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                         json(
                             mapOf(
                                 "date" to "2026-05-22",
-                                "productCategory" to "basic_bouquet",
+                                "categoryId" to saleCategoryId(token),
                                 "amount" to 50_000,
                                 "paymentMethod" to "cash",
                             ),

@@ -11,6 +11,9 @@ import kr.ai.flori.reservations.dto.ReservationCreateRequest
 import kr.ai.flori.reservations.dto.ReservationUpdateRequest
 import kr.ai.flori.sales.dto.SaleCreateRequest
 import kr.ai.flori.sales.service.SaleService
+import kr.ai.flori.settings.entity.LabelDomains
+import kr.ai.flori.settings.entity.LabelKinds
+import kr.ai.flori.settings.repository.LabelSettingRepository
 import kr.ai.flori.support.TestAccounts
 import kr.ai.flori.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
@@ -41,6 +44,9 @@ class ReservationServiceIntegrationTest {
     @Autowired
     lateinit var userRepository: UserRepository
 
+    @Autowired
+    lateinit var labelSettingRepository: LabelSettingRepository
+
     @AfterEach
     fun tearDown() = TenantContext.clear()
 
@@ -51,6 +57,17 @@ class ReservationServiceIntegrationTest {
         TenantContext.set(userId)
         return userId
     }
+
+    /** 시드된 매출 카테고리 value → label_settings id. */
+    private fun catId(value: String): Long =
+        requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
+                TenantContext.currentUserId(),
+                LabelDomains.SALE,
+                LabelKinds.CATEGORY,
+                value,
+            ),
+        ).id!!
 
     private fun create(date: LocalDate = LocalDate.of(2026, 6, 1)) =
         service.create(
@@ -92,7 +109,7 @@ class ReservationServiceIntegrationTest {
         val sale =
             service.convertToSale(
                 r.id,
-                SaleCreateRequest(LocalDate.of(2026, 6, 1), "basic_bouquet", 50_000, "cash"),
+                SaleCreateRequest(LocalDate.of(2026, 6, 1), catId("basic_bouquet"), 50_000, "cash"),
             )
         assertThat(service.get(r.id).saleId).isEqualTo(sale.id)
     }
@@ -104,7 +121,7 @@ class ReservationServiceIntegrationTest {
             saleService.create(
                 SaleCreateRequest(
                     date = LocalDate.of(2026, 6, 1),
-                    productCategory = "basket",
+                    categoryId = catId("basket"),
                     amount = 30_000,
                     paymentMethod = "cash",
                     customerName = "김영희",

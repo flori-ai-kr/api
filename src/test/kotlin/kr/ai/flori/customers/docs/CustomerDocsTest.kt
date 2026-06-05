@@ -72,17 +72,26 @@ class CustomerDocsTest : RestDocsSupport() {
             fieldWithPath("sales").type(JsonFieldType.ARRAY).description("매출 목록"),
             fieldWithPath("sales[].id").type(JsonFieldType.NUMBER).description("매출 ID"),
             fieldWithPath("sales[].date").type(JsonFieldType.STRING).description("매출 발생일 (yyyy-MM-dd)"),
-            fieldWithPath("sales[].productCategory")
+            fieldWithPath("sales[].categoryId")
+                .type(JsonFieldType.NUMBER)
+                .optional()
+                .description("상품 카테고리 ID (null 가능)"),
+            fieldWithPath("sales[].categoryLabel")
                 .type(JsonFieldType.STRING)
                 .optional()
-                .description("상품 카테고리 (null 가능)"),
+                .description("상품 카테고리 이름 (null 가능)"),
             fieldWithPath("sales[].amount").type(JsonFieldType.NUMBER).description("결제 금액(원)"),
             fieldWithPath("sales[].paymentMethod")
                 .type(JsonFieldType.STRING)
                 .description("결제방식"),
-            fieldWithPath("sales[].reservationChannel")
+            fieldWithPath("sales[].channelId")
+                .type(JsonFieldType.NUMBER)
+                .optional()
+                .description("매출 채널 ID (null 가능)"),
+            fieldWithPath("sales[].channelLabel")
                 .type(JsonFieldType.STRING)
-                .description("예약 채널"),
+                .optional()
+                .description("매출 채널 이름 (null 가능)"),
             fieldWithPath("sales[].customerName")
                 .type(JsonFieldType.STRING)
                 .optional()
@@ -140,7 +149,7 @@ class CustomerDocsTest : RestDocsSupport() {
                     json(
                         mapOf(
                             "date" to "2026-05-22",
-                            "productCategory" to "basic_bouquet",
+                            "categoryId" to saleCategoryId(token),
                             "amount" to 50_000,
                             "paymentMethod" to "cash",
                             "customerId" to customerId,

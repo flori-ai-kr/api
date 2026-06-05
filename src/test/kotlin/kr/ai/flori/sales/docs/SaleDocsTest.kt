@@ -23,13 +23,18 @@ class SaleDocsTest : RestDocsSupport() {
         listOf(
             fieldWithPath("id").type(JsonFieldType.NUMBER).description("매출 ID"),
             fieldWithPath("date").type(JsonFieldType.STRING).description("매출 발생일 (yyyy-MM-dd)"),
-            fieldWithPath("productCategory")
+            fieldWithPath("categoryId")
+                .type(JsonFieldType.NUMBER)
+                .optional()
+                .description("상품 카테고리 ID (label_settings, null 가능)"),
+            fieldWithPath("categoryLabel")
                 .type(JsonFieldType.STRING)
                 .optional()
-                .description("상품 카테고리 (null 가능)"),
+                .description("상품 카테고리 표시 이름 (null 가능)"),
             fieldWithPath("amount").type(JsonFieldType.NUMBER).description("결제 금액(원)"),
             fieldWithPath("paymentMethod").type(JsonFieldType.STRING).description("결제방식"),
-            fieldWithPath("reservationChannel").type(JsonFieldType.STRING).description("예약 채널"),
+            fieldWithPath("channelId").type(JsonFieldType.NUMBER).optional().description("매출 채널 ID (null 가능)"),
+            fieldWithPath("channelLabel").type(JsonFieldType.STRING).optional().description("매출 채널 표시 이름 (null 가능)"),
             fieldWithPath("customerName")
                 .type(JsonFieldType.STRING)
                 .optional()
@@ -58,15 +63,24 @@ class SaleDocsTest : RestDocsSupport() {
             fieldWithPath("sales").type(JsonFieldType.ARRAY).description("매출 목록"),
             fieldWithPath("sales[].id").type(JsonFieldType.NUMBER).description("매출 ID"),
             fieldWithPath("sales[].date").type(JsonFieldType.STRING).description("매출 발생일 (yyyy-MM-dd)"),
-            fieldWithPath("sales[].productCategory")
+            fieldWithPath("sales[].categoryId")
+                .type(JsonFieldType.NUMBER)
+                .optional()
+                .description("상품 카테고리 ID (null 가능)"),
+            fieldWithPath("sales[].categoryLabel")
                 .type(JsonFieldType.STRING)
                 .optional()
-                .description("상품 카테고리 (null 가능)"),
+                .description("상품 카테고리 표시 이름 (null 가능)"),
             fieldWithPath("sales[].amount").type(JsonFieldType.NUMBER).description("결제 금액(원)"),
             fieldWithPath("sales[].paymentMethod").type(JsonFieldType.STRING).description("결제방식"),
-            fieldWithPath("sales[].reservationChannel")
+            fieldWithPath("sales[].channelId")
+                .type(JsonFieldType.NUMBER)
+                .optional()
+                .description("매출 채널 ID (null 가능)"),
+            fieldWithPath("sales[].channelLabel")
                 .type(JsonFieldType.STRING)
-                .description("예약 채널"),
+                .optional()
+                .description("매출 채널 표시 이름 (null 가능)"),
             fieldWithPath("sales[].customerName")
                 .type(JsonFieldType.STRING)
                 .optional()
@@ -103,7 +117,7 @@ class SaleDocsTest : RestDocsSupport() {
                         json(
                             mapOf(
                                 "date" to "2026-05-22",
-                                "productCategory" to "basic_bouquet",
+                                "categoryId" to saleCategoryId(token),
                                 "amount" to 100_000,
                                 "paymentMethod" to "card",
                             ),
@@ -127,10 +141,10 @@ class SaleDocsTest : RestDocsSupport() {
                     json(
                         mapOf(
                             "date" to "2026-05-22",
-                            "productCategory" to "basic_bouquet",
+                            "categoryId" to saleCategoryId(token),
                             "amount" to 100_000,
                             "paymentMethod" to "card",
-                            "reservationChannel" to "kakaotalk",
+                            "channelId" to saleChannelId(token),
                             "customerName" to "김하늘",
                             "memo" to "웨딩 부케",
                         ),
@@ -149,19 +163,19 @@ class SaleDocsTest : RestDocsSupport() {
                                 fieldWithPath("date")
                                     .type(JsonFieldType.STRING)
                                     .description("매출 발생일 (yyyy-MM-dd, 필수)"),
-                                fieldWithPath("productCategory")
-                                    .type(JsonFieldType.STRING)
-                                    .description("상품 카테고리(매출설정 value, 필수)"),
+                                fieldWithPath("categoryId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .description("상품 카테고리 ID (매출설정 label_settings, 필수)"),
                                 fieldWithPath("amount")
                                     .type(JsonFieldType.NUMBER)
                                     .description("결제 금액(원, 0 이상, 필수)"),
                                 fieldWithPath("paymentMethod")
                                     .type(JsonFieldType.STRING)
                                     .description("결제방식. 'unpaid' 이면 미수로 생성 (필수)"),
-                                fieldWithPath("reservationChannel")
-                                    .type(JsonFieldType.STRING)
+                                fieldWithPath("channelId")
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
-                                    .description("예약 채널. phone | kakaotalk | naver_booking | road | other"),
+                                    .description("매출 채널 ID (미지정 시 기본 채널 'other')"),
                                 fieldWithPath("customerName")
                                     .type(JsonFieldType.STRING)
                                     .optional()
@@ -306,10 +320,10 @@ class SaleDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("매출 발생일 변경"),
-                                fieldWithPath("productCategory")
-                                    .type(JsonFieldType.STRING)
+                                fieldWithPath("categoryId")
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
-                                    .description("상품 카테고리 변경"),
+                                    .description("상품 카테고리 ID 변경"),
                                 fieldWithPath("amount")
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
@@ -318,10 +332,10 @@ class SaleDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("결제방식 변경"),
-                                fieldWithPath("reservationChannel")
-                                    .type(JsonFieldType.STRING)
+                                fieldWithPath("channelId")
+                                    .type(JsonFieldType.NUMBER)
                                     .optional()
-                                    .description("예약 채널 변경. phone | kakaotalk | naver_booking | road | other"),
+                                    .description("매출 채널 ID 변경"),
                                 fieldWithPath("customerName")
                                     .type(JsonFieldType.STRING)
                                     .optional()
@@ -365,7 +379,7 @@ class SaleDocsTest : RestDocsSupport() {
                         json(
                             mapOf(
                                 "date" to "2026-05-22",
-                                "productCategory" to "basic_bouquet",
+                                "categoryId" to saleCategoryId(token),
                                 "amount" to 80_000,
                                 "paymentMethod" to "unpaid",
                             ),
@@ -418,7 +432,7 @@ class SaleDocsTest : RestDocsSupport() {
                         json(
                             mapOf(
                                 "date" to "2026-05-22",
-                                "productCategory" to "basic_bouquet",
+                                "categoryId" to saleCategoryId(token),
                                 "amount" to 60_000,
                                 "paymentMethod" to "unpaid",
                             ),

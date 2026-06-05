@@ -8,6 +8,9 @@ import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.expenses.dto.ExpenseCreateRequest
 import kr.ai.flori.expenses.dto.ExpenseUpdateRequest
+import kr.ai.flori.settings.entity.LabelDomains
+import kr.ai.flori.settings.entity.LabelKinds
+import kr.ai.flori.settings.repository.LabelSettingRepository
 import kr.ai.flori.support.TestAccounts
 import kr.ai.flori.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
@@ -34,6 +37,9 @@ class ExpenseServiceIntegrationTest {
     @Autowired
     lateinit var userRepository: UserRepository
 
+    @Autowired
+    lateinit var labelSettingRepository: LabelSettingRepository
+
     @AfterEach
     fun tearDown() = TenantContext.clear()
 
@@ -45,6 +51,17 @@ class ExpenseServiceIntegrationTest {
         return userId
     }
 
+    /** 시드된 지출 카테고리 value → label_settings id. */
+    private fun catId(value: String): Long =
+        requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
+                TenantContext.currentUserId(),
+                LabelDomains.EXPENSE,
+                LabelKinds.CATEGORY,
+                value,
+            ),
+        ).id!!
+
     private fun req(
         unitPrice: Int = 5000,
         quantity: Int = 3,
@@ -52,7 +69,7 @@ class ExpenseServiceIntegrationTest {
     ) = ExpenseCreateRequest(
         date = date,
         itemName = "장미 100송이",
-        category = "flower_purchase",
+        categoryId = catId("flower_purchase"),
         unitPrice = unitPrice,
         quantity = quantity,
         paymentMethod = "card",

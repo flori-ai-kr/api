@@ -5,6 +5,9 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
 import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.security.JwtTokenProvider
+import kr.ai.flori.settings.entity.LabelDomains
+import kr.ai.flori.settings.entity.LabelKinds
+import kr.ai.flori.settings.repository.LabelSettingRepository
 import kr.ai.flori.support.TestAccounts
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -35,7 +38,26 @@ class SaleApiIntegrationTest {
     @Autowired
     lateinit var tokenProvider: JwtTokenProvider
 
+    @Autowired
+    lateinit var labelSettingRepository: LabelSettingRepository
+
     private fun signupToken(): String = TestAccounts.register(authService, tokenProvider).accessToken
+
+    /** 토큰 소유 유저의 시드된 매출 카테고리 value → id. */
+    private fun categoryId(
+        token: String,
+        value: String = "basic_bouquet",
+    ): Long {
+        val userId = requireNotNull(tokenProvider.parse(token)).userId
+        return requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
+                userId,
+                LabelDomains.SALE,
+                LabelKinds.CATEGORY,
+                value,
+            ),
+        ).id!!
+    }
 
     private fun createCardSale(token: String): String {
         val response =
@@ -47,7 +69,7 @@ class SaleApiIntegrationTest {
                         objectMapper.writeValueAsString(
                             mapOf(
                                 "date" to "2026-05-22",
-                                "productCategory" to "basic_bouquet",
+                                "categoryId" to categoryId(token),
                                 "amount" to 100_000,
                                 "paymentMethod" to "card",
                             ),
@@ -69,7 +91,7 @@ class SaleApiIntegrationTest {
                     objectMapper.writeValueAsString(
                         mapOf(
                             "date" to "2026-05-22",
-                            "productCategory" to "basic_bouquet",
+                            "categoryId" to categoryId(token),
                             "amount" to 100_000,
                             "paymentMethod" to "card",
                         ),
@@ -100,7 +122,7 @@ class SaleApiIntegrationTest {
                     objectMapper.writeValueAsString(
                         mapOf(
                             "date" to "2026-05-22",
-                            "productCategory" to "basic_bouquet",
+                            "categoryId" to categoryId(token),
                             "amount" to 100_000,
                             "paymentMethod" to "card",
                             "memo" to "가".repeat(201), // FieldLimits.MEMO(200) 초과
@@ -142,7 +164,7 @@ class SaleApiIntegrationTest {
             .post("/sales") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
-                content = objectMapper.writeValueAsString(mapOf("productCategory" to "x"))
+                content = objectMapper.writeValueAsString(mapOf("amount" to 100_000))
             }.andExpect { status { isBadRequest() } }
     }
 }

@@ -13,6 +13,9 @@ import kr.ai.flori.dashboard.dto.PaymentMethodStat
 import kr.ai.flori.dashboard.dto.TodayDashboardResponse
 import kr.ai.flori.reservations.service.ReservationService
 import kr.ai.flori.sales.service.SaleService
+import kr.ai.flori.settings.entity.LabelDomains
+import kr.ai.flori.settings.entity.LabelKinds
+import kr.ai.flori.settings.service.LabelSettingReader
 import kr.ai.flori.settings.service.SaleCategorySettingService
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
@@ -32,6 +35,7 @@ class DashboardService(
     private val reservationService: ReservationService,
     private val saleService: SaleService,
     private val saleCategoryService: SaleCategorySettingService,
+    private val labelReader: LabelSettingReader,
 ) {
     @Transactional(readOnly = true)
     fun today(): TodayDashboardResponse {
@@ -113,16 +117,19 @@ class DashboardService(
     ): List<CategoryStat> {
         val rows =
             jdbcTemplate.query(
-                "SELECT COALESCE(product_category, '기타') AS name, COUNT(*) AS cnt, SUM(amount) AS amount " +
+                "SELECT category_id AS cid, COUNT(*) AS cnt, SUM(amount) AS amount " +
                     "FROM sales WHERE user_id = ?::bigint AND date BETWEEN ? AND ? AND payment_method <> 'unpaid' " +
-                    "GROUP BY COALESCE(product_category, '기타') ORDER BY amount DESC",
-                { rs, _ -> Triple(rs.getString("name"), rs.getLong("cnt"), rs.getLong("amount")) },
+                    "GROUP BY category_id ORDER BY amount DESC",
+                { rs, _ -> Triple(rs.getLong("cid").takeUnless { rs.wasNull() }, rs.getLong("cnt"), rs.getLong("amount")) },
                 userId,
                 Date.valueOf(start),
                 Date.valueOf(end),
             )
+        val labels = labelReader.labelMap(LabelDomains.SALE, LabelKinds.CATEGORY)
         val total = rows.sumOf { it.third }
-        return rows.map { CategoryStat(it.first, it.second, it.third, percentage(it.third, total)) }
+        return rows.map {
+            CategoryStat(it.first, it.first?.let { id -> labels[id] } ?: ETC, it.second, it.third, percentage(it.third, total))
+        }
     }
 
     private fun paymentStats(
@@ -153,17 +160,18 @@ class DashboardService(
     ): List<ChannelStat> {
         val rows =
             jdbcTemplate.query(
-                "SELECT COALESCE(reservation_channel, 'other') AS ch, COUNT(*) AS cnt, SUM(amount) AS amount " +
+                "SELECT channel_id AS cid, COUNT(*) AS cnt, SUM(amount) AS amount " +
                     "FROM sales WHERE user_id = ?::bigint AND date BETWEEN ? AND ? AND payment_method <> 'unpaid' " +
-                    "GROUP BY COALESCE(reservation_channel, 'other') ORDER BY amount DESC",
-                { rs, _ -> Triple(rs.getString("ch"), rs.getLong("cnt"), rs.getLong("amount")) },
+                    "GROUP BY channel_id ORDER BY amount DESC",
+                { rs, _ -> Triple(rs.getLong("cid").takeUnless { rs.wasNull() }, rs.getLong("cnt"), rs.getLong("amount")) },
                 userId,
                 Date.valueOf(start),
                 Date.valueOf(end),
             )
+        val labels = labelReader.labelMap(LabelDomains.SALE, LabelKinds.CHANNEL)
         val total = rows.sumOf { it.third }
         return rows.map {
-            ChannelStat(it.first, CHANNEL_LABELS[it.first] ?: it.first, it.second, it.third, percentage(it.third, total))
+            ChannelStat(it.first, it.first?.let { id -> labels[id] } ?: ETC, it.second, it.third, percentage(it.third, total))
         }
     }
 
@@ -174,15 +182,18 @@ class DashboardService(
     ): List<ExpenseCategoryStat> {
         val rows =
             jdbcTemplate.query(
-                "SELECT category, SUM(total_amount) AS amount FROM expenses " +
-                    "WHERE user_id = ?::bigint AND date BETWEEN ? AND ? GROUP BY category ORDER BY amount DESC",
-                { rs, _ -> rs.getString("category") to rs.getLong("amount") },
+                "SELECT category_id AS cid, SUM(total_amount) AS amount FROM expenses " +
+                    "WHERE user_id = ?::bigint AND date BETWEEN ? AND ? GROUP BY category_id ORDER BY amount DESC",
+                { rs, _ -> rs.getLong("cid").takeUnless { rs.wasNull() } to rs.getLong("amount") },
                 userId,
                 Date.valueOf(start),
                 Date.valueOf(end),
             )
+        val labels = labelReader.labelMap(LabelDomains.EXPENSE, LabelKinds.CATEGORY)
         val total = rows.sumOf { it.second }
-        return rows.map { ExpenseCategoryStat(it.first, EXPENSE_LABELS[it.first] ?: it.first, it.second, percentage(it.second, total)) }
+        return rows.map {
+            ExpenseCategoryStat(it.first, it.first?.let { id -> labels[id] } ?: ETC, it.second, percentage(it.second, total))
+        }
     }
 
     private fun customerStats(
@@ -222,20 +233,11 @@ class DashboardService(
     private companion object {
         const val RECENT_LIMIT = 5
         const val PERCENT = 100
+
+        /** id가 null인(설정에서 삭제됐거나 미지정) 집계 버킷의 표시 라벨. */
+        const val ETC = "기타"
         val EMPTY_SUMMARY = DashboardSummary(0, 0, 0, 0, 0, 0)
         val PAYMENT_LABELS =
             mapOf("card" to "카드", "cash" to "현금", "transfer" to "계좌이체", "naverpay" to "네이버페이", "kakaopay" to "카카오페이")
-        val CHANNEL_LABELS =
-            mapOf("phone" to "전화", "kakaotalk" to "카카오톡", "naver_booking" to "네이버예약", "road" to "길거리", "other" to "기타")
-        val EXPENSE_LABELS =
-            mapOf(
-                "flower_purchase" to "꽃 사입",
-                "delivery" to "배송비",
-                "advertising" to "광고비",
-                "rent" to "임대료",
-                "utilities" to "공과금",
-                "supplies" to "소모품",
-                "other" to "기타",
-            )
     }
 }

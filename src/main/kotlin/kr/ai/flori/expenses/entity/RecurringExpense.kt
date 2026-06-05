@@ -28,8 +28,8 @@ class RecurringExpense(
     var userId: Long,
     @Column(name = "item_name", nullable = false)
     var itemName: String,
-    @Column(name = "category", nullable = false)
-    var category: String,
+    @Column(name = "category_id")
+    var categoryId: Long?,
     @Column(name = "unit_price", nullable = false)
     var unitPrice: Int,
     @Column(name = "quantity", nullable = false)

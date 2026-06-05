@@ -13,6 +13,9 @@ import kr.ai.flori.reservations.entity.Reservation
 import kr.ai.flori.reservations.repository.ReservationRepository
 import kr.ai.flori.sales.dto.SaleCreateRequest
 import kr.ai.flori.sales.dto.SaleUpdateRequest
+import kr.ai.flori.settings.entity.LabelDomains
+import kr.ai.flori.settings.entity.LabelKinds
+import kr.ai.flori.settings.repository.LabelSettingRepository
 import kr.ai.flori.support.TestAccounts
 import kr.ai.flori.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
@@ -45,6 +48,9 @@ class SaleServiceIntegrationTest {
     @Autowired
     lateinit var photoCardRepository: PhotoCardRepository
 
+    @Autowired
+    lateinit var labelSettingRepository: LabelSettingRepository
+
     @AfterEach
     fun tearDown() {
         TenantContext.clear()
@@ -59,10 +65,32 @@ class SaleServiceIntegrationTest {
         return userId
     }
 
+    /** 시드된 매출 카테고리 value → label_settings id. */
+    private fun catId(value: String): Long =
+        requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
+                TenantContext.currentUserId(),
+                LabelDomains.SALE,
+                LabelKinds.CATEGORY,
+                value,
+            ),
+        ).id!!
+
+    /** 시드된 매출 채널 value → label_settings id. */
+    private fun channelId(value: String): Long =
+        requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
+                TenantContext.currentUserId(),
+                LabelDomains.SALE,
+                LabelKinds.CHANNEL,
+                value,
+            ),
+        ).id!!
+
     private fun cardSale(date: LocalDate = LocalDate.of(2026, 5, 22)) =
         SaleCreateRequest(
             date = date,
-            productCategory = "basic_bouquet",
+            categoryId = catId("basic_bouquet"),
             amount = 100_000,
             paymentMethod = "card",
         )
@@ -82,7 +110,7 @@ class SaleServiceIntegrationTest {
         newTenant()
         val sale =
             saleService.create(
-                SaleCreateRequest(LocalDate.of(2026, 5, 22), "vase", 30_000, "cash"),
+                SaleCreateRequest(LocalDate.of(2026, 5, 22), catId("vase"), 30_000, "cash"),
             )
         assertThat(sale.paymentMethod).isEqualTo("cash")
         assertThat(sale.isUnpaid).isFalse()
@@ -93,7 +121,7 @@ class SaleServiceIntegrationTest {
         newTenant()
         val unpaid =
             saleService.create(
-                SaleCreateRequest(LocalDate.of(2026, 5, 22), "reservation", 50_000, "unpaid"),
+                SaleCreateRequest(LocalDate.of(2026, 5, 22), catId("reservation"), 50_000, "unpaid"),
             )
         assertThat(unpaid.isUnpaid).isTrue()
 
@@ -116,14 +144,14 @@ class SaleServiceIntegrationTest {
     @Test
     fun `목록은 다중선택 필터와 무한스크롤을 지원한다`() {
         newTenant()
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 1), "vase", 1_000, "cash"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 2), "basket", 2_000, "card"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 3), "vase", 3_000, "transfer"))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 1), catId("vase"), 1_000, "cash"))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 2), catId("basket"), 2_000, "card"))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 3), catId("vase"), 3_000, "transfer"))
 
         val cashOnly = saleService.list(null, null, null, 0, 100, null, listOf("cash"), null, null)
         assertThat(cashOnly.sales).hasSize(1)
 
-        val vaseCategory = saleService.list(null, null, null, 0, 100, listOf("vase"), null, null, null)
+        val vaseCategory = saleService.list(null, null, null, 0, 100, listOf(catId("vase")), null, null, null)
         assertThat(vaseCategory.sales).hasSize(2)
 
         val firstPage = saleService.list(null, null, null, 0, 2, null, null, null, null)
@@ -137,11 +165,11 @@ class SaleServiceIntegrationTest {
     @Test
     fun `요약은 DB 집계로 결제수단별 합계와 전체(미수 포함)를 계산하고 동일 필터를 지원한다`() {
         newTenant()
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 1), "vase", 1_000, "card", customerName = "김하늘"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 2), "basket", 2_000, "cash"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 3), "vase", 3_000, "transfer"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 4), "vase", 4_000, "naverpay"))
-        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 5), "vase", 5_000, "unpaid"))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 1), catId("vase"), 1_000, "card", customerName = "김하늘"))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 2), catId("basket"), 2_000, "cash"))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 3), catId("vase"), 3_000, "transfer"))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 4), catId("vase"), 4_000, "naverpay"))
+        saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 5), catId("vase"), 5_000, "unpaid"))
 
         // 전체: total/count는 미수 포함, 버킷은 결제수단별
         val all = saleService.summary("2026-05", null, null, null, null, null, null)
@@ -158,12 +186,12 @@ class SaleServiceIntegrationTest {
         assertThat(cardOnly.count).isEqualTo(1L)
 
         // 카테고리 IN
-        val vaseOnly = saleService.summary("2026-05", null, null, listOf("vase"), null, null, null)
+        val vaseOnly = saleService.summary("2026-05", null, null, listOf(catId("vase")), null, null, null)
         assertThat(vaseOnly.count).isEqualTo(4L)
         assertThat(vaseOnly.total).isEqualTo(13_000L)
 
         // 채널 IN (기본 채널 other)
-        val otherChannel = saleService.summary("2026-05", null, null, null, null, listOf("other"), null)
+        val otherChannel = saleService.summary("2026-05", null, null, null, null, listOf(channelId("other")), null)
         assertThat(otherChannel.count).isEqualTo(5L)
 
         // 검색(고객명)

@@ -11,6 +11,9 @@ import kr.ai.flori.customers.dto.CustomerCreateRequest
 import kr.ai.flori.customers.dto.CustomerUpdateRequest
 import kr.ai.flori.sales.dto.SaleCreateRequest
 import kr.ai.flori.sales.service.SaleService
+import kr.ai.flori.settings.entity.LabelDomains
+import kr.ai.flori.settings.entity.LabelKinds
+import kr.ai.flori.settings.repository.LabelSettingRepository
 import kr.ai.flori.support.TestAccounts
 import kr.ai.flori.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
@@ -40,6 +43,9 @@ class CustomerServiceIntegrationTest {
     @Autowired
     lateinit var userRepository: UserRepository
 
+    @Autowired
+    lateinit var labelSettingRepository: LabelSettingRepository
+
     @AfterEach
     fun tearDown() = TenantContext.clear()
 
@@ -50,6 +56,17 @@ class CustomerServiceIntegrationTest {
         TenantContext.set(userId)
         return userId
     }
+
+    /** 시드된 매출 카테고리 value → label_settings id. */
+    private fun catId(value: String): Long =
+        requireNotNull(
+            labelSettingRepository.findByUserIdAndDomainAndKindAndValue(
+                TenantContext.currentUserId(),
+                LabelDomains.SALE,
+                LabelKinds.CATEGORY,
+                value,
+            ),
+        ).id!!
 
     private fun create(
         name: String = "홍길동",
@@ -154,7 +171,7 @@ class CustomerServiceIntegrationTest {
         amount: Int,
     ) = SaleCreateRequest(
         date = date,
-        productCategory = "basic_bouquet",
+        categoryId = catId("basic_bouquet"),
         amount = amount,
         paymentMethod = "cash",
         customerId = customerId,

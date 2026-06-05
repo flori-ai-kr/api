@@ -15,15 +15,14 @@ import java.time.LocalDate
 data class SaleCreateRequest(
     @field:NotNull(message = "날짜는 필수입니다")
     val date: LocalDate?,
-    @field:NotBlank(message = "상품 카테고리는 필수입니다")
-    @field:Size(max = FieldLimits.PRODUCT_CATEGORY, message = "상품 카테고리가 너무 깁니다")
-    val productCategory: String?,
+    @field:NotNull(message = "상품 카테고리는 필수입니다")
+    val categoryId: Long?,
     @field:NotNull(message = "금액은 필수입니다")
     @field:Min(value = 0, message = "금액은 0 이상이어야 합니다")
     val amount: Int?,
     @field:NotBlank(message = "결제방식은 필수입니다")
     val paymentMethod: String?,
-    val reservationChannel: String? = null,
+    val channelId: Long? = null,
     @field:Size(max = FieldLimits.NAME, message = "고객명이 너무 깁니다")
     val customerName: String? = null,
     @field:Size(max = FieldLimits.PHONE, message = "전화번호가 너무 깁니다")
@@ -36,12 +35,11 @@ data class SaleCreateRequest(
 /** 매출 부분 수정. 제공된(non-null) 필드만 반영. */
 data class SaleUpdateRequest(
     val date: LocalDate? = null,
-    @field:Size(max = FieldLimits.PRODUCT_CATEGORY, message = "상품 카테고리가 너무 깁니다")
-    val productCategory: String? = null,
+    val categoryId: Long? = null,
     @field:Min(value = 0, message = "금액은 0 이상이어야 합니다")
     val amount: Int? = null,
     val paymentMethod: String? = null,
-    val reservationChannel: String? = null,
+    val channelId: Long? = null,
     @field:Size(max = FieldLimits.NAME, message = "고객명이 너무 깁니다")
     val customerName: String? = null,
     @field:Size(max = FieldLimits.PHONE, message = "전화번호가 너무 깁니다")
@@ -60,10 +58,12 @@ data class CompleteUnpaidRequest(
 data class SaleResponse(
     val id: Long,
     val date: LocalDate,
-    val productCategory: String?,
+    val categoryId: Long?,
+    val categoryLabel: String?,
     val amount: Int,
     val paymentMethod: String,
-    val reservationChannel: String,
+    val channelId: Long?,
+    val channelLabel: String?,
     val customerName: String?,
     val customerPhone: String?,
     val customerId: Long?,
@@ -77,15 +77,19 @@ data class SaleResponse(
     companion object {
         fun from(
             sale: Sale,
+            categoryLabel: String?,
+            channelLabel: String?,
             photos: List<String> = emptyList(),
         ): SaleResponse =
             SaleResponse(
                 id = requireNotNull(sale.id),
                 date = sale.date,
-                productCategory = sale.productCategory,
+                categoryId = sale.categoryId,
+                categoryLabel = categoryLabel,
                 amount = sale.amount,
                 paymentMethod = sale.paymentMethod,
-                reservationChannel = sale.reservationChannel,
+                channelId = sale.channelId,
+                channelLabel = channelLabel,
                 customerName = sale.customerName,
                 customerPhone = sale.customerPhone,
                 customerId = sale.customerId,

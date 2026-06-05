@@ -12,8 +12,8 @@ import java.time.LocalDate
 data class RecurringExpenseRequest(
     @field:NotBlank(message = "물품명은 필수입니다")
     val itemName: String?,
-    @field:NotBlank(message = "카테고리는 필수입니다")
-    val category: String?,
+    @field:NotNull(message = "카테고리는 필수입니다")
+    val categoryId: Long?,
     @field:NotNull @field:Min(0, message = "단가는 0 이상이어야 합니다")
     val unitPrice: Int?,
     @field:Min(1, message = "수량은 1 이상이어야 합니다")
@@ -44,7 +44,7 @@ data class ToggleActiveRequest(
 data class RecurringInstanceUpdateRequest(
     val date: LocalDate? = null,
     val itemName: String? = null,
-    val category: String? = null,
+    val categoryId: Long? = null,
     @field:Min(0, message = "단가는 0 이상이어야 합니다")
     val unitPrice: Int? = null,
     @field:Min(1, message = "수량은 1 이상이어야 합니다")
@@ -57,7 +57,8 @@ data class RecurringInstanceUpdateRequest(
 data class RecurringExpenseResponse(
     val id: Long,
     val itemName: String,
-    val category: String,
+    val categoryId: Long?,
+    val categoryLabel: String?,
     val unitPrice: Int,
     val quantity: Int,
     val paymentMethod: String,
@@ -75,11 +76,15 @@ data class RecurringExpenseResponse(
     val updatedAt: Instant,
 ) {
     companion object {
-        fun from(r: RecurringExpense): RecurringExpenseResponse =
+        fun from(
+            r: RecurringExpense,
+            categoryLabel: String?,
+        ): RecurringExpenseResponse =
             RecurringExpenseResponse(
                 id = requireNotNull(r.id),
                 itemName = r.itemName,
-                category = r.category,
+                categoryId = r.categoryId,
+                categoryLabel = categoryLabel,
                 unitPrice = r.unitPrice,
                 quantity = r.quantity,
                 paymentMethod = r.paymentMethod,

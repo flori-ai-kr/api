@@ -15,7 +15,6 @@ object FieldLimits {
     const val AGE_RANGE = 20
     const val LABEL = 100 // *_settings.label VARCHAR(100)
     const val VALUE = 100 // label_settings.value VARCHAR(100)
-    const val PRODUCT_CATEGORY = 100 // sales.product_category VARCHAR(100)
     const val ITEM_NAME = 200 // expenses.item_name TEXT
     const val VENDOR = 100 // card_companies.vendor VARCHAR(100), expenses.vendor TEXT
     const val CARD_COMPANY = 50 // expenses.card_company VARCHAR(50)

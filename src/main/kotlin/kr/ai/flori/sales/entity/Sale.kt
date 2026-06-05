@@ -19,8 +19,8 @@ class Sale(
     var userId: Long,
     @Column(name = "date", nullable = false)
     var date: LocalDate,
-    @Column(name = "product_category")
-    var productCategory: String?,
+    @Column(name = "category_id")
+    var categoryId: Long?,
     @Column(name = "amount", nullable = false)
     var amount: Int,
     @Column(name = "payment_method", nullable = false)
@@ -31,8 +31,8 @@ class Sale(
     @Column(name = "id")
     var id: Long? = null
 
-    @Column(name = "reservation_channel")
-    var reservationChannel: String = "other"
+    @Column(name = "channel_id")
+    var channelId: Long? = null
 
     @Column(name = "is_unpaid", nullable = false)
     var isUnpaid: Boolean = false

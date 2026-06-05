@@ -13,6 +13,9 @@ import kr.ai.flori.customers.repository.CustomerRepository
 import kr.ai.flori.sales.dto.SaleResponse
 import kr.ai.flori.sales.dto.SalesPageResponse
 import kr.ai.flori.sales.repository.SaleRepository
+import kr.ai.flori.settings.entity.LabelDomains
+import kr.ai.flori.settings.entity.LabelKinds
+import kr.ai.flori.settings.service.LabelSettingReader
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -28,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional
 class CustomerService(
     private val customerRepository: CustomerRepository,
     private val saleRepository: SaleRepository,
+    private val labelReader: LabelSettingReader,
     private val jdbcTemplate: JdbcTemplate,
 ) {
     @Transactional(readOnly = true)
@@ -90,7 +94,14 @@ class CustomerService(
         load(customerId) // 소유권 확인
         val pageable = PageRequest.of(page.coerceAtLeast(0), size.coerceIn(1, MAX_PAGE_SIZE), Sort.by(Sort.Order.desc("date")))
         val result = saleRepository.findByUserIdAndCustomerId(userId, customerId, pageable)
-        return SalesPageResponse(result.content.map(SaleResponse::from), result.hasNext())
+        val catMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.CATEGORY)
+        val chMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.CHANNEL)
+        return SalesPageResponse(
+            result.content.map { sale ->
+                SaleResponse.from(sale, sale.categoryId?.let { catMap[it] }, sale.channelId?.let { chMap[it] })
+            },
+            result.hasNext(),
+        )
     }
 
     @Transactional
