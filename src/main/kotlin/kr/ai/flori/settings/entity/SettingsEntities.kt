@@ -1,31 +1,46 @@
 package kr.ai.flori.settings.entity
 
+import io.hypersistence.utils.hibernate.type.json.JsonType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.IdClass
 import jakarta.persistence.Table
-import org.hibernate.annotations.JdbcTypeCode
-import org.hibernate.type.SqlTypes
-import java.time.Instant
+import kr.ai.flori.common.entity.BaseEntity
+import org.hibernate.annotations.Type
+import java.io.Serializable
 
 /**
- * 유저 설정(하단바 커스터마이즈). PK는 user_id. bottom_nav_items는 jsonb 문자열 배열.
+ * 유저 설정 — key-value 스토어(확장 가능). PK=(user_id, key), value는 jsonb 원본 문자열.
+ * 예: key='bottom_nav', value='["dashboard","sales",...]'. 새 설정은 컬럼 추가 없이 key만 늘린다.
+ * created_at/updated_at은 BaseEntity가 자동 관리.
  */
 @Entity
 @Table(name = "user_preferences")
-class UserPreferences(
+@IdClass(UserPreferenceId::class)
+class UserPreference(
     @Id
     @Column(name = "user_id")
     var userId: Long,
-) {
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "bottom_nav_items", columnDefinition = "jsonb")
-    var bottomNavItems: List<String> = emptyList()
+    @Id
+    @Column(name = "key")
+    var key: String,
+) : BaseEntity() {
+    @Type(JsonType::class)
+    @Column(name = "value", columnDefinition = "jsonb", nullable = false)
+    var value: String = "null"
+}
 
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
+/** UserPreference 복합 PK(user_id, key). JPA @IdClass 요구로 Serializable. */
+data class UserPreferenceId(
+    val userId: Long = 0,
+    val key: String = "",
+) : Serializable {
+    companion object {
+        private const val serialVersionUID = 1L
+    }
 }
 
 /**

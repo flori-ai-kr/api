@@ -365,12 +365,16 @@ CREATE TRIGGER update_schedules_updated_at
   BEFORE UPDATE ON schedules FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- =============================================
--- 유저 설정 (하단바 커스터마이즈) — PK이자 FK인 user_id
+-- 유저 설정 — key-value 스토어. (user_id, key) 복합 PK, value는 jsonb 원본.
+-- 예: ('...', 'bottom_nav', '["dashboard","sales",...]'). 새 설정은 key만 추가.
 -- =============================================
 CREATE TABLE user_preferences (
-  user_id BIGINT PRIMARY KEY,
-  bottom_nav_items JSONB NOT NULL DEFAULT '["calendar","sales","expenses","customers"]'::jsonb,
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  user_id BIGINT NOT NULL,
+  key VARCHAR(40) NOT NULL,
+  value JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, key)
 );
 
 CREATE TRIGGER update_user_preferences_updated_at

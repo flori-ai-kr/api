@@ -1,39 +1,46 @@
 package kr.ai.flori.settings.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.settings.dto.UserPreferencesResponse
-import kr.ai.flori.settings.entity.UserPreferences
-import kr.ai.flori.settings.repository.UserPreferencesRepository
+import kr.ai.flori.settings.entity.UserPreference
+import kr.ai.flori.settings.repository.UserPreferenceRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 
 /**
- * 유저 설정(하단바). 없으면 기본값 반환, 변경은 upsert.
- *
- * 멀티테넌시: UserPreferences의 PK가 user_id이므로 항상 [TenantContext.currentUserId]를 키로 조회한다
- * (임의 Long를 키로 넘기지 말 것 — 격리가 호출부 규약에 의존한다).
+ * 유저 설정. key-value 스토어(`user_preferences`) 위에서 동작 — 설정마다 key 한 행, value는 jsonb.
+ * 없으면 기본값 반환, 변경은 upsert. 멀티테넌시: 항상 [TenantContext.currentUserId]를 키로 조회.
  */
 @Service
 class UserPreferenceService(
-    private val repository: UserPreferencesRepository,
+    private val repository: UserPreferenceRepository,
+    private val objectMapper: ObjectMapper,
 ) {
     @Transactional(readOnly = true)
     fun get(): UserPreferencesResponse {
-        val prefs = repository.findById(TenantContext.currentUserId()).orElse(null)
-        return UserPreferencesResponse(prefs?.bottomNavItems ?: DEFAULT_BOTTOM_NAV)
+        val pref = repository.findByUserIdAndKey(TenantContext.currentUserId(), BOTTOM_NAV_KEY)
+        val items = pref?.let { objectMapper.readValue<List<String>>(it.value) } ?: DEFAULT_BOTTOM_NAV
+        return UserPreferencesResponse(items)
     }
 
     @Transactional
     fun updateBottomNav(items: List<String>): UserPreferencesResponse {
         val userId = TenantContext.currentUserId()
-        val prefs = repository.findById(userId).orElseGet { UserPreferences(userId) }
-        prefs.bottomNavItems = items
-        prefs.updatedAt = Instant.now()
-        return UserPreferencesResponse(repository.save(prefs).bottomNavItems)
+        val pref =
+            repository.findByUserIdAndKey(userId, BOTTOM_NAV_KEY)
+                ?: UserPreference(userId, BOTTOM_NAV_KEY)
+        pref.value = objectMapper.writeValueAsString(items)
+        repository.save(pref)
+        return UserPreferencesResponse(items)
     }
 
-    private companion object {
-        val DEFAULT_BOTTOM_NAV = listOf("dashboard", "sales", "expenses", "customers")
+    companion object {
+        /** 하단바 설정 key. */
+        const val BOTTOM_NAV_KEY = "bottom_nav"
+
+        /** 가입 시 시드/기본 하단바 항목(SSOT). DefaultDataSeeder도 동일 값을 시드한다. */
+        val DEFAULT_BOTTOM_NAV = listOf("dashboard", "sales", "expenses", "calendar", "customers", "gallery")
     }
 }

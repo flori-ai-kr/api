@@ -1,18 +1,21 @@
 package kr.ai.flori.auth.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import kr.ai.flori.settings.service.UserPreferenceService
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 
 /**
- * 가입 시 사용자별 기본 라벨 설정 시드(매출 카테고리/결제방식/채널, 지출 카테고리/결제방식).
- * 단일 테이블 label_settings에 (domain, kind)로 구분해 적재한다.
- * 모든 INSERT는 복합 unique(user_id, domain, kind, value) 기준 ON CONFLICT DO NOTHING으로 멱등하다(재시도 안전).
+ * 가입 시 사용자별 기본 설정 시드(매출 카테고리/결제방식/채널, 지출 카테고리/결제방식, 하단바).
+ * 라벨은 label_settings에 (domain, kind)로, 하단바는 user_preferences(key='bottom_nav')에 적재한다.
+ * 모든 INSERT는 복합 unique 기준 ON CONFLICT DO NOTHING으로 멱등하다(재시도 안전).
  *
  * 기본값 출처: 원본 flori-ai/web의 PRODUCT_CATEGORIES / 결제방식 / 채널 / expense-settings 기본값.
  */
 @Component
 class DefaultDataSeeder(
     private val jdbcTemplate: JdbcTemplate,
+    private val objectMapper: ObjectMapper,
 ) {
     private data class Setting(
         val value: String,
@@ -25,6 +28,18 @@ class DefaultDataSeeder(
         seedLabels(userId, "sale", "channel", SALE_CHANNELS)
         seedLabels(userId, "expense", "category", EXPENSE_CATEGORIES)
         seedLabels(userId, "expense", "payment", EXPENSE_PAYMENT_METHODS)
+        seedBottomNav(userId)
+    }
+
+    /** 하단바 기본값 시드(user_preferences key-value). 기본 항목 SSOT는 UserPreferenceService. */
+    private fun seedBottomNav(userId: Long) {
+        jdbcTemplate.update(
+            "INSERT INTO user_preferences (user_id, key, value) VALUES (?, ?, ?::jsonb) " +
+                "ON CONFLICT (user_id, key) DO NOTHING",
+            userId,
+            UserPreferenceService.BOTTOM_NAV_KEY,
+            objectMapper.writeValueAsString(UserPreferenceService.DEFAULT_BOTTOM_NAV),
+        )
     }
 
     private fun seedLabels(
