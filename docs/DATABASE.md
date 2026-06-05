@@ -138,7 +138,7 @@ JWT refresh 회전/무효화 추적. **원문이 아닌 SHA-256 해시만 저장
 | 컬럼 | 타입 | 제약 | 설명 |
 |------|------|------|------|
 | `user_id` | BIGINT | **PK**→users 논리참조 | |
-| `bottom_nav_items` | JSONB | NOT NULL, DEFAULT `["schedules","sales","expenses","customers","insights"]` | 하단 네비 항목 순서 |
+| `bottom_nav_items` | JSONB | NOT NULL, DEFAULT `["calendar","sales","expenses","customers","insights"]` | 하단 네비 항목 순서 |
 | `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | 트리거 갱신 |
 
 ---

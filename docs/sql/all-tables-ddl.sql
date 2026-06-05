@@ -475,7 +475,7 @@ CREATE INDEX idx_instagram_posts_posted_at ON instagram_posts(posted_at DESC);
 -- =============================================
 CREATE TABLE user_preferences (
   user_id BIGINT PRIMARY KEY,
-  bottom_nav_items JSONB NOT NULL DEFAULT '["schedules","sales","expenses","customers","insights"]'::jsonb,
+  bottom_nav_items JSONB NOT NULL DEFAULT '["calendar","sales","expenses","customers","insights"]'::jsonb,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
