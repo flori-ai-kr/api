@@ -15,3 +15,12 @@ ALTER INDEX idx_calendar_events_range RENAME TO idx_schedules_range;
 ALTER TRIGGER update_calendar_events_updated_at ON schedules RENAME TO update_schedules_updated_at;
 
 COMMIT;
+
+-- bottom_nav_items에서 "schedules" → "calendar" 되돌리기
+UPDATE user_preferences
+SET bottom_nav_items = REPLACE(bottom_nav_items::text, '"schedules"', '"calendar"')::jsonb
+WHERE bottom_nav_items::text LIKE '%"schedules"%';
+
+-- DEFAULT도 원복
+ALTER TABLE user_preferences
+    ALTER COLUMN bottom_nav_items SET DEFAULT '["calendar","sales","expenses","customers","insights"]'::jsonb;
