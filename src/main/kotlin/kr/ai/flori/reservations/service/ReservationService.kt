@@ -15,6 +15,7 @@ import kr.ai.flori.reservations.entity.Reservation
 import kr.ai.flori.reservations.repository.ReservationRepository
 import kr.ai.flori.sales.dto.SaleCreateRequest
 import kr.ai.flori.sales.dto.SaleResponse
+import kr.ai.flori.sales.repository.SaleRepository
 import kr.ai.flori.sales.service.SaleService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -31,14 +32,32 @@ import java.time.YearMonth
 class ReservationService(
     private val reservationRepository: ReservationRepository,
     private val saleService: SaleService,
+    private val saleRepository: SaleRepository,
     private val customerService: CustomerService,
 ) {
     @Transactional(readOnly = true)
     fun listByMonth(month: String): List<ReservationResponse> {
+        val userId = TenantContext.currentUserId()
         val ym = YearMonth.parse(month)
-        return reservationRepository
-            .findByUserIdAndDateBetweenOrderByDateAscTimeAsc(TenantContext.currentUserId(), ym.atDay(1), ym.atEndOfMonth())
-            .map(ReservationResponse::from)
+        val reservations =
+            reservationRepository
+                .findByUserIdAndDateBetweenOrderByDateAscTimeAsc(userId, ym.atDay(1), ym.atEndOfMonth())
+
+        // 매출 조인 enrichment: 연결된 매출/고객 구매횟수를 일괄 조회해 카드 표시 필드를 채운다.
+        val saleIds = reservations.mapNotNull { it.saleId }.distinct()
+        val salesById =
+            if (saleIds.isEmpty()) {
+                emptyMap()
+            } else {
+                saleRepository.findAllById(saleIds).filter { it.userId == userId }.associateBy { it.id }
+            }
+        val purchaseCounts = customerService.purchaseCountsByCustomer()
+
+        return reservations.map { r ->
+            val sale = r.saleId?.let { salesById[it] }
+            val purchaseCount = sale?.customerId?.let { purchaseCounts[it] }
+            ReservationResponse.from(r, sale, purchaseCount)
+        }
     }
 
     @Transactional(readOnly = true)

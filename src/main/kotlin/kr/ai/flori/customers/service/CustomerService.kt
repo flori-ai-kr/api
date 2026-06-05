@@ -46,6 +46,17 @@ class CustomerService(
         return CustomerResponse.from(customer, statsFor(customer.userId, id))
     }
 
+    /** 고객별 구매(매출) 건수 일괄 조회. 예약 카드의 'N번 방문' 배지 등 enrichment 용도. */
+    @Transactional(readOnly = true)
+    fun purchaseCountsByCustomer(): Map<Long, Int> =
+        jdbcTemplate
+            .query(
+                "SELECT customer_id, count(*) AS cnt FROM sales " +
+                    "WHERE user_id = ?::bigint AND customer_id IS NOT NULL GROUP BY customer_id",
+                { rs, _ -> rs.getLong("customer_id") to rs.getInt("cnt") },
+                TenantContext.currentUserId(),
+            ).toMap()
+
     @Transactional(readOnly = true)
     fun searchByName(query: String): List<CustomerSearchResult> {
         if (query.isBlank()) return emptyList()

@@ -54,6 +54,13 @@ class ReservationDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.BOOLEAN)
                 .description("리마인더 발송 여부 (reminderAt 변경 시 false로 리셋)"),
             fieldWithPath("pickupCompleted").type(JsonFieldType.BOOLEAN).description("픽업 완료 여부"),
+            fieldWithPath("saleDate").type(JsonFieldType.STRING).optional().description("연결된 매출 결제일 (매출 미연결 시 null)"),
+            fieldWithPath("productCategory").type(JsonFieldType.STRING).optional().description("연결된 매출 상품 카테고리"),
+            fieldWithPath("customerId").type(JsonFieldType.NUMBER).optional().description("연결된 고객 ID (딥링크용)"),
+            fieldWithPath("purchaseCount").type(JsonFieldType.NUMBER).optional().description("고객 누적 구매 건수"),
+            fieldWithPath("saleIsUnpaid").type(JsonFieldType.BOOLEAN).optional().description("연결된 매출 미수 여부"),
+            fieldWithPath("salePaymentMethod").type(JsonFieldType.STRING).optional().description("연결된 매출 결제방식"),
+            fieldWithPath("saleReservationChannel").type(JsonFieldType.STRING).optional().description("연결된 매출 예약 채널"),
             fieldWithPath("createdAt").type(JsonFieldType.STRING).description("생성 시각 (ISO-8601)"),
             fieldWithPath("updatedAt").type(JsonFieldType.STRING).description("최종 수정 시각 (ISO-8601)"),
         )
@@ -242,6 +249,34 @@ class ReservationDocsTest : RestDocsSupport() {
                                 fieldWithPath("[].pickupCompleted")
                                     .type(JsonFieldType.BOOLEAN)
                                     .description("픽업 완료 여부"),
+                                fieldWithPath("[].saleDate")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 결제일 (매출 미연결 시 null)"),
+                                fieldWithPath("[].productCategory")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 상품 카테고리"),
+                                fieldWithPath("[].customerId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("연결된 고객 ID (딥링크용)"),
+                                fieldWithPath("[].purchaseCount")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("고객 누적 구매 건수"),
+                                fieldWithPath("[].saleIsUnpaid")
+                                    .type(JsonFieldType.BOOLEAN)
+                                    .optional()
+                                    .description("연결된 매출 미수 여부"),
+                                fieldWithPath("[].salePaymentMethod")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 결제방식"),
+                                fieldWithPath("[].saleReservationChannel")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 예약 채널"),
                                 fieldWithPath("[].createdAt")
                                     .type(JsonFieldType.STRING)
                                     .description("생성 시각 (ISO-8601)"),
@@ -322,6 +357,34 @@ class ReservationDocsTest : RestDocsSupport() {
                                 fieldWithPath("[].pickupCompleted")
                                     .type(JsonFieldType.BOOLEAN)
                                     .description("픽업 완료 여부"),
+                                fieldWithPath("[].saleDate")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 결제일 (매출 미연결 시 null)"),
+                                fieldWithPath("[].productCategory")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 상품 카테고리"),
+                                fieldWithPath("[].customerId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("연결된 고객 ID (딥링크용)"),
+                                fieldWithPath("[].purchaseCount")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("고객 누적 구매 건수"),
+                                fieldWithPath("[].saleIsUnpaid")
+                                    .type(JsonFieldType.BOOLEAN)
+                                    .optional()
+                                    .description("연결된 매출 미수 여부"),
+                                fieldWithPath("[].salePaymentMethod")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 결제방식"),
+                                fieldWithPath("[].saleReservationChannel")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 예약 채널"),
                                 fieldWithPath("[].createdAt")
                                     .type(JsonFieldType.STRING)
                                     .description("생성 시각 (ISO-8601)"),
@@ -401,6 +464,34 @@ class ReservationDocsTest : RestDocsSupport() {
                                 fieldWithPath("[].pickupCompleted")
                                     .type(JsonFieldType.BOOLEAN)
                                     .description("픽업 완료 여부"),
+                                fieldWithPath("[].saleDate")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 결제일 (매출 미연결 시 null)"),
+                                fieldWithPath("[].productCategory")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 상품 카테고리"),
+                                fieldWithPath("[].customerId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("연결된 고객 ID (딥링크용)"),
+                                fieldWithPath("[].purchaseCount")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("고객 누적 구매 건수"),
+                                fieldWithPath("[].saleIsUnpaid")
+                                    .type(JsonFieldType.BOOLEAN)
+                                    .optional()
+                                    .description("연결된 매출 미수 여부"),
+                                fieldWithPath("[].salePaymentMethod")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 결제방식"),
+                                fieldWithPath("[].saleReservationChannel")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 예약 채널"),
                                 fieldWithPath("[].createdAt")
                                     .type(JsonFieldType.STRING)
                                     .description("생성 시각 (ISO-8601)"),
@@ -528,6 +619,34 @@ class ReservationDocsTest : RestDocsSupport() {
                                 fieldWithPath("[].pickupCompleted")
                                     .type(JsonFieldType.BOOLEAN)
                                     .description("픽업 완료 여부"),
+                                fieldWithPath("[].saleDate")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 결제일 (매출 미연결 시 null)"),
+                                fieldWithPath("[].productCategory")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 상품 카테고리"),
+                                fieldWithPath("[].customerId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("연결된 고객 ID (딥링크용)"),
+                                fieldWithPath("[].purchaseCount")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("고객 누적 구매 건수"),
+                                fieldWithPath("[].saleIsUnpaid")
+                                    .type(JsonFieldType.BOOLEAN)
+                                    .optional()
+                                    .description("연결된 매출 미수 여부"),
+                                fieldWithPath("[].salePaymentMethod")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 결제방식"),
+                                fieldWithPath("[].saleReservationChannel")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 매출 예약 채널"),
                                 fieldWithPath("[].createdAt")
                                     .type(JsonFieldType.STRING)
                                     .description("생성 시각 (ISO-8601)"),

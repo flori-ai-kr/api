@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import kr.ai.flori.common.validation.FieldLimits
 import kr.ai.flori.reservations.entity.Reservation
+import kr.ai.flori.sales.entity.Sale
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -76,11 +77,23 @@ data class ReservationResponse(
     val reminderAt: Instant?,
     val reminderSent: Boolean,
     val pickupCompleted: Boolean,
+    // 연결된 매출(sale)·고객 조인 enrichment — 캘린더 카드 표시용. 매출 미연결 시 null.
+    val saleDate: LocalDate?,
+    val productCategory: String?,
+    val customerId: Long?,
+    val purchaseCount: Int?,
+    val saleIsUnpaid: Boolean?,
+    val salePaymentMethod: String?,
+    val saleReservationChannel: String?,
     val createdAt: Instant,
     val updatedAt: Instant,
 ) {
     companion object {
-        fun from(r: Reservation): ReservationResponse =
+        fun from(
+            r: Reservation,
+            sale: Sale? = null,
+            purchaseCount: Int? = null,
+        ): ReservationResponse =
             ReservationResponse(
                 id = requireNotNull(r.id),
                 date = r.date,
@@ -95,6 +108,13 @@ data class ReservationResponse(
                 reminderAt = r.reminderAt,
                 reminderSent = r.reminderSent,
                 pickupCompleted = r.pickupCompleted,
+                saleDate = sale?.date,
+                productCategory = sale?.productCategory,
+                customerId = sale?.customerId,
+                purchaseCount = purchaseCount,
+                saleIsUnpaid = sale?.isUnpaid,
+                salePaymentMethod = sale?.paymentMethod,
+                saleReservationChannel = sale?.reservationChannel,
                 createdAt = r.createdAt,
                 updatedAt = r.updatedAt,
             )
