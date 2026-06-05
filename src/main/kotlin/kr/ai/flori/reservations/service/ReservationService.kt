@@ -5,6 +5,7 @@ import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.common.util.KST
+import kr.ai.flori.customers.service.CustomerService
 import kr.ai.flori.reservations.dto.AddPickupRequest
 import kr.ai.flori.reservations.dto.ReservationCreateRequest
 import kr.ai.flori.reservations.dto.ReservationResponse
@@ -30,6 +31,7 @@ import java.time.YearMonth
 class ReservationService(
     private val reservationRepository: ReservationRepository,
     private val saleService: SaleService,
+    private val customerService: CustomerService,
 ) {
     @Transactional(readOnly = true)
     fun listByMonth(month: String): List<ReservationResponse> {
@@ -70,21 +72,27 @@ class ReservationService(
         val userId = TenantContext.currentUserId()
         return ReservationSuggestionsResponse(
             titles = reservationRepository.findTitlesByFrequency(userId),
-            descriptions = reservationRepository.findDescriptionsByFrequency(userId),
+            memos = reservationRepository.findMemosByFrequency(userId),
         )
     }
 
     @Transactional
     fun create(request: ReservationCreateRequest): ReservationResponse {
+        val customerName = requireNotNull(request.customerName)
         val reservation = Reservation(TenantContext.currentUserId(), requireNotNull(request.date))
         reservation.time = request.time
-        reservation.customerName = requireNotNull(request.customerName)
+        reservation.customerName = customerName
         reservation.customerPhone = request.customerPhone
         reservation.title = requireNotNull(request.title)
-        reservation.description = request.description
+        reservation.memo = request.memo
         reservation.amount = request.amount
         reservation.status = validStatus(request.status ?: ReservationStatuses.PENDING)
         reservation.reminderAt = request.reminderAt
+
+        request.customerPhone?.takeIf { it.isNotBlank() }?.let { phone ->
+            customerService.findOrCreate(customerName, phone)
+        }
+
         return ReservationResponse.from(reservationRepository.save(reservation))
     }
 
@@ -99,7 +107,7 @@ class ReservationService(
         request.customerName?.let { reservation.customerName = it }
         request.customerPhone?.let { reservation.customerPhone = it }
         request.title?.let { reservation.title = it }
-        request.description?.let { reservation.description = it }
+        request.memo?.let { reservation.memo = it }
         request.amount?.let { reservation.amount = it }
         request.status?.let { reservation.status = validStatus(it) }
         request.saleId?.let {

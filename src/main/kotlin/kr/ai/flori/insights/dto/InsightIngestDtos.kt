@@ -45,7 +45,7 @@ data class InstagramAccountCreateRequest(
     @field:NotBlank val region: String?,
     val sortOrder: Int = 0,
     val active: Boolean = true,
-    val notes: String? = null,
+    val memo: String? = null,
 )
 
 data class InstagramAccountUpdateRequest(
@@ -54,7 +54,7 @@ data class InstagramAccountUpdateRequest(
     val region: String? = null,
     val sortOrder: Int? = null,
     val active: Boolean? = null,
-    val notes: String? = null,
+    val memo: String? = null,
 )
 
 data class IngestResultResponse(

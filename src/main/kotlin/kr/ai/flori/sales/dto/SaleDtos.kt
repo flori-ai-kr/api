@@ -29,8 +29,8 @@ data class SaleCreateRequest(
     @field:Size(max = FieldLimits.PHONE, message = "전화번호가 너무 깁니다")
     val customerPhone: String? = null,
     val customerId: Long? = null,
-    @field:Size(max = FieldLimits.NOTE, message = "비고가 너무 깁니다")
-    val note: String? = null,
+    @field:Size(max = FieldLimits.MEMO, message = "메모가 너무 깁니다")
+    val memo: String? = null,
 )
 
 /** 매출 부분 수정. 제공된(non-null) 필드만 반영. */
@@ -47,8 +47,8 @@ data class SaleUpdateRequest(
     @field:Size(max = FieldLimits.PHONE, message = "전화번호가 너무 깁니다")
     val customerPhone: String? = null,
     val customerId: Long? = null,
-    @field:Size(max = FieldLimits.NOTE, message = "비고가 너무 깁니다")
-    val note: String? = null,
+    @field:Size(max = FieldLimits.MEMO, message = "메모가 너무 깁니다")
+    val memo: String? = null,
     val hasReview: Boolean? = null,
 )
 
@@ -68,7 +68,7 @@ data class SaleResponse(
     val customerName: String?,
     val customerPhone: String?,
     val customerId: Long?,
-    val note: String?,
+    val memo: String?,
     val isUnpaid: Boolean,
     val hasReview: Boolean,
     val createdAt: Instant,
@@ -87,7 +87,7 @@ data class SaleResponse(
                 customerName = sale.customerName,
                 customerPhone = sale.customerPhone,
                 customerId = sale.customerId,
-                note = sale.note,
+                memo = sale.memo,
                 isUnpaid = sale.isUnpaid,
                 hasReview = sale.hasReview,
                 createdAt = sale.createdAt,
@@ -102,7 +102,7 @@ data class SalesPageResponse(
 )
 
 data class SaleSuggestionsResponse(
-    val notes: List<String>,
+    val memos: List<String>,
 )
 
 /**

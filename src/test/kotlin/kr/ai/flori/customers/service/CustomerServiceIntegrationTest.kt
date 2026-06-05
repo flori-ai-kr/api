@@ -79,7 +79,7 @@ class CustomerServiceIntegrationTest {
         newTenant()
         val c = create()
         assertThat(customerService.updateGrade(c.id, "vip").grade).isEqualTo("vip")
-        assertThat(customerService.update(c.id, CustomerUpdateRequest(note = "단골")).note).isEqualTo("단골")
+        assertThat(customerService.update(c.id, CustomerUpdateRequest(memo = "단골")).memo).isEqualTo("단골")
     }
 
     @Test

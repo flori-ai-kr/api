@@ -34,7 +34,7 @@ class ReservationDocsTest : RestDocsSupport() {
                 .optional()
                 .description("고객 전화번호 (미입력이면 null)"),
             fieldWithPath("title").type(JsonFieldType.STRING).description("예약 제목"),
-            fieldWithPath("description")
+            fieldWithPath("memo")
                 .type(JsonFieldType.STRING)
                 .optional()
                 .description("상세 메모 (미입력이면 null)"),
@@ -83,7 +83,7 @@ class ReservationDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.NUMBER)
                 .optional()
                 .description("연결된 고객 ID (미연결이면 null)"),
-            fieldWithPath("note").type(JsonFieldType.STRING).optional().description("비고"),
+            fieldWithPath("memo").type(JsonFieldType.STRING).optional().description("비고"),
             fieldWithPath("isUnpaid").type(JsonFieldType.BOOLEAN).description("미수 여부"),
             fieldWithPath("hasReview").type(JsonFieldType.BOOLEAN).description("리뷰 보유 여부"),
             fieldWithPath("createdAt").type(JsonFieldType.STRING).description("생성 시각 (ISO-8601)"),
@@ -128,7 +128,7 @@ class ReservationDocsTest : RestDocsSupport() {
                             "customerName" to "김하늘",
                             "customerPhone" to "010-1234-5678",
                             "title" to "웨딩 부케",
-                            "description" to "흰 장미 위주",
+                            "memo" to "흰 장미 위주",
                             "amount" to 150_000,
                             "status" to "confirmed",
                         ),
@@ -161,7 +161,7 @@ class ReservationDocsTest : RestDocsSupport() {
                                 fieldWithPath("title")
                                     .type(JsonFieldType.STRING)
                                     .description("예약 제목 (필수)"),
-                                fieldWithPath("description")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("상세 메모"),
@@ -220,7 +220,7 @@ class ReservationDocsTest : RestDocsSupport() {
                                     .optional()
                                     .description("고객 전화번호"),
                                 fieldWithPath("[].title").type(JsonFieldType.STRING).description("예약 제목"),
-                                fieldWithPath("[].description")
+                                fieldWithPath("[].memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("상세 메모"),
@@ -300,7 +300,7 @@ class ReservationDocsTest : RestDocsSupport() {
                                     .optional()
                                     .description("고객 전화번호"),
                                 fieldWithPath("[].title").type(JsonFieldType.STRING).description("예약 제목"),
-                                fieldWithPath("[].description")
+                                fieldWithPath("[].memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("상세 메모"),
@@ -379,7 +379,7 @@ class ReservationDocsTest : RestDocsSupport() {
                                     .optional()
                                     .description("고객 전화번호"),
                                 fieldWithPath("[].title").type(JsonFieldType.STRING).description("예약 제목"),
-                                fieldWithPath("[].description")
+                                fieldWithPath("[].memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("상세 메모"),
@@ -435,7 +435,7 @@ class ReservationDocsTest : RestDocsSupport() {
                                 fieldWithPath("titles")
                                     .type(JsonFieldType.ARRAY)
                                     .description("제목 자동완성 목록 (빈도 내림차순)"),
-                                fieldWithPath("descriptions")
+                                fieldWithPath("memos")
                                     .type(JsonFieldType.ARRAY)
                                     .description("메모 자동완성 목록 (빈도 내림차순)"),
                             ),
@@ -506,7 +506,7 @@ class ReservationDocsTest : RestDocsSupport() {
                                     .optional()
                                     .description("고객 전화번호"),
                                 fieldWithPath("[].title").type(JsonFieldType.STRING).description("예약 제목"),
-                                fieldWithPath("[].description")
+                                fieldWithPath("[].memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("상세 메모"),
@@ -582,7 +582,7 @@ class ReservationDocsTest : RestDocsSupport() {
                     json(
                         mapOf(
                             "status" to "confirmed",
-                            "description" to "수정된 메모",
+                            "memo" to "수정된 메모",
                         ),
                     )
             }.andExpect { status { isOk() } }
@@ -617,7 +617,7 @@ class ReservationDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("제목 변경"),
-                                fieldWithPath("description")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("메모 변경"),
@@ -744,7 +744,7 @@ class ReservationDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("연결할 고객 ID (본인 소유 검증)"),
-                                fieldWithPath("note")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("비고"),

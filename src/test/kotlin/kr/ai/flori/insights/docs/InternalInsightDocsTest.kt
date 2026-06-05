@@ -85,7 +85,7 @@ class InternalInsightDocsTest {
             fieldWithPath("region").type(JsonFieldType.STRING).description("지역"),
             fieldWithPath("sortOrder").type(JsonFieldType.NUMBER).description("정렬 순서"),
             fieldWithPath("active").type(JsonFieldType.BOOLEAN).description("활성 여부"),
-            fieldWithPath("notes").type(JsonFieldType.STRING).optional().description("메모 (null 가능)"),
+            fieldWithPath("memo").type(JsonFieldType.STRING).optional().description("메모 (null 가능)"),
         )
 
     /** IngestResultResponse 공통 응답 필드 */
@@ -279,7 +279,7 @@ class InternalInsightDocsTest {
                             "region" to "domestic",
                             "sortOrder" to 5,
                             "active" to true,
-                            "notes" to "문서화용 계정",
+                            "memo" to "문서화용 계정",
                         ),
                     )
             }.andExpect { status { isCreated() } }
@@ -311,7 +311,7 @@ class InternalInsightDocsTest {
                                     .type(JsonFieldType.BOOLEAN)
                                     .optional()
                                     .description("활성 여부 (기본값: true)"),
-                                fieldWithPath("notes")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("메모 (null 가능)"),
@@ -342,7 +342,7 @@ class InternalInsightDocsTest {
                             "displayName" to "수정된 표시명",
                             "sortOrder" to 10,
                             "active" to false,
-                            "notes" to "수정된 메모",
+                            "memo" to "수정된 메모",
                         ),
                     )
             }.andExpect { status { isOk() } }
@@ -377,7 +377,7 @@ class InternalInsightDocsTest {
                                     .type(JsonFieldType.BOOLEAN)
                                     .optional()
                                     .description("활성 여부 변경"),
-                                fieldWithPath("notes")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("메모 변경 (null 가능)"),

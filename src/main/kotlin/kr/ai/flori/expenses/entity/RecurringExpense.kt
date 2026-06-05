@@ -67,8 +67,8 @@ class RecurringExpense(
     @Column(name = "vendor")
     var vendor: String? = null
 
-    @Column(name = "note")
-    var note: String? = null
+    @Column(name = "memo")
+    var memo: String? = null
 
     @Column(name = "is_active", nullable = false)
     var isActive: Boolean = true

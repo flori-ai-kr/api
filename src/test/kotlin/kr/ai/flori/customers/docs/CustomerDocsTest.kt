@@ -33,7 +33,7 @@ class CustomerDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.STRING)
                 .optional()
                 .description("성별 (미입력이면 null)"),
-            fieldWithPath("note")
+            fieldWithPath("memo")
                 .type(JsonFieldType.STRING)
                 .optional()
                 .description("메모 (미입력이면 null)"),
@@ -98,7 +98,7 @@ class CustomerDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.NUMBER)
                 .optional()
                 .description("연결된 고객 ID"),
-            fieldWithPath("sales[].note").type(JsonFieldType.STRING).optional().description("비고"),
+            fieldWithPath("sales[].memo").type(JsonFieldType.STRING).optional().description("비고"),
             fieldWithPath("sales[].isUnpaid").type(JsonFieldType.BOOLEAN).description("미수 여부"),
             fieldWithPath("sales[].hasReview")
                 .type(JsonFieldType.BOOLEAN)
@@ -187,7 +187,7 @@ class CustomerDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("성별 (미입력이면 null)"),
-                                fieldWithPath("[].note")
+                                fieldWithPath("[].memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("메모 (미입력이면 null)"),
@@ -385,7 +385,7 @@ class CustomerDocsTest : RestDocsSupport() {
                             "phone" to "010-5555-6666",
                             "grade" to "regular",
                             "gender" to "female",
-                            "note" to "VIP 예비 고객",
+                            "memo" to "VIP 예비 고객",
                         ),
                     )
             }.andExpect { status { isCreated() } }
@@ -413,7 +413,7 @@ class CustomerDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("성별. male | female"),
-                                fieldWithPath("note")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("메모"),
@@ -480,7 +480,7 @@ class CustomerDocsTest : RestDocsSupport() {
                 content =
                     json(
                         mapOf(
-                            "note" to "수정된 메모",
+                            "memo" to "수정된 메모",
                             "gender" to "male",
                         ),
                     )
@@ -512,7 +512,7 @@ class CustomerDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("성별 변경. male | female"),
-                                fieldWithPath("note")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("메모 변경"),

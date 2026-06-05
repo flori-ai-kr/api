@@ -183,11 +183,11 @@ class SaleServiceIntegrationTest {
     @Test
     fun `비고 자동완성은 빈도순으로 반환한다`() {
         newTenant()
-        repeat(3) { saleService.create(cardSale().copy(note = "리본 포장")) }
-        saleService.create(cardSale().copy(note = "당일 픽업"))
+        repeat(3) { saleService.create(cardSale().copy(memo = "리본 포장")) }
+        saleService.create(cardSale().copy(memo = "당일 픽업"))
 
-        val notes = saleService.suggestions()
-        assertThat(notes).containsExactly("리본 포장", "당일 픽업")
+        val memos = saleService.suggestions()
+        assertThat(memos).containsExactly("리본 포장", "당일 픽업")
     }
 
     @Test

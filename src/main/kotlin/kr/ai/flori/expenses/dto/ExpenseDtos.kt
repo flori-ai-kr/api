@@ -27,8 +27,8 @@ data class ExpenseCreateRequest(
     val cardCompany: String? = null,
     @field:Size(max = FieldLimits.VENDOR, message = "거래처가 너무 깁니다")
     val vendor: String? = null,
-    @field:Size(max = FieldLimits.NOTE, message = "메모가 너무 깁니다")
-    val note: String? = null,
+    @field:Size(max = FieldLimits.MEMO, message = "메모가 너무 깁니다")
+    val memo: String? = null,
 )
 
 data class ExpenseUpdateRequest(
@@ -45,8 +45,8 @@ data class ExpenseUpdateRequest(
     val cardCompany: String? = null,
     @field:Size(max = FieldLimits.VENDOR, message = "거래처가 너무 깁니다")
     val vendor: String? = null,
-    @field:Size(max = FieldLimits.NOTE, message = "메모가 너무 깁니다")
-    val note: String? = null,
+    @field:Size(max = FieldLimits.MEMO, message = "메모가 너무 깁니다")
+    val memo: String? = null,
 )
 
 data class ExpenseResponse(
@@ -60,7 +60,7 @@ data class ExpenseResponse(
     val paymentMethod: String,
     val cardCompany: String?,
     val vendor: String?,
-    val note: String?,
+    val memo: String?,
     val recurringId: Long?,
     val isRecurringModified: Boolean,
     val createdAt: Instant,
@@ -79,7 +79,7 @@ data class ExpenseResponse(
                 paymentMethod = e.paymentMethod,
                 cardCompany = e.cardCompany,
                 vendor = e.vendor,
-                note = e.note,
+                memo = e.memo,
                 recurringId = e.recurringId,
                 isRecurringModified = e.isRecurringModified,
                 createdAt = e.createdAt,
@@ -91,5 +91,5 @@ data class ExpenseResponse(
 data class ExpenseSuggestionsResponse(
     val itemNames: List<String>,
     val vendors: List<String>,
-    val notes: List<String>,
+    val memos: List<String>,
 )

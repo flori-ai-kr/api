@@ -21,7 +21,7 @@ data class RecurringExpenseRequest(
     @field:NotBlank(message = "결제방식은 필수입니다")
     val paymentMethod: String?,
     val vendor: String? = null,
-    val note: String? = null,
+    val memo: String? = null,
     @field:NotBlank(message = "반복 주기는 필수입니다")
     val frequency: String?,
     @field:Min(1, message = "간격은 1 이상이어야 합니다")
@@ -51,7 +51,7 @@ data class RecurringInstanceUpdateRequest(
     val quantity: Int? = null,
     val paymentMethod: String? = null,
     val vendor: String? = null,
-    val note: String? = null,
+    val memo: String? = null,
 )
 
 data class RecurringExpenseResponse(
@@ -62,7 +62,7 @@ data class RecurringExpenseResponse(
     val quantity: Int,
     val paymentMethod: String,
     val vendor: String?,
-    val note: String?,
+    val memo: String?,
     val frequency: String,
     val intervalCount: Int,
     val daysOfWeek: List<Int>,
@@ -84,7 +84,7 @@ data class RecurringExpenseResponse(
                 quantity = r.quantity,
                 paymentMethod = r.paymentMethod,
                 vendor = r.vendor,
-                note = r.note,
+                memo = r.memo,
                 frequency = r.frequency,
                 intervalCount = r.intervalCount,
                 daysOfWeek = r.daysOfWeek,

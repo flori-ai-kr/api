@@ -21,9 +21,7 @@ object FieldLimits {
     const val VENDOR = 100 // card_companies.vendor VARCHAR(100), expenses.vendor TEXT
     const val CARD_COMPANY = 50 // expenses.card_company VARCHAR(50)
     const val TITLE = 200 // community/reservations title TEXT
-    const val NOTE = 1000 // *.note TEXT (자유 메모)
-    const val DESCRIPTION = 2000 // reservations.description TEXT
-    const val MEMO = 500 // insight_scraps.memo TEXT
+    const val MEMO = 200 // *.memo TEXT (자유 메모, 전 도메인 통일)
     const val COMMENT = 2000 // community_comments.content TEXT
     const val CONTENT_TEXT = 20_000 // community_posts.content_text (본문 플레인텍스트)
     const val CONTENT_JSON = 100_000 // community_posts.content(jsonb) 직렬화 상한(서비스 검사)

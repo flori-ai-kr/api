@@ -90,7 +90,7 @@ class InsightIngestService(
         account.displayName = request.displayName
         account.sortOrder = request.sortOrder
         account.active = request.active
-        account.notes = request.notes
+        account.memo = request.memo
         return InstagramAccountResponse.from(saveUnique(account))
     }
 
@@ -109,7 +109,7 @@ class InsightIngestService(
         request.region?.let { account.region = it }
         request.sortOrder?.let { account.sortOrder = it }
         request.active?.let { account.active = it }
-        request.notes?.let { account.notes = it }
+        request.memo?.let { account.memo = it }
         return InstagramAccountResponse.from(saveUnique(account))
     }
 

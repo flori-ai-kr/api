@@ -24,13 +24,13 @@ interface SaleRepository :
         pageable: Pageable,
     ): Page<Sale>
 
-    /** 비고 자동완성: 빈도(사용 횟수) 내림차순. */
+    /** 메모 자동완성: 빈도(사용 횟수) 내림차순. */
     @Query(
-        "SELECT s.note FROM Sale s " +
-            "WHERE s.userId = :userId AND s.note IS NOT NULL AND s.note <> '' " +
-            "GROUP BY s.note ORDER BY COUNT(s.note) DESC",
+        "SELECT s.memo FROM Sale s " +
+            "WHERE s.userId = :userId AND s.memo IS NOT NULL AND s.memo <> '' " +
+            "GROUP BY s.memo ORDER BY COUNT(s.memo) DESC",
     )
-    fun findNotesByFrequency(
+    fun findMemosByFrequency(
         @Param("userId") userId: Long,
     ): List<String>
 

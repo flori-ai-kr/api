@@ -38,10 +38,10 @@ interface ExpenseRepository : JpaRepository<Expense, Long> {
     ): List<String>
 
     @Query(
-        "SELECT e.note FROM Expense e WHERE e.userId = :userId AND e.note IS NOT NULL AND e.note <> '' " +
-            "GROUP BY e.note ORDER BY COUNT(e.note) DESC",
+        "SELECT e.memo FROM Expense e WHERE e.userId = :userId AND e.memo IS NOT NULL AND e.memo <> '' " +
+            "GROUP BY e.memo ORDER BY COUNT(e.memo) DESC",
     )
-    fun findNotesByFrequency(
+    fun findMemosByFrequency(
         @Param("userId") userId: Long,
     ): List<String>
 

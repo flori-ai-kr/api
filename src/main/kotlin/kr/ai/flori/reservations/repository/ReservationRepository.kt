@@ -67,11 +67,11 @@ interface ReservationRepository : JpaRepository<Reservation, Long> {
     ): List<String>
 
     @Query(
-        "SELECT r.description FROM Reservation r WHERE r.userId = :userId " +
-            "AND r.description IS NOT NULL AND r.description <> '' " +
-            "GROUP BY r.description ORDER BY COUNT(r.description) DESC",
+        "SELECT r.memo FROM Reservation r WHERE r.userId = :userId " +
+            "AND r.memo IS NOT NULL AND r.memo <> '' " +
+            "GROUP BY r.memo ORDER BY COUNT(r.memo) DESC",
     )
-    fun findDescriptionsByFrequency(
+    fun findMemosByFrequency(
         @Param("userId") userId: Long,
     ): List<String>
 

@@ -33,6 +33,6 @@ class Customer(
     @Column(name = "gender")
     var gender: String? = null
 
-    @Column(name = "note")
-    var note: String? = null
+    @Column(name = "memo")
+    var memo: String? = null
 }

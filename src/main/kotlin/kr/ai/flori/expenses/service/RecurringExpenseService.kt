@@ -107,7 +107,7 @@ class RecurringExpenseService(
                 paymentMethod = rule.paymentMethod,
             )
         expense.vendor = rule.vendor
-        expense.note = rule.note
+        expense.memo = rule.memo
         return ExpenseResponse.from(expenseRepository.save(expense))
     }
 
@@ -138,7 +138,7 @@ class RecurringExpenseService(
         fields.quantity?.let { rule.quantity = it }
         fields.paymentMethod?.let { rule.paymentMethod = requireValidPayment(it) }
         fields.vendor?.let { rule.vendor = it }
-        fields.note?.let { rule.note = it }
+        fields.memo?.let { rule.memo = it }
         recurringRepository.save(rule)
 
         applyInstanceFields(expense, fields)
@@ -179,7 +179,7 @@ class RecurringExpenseService(
         rule.yearlyDates = request.yearlyDates
         rule.endDate = request.endDate
         rule.vendor = request.vendor
-        rule.note = request.note
+        rule.memo = request.memo
         rule.isActive = request.isActive
     }
 
@@ -194,7 +194,7 @@ class RecurringExpenseService(
         fields.quantity?.let { expense.quantity = it }
         fields.paymentMethod?.let { expense.paymentMethod = requireValidPayment(it) }
         fields.vendor?.let { expense.vendor = it }
-        fields.note?.let { expense.note = it }
+        fields.memo?.let { expense.memo = it }
         expense.totalAmount = expense.unitPrice * expense.quantity
     }
 

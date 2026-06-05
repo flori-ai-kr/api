@@ -43,7 +43,7 @@ class SaleDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.NUMBER)
                 .optional()
                 .description("연결된 고객 ID (미연결이면 null)"),
-            fieldWithPath("note").type(JsonFieldType.STRING).optional().description("비고"),
+            fieldWithPath("memo").type(JsonFieldType.STRING).optional().description("비고"),
             fieldWithPath("isUnpaid")
                 .type(JsonFieldType.BOOLEAN)
                 .description("미수 여부 (paymentMethod=unpaid 이면 true)"),
@@ -80,7 +80,7 @@ class SaleDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.NUMBER)
                 .optional()
                 .description("연결된 고객 ID"),
-            fieldWithPath("sales[].note").type(JsonFieldType.STRING).optional().description("비고"),
+            fieldWithPath("sales[].memo").type(JsonFieldType.STRING).optional().description("비고"),
             fieldWithPath("sales[].isUnpaid").type(JsonFieldType.BOOLEAN).description("미수 여부"),
             fieldWithPath("sales[].hasReview").type(JsonFieldType.BOOLEAN).description("리뷰 보유 여부"),
             fieldWithPath("sales[].createdAt").type(JsonFieldType.STRING).description("생성 시각 (ISO-8601)"),
@@ -130,7 +130,7 @@ class SaleDocsTest : RestDocsSupport() {
                             "paymentMethod" to "card",
                             "reservationChannel" to "kakaotalk",
                             "customerName" to "김하늘",
-                            "note" to "웨딩 부케",
+                            "memo" to "웨딩 부케",
                         ),
                     )
             }.andExpect { status { isCreated() } }
@@ -172,7 +172,7 @@ class SaleDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("연결할 고객 ID (본인 소유 검증)"),
-                                fieldWithPath("note")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("비고"),
@@ -285,7 +285,7 @@ class SaleDocsTest : RestDocsSupport() {
                     json(
                         mapOf(
                             "amount" to 120_000,
-                            "note" to "수정된 비고",
+                            "memo" to "수정된 비고",
                         ),
                     )
             }.andExpect { status { isOk() } }
@@ -332,7 +332,7 @@ class SaleDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("연결 고객 ID 변경"),
-                                fieldWithPath("note")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("비고 변경"),
@@ -472,7 +472,7 @@ class SaleDocsTest : RestDocsSupport() {
                         summary = "비고 자동완성 (과거 비고를 빈도순으로 반환)",
                         responseFields =
                             listOf(
-                                fieldWithPath("notes")
+                                fieldWithPath("memos")
                                     .type(JsonFieldType.ARRAY)
                                     .description("비고 자동완성 목록 (빈도 내림차순)"),
                             ),

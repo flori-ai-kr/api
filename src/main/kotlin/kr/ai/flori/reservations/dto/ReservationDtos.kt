@@ -21,8 +21,8 @@ data class ReservationCreateRequest(
     @field:NotBlank(message = "제목은 필수입니다")
     @field:Size(max = FieldLimits.TITLE, message = "제목이 너무 깁니다")
     val title: String?,
-    @field:Size(max = FieldLimits.DESCRIPTION, message = "설명이 너무 깁니다")
-    val description: String? = null,
+    @field:Size(max = FieldLimits.MEMO, message = "메모가 너무 깁니다")
+    val memo: String? = null,
     val amount: Int = 0,
     val status: String? = null,
     val reminderAt: Instant? = null,
@@ -37,8 +37,8 @@ data class ReservationUpdateRequest(
     val customerPhone: String? = null,
     @field:Size(max = FieldLimits.TITLE, message = "제목이 너무 깁니다")
     val title: String? = null,
-    @field:Size(max = FieldLimits.DESCRIPTION, message = "설명이 너무 깁니다")
-    val description: String? = null,
+    @field:Size(max = FieldLimits.MEMO, message = "메모가 너무 깁니다")
+    val memo: String? = null,
     val amount: Int? = null,
     val status: String? = null,
     val saleId: Long? = null,
@@ -69,7 +69,7 @@ data class ReservationResponse(
     val customerName: String,
     val customerPhone: String?,
     val title: String,
-    val description: String?,
+    val memo: String?,
     val status: String,
     val saleId: Long?,
     val amount: Int,
@@ -88,7 +88,7 @@ data class ReservationResponse(
                 customerName = r.customerName,
                 customerPhone = r.customerPhone,
                 title = r.title,
-                description = r.description,
+                memo = r.memo,
                 status = r.status,
                 saleId = r.saleId,
                 amount = r.amount,
@@ -103,5 +103,5 @@ data class ReservationResponse(
 
 data class ReservationSuggestionsResponse(
     val titles: List<String>,
-    val descriptions: List<String>,
+    val memos: List<String>,
 )

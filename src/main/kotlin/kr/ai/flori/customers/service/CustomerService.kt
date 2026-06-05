@@ -92,7 +92,7 @@ class CustomerService(
         val customer = Customer(userId, requireNotNull(request.name), phone)
         customer.grade = validGrade(request.grade ?: DEFAULT_GRADE)
         customer.gender = validGender(request.gender)
-        customer.note = request.note
+        customer.memo = request.memo
         return CustomerResponse.from(customerRepository.save(customer), CustomerStats.EMPTY)
     }
 
@@ -106,7 +106,7 @@ class CustomerService(
         request.phone?.let { customer.phone = it }
         request.grade?.let { customer.grade = validGrade(it) }
         request.gender?.let { customer.gender = validGender(it) }
-        request.note?.let { customer.note = it }
+        request.memo?.let { customer.memo = it }
         return CustomerResponse.from(saveUnique(customer), statsFor(customer.userId, id))
     }
 

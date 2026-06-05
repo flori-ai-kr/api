@@ -136,7 +136,7 @@ class SaleService(
     fun get(id: Long): SaleResponse = SaleResponse.from(load(id))
 
     @Transactional(readOnly = true)
-    fun suggestions(): List<String> = saleRepository.findNotesByFrequency(TenantContext.currentUserId())
+    fun suggestions(): List<String> = saleRepository.findMemosByFrequency(TenantContext.currentUserId())
 
     @Transactional
     fun create(request: SaleCreateRequest): SaleResponse {
@@ -162,7 +162,7 @@ class SaleService(
         sale.customerName = request.customerName
         sale.customerPhone = request.customerPhone
         sale.customerId = request.customerId
-        sale.note = request.note
+        sale.memo = request.memo
         return SaleResponse.from(saleRepository.save(sale))
     }
 
@@ -187,7 +187,7 @@ class SaleService(
             verifyCustomerOwnership(userId, it)
             sale.customerId = it
         }
-        request.note?.let { sale.note = it }
+        request.memo?.let { sale.memo = it }
         request.hasReview?.let { sale.hasReview = it }
         // is_unpaid 마커는 수정에서 변경하지 않음(생성 시 결정, complete/revert로만 전이)
         return SaleResponse.from(saleRepository.save(sale))

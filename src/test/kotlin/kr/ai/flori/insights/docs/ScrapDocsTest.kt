@@ -370,7 +370,7 @@ class ScrapDocsTest : RestDocsSupport() {
                                 fieldWithPath("[].post.account.region").type(JsonFieldType.STRING).optional().description("지역"),
                                 fieldWithPath("[].post.account.sortOrder").type(JsonFieldType.NUMBER).optional().description("정렬 순서"),
                                 fieldWithPath("[].post.account.active").type(JsonFieldType.BOOLEAN).optional().description("활성 여부"),
-                                fieldWithPath("[].post.account.notes").type(JsonFieldType.STRING).optional().description("메모 (null 가능)"),
+                                fieldWithPath("[].post.account.memo").type(JsonFieldType.STRING).optional().description("메모 (null 가능)"),
                             ),
                     ),
                 )

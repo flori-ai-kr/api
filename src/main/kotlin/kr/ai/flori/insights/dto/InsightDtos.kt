@@ -48,7 +48,7 @@ data class InstagramAccountResponse(
     val region: String,
     val sortOrder: Int,
     val active: Boolean,
-    val notes: String?,
+    val memo: String?,
 ) {
     companion object {
         fun from(a: InstagramAccount) =
@@ -60,7 +60,7 @@ data class InstagramAccountResponse(
                 a.region,
                 a.sortOrder,
                 a.active,
-                a.notes,
+                a.memo,
             )
     }
 }

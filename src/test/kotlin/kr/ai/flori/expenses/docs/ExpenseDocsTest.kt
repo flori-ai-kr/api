@@ -42,7 +42,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.STRING)
                 .optional()
                 .description("거래처 (null 가능)"),
-            fieldWithPath("note")
+            fieldWithPath("memo")
                 .type(JsonFieldType.STRING)
                 .optional()
                 .description("비고 (null 가능)"),
@@ -103,7 +103,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                             "paymentMethod" to "card",
                             "cardCompany" to "신한카드",
                             "vendor" to "양재 꽃시장",
-                            "note" to "웨딩 준비",
+                            "memo" to "웨딩 준비",
                         ),
                     )
             }.andExpect { status { isCreated() } }
@@ -144,7 +144,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("거래처"),
-                                fieldWithPath("note")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("비고"),
@@ -198,7 +198,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("거래처"),
-                                fieldWithPath("[].note")
+                                fieldWithPath("[].memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("비고"),
@@ -264,7 +264,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                         mapOf(
                             "unitPrice" to 10_000,
                             "quantity" to 2,
-                            "note" to "수정된 비고",
+                            "memo" to "수정된 비고",
                         ),
                     )
             }.andExpect { status { isOk() } }
@@ -311,7 +311,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("거래처 변경"),
-                                fieldWithPath("note")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("비고 변경"),
@@ -348,7 +348,7 @@ class ExpenseDocsTest : RestDocsSupport() {
                                 fieldWithPath("vendors")
                                     .type(JsonFieldType.ARRAY)
                                     .description("거래처 자동완성 목록 (빈도 내림차순)"),
-                                fieldWithPath("notes")
+                                fieldWithPath("memos")
                                     .type(JsonFieldType.ARRAY)
                                     .description("비고 자동완성 목록 (빈도 내림차순)"),
                             ),

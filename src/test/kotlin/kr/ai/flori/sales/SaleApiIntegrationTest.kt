@@ -103,7 +103,7 @@ class SaleApiIntegrationTest {
                             "productCategory" to "basic_bouquet",
                             "amount" to 100_000,
                             "paymentMethod" to "card",
-                            "note" to "가".repeat(1_001), // FieldLimits.NOTE(1000) 초과
+                            "memo" to "가".repeat(201), // FieldLimits.MEMO(200) 초과
                         ),
                     )
             }.andExpect {

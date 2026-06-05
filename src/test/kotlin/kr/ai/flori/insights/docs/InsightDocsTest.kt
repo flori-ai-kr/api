@@ -90,7 +90,7 @@ class InsightDocsTest : RestDocsSupport() {
             fieldWithPath("region").type(JsonFieldType.STRING).description("지역"),
             fieldWithPath("sortOrder").type(JsonFieldType.NUMBER).description("정렬 순서"),
             fieldWithPath("active").type(JsonFieldType.BOOLEAN).description("활성 여부"),
-            fieldWithPath("notes").type(JsonFieldType.STRING).optional().description("메모 (null 가능)"),
+            fieldWithPath("memo").type(JsonFieldType.STRING).optional().description("메모 (null 가능)"),
         )
 
     // ── 1. 트렌드 목록 ─────────────────────────────────────────────────────────
@@ -311,7 +311,7 @@ class InsightDocsTest : RestDocsSupport() {
                                 fieldWithPath("[].account.region").type(JsonFieldType.STRING).optional().description("지역"),
                                 fieldWithPath("[].account.sortOrder").type(JsonFieldType.NUMBER).optional().description("정렬 순서"),
                                 fieldWithPath("[].account.active").type(JsonFieldType.BOOLEAN).optional().description("활성 여부"),
-                                fieldWithPath("[].account.notes").type(JsonFieldType.STRING).optional().description("메모 (null 가능)"),
+                                fieldWithPath("[].account.memo").type(JsonFieldType.STRING).optional().description("메모 (null 가능)"),
                             ),
                     ),
                 )

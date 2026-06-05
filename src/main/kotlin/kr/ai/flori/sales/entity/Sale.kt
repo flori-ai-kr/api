@@ -48,8 +48,8 @@ class Sale(
     @Column(name = "customer_id")
     var customerId: Long? = null
 
-    @Column(name = "note")
-    var note: String? = null
+    @Column(name = "memo")
+    var memo: String? = null
 
     @Column(name = "has_review")
     var hasReview: Boolean = false

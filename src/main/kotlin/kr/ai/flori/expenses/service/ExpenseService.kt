@@ -43,7 +43,7 @@ class ExpenseService(
         return ExpenseSuggestionsResponse(
             itemNames = expenseRepository.findItemNamesByFrequency(userId),
             vendors = expenseRepository.findVendorsByFrequency(userId),
-            notes = expenseRepository.findNotesByFrequency(userId),
+            memos = expenseRepository.findMemosByFrequency(userId),
         )
     }
 
@@ -63,7 +63,7 @@ class ExpenseService(
             )
         expense.cardCompany = request.cardCompany
         expense.vendor = request.vendor
-        expense.note = request.note
+        expense.memo = request.memo
         return ExpenseResponse.from(expenseRepository.save(expense))
     }
 
@@ -81,7 +81,7 @@ class ExpenseService(
         request.paymentMethod?.let { expense.paymentMethod = it }
         request.cardCompany?.let { expense.cardCompany = it }
         request.vendor?.let { expense.vendor = it }
-        request.note?.let { expense.note = it }
+        request.memo?.let { expense.memo = it }
         expense.totalAmount = expense.unitPrice * expense.quantity
         return ExpenseResponse.from(expenseRepository.save(expense))
     }

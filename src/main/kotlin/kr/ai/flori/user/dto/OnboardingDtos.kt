@@ -104,10 +104,10 @@ data class ProfileUploadTargetResponse(
 /** DELETE /me 요청 (탈퇴 사유). */
 @Schema(description = "계정 탈퇴 요청")
 data class DeleteAccountRequest(
-    @field:Size(max = FieldLimits.NOTE, message = "사유가 너무 깁니다")
+    @field:Size(max = FieldLimits.MEMO, message = "사유가 너무 깁니다")
     @field:Schema(description = "탈퇴 사유(선택)")
     val reason: String? = null,
-    @field:Size(max = FieldLimits.NOTE, message = "상세 사유가 너무 깁니다")
+    @field:Size(max = FieldLimits.MEMO, message = "상세 사유가 너무 깁니다")
     @field:Schema(description = "기타 상세 사유(선택)")
     val detail: String? = null,
 )

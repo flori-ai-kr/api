@@ -35,6 +35,6 @@ class InstagramAccount(
     @Column(name = "active")
     var active: Boolean = true
 
-    @Column(name = "notes")
-    var notes: String? = null
+    @Column(name = "memo")
+    var memo: String? = null
 }

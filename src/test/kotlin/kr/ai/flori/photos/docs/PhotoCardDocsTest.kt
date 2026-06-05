@@ -26,7 +26,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
         listOf(
             fieldWithPath("id").type(JsonFieldType.NUMBER).description("사진 카드 ID"),
             fieldWithPath("title").type(JsonFieldType.STRING).description("카드 제목"),
-            fieldWithPath("description")
+            fieldWithPath("memo")
                 .type(JsonFieldType.STRING)
                 .optional()
                 .description("카드 설명 (미입력이면 null)"),
@@ -63,7 +63,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                         json(
                             mapOf(
                                 "title" to "결혼식 부케",
-                                "description" to "봄 웨딩 부케 작업",
+                                "memo" to "봄 웨딩 부케 작업",
                                 "tags" to listOf("웨딩", "부케"),
                             ),
                         )
@@ -102,7 +102,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                                 fieldWithPath("cards[].title")
                                     .type(JsonFieldType.STRING)
                                     .description("카드 제목"),
-                                fieldWithPath("cards[].description")
+                                fieldWithPath("cards[].memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("카드 설명"),
@@ -149,7 +149,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                     json(
                         mapOf(
                             "title" to "가을 꽃다발",
-                            "description" to "국화 혼합 꽃다발",
+                            "memo" to "국화 혼합 꽃다발",
                             "tags" to listOf("꽃다발", "가을"),
                             "photos" to
                                 listOf(
@@ -171,7 +171,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                                 fieldWithPath("title")
                                     .type(JsonFieldType.STRING)
                                     .description("카드 제목 (필수)"),
-                                fieldWithPath("description")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("카드 설명"),
@@ -356,7 +356,7 @@ class PhotoCardDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("카드 제목 변경"),
-                                fieldWithPath("description")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("카드 설명 변경"),

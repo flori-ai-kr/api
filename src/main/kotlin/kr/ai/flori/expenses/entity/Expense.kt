@@ -44,8 +44,8 @@ class Expense(
     @Column(name = "vendor")
     var vendor: String? = null
 
-    @Column(name = "note")
-    var note: String? = null
+    @Column(name = "memo")
+    var memo: String? = null
 
     @Column(name = "recurring_id")
     var recurringId: Long? = null

@@ -46,7 +46,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.STRING)
                 .optional()
                 .description("거래처 (null 가능)"),
-            fieldWithPath("note")
+            fieldWithPath("memo")
                 .type(JsonFieldType.STRING)
                 .optional()
                 .description("비고 (null 가능)"),
@@ -100,7 +100,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.STRING)
                 .optional()
                 .description("거래처"),
-            fieldWithPath("note")
+            fieldWithPath("memo")
                 .type(JsonFieldType.STRING)
                 .optional()
                 .description("비고"),
@@ -259,7 +259,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("거래처"),
-                                fieldWithPath("[].note")
+                                fieldWithPath("[].memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("비고"),
@@ -447,7 +447,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("거래처"),
-                                fieldWithPath("note")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("비고"),
@@ -501,7 +501,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                     json(
                         mapOf(
                             "unitPrice" to 600_000,
-                            "note" to "이번 달만 인상",
+                            "memo" to "이번 달만 인상",
                         ),
                     )
             }.andExpect { status { isOk() } }
@@ -543,7 +543,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("거래처 변경"),
-                                fieldWithPath("note")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("비고 변경"),
@@ -617,7 +617,7 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("거래처 변경"),
-                                fieldWithPath("note")
+                                fieldWithPath("memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("비고 변경"),
