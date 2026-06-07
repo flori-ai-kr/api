@@ -24,6 +24,10 @@ jwt:
   secret: ${JWT_SECRET:local-dev-insecure-jwt-secret-please-change-32bytes+}
   access-ttl-seconds: ${JWT_ACCESS_TTL:900}        # 15분
   refresh-ttl-seconds: ${JWT_REFRESH_TTL:1209600}  # 14일
+  # 동시/중복 refresh 멱등 윈도(초). 같은 refresh 토큰으로 이 시간 내 다시 호출하면 회전을 1회만 하고
+  # 같은 결과를 돌려준다(프리페치/멀티탭/쿠키저장 실패 재시도로 인한 rotation race → 로그아웃 방지).
+  # 0 이하면 멱등 비활성(매 호출 회전, 즉시 재사용은 INVALID_TOKEN).
+  refresh-dedup-ttl-seconds: ${JWT_REFRESH_DEDUP_TTL:30}
 
 # CORS 허용 origin (앱/웹). 콤마 구분.
 cors:

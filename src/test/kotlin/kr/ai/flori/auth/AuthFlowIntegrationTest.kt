@@ -110,12 +110,14 @@ class AuthFlowIntegrationTest {
                 .response.contentAsString
         val newRefresh = objectMapper.readTree(refreshResponse).get("refreshToken").asText()
 
-        // 회전된 옛 refresh는 거부
+        // 멱등: 회전 직후 같은 옛 refresh로 재호출하면 (dedup 윈도 내) 같은 새 토큰을 돌려준다.
+        // (동시/중복 refresh로 인한 rotation race → 로그아웃 방지. 윈도 밖 재사용 거부는 서비스 테스트가 커버)
         mockMvc
             .post("/auth/refresh") {
                 contentType = MediaType.APPLICATION_JSON
                 content = body("refreshToken" to refresh)
-            }.andExpect { status { isUnauthorized() } }
+            }.andExpect { status { isOk() } }
+            .andExpect { jsonPath("$.refreshToken") { value(newRefresh) } }
 
         // 로그아웃 후 새 refresh도 무효
         mockMvc

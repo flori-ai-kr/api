@@ -10,4 +10,6 @@ data class JwtProperties(
     val secret: String,
     val accessTtlSeconds: Long,
     val refreshTtlSeconds: Long,
+    // 동시/중복 refresh 멱등 윈도(초). 0 이하면 멱등 비활성. 기본 30초.
+    val refreshDedupTtlSeconds: Long = 30,
 )

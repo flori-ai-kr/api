@@ -46,6 +46,9 @@ dependencies {
     // jsonb / 배열 컬럼의 JPA 매핑 (도메인 SPEC에서 사용)
     implementation("io.hypersistence:hypersistence-utils-hibernate-63:$hypersistenceVersion")
 
+    // refresh 회전 멱등 처리용 인메모리 캐시(동시 refresh dedup). 버전은 Spring Boot BOM이 관리.
+    implementation("com.github.ben-manes.caffeine:caffeine")
+
     // 자체 JWT
     implementation("io.jsonwebtoken:jjwt-api:$jjwtVersion")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:$jjwtVersion")

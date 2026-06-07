@@ -79,6 +79,7 @@ open http://localhost:8080/swagger-ui.html
 | `DB_URL` / `DB_USER` / `DB_PASSWORD` | PostgreSQL 연결 | local 기본값 |
 | `JWT_SECRET` | JWT 서명키 (운영 필수, ≥32 bytes) | local 전용 기본값 ⚠️ 비-local 프로필은 부팅 거부 |
 | `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL` | 토큰 만료(초) | 900 / 1209600 |
+| `JWT_REFRESH_DEDUP_TTL` | refresh 멱등 윈도(초). 동시 refresh race 로그아웃 방지 | 30 (0=비활성) |
 | `AWS_REGION` / `S3_BUCKET` / `CLOUDFRONT_DOMAIN` | S3 presigned 업로드 | 미발급(presign 시 에러) |
 | `FCM_ENABLED` / `FCM_CREDENTIALS` | FCM 푸시 | 로깅 fallback(no-op) |
 | `DISCORD_WEBHOOK_URL` | 운영 에러 알림 | 콘솔 로깅 |

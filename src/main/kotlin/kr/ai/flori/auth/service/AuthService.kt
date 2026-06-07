@@ -1,5 +1,7 @@
 package kr.ai.flori.auth.service
 
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
 import kr.ai.flori.auth.dto.OAuthResult
 import kr.ai.flori.auth.dto.RegisterCompleteRequest
 import kr.ai.flori.auth.dto.TokenResponse
@@ -25,9 +27,12 @@ import kr.ai.flori.user.service.toResponse
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
+import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.time.Duration
 import java.time.Instant
 import java.util.Base64
 
@@ -50,8 +55,31 @@ class AuthService(
     // 제공자 일반화: 빈 이름(KAKAO/GOOGLE/NAVER)을 키로 소셜 클라이언트 주입. 새 제공자는 빈 추가만으로 확장.
     private val socialClients: Map<String, SocialOAuthClient>,
     private val eventPublisher: ApplicationEventPublisher,
+    transactionManager: PlatformTransactionManager,
 ) {
     private val secureRandom = SecureRandom()
+
+    // refresh 회전을 캐시 로더 안에서 독립 트랜잭션으로 실행하기 위한 템플릿(self-invocation @Transactional 우회).
+    private val txTemplate = TransactionTemplate(transactionManager)
+
+    // @MX:WARN: [AUTO] refresh 멱등 캐시 — 같은 raw refresh 토큰 호출은 단 1회만 회전한다.
+    // @MX:REASON: refresh 토큰은 단일 사용 회전이라, 동시/중복 호출(프리페치·멀티탭·쿠키저장 실패 재시도)이
+    //   각자 회전하면 첫 호출만 성공하고 나머지는 INVALID_TOKEN → 로그아웃. 발급 결과를 hash(raw)로 짧게
+    //   캐시해 동시 호출에 동일 토큰을 돌려준다. get(key, loader)는 키당 1회만 로더를 원자적으로 실행한다.
+    // null이면 멱등 비활성(ttl<=0) — refresh가 매번 rotate를 직접 호출(strict 회전).
+    // [멀티 인스턴스 제약] 이 캐시는 프로세스 로컬이다. API 인스턴스가 2개 이상이고 동시 두 요청이
+    //   서로 다른 인스턴스로 라우팅되면 dedup이 적용되지 않아 한쪽은 INVALID_TOKEN을 받을 수 있다.
+    //   완전한 멱등 보장이 필요하면 Redis 등 분산 캐시로 교체해야 한다.
+    private val refreshDedup: Cache<String, TokenResponse>? =
+        if (jwtProperties.refreshDedupTtlSeconds > 0) {
+            Caffeine
+                .newBuilder()
+                .expireAfterWrite(Duration.ofSeconds(jwtProperties.refreshDedupTtlSeconds))
+                .maximumSize(REFRESH_DEDUP_MAX_SIZE)
+                .build()
+        } else {
+            null
+        }
 
     /**
      * 소셜 로그인 일반화 진입점. provider(KAKAO/GOOGLE/NAVER)로 클라이언트를 선택해 인증코드를 검증한다.
@@ -276,25 +304,41 @@ class AuthService(
         )
     }
 
-    @Transactional
+    /**
+     * 토큰 갱신(회전). 동시·중복 호출 멱등 처리:
+     * 같은 raw refresh 토큰으로 들어온 호출은 dedup 윈도 내에서 단 1회만 실제 회전하고, 나머지는 동일 결과를 받는다.
+     * 윈도 밖 재사용은 회전된(ROTATED) 토큰이므로 INVALID_TOKEN으로 거부된다(회전 reuse 탐지 유지).
+     * 멱등 비활성(ttl<=0) 시 매 호출 회전 → 즉시 재사용도 INVALID_TOKEN.
+     *
+     * @MX:ANCHOR: [AUTO] 웹 BFF의 모든 401 자동 재발급·미들웨어 선제 갱신이 도달하는 단일 갱신 진입점.
+     */
     fun refresh(rawRefreshToken: String): TokenResponse {
-        val stored =
-            refreshTokenRepository.findByTokenHash(hashToken(rawRefreshToken))
-                ?: throw AppException(CommonErrorCode.INVALID_TOKEN)
-        if (stored.status != RefreshTokenStatuses.ACTIVE || stored.expiresAt.isBefore(Instant.now())) {
-            throw AppException(CommonErrorCode.INVALID_TOKEN)
-        }
-        val user =
-            userRepository
-                .findById(stored.userId)
-                .orElseThrow { AppException(CommonErrorCode.INVALID_TOKEN) }
-
-        // 회전: 사용된 refresh 토큰을 ROTATED로 무효화하고, 새 토큰이 세션 계보를 잇도록 부모로 넘긴다.
-        stored.status = RefreshTokenStatuses.ROTATED
-        stored.lastUsedAt = Instant.now()
-        refreshTokenRepository.save(stored)
-        return issueTokens(user, parent = stored)
+        val cache = refreshDedup ?: return rotate(rawRefreshToken)
+        // get(key, loader): 키당 로더를 원자적으로 최대 1회 실행. 동시 호출은 대기 후 같은 결과 수신.
+        // 로더가 던진 예외(INVALID_TOKEN 등)는 그대로 전파되며 캐시에 저장되지 않는다.
+        return cache.get(hashToken(rawRefreshToken)) { rotate(rawRefreshToken) }
     }
+
+    /** 실제 회전. 캐시 로더 내부에서 호출되므로 TransactionTemplate으로 독립 트랜잭션을 보장한다. */
+    private fun rotate(rawRefreshToken: String): TokenResponse =
+        txTemplate.execute {
+            val stored =
+                refreshTokenRepository.findByTokenHash(hashToken(rawRefreshToken))
+                    ?: throw AppException(CommonErrorCode.INVALID_TOKEN)
+            if (stored.status != RefreshTokenStatuses.ACTIVE || stored.expiresAt.isBefore(Instant.now())) {
+                throw AppException(CommonErrorCode.INVALID_TOKEN)
+            }
+            val user =
+                userRepository
+                    .findById(stored.userId)
+                    .orElseThrow { AppException(CommonErrorCode.INVALID_TOKEN) }
+
+            // 회전: 사용된 refresh 토큰을 ROTATED로 무효화하고, 새 토큰이 세션 계보를 잇도록 부모로 넘긴다.
+            stored.status = RefreshTokenStatuses.ROTATED
+            stored.lastUsedAt = Instant.now()
+            refreshTokenRepository.save(stored)
+            issueTokens(user, parent = stored)
+        }!!
 
     @Transactional
     fun logout(rawRefreshToken: String) {
@@ -303,6 +347,8 @@ class AuthService(
             token.lastUsedAt = Instant.now()
             refreshTokenRepository.save(token)
         }
+        // 멱등 캐시 무효화: 로그아웃한 토큰이 dedup 윈도 내 캐시 히트로 재사용되지 않도록.
+        refreshDedup?.invalidate(hashToken(rawRefreshToken))
     }
 
     /**
@@ -354,6 +400,9 @@ class AuthService(
 
     private companion object {
         const val REFRESH_TOKEN_BYTES = 32
+
+        // refresh 멱등 캐시 상한(동시 활성 세션 수 대비 충분히 큰 값). 초과 시 LRU 축출.
+        const val REFRESH_DEDUP_MAX_SIZE = 10_000L
 
         // 중복 충돌 메시지(웹이 어떤 필드가 겹쳤는지 구분할 수 있도록 셋을 명확히 구별)
         const val DUP_IDENTITY = "이미 가입된 계정입니다"
