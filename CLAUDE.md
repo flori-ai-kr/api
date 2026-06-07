@@ -123,7 +123,7 @@ src/main/kotlin/kr/ai/flori/
 
 ## 보안 체크리스트 (HARD)
 
-- JWT: 짧은 access TTL + refresh rotation, registerToken 5분, 서명키 환경변수, 만료/위변조 검증
+- JWT: 짧은 access TTL + refresh rotation(멱등 윈도 `JWT_REFRESH_DEDUP_TTL` 기본 30초 — 동시 race 로그아웃 방지, Caffeine 인메모리 캐시), registerToken 5분, 서명키 환경변수, 만료/위변조 검증
 - 멀티테넌시: 모든 쿼리 `user_id` 격리
 - 입력 검증: Bean Validation, SQL 인젝션 방지(JPA·네이티브 쿼리 파라미터 바인딩)
 - S3: presigned URL 짧은 만료, 소유권 검증 후 발급

@@ -308,11 +308,15 @@ sequenceDiagram
         F-->>U: 401 (표준 JSON, 디테일 비노출)
     end
 
-    Note over U,DB: 토큰 회전
+    Note over U,DB: 토큰 회전 (멱등 윈도 적용)
     U->>AS: POST /auth/refresh (refreshToken)
-    AS->>DB: 해시 조회 → status(ACTIVE)/만료 확인
-    AS->>DB: 기존 토큰 ROTATED + 신규 발급/저장(계보 계승)
-    AS-->>U: { 새 access, 새 refresh }
+    alt 멱등 윈도 내 중복 호출(기본 30초, JWT_REFRESH_DEDUP_TTL)
+        AS-->>U: 캐시된 { 기존 access, 기존 refresh } 반환 (재회전 없음)
+    else 윈도 밖 신규 호출
+        AS->>DB: 해시 조회 → status(ACTIVE)/만료 확인
+        AS->>DB: 기존 토큰 ROTATED + 신규 발급/저장(계보 계승)
+        AS-->>U: { 새 access, 새 refresh }
+    end
 ```
 
 공개 경로: `/auth/oauth/**`·`/auth/register/complete`·`/auth/refresh`·`/auth/logout`·`/auth/nickname/check`(비인증 의도 경로만 명시 — `/auth/**` 와일드카드 대신), `/health`, `/actuator/**`, Swagger, `/internal/**`(내부 키로 별도 검증). 그 외(`/me/**` 등)는 모두 인증 필요.
@@ -546,7 +550,7 @@ erDiagram
 | **소유권 재검증** | `customer_id`·다건 `ids` 등 외부 식별자 소유 확인 | 교차 테넌트 식별자 주입 |
 | **소셜 전용 인증** | 이메일/비밀번호 가입 폐지(비밀번호 미저장). 신원은 OAuth providerId로만 도출 | 자격증명 노출 |
 | **소셜 로그인** | `SocialOAuthClient` 인터페이스(KAKAO/GOOGLE/NAVER 빈 분리) — 4xx/5xx·네트워크 오류를 `AppException(INVALID_TOKEN)`으로 변환(원인 체이닝, 500 노출 방지). 신규 신원은 User 미생성·registerToken만 발급(신원은 본문이 아닌 토큰에서만 도출). 동시 첫 가입 경쟁은 DataIntegrityViolationException 캐치(멱등) | 제공자 API 오류 노출·중복 사용자 생성·신원 위조 |
-| **refresh 회전** | 불투명 난수 + SHA-256 해시 저장, 사용 시 회전·로그아웃 시 무효 | 토큰 탈취/재사용 |
+| **refresh 회전** | 불투명 난수 + SHA-256 해시 저장, 사용 시 회전·로그아웃 시 무효(캐시도 함께 무효화). **멱등 윈도** — 같은 raw refresh 토큰으로 짧은 윈도(기본 30초, `JWT_REFRESH_DEDUP_TTL`) 내 중복 호출 시 회전 1회만 수행하고 동일 토큰 반환(Caffeine 인메모리 캐시). 윈도 밖 재사용은 INVALID_TOKEN. 멀티 인스턴스 시 dedup 비공유 한계 | 토큰 탈취/재사용·동시 refresh race 로그아웃 |
 | **내부 API** | `InternalAuthVerifier` — `MessageDigest.isEqual` 타이밍-세이프, 키 미설정 시 전면 차단 | 수집 API 무단 호출 |
 | **입력 검증** | Jakarta Validation `@Valid`, 결제수단/등급/상태 화이트리스트 | 잘못된 입력 |
 | **SQL 인젝션** | JPA 파라미터 바인딩, 네이티브도 `?`/`:param` 바인딩 전용 | 인젝션 |
@@ -622,6 +626,7 @@ flowchart LR
 |---|---|
 | `DB_URL` / `DB_USER` / `DB_PASSWORD` | RDS PostgreSQL |
 | `JWT_SECRET` / `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL` | 토큰 서명·만료 |
+| `JWT_REFRESH_DEDUP_TTL` | refresh 멱등 윈도(초, 기본 30, 0=비활성). 동시 refresh race 로그아웃 방지 |
 | `AWS_REGION` / `S3_BUCKET` / `CLOUDFRONT_DOMAIN` (+ AWS 자격증명) | presigned 업로드·서빙 |
 | `FCM_ENABLED` / `FCM_CREDENTIALS` | 모바일 FCM 푸시 |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | Web Push/VAPID(브라우저 PWA 푸시). 미설정 시 로깅 폴백 |
@@ -649,6 +654,7 @@ flowchart LR
 | PostgreSQL Driver | (BOM) | DB 드라이버 |
 | hypersistence-utils-hibernate-63 | 3.9.0 | jsonb/배열 매핑 |
 | JJWT | 0.12.6 | 자체 JWT |
+| com.github.ben-manes.caffeine:caffeine | (BOM) | refresh 멱등 윈도 인메모리 캐시 |
 | AWS SDK v2 (s3) | 2.29.20 | presigned URL |
 | Firebase Admin | 9.4.1 | FCM(모바일 푸시) |
 | nl.martijndwars:web-push | 5.1.1 | Web Push/VAPID(브라우저 PWA 푸시) |

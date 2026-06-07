@@ -21,7 +21,10 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.TestPropertySource
+import java.util.Collections
 import java.util.UUID
+import java.util.concurrent.CyclicBarrier
+import java.util.concurrent.Executors
 
 /**
  * 소셜 전용 인증 통합 검증.
@@ -263,14 +266,65 @@ class AuthServiceIntegrationTest {
     }
 
     @Test
-    fun `refresh 회전 후 이전 refresh 토큰은 무효다`() {
+    fun `dedup 윈도 내 중복 refresh는 회전을 1회만 하고 같은 토큰을 멱등 반환한다`() {
         val email = uniqueEmail()
         val registerToken = tokenProvider.generateRegisterToken("KAKAO", "kakao-${UUID.randomUUID()}", email, "닉")
         val first = authService.registerComplete(completeRequest(registerToken, email))
 
-        val rotated = authService.refresh(first.refreshToken)
-        assertThat(rotated.accessToken).isNotBlank()
+        val r1 = authService.refresh(first.refreshToken)
+        val r2 = authService.refresh(first.refreshToken) // 같은 토큰 재호출(윈도 내)
 
+        // 회전은 실제로 일어났고(원본과 다른 토큰), 중복 호출은 동일 결과를 받는다.
+        assertThat(r1.refreshToken).isNotEqualTo(first.refreshToken)
+        assertThat(r2.refreshToken).isEqualTo(r1.refreshToken)
+        assertThat(r2.accessToken).isEqualTo(r1.accessToken)
+    }
+
+    @Test
+    fun `같은 refresh 토큰으로 동시 다발 호출해도 전부 성공하고 같은 토큰을 받는다`() {
+        val email = uniqueEmail()
+        val registerToken = tokenProvider.generateRegisterToken("KAKAO", "kakao-${UUID.randomUUID()}", email, "닉")
+        val first = authService.registerComplete(completeRequest(registerToken, email))
+
+        val threads = 8
+        val pool = Executors.newFixedThreadPool(threads)
+        val barrier = CyclicBarrier(threads)
+        val refreshTokens = Collections.synchronizedList(mutableListOf<String>())
+        val errors = Collections.synchronizedList(mutableListOf<Throwable>())
+
+        val futures =
+            (1..threads).map {
+                pool.submit {
+                    try {
+                        barrier.await() // 동시 발사
+                        refreshTokens.add(authService.refresh(first.refreshToken).refreshToken)
+                    } catch (e: Throwable) {
+                        errors.add(e)
+                    }
+                }
+            }
+        futures.forEach { it.get() }
+        pool.shutdown()
+
+        // 멱등 처리로 아무도 INVALID_TOKEN을 받지 않고, 전원이 동일한 새 토큰을 받는다.
+        assertThat(errors).isEmpty()
+        assertThat(refreshTokens).hasSize(threads)
+        assertThat(refreshTokens.toSet()).hasSize(1)
+        assertThat(refreshTokens.first()).isNotEqualTo(first.refreshToken)
+    }
+
+    @Test
+    fun `로그아웃은 멱등 캐시를 무효화해 윈도 내 옛 토큰 재사용을 막는다`() {
+        val email = uniqueEmail()
+        val registerToken = tokenProvider.generateRegisterToken("KAKAO", "kakao-${UUID.randomUUID()}", email, "닉")
+        val first = authService.registerComplete(completeRequest(registerToken, email))
+
+        // refresh로 회전 → first.refreshToken이 dedup 캐시에 키로 적재됨
+        authService.refresh(first.refreshToken)
+        // 같은(옛) 토큰으로 로그아웃 → DB 무효화 + 캐시 무효화
+        authService.logout(first.refreshToken)
+
+        // 윈도 내라도 캐시가 비워졌으므로 옛 토큰 재사용은 거부된다(캐시 히트 없음 → ROTATED 재회전 시도 → INVALID)
         assertThatThrownBy { authService.refresh(first.refreshToken) }
             .isInstanceOfSatisfying(AppException::class.java) {
                 assertThat(it.errorCode).isEqualTo(CommonErrorCode.INVALID_TOKEN)
