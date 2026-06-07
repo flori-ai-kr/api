@@ -46,6 +46,9 @@ class SaleServiceIntegrationTest {
     lateinit var reservationRepository: ReservationRepository
 
     @Autowired
+    lateinit var customerRepository: kr.ai.flori.customers.repository.CustomerRepository
+
+    @Autowired
     lateinit var photoCardRepository: PhotoCardRepository
 
     @Autowired
@@ -245,6 +248,96 @@ class SaleServiceIntegrationTest {
         val empty = saleService.summary("2026-04", null, null, null, null, null, null)
         assertThat(empty.total).isEqualTo(0L)
         assertThat(empty.count).isEqualTo(0L)
+    }
+
+    @Test
+    fun `이름+전화번호로 등록한 신규고객은 자동 생성되어 매출에 연결된다`() {
+        val userId = newTenant()
+        val sale =
+            saleService.create(
+                cardSale().copy(customerName = "박서연", customerPhone = "01012345678"),
+            )
+
+        // 고객이 자동 생성되고 그 id가 매출에 연결되어야 한다
+        val customer = requireNotNull(customerRepository.findByUserIdAndPhone(userId, "01012345678"))
+        assertThat(sale.customerId).isEqualTo(customer.id)
+        assertThat(customer.name).isEqualTo("박서연")
+    }
+
+    @Test
+    fun `동일 전화번호의 두 번째 매출은 기존 고객을 재사용한다`() {
+        val userId = newTenant()
+        val first = saleService.create(cardSale().copy(customerName = "박서연", customerPhone = "01012345678"))
+        val second = saleService.create(cardSale().copy(customerName = "박서연", customerPhone = "01012345678"))
+
+        assertThat(second.customerId).isEqualTo(first.customerId)
+        assertThat(customerRepository.findByUserIdAndPhone(userId, "01012345678")).isNotNull()
+    }
+
+    @Test
+    fun `전화번호만 있고 이름이 없으면 고객을 생성하지 않는다`() {
+        val userId = newTenant()
+        val sale = saleService.create(cardSale().copy(customerPhone = "01099998888"))
+
+        assertThat(sale.customerId).isNull()
+        assertThat(customerRepository.findByUserIdAndPhone(userId, "01099998888")).isNull()
+    }
+
+    @Test
+    fun `수정 시 이름+전화번호로 신규고객이 자동 생성되어 매출에 연결된다`() {
+        val userId = newTenant()
+        val sale = saleService.create(cardSale()) // 고객 없이 생성
+        assertThat(sale.customerId).isNull()
+
+        val updated =
+            saleService.update(sale.id, SaleUpdateRequest(customerName = "최유진", customerPhone = "01055556666"))
+
+        val customer = requireNotNull(customerRepository.findByUserIdAndPhone(userId, "01055556666"))
+        assertThat(updated.customerId).isEqualTo(customer.id)
+        assertThat(customer.name).isEqualTo("최유진")
+    }
+
+    @Test
+    fun `수정으로 전화번호를 바꾸면 새 전화번호의 고객으로 재연결된다`() {
+        val userId = newTenant()
+        val sale = saleService.create(cardSale().copy(customerName = "한별", customerPhone = "01011112222"))
+        val firstCustomerId = sale.customerId
+        assertThat(firstCustomerId).isNotNull()
+
+        val updated =
+            saleService.update(sale.id, SaleUpdateRequest(customerName = "한별", customerPhone = "01033334444"))
+
+        val newCustomer = requireNotNull(customerRepository.findByUserIdAndPhone(userId, "01033334444"))
+        assertThat(updated.customerId).isEqualTo(newCustomer.id)
+        assertThat(updated.customerId).isNotEqualTo(firstCustomerId)
+    }
+
+    @Test
+    fun `customerName·customerPhone을 건드리지 않는 수정은 기존 고객 연결을 유지한다`() {
+        newTenant()
+        val sale = saleService.create(cardSale().copy(customerName = "지우", customerPhone = "01077778888"))
+        val linkedId = sale.customerId
+        assertThat(linkedId).isNotNull()
+
+        val updated = saleService.update(sale.id, SaleUpdateRequest(amount = 200_000))
+        assertThat(updated.customerId).isEqualTo(linkedId)
+        assertThat(updated.amount).isEqualTo(200_000)
+    }
+
+    @Test
+    fun `명시한 customerId가 있으면 전화번호 자동연결보다 우선한다`() {
+        val userId = newTenant()
+        val existing =
+            customerRepository.save(
+                kr.ai.flori.customers.entity
+                    .Customer(userId, "기존고객", "01000000000"),
+            )
+        val sale =
+            saleService.create(
+                cardSale().copy(customerId = existing.id, customerName = "다른이름", customerPhone = "01012345678"),
+            )
+
+        assertThat(sale.customerId).isEqualTo(existing.id)
     }
 
     @Test

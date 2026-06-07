@@ -5,6 +5,7 @@ import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.common.util.monthRange
 import kr.ai.flori.customers.repository.CustomerRepository
+import kr.ai.flori.customers.service.CustomerService
 import kr.ai.flori.photos.repository.PhotoCardRepository
 import kr.ai.flori.reservations.repository.ReservationRepository
 import kr.ai.flori.sales.dto.SaleCreateRequest
@@ -32,9 +33,11 @@ import java.time.LocalDate
  * 미수는 payment_method_id=NULL + is_unpaid=true 로 표현한다(결제수단 값 'unpaid' 폐지).
  */
 @Service
+@Suppress("TooManyFunctions")
 class SaleService(
     private val saleRepository: SaleRepository,
     private val customerRepository: CustomerRepository,
+    private val customerService: CustomerService,
     private val reservationRepository: ReservationRepository,
     private val photoCardRepository: PhotoCardRepository,
     private val labelReader: LabelSettingReader,
@@ -179,7 +182,6 @@ class SaleService(
         val categoryId = labelReader.requireOwned(requireNotNull(request.categoryId), LabelDomains.SALE, LabelKinds.CATEGORY)
         val date = requireNotNull(request.date)
         val amount = requireNotNull(request.amount)
-        request.customerId?.let { verifyCustomerOwnership(userId, it) }
 
         // 미수면 결제수단 미지정(NULL), 아니면 결제수단 id 필수·소유권 검증.
         val paymentMethodId =
@@ -202,7 +204,7 @@ class SaleService(
         sale.isUnpaid = request.isUnpaid
         sale.customerName = request.customerName
         sale.customerPhone = request.customerPhone
-        sale.customerId = request.customerId
+        sale.customerId = resolveCustomerId(userId, request.customerId, request.customerName, request.customerPhone)
         sale.memo = request.memo
         return single(saleRepository.save(sale))
     }
@@ -220,9 +222,12 @@ class SaleService(
         request.channelId?.let { sale.channelId = labelReader.requireOwned(it, LabelDomains.SALE, LabelKinds.CHANNEL) }
         request.customerName?.let { sale.customerName = it }
         request.customerPhone?.let { sale.customerPhone = it }
-        request.customerId?.let {
-            verifyCustomerOwnership(userId, it)
-            sale.customerId = it
+        if (request.customerId != null) {
+            verifyCustomerOwnership(userId, request.customerId)
+            sale.customerId = request.customerId
+        } else if (request.customerName != null || request.customerPhone != null) {
+            // 고객명·연락처를 수정하면 customerId도 전화번호 기준으로 재해석(생성과 동일 규칙) — 이름·전화 둘 다 있을 때만 연결.
+            sale.customerId = resolveCustomerId(userId, null, sale.customerName, sale.customerPhone)
         }
         request.memo?.let { sale.memo = it }
         request.hasReview?.let { sale.hasReview = it }
@@ -340,6 +345,27 @@ class SaleService(
         if (customerRepository.findByIdAndUserId(customerId, userId) == null) {
             throw AppException(CommonErrorCode.VALIDATION, "유효하지 않은 고객입니다")
         }
+    }
+
+    /**
+     * 매출에 연결할 고객 id를 해석한다.
+     * - customerId가 오면 소유권 검증 후 그대로 사용(드롭다운에서 직접 선택한 경우)
+     * - customerId가 없고 이름·전화가 있으면 전화번호 기준 findOrCreate로 연결(자동 매칭)
+     *   → 예약/매출 등록 시 제안 고객을 클릭하지 않아도 전화번호로 기존 고객과 이어진다.
+     */
+    private fun resolveCustomerId(
+        userId: Long,
+        customerId: Long?,
+        customerName: String?,
+        customerPhone: String?,
+    ): Long? {
+        if (customerId != null) {
+            verifyCustomerOwnership(userId, customerId)
+            return customerId
+        }
+        val phone = customerPhone?.takeIf { it.isNotBlank() }
+        val name = customerName?.takeIf { it.isNotBlank() }
+        return if (phone != null && name != null) customerService.findOrCreate(name, phone).id else null
     }
 
     private fun requirePaymentId(id: Long?): Long = id ?: throw AppException(CommonErrorCode.VALIDATION, "결제방식은 필수입니다(미수가 아니면 결제수단을 지정하세요)")
