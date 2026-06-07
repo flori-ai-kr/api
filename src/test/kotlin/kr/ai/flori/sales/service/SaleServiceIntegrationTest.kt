@@ -313,6 +313,25 @@ class SaleServiceIntegrationTest {
     }
 
     @Test
+    fun `전화번호 없이 customerId로만 연결된 매출은 이름만 수정해도 연결이 끊기지 않는다`() {
+        val userId = newTenant()
+        val customer =
+            customerRepository.save(
+                kr.ai.flori.customers.entity
+                    .Customer(userId, "이든", "01066667777"),
+            )
+        // 전화번호는 매출에 저장하지 않고 customerId로만 연결
+        val sale = saleService.create(cardSale().copy(customerId = customer.id, customerName = "이든"))
+        assertThat(sale.customerId).isEqualTo(customer.id)
+        assertThat(sale.customerPhone).isNull()
+
+        // 이름만 수정 → 전화번호가 요청에 없으므로 customerId를 재해석하지 않고 유지(자동 언링크 금지)
+        val updated = saleService.update(sale.id, SaleUpdateRequest(customerName = "이든(수정)"))
+        assertThat(updated.customerId).isEqualTo(customer.id)
+        assertThat(updated.customerName).isEqualTo("이든(수정)")
+    }
+
+    @Test
     fun `customerName·customerPhone을 건드리지 않는 수정은 기존 고객 연결을 유지한다`() {
         newTenant()
         val sale = saleService.create(cardSale().copy(customerName = "지우", customerPhone = "01077778888"))

@@ -225,8 +225,9 @@ class SaleService(
         if (request.customerId != null) {
             verifyCustomerOwnership(userId, request.customerId)
             sale.customerId = request.customerId
-        } else if (request.customerName != null || request.customerPhone != null) {
-            // 고객명·연락처를 수정하면 customerId도 전화번호 기준으로 재해석(생성과 동일 규칙) — 이름·전화 둘 다 있을 때만 연결.
+        } else if (request.customerName != null && request.customerPhone != null) {
+            // 이름·전화를 함께 수정할 때만 customerId를 전화번호 기준으로 재해석(생성과 동일 규칙).
+            // 한쪽만 수정하면 기존 연결을 그대로 유지한다(묵시적 언링크·고객 교체 방지).
             sale.customerId = resolveCustomerId(userId, null, sale.customerName, sale.customerPhone)
         }
         request.memo?.let { sale.memo = it }
