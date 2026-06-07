@@ -101,3 +101,22 @@ data class ExpenseSuggestionsResponse(
     val vendors: List<String>,
     val memos: List<String>,
 )
+
+/** 지출 목록 페이지 응답(무한스크롤). */
+data class ExpensePageResponse(
+    val expenses: List<ExpenseResponse>,
+    val hasMore: Boolean,
+)
+
+/** 지출 요약: 총액·건수 + 카테고리별 합계(breakdown 바). 색은 web이 categoryId로 매핑. */
+data class ExpensesSummaryResponse(
+    val total: Long,
+    val count: Long,
+    val byCategory: List<ExpenseCategorySlice>,
+)
+
+data class ExpenseCategorySlice(
+    val categoryId: Long?,
+    val categoryLabel: String,
+    val amount: Long,
+)

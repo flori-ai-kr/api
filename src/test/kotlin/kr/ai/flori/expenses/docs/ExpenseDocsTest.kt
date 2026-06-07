@@ -176,51 +176,54 @@ class ExpenseDocsTest : RestDocsSupport() {
                         summary = "지출 목록 (월 필터 선택, 미입력 시 전체)",
                         responseFields =
                             listOf(
-                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("지출 ID"),
-                                fieldWithPath("[].date")
+                                fieldWithPath("expenses[].id").type(JsonFieldType.NUMBER).description("지출 ID"),
+                                fieldWithPath("expenses[].date")
                                     .type(JsonFieldType.STRING)
                                     .description("지출 발생일 (yyyy-MM-dd)"),
-                                fieldWithPath("[].itemName").type(JsonFieldType.STRING).description("물품명"),
-                                fieldWithPath("[].categoryId").type(JsonFieldType.NUMBER).optional().description("지출 카테고리 ID"),
-                                fieldWithPath("[].categoryLabel").type(JsonFieldType.STRING).optional().description("지출 카테고리 이름"),
-                                fieldWithPath("[].unitPrice").type(JsonFieldType.NUMBER).description("단가(원)"),
-                                fieldWithPath("[].quantity").type(JsonFieldType.NUMBER).description("수량"),
-                                fieldWithPath("[].totalAmount")
+                                fieldWithPath("expenses[].itemName").type(JsonFieldType.STRING).description("물품명"),
+                                fieldWithPath("expenses[].categoryId").type(JsonFieldType.NUMBER).optional().description("지출 카테고리 ID"),
+                                fieldWithPath("expenses[].categoryLabel").type(JsonFieldType.STRING).optional().description("지출 카테고리 이름"),
+                                fieldWithPath("expenses[].unitPrice").type(JsonFieldType.NUMBER).description("단가(원)"),
+                                fieldWithPath("expenses[].quantity").type(JsonFieldType.NUMBER).description("수량"),
+                                fieldWithPath("expenses[].totalAmount")
                                     .type(JsonFieldType.NUMBER)
                                     .description("[서버 계산 SSOT] 총액 = 단가 × 수량"),
-                                fieldWithPath("[].paymentMethodId")
+                                fieldWithPath("expenses[].paymentMethodId")
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("결제수단 ID"),
-                                fieldWithPath("[].paymentMethodLabel")
+                                fieldWithPath("expenses[].paymentMethodLabel")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("결제수단 이름"),
-                                fieldWithPath("[].cardCompany")
+                                fieldWithPath("expenses[].cardCompany")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("카드사"),
-                                fieldWithPath("[].vendor")
+                                fieldWithPath("expenses[].vendor")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("거래처"),
-                                fieldWithPath("[].memo")
+                                fieldWithPath("expenses[].memo")
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("비고"),
-                                fieldWithPath("[].recurringId")
+                                fieldWithPath("expenses[].recurringId")
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("고정비 템플릿 ID"),
-                                fieldWithPath("[].isRecurringModified")
+                                fieldWithPath("expenses[].isRecurringModified")
                                     .type(JsonFieldType.BOOLEAN)
                                     .description("고정비 인스턴스 개별 수정 여부"),
-                                fieldWithPath("[].createdAt")
+                                fieldWithPath("expenses[].createdAt")
                                     .type(JsonFieldType.STRING)
                                     .description("생성 시각 (ISO-8601)"),
-                                fieldWithPath("[].updatedAt")
+                                fieldWithPath("expenses[].updatedAt")
                                     .type(JsonFieldType.STRING)
                                     .description("최종 수정 시각 (ISO-8601)"),
+                                fieldWithPath("hasMore")
+                                    .type(JsonFieldType.BOOLEAN)
+                                    .description("다음 페이지 존재 여부(무한스크롤)"),
                             ),
                     ),
                 )
