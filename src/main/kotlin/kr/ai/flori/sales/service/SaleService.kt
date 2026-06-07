@@ -5,6 +5,7 @@ import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.common.util.monthRange
 import kr.ai.flori.customers.repository.CustomerRepository
+import kr.ai.flori.customers.service.CustomerService
 import kr.ai.flori.photos.repository.PhotoCardRepository
 import kr.ai.flori.reservations.repository.ReservationRepository
 import kr.ai.flori.sales.dto.SaleCreateRequest
@@ -32,9 +33,11 @@ import java.time.LocalDate
  * 미수는 payment_method_id=NULL + is_unpaid=true 로 표현한다(결제수단 값 'unpaid' 폐지).
  */
 @Service
+@Suppress("TooManyFunctions")
 class SaleService(
     private val saleRepository: SaleRepository,
     private val customerRepository: CustomerRepository,
+    private val customerService: CustomerService,
     private val reservationRepository: ReservationRepository,
     private val photoCardRepository: PhotoCardRepository,
     private val labelReader: LabelSettingReader,
@@ -179,7 +182,6 @@ class SaleService(
         val categoryId = labelReader.requireOwned(requireNotNull(request.categoryId), LabelDomains.SALE, LabelKinds.CATEGORY)
         val date = requireNotNull(request.date)
         val amount = requireNotNull(request.amount)
-        request.customerId?.let { verifyCustomerOwnership(userId, it) }
 
         // 미수면 결제수단 미지정(NULL), 아니면 결제수단 id 필수·소유권 검증.
         val paymentMethodId =
@@ -202,7 +204,7 @@ class SaleService(
         sale.isUnpaid = request.isUnpaid
         sale.customerName = request.customerName
         sale.customerPhone = request.customerPhone
-        sale.customerId = request.customerId
+        sale.customerId = resolveCustomerId(userId, request.customerId, request.customerName, request.customerPhone)
         sale.memo = request.memo
         return single(saleRepository.save(sale))
     }
@@ -214,21 +216,63 @@ class SaleService(
     ): SaleResponse {
         val userId = TenantContext.currentUserId()
         val sale = load(id)
-        request.paymentMethodId?.let { sale.paymentMethodId = labelReader.requireOwned(it, LabelDomains.SALE, LabelKinds.PAYMENT) }
         request.date?.let { sale.date = it }
         request.amount?.let { sale.amount = it }
         request.categoryId?.let { sale.categoryId = labelReader.requireOwned(it, LabelDomains.SALE, LabelKinds.CATEGORY) }
         request.channelId?.let { sale.channelId = labelReader.requireOwned(it, LabelDomains.SALE, LabelKinds.CHANNEL) }
         request.customerName?.let { sale.customerName = it }
         request.customerPhone?.let { sale.customerPhone = it }
-        request.customerId?.let {
-            verifyCustomerOwnership(userId, it)
-            sale.customerId = it
+        if (request.customerId != null) {
+            verifyCustomerOwnership(userId, request.customerId)
+            sale.customerId = request.customerId
+        } else if (request.customerName != null && request.customerPhone != null) {
+            // 이름·전화를 함께 수정할 때만 customerId를 전화번호 기준으로 재해석(생성과 동일 규칙).
+            // 한쪽만 수정하면 기존 연결을 그대로 유지한다(묵시적 언링크·고객 교체 방지).
+            sale.customerId = resolveCustomerId(userId, null, sale.customerName, sale.customerPhone)
         }
         request.memo?.let { sale.memo = it }
         request.hasReview?.let { sale.hasReview = it }
-        // is_unpaid 마커는 수정에서 변경하지 않음(생성 시 결정, complete/revert로만 전이)
-        return single(saleRepository.save(sale))
+        applyUnpaidTransition(sale, request)
+        val saved = saleRepository.save(sale)
+        syncLinkedReservations(saved)
+        return single(saved)
+    }
+
+    /**
+     * 매출과 예약(픽업)이 중복 보유하는 데이터를 예약 쪽에 동기화한다.
+     * 고객명·연락처는 항상, 금액은 픽업이 1건일 때만(여러 픽업은 캘린더에서 픽업별로 관리).
+     */
+    private fun syncLinkedReservations(sale: Sale) {
+        val saleId = sale.id ?: return
+        val pickups = reservationRepository.findByUserIdAndSaleIdOrderByDateAsc(sale.userId, saleId)
+        if (pickups.isEmpty()) return
+        pickups.forEach {
+            it.customerName = sale.customerName ?: ""
+            it.customerPhone = sale.customerPhone
+        }
+        if (pickups.size == 1) pickups[0].amount = sale.amount
+        reservationRepository.saveAll(pickups)
+    }
+
+    /**
+     * 수정 시 미수(외상) 상태 전이. is_unpaid 마커 + payment_method_id(정산 여부)를 함께 반영한다.
+     * - isUnpaid=true  : 미수로 되돌림(결제수단 비움 → 매출 합계 제외)
+     * - isUnpaid=false : 결제 완료로 전환(마커 OFF + 결제수단 확정)
+     * - isUnpaid=null  : 미수 상태 불변, 결제수단만(제공 시) 반영
+     */
+    private fun applyUnpaidTransition(
+        sale: Sale,
+        request: SaleUpdateRequest,
+    ) {
+        if (request.isUnpaid == true) {
+            sale.isUnpaid = true
+            sale.paymentMethodId = null
+            return
+        }
+        if (request.isUnpaid == false) sale.isUnpaid = false
+        request.paymentMethodId?.let {
+            sale.paymentMethodId = labelReader.requireOwned(it, LabelDomains.SALE, LabelKinds.PAYMENT)
+        }
     }
 
     @Transactional
@@ -304,6 +348,27 @@ class SaleService(
         }
     }
 
+    /**
+     * 매출에 연결할 고객 id를 해석한다.
+     * - customerId가 오면 소유권 검증 후 그대로 사용(드롭다운에서 직접 선택한 경우)
+     * - customerId가 없고 이름·전화가 있으면 전화번호 기준 findOrCreate로 연결(자동 매칭)
+     *   → 예약/매출 등록 시 제안 고객을 클릭하지 않아도 전화번호로 기존 고객과 이어진다.
+     */
+    private fun resolveCustomerId(
+        userId: Long,
+        customerId: Long?,
+        customerName: String?,
+        customerPhone: String?,
+    ): Long? {
+        if (customerId != null) {
+            verifyCustomerOwnership(userId, customerId)
+            return customerId
+        }
+        val phone = customerPhone?.takeIf { it.isNotBlank() }
+        val name = customerName?.takeIf { it.isNotBlank() }
+        return if (phone != null && name != null) customerService.findOrCreate(name, phone).id else null
+    }
+
     private fun requirePaymentId(id: Long?): Long = id ?: throw AppException(CommonErrorCode.VALIDATION, "결제방식은 필수입니다(미수가 아니면 결제수단을 지정하세요)")
 
     private companion object {
@@ -319,7 +384,7 @@ class SaleService(
         val SUMMARY_SELECT =
             """
             SELECT
-              COALESCE(SUM(s.amount), 0) AS total,
+              COALESCE(SUM(s.amount) FILTER (WHERE s.payment_method_id IS NOT NULL), 0) AS total,
               COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'card'), 0) AS card,
               COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'naverpay'), 0) AS naverpay,
               COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'transfer'), 0) AS transfer,

@@ -2,9 +2,11 @@ package kr.ai.flori.expenses.controller
 
 import jakarta.validation.Valid
 import kr.ai.flori.expenses.dto.ExpenseCreateRequest
+import kr.ai.flori.expenses.dto.ExpensePageResponse
 import kr.ai.flori.expenses.dto.ExpenseResponse
 import kr.ai.flori.expenses.dto.ExpenseSuggestionsResponse
 import kr.ai.flori.expenses.dto.ExpenseUpdateRequest
+import kr.ai.flori.expenses.dto.ExpensesSummaryResponse
 import kr.ai.flori.expenses.service.ExpenseService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -24,9 +26,32 @@ class ExpenseController(
     private val expenseService: ExpenseService,
 ) {
     @GetMapping
+    @Suppress("LongParameterList")
     fun list(
         @RequestParam(required = false) month: String?,
-    ): List<ExpenseResponse> = expenseService.list(month)
+        @RequestParam(required = false) startDate: String?,
+        @RequestParam(required = false) endDate: String?,
+        @RequestParam(defaultValue = "0") offset: Int,
+        @RequestParam(defaultValue = "100") limit: Int,
+        @RequestParam(required = false) category: List<Long>?,
+        @RequestParam(required = false) payment: List<Long>?,
+        @RequestParam(required = false) search: String?,
+    ): ExpensePageResponse {
+        val safeLimit = limit.coerceIn(MIN_LIMIT, MAX_LIMIT)
+        val safeOffset = offset.coerceAtLeast(0)
+        return expenseService.listPaged(month, startDate, endDate, safeOffset, safeLimit, category, payment, search)
+    }
+
+    @GetMapping("/summary")
+    @Suppress("LongParameterList")
+    fun summary(
+        @RequestParam(required = false) month: String?,
+        @RequestParam(required = false) startDate: String?,
+        @RequestParam(required = false) endDate: String?,
+        @RequestParam(required = false) category: List<Long>?,
+        @RequestParam(required = false) payment: List<Long>?,
+        @RequestParam(required = false) search: String?,
+    ): ExpensesSummaryResponse = expenseService.summary(month, startDate, endDate, category, payment, search)
 
     @GetMapping("/suggestions")
     fun suggestions(): ExpenseSuggestionsResponse = expenseService.suggestions()
@@ -54,5 +79,10 @@ class ExpenseController(
         @PathVariable id: Long,
     ) {
         expenseService.delete(id)
+    }
+
+    companion object {
+        private const val MIN_LIMIT = 1
+        private const val MAX_LIMIT = 100
     }
 }

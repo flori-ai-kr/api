@@ -48,6 +48,8 @@ data class SaleUpdateRequest(
     @field:Size(max = FieldLimits.MEMO, message = "메모가 너무 깁니다")
     val memo: String? = null,
     val hasReview: Boolean? = null,
+    /** 미수(외상) 전환. true=미수로(결제수단 비움), false=결제완료로, null=변경 없음. */
+    val isUnpaid: Boolean? = null,
 )
 
 data class CompleteUnpaidRequest(
