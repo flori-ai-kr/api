@@ -147,6 +147,30 @@ class SaleServiceIntegrationTest {
     }
 
     @Test
+    fun `수정으로 결제완료 매출을 미수로 되돌리거나 다시 결제완료로 전환한다`() {
+        newTenant()
+        // 결제완료(카드) 매출
+        val paid = saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 22), catId("reservation"), 50_000, payId("card")))
+        assertThat(paid.isUnpaid).isFalse()
+        assertThat(paid.paymentMethodId).isEqualTo(payId("card"))
+
+        // 수정으로 미수 전환 → 결제수단 비고 마커 ON
+        val toUnpaid = saleService.update(paid.id, SaleUpdateRequest(isUnpaid = true))
+        assertThat(toUnpaid.isUnpaid).isTrue()
+        assertThat(toUnpaid.paymentMethodId).isNull()
+
+        // 수정으로 다시 결제완료 전환 → 마커 OFF + 결제수단 확정
+        val toPaid = saleService.update(paid.id, SaleUpdateRequest(isUnpaid = false, paymentMethodId = payId("cash")))
+        assertThat(toPaid.isUnpaid).isFalse()
+        assertThat(toPaid.paymentMethodId).isEqualTo(payId("cash"))
+
+        // isUnpaid=null 이면 미수 상태 불변(결제수단만 반영)
+        val unchanged = saleService.update(paid.id, SaleUpdateRequest(amount = 60_000))
+        assertThat(unchanged.isUnpaid).isFalse()
+        assertThat(unchanged.amount).isEqualTo(60_000)
+    }
+
+    @Test
     fun `미수가 아닌 매출의 완료 시도는 거부된다`() {
         newTenant()
         val sale = saleService.create(cardSale())

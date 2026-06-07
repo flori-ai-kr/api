@@ -214,7 +214,6 @@ class SaleService(
     ): SaleResponse {
         val userId = TenantContext.currentUserId()
         val sale = load(id)
-        request.paymentMethodId?.let { sale.paymentMethodId = labelReader.requireOwned(it, LabelDomains.SALE, LabelKinds.PAYMENT) }
         request.date?.let { sale.date = it }
         request.amount?.let { sale.amount = it }
         request.categoryId?.let { sale.categoryId = labelReader.requireOwned(it, LabelDomains.SALE, LabelKinds.CATEGORY) }
@@ -227,8 +226,29 @@ class SaleService(
         }
         request.memo?.let { sale.memo = it }
         request.hasReview?.let { sale.hasReview = it }
-        // is_unpaid 마커는 수정에서 변경하지 않음(생성 시 결정, complete/revert로만 전이)
+        applyUnpaidTransition(sale, request)
         return single(saleRepository.save(sale))
+    }
+
+    /**
+     * 수정 시 미수(외상) 상태 전이. is_unpaid 마커 + payment_method_id(정산 여부)를 함께 반영한다.
+     * - isUnpaid=true  : 미수로 되돌림(결제수단 비움 → 매출 합계 제외)
+     * - isUnpaid=false : 결제 완료로 전환(마커 OFF + 결제수단 확정)
+     * - isUnpaid=null  : 미수 상태 불변, 결제수단만(제공 시) 반영
+     */
+    private fun applyUnpaidTransition(
+        sale: Sale,
+        request: SaleUpdateRequest,
+    ) {
+        if (request.isUnpaid == true) {
+            sale.isUnpaid = true
+            sale.paymentMethodId = null
+            return
+        }
+        if (request.isUnpaid == false) sale.isUnpaid = false
+        request.paymentMethodId?.let {
+            sale.paymentMethodId = labelReader.requireOwned(it, LabelDomains.SALE, LabelKinds.PAYMENT)
+        }
     }
 
     @Transactional
