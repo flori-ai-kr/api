@@ -227,7 +227,25 @@ class SaleService(
         request.memo?.let { sale.memo = it }
         request.hasReview?.let { sale.hasReview = it }
         applyUnpaidTransition(sale, request)
-        return single(saleRepository.save(sale))
+        val saved = saleRepository.save(sale)
+        syncLinkedReservations(saved)
+        return single(saved)
+    }
+
+    /**
+     * 매출과 예약(픽업)이 중복 보유하는 데이터를 예약 쪽에 동기화한다.
+     * 고객명·연락처는 항상, 금액은 픽업이 1건일 때만(여러 픽업은 캘린더에서 픽업별로 관리).
+     */
+    private fun syncLinkedReservations(sale: Sale) {
+        val saleId = sale.id ?: return
+        val pickups = reservationRepository.findByUserIdAndSaleIdOrderByDateAsc(sale.userId, saleId)
+        if (pickups.isEmpty()) return
+        pickups.forEach {
+            it.customerName = sale.customerName ?: ""
+            it.customerPhone = sale.customerPhone
+        }
+        if (pickups.size == 1) pickups[0].amount = sale.amount
+        reservationRepository.saveAll(pickups)
     }
 
     /**
@@ -339,7 +357,7 @@ class SaleService(
         val SUMMARY_SELECT =
             """
             SELECT
-              COALESCE(SUM(s.amount), 0) AS total,
+              COALESCE(SUM(s.amount) FILTER (WHERE s.payment_method_id IS NOT NULL), 0) AS total,
               COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'card'), 0) AS card,
               COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'naverpay'), 0) AS naverpay,
               COALESCE(SUM(s.amount) FILTER (WHERE ls.value = 'transfer'), 0) AS transfer,

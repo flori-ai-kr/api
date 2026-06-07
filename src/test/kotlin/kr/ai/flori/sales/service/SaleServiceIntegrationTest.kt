@@ -200,7 +200,7 @@ class SaleServiceIntegrationTest {
     }
 
     @Test
-    fun `요약은 DB 집계로 결제수단별 합계와 전체(미수 포함)를 계산하고 동일 필터를 지원한다`() {
+    fun `요약은 DB 집계로 결제수단별 합계와 전체(미수 제외)를 계산하고 동일 필터를 지원한다`() {
         newTenant()
         saleService.create(
             SaleCreateRequest(LocalDate.of(2026, 5, 1), catId("vase"), 1_000, payId("card"), customerName = "김하늘"),
@@ -210,9 +210,9 @@ class SaleServiceIntegrationTest {
         saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 4), catId("vase"), 4_000, payId("naverpay")))
         saleService.create(SaleCreateRequest(LocalDate.of(2026, 5, 5), catId("vase"), 5_000, null, isUnpaid = true))
 
-        // 전체: total/count는 미수 포함, 버킷은 결제수단별
+        // total은 미수(미정산: payment_method_id NULL) 제외, count는 전체, 버킷은 결제수단별
         val all = saleService.summary("2026-05", null, null, null, null, null, null)
-        assertThat(all.total).isEqualTo(15_000L)
+        assertThat(all.total).isEqualTo(10_000L) // 15,000 - 미수 5,000
         assertThat(all.card).isEqualTo(1_000L)
         assertThat(all.cash).isEqualTo(2_000L)
         assertThat(all.transfer).isEqualTo(3_000L)
@@ -224,10 +224,10 @@ class SaleServiceIntegrationTest {
         assertThat(cardOnly.total).isEqualTo(1_000L)
         assertThat(cardOnly.count).isEqualTo(1L)
 
-        // 카테고리 IN
+        // 카테고리 IN (vase: card 1,000 + transfer 3,000 + naverpay 4,000 + 미수 5,000 → total은 미수 제외)
         val vaseOnly = saleService.summary("2026-05", null, null, listOf(catId("vase")), null, null, null)
         assertThat(vaseOnly.count).isEqualTo(4L)
-        assertThat(vaseOnly.total).isEqualTo(13_000L)
+        assertThat(vaseOnly.total).isEqualTo(8_000L)
 
         // 채널 IN (기본 채널 other)
         val otherChannel = saleService.summary("2026-05", null, null, null, null, listOf(channelId("other")), null)
