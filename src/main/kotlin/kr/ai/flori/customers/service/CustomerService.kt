@@ -9,6 +9,7 @@ import kr.ai.flori.customers.dto.CustomerSearchResult
 import kr.ai.flori.customers.dto.CustomerStats
 import kr.ai.flori.customers.dto.CustomerUpdateRequest
 import kr.ai.flori.customers.entity.Customer
+import kr.ai.flori.customers.repository.CustomerGradeRepository
 import kr.ai.flori.customers.repository.CustomerRepository
 import kr.ai.flori.sales.dto.SaleResponse
 import kr.ai.flori.sales.dto.SalesPageResponse
@@ -30,6 +31,8 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class CustomerService(
     private val customerRepository: CustomerRepository,
+    private val gradeRepository: CustomerGradeRepository,
+    private val gradeService: CustomerGradeService,
     private val saleRepository: SaleRepository,
     private val labelReader: LabelSettingReader,
     private val jdbcTemplate: JdbcTemplate,
@@ -38,16 +41,26 @@ class CustomerService(
     fun list(): List<CustomerResponse> {
         val userId = TenantContext.currentUserId()
         val statsByCustomer = aggregateStats(userId)
+        val gradeNames = gradeNamesById(userId)
+        val photoSummary = photoSummaryByCustomer(userId)
         return customerRepository
             .findByUserIdOrderByCreatedAtDesc(userId)
-            .map { CustomerResponse.from(it, statsByCustomer[it.id] ?: CustomerStats.EMPTY) }
-            .sortedByDescending { it.totalPurchaseAmount }
+            .map { c ->
+                val (thumbs, count) = photoSummary[c.id] ?: (emptyList<String>() to 0)
+                CustomerResponse.from(
+                    c,
+                    statsByCustomer[c.id] ?: CustomerStats.EMPTY,
+                    c.gradeId?.let { gradeNames[it] },
+                    thumbs,
+                    count,
+                )
+            }.sortedByDescending { it.totalPurchaseAmount }
     }
 
     @Transactional(readOnly = true)
     fun get(id: Long): CustomerResponse {
         val customer = load(id)
-        return CustomerResponse.from(customer, statsFor(customer.userId, id))
+        return toResponse(customer)
     }
 
     /** 고객별 구매(매출) 건수 일괄 조회. 예약 카드의 'N번 방문' 배지 등 enrichment 용도. */
@@ -64,9 +77,11 @@ class CustomerService(
     @Transactional(readOnly = true)
     fun searchByName(query: String): List<CustomerSearchResult> {
         if (query.isBlank()) return emptyList()
+        val userId = TenantContext.currentUserId()
+        val gradeNames = gradeNamesById(userId)
         return customerRepository
-            .findTop10ByUserIdAndNameContainingIgnoreCaseOrderByCreatedAtDesc(TenantContext.currentUserId(), query)
-            .map { CustomerSearchResult(requireNotNull(it.id), it.name, it.phone, it.grade) }
+            .findTop10ByUserIdAndNameContainingIgnoreCaseOrderByCreatedAtDesc(userId, query)
+            .map { CustomerSearchResult(requireNotNull(it.id), it.name, it.phone, it.gradeId?.let(gradeNames::get)) }
     }
 
     @Transactional(readOnly = true)
@@ -81,7 +96,14 @@ class CustomerService(
             } else {
                 customerRepository.findFirstByUserIdAndPhone(userId, phone)
             }
-        return found?.let { CustomerSearchResult(requireNotNull(it.id), it.name, it.phone, it.grade) }
+        return found?.let {
+            CustomerSearchResult(
+                requireNotNull(it.id),
+                it.name,
+                it.phone,
+                it.gradeId?.let { gid -> gradeRepository.findByIdAndUserId(gid, userId)?.name },
+            )
+        }
     }
 
     @Transactional(readOnly = true)
@@ -117,11 +139,13 @@ class CustomerService(
         if (customerRepository.findByUserIdAndPhone(userId, phone) != null) {
             throw AppException(CommonErrorCode.CONFLICT, "이미 등록된 전화번호입니다")
         }
+        gradeService.ensureDefaults(userId)
         val customer = Customer(userId, requireNotNull(request.name), phone)
-        customer.grade = validGrade(request.grade ?: DEFAULT_GRADE)
+        customer.gradeId = autoGradeId(userId, 0)
+        customer.gradeLocked = false
         customer.gender = validGender(request.gender)
         customer.memo = request.memo
-        return CustomerResponse.from(customerRepository.save(customer), CustomerStats.EMPTY)
+        return toResponse(customerRepository.save(customer))
     }
 
     @Transactional
@@ -132,20 +156,57 @@ class CustomerService(
         val customer = load(id)
         request.name?.let { customer.name = it }
         request.phone?.let { customer.phone = it }
-        request.grade?.let { customer.grade = validGrade(it) }
         request.gender?.let { customer.gender = validGender(it) }
         request.memo?.let { customer.memo = it }
-        return CustomerResponse.from(saveUnique(customer), statsFor(customer.userId, id))
+        return toResponse(saveUnique(customer))
     }
 
+    /** 구매횟수 기준 적정 등급 id. threshold 있는 등급 중 threshold<=count 최대, 없으면 최저 sort_order. */
+    private fun autoGradeId(
+        userId: Long,
+        count: Int,
+    ): Long? {
+        val grades = gradeRepository.findByUserIdOrderBySortOrderAsc(userId)
+        if (grades.isEmpty()) return null
+        val eligible = grades.filter { it.threshold != null && it.threshold!! <= count }.maxByOrNull { it.threshold!! }
+        return (eligible ?: grades.minByOrNull { it.sortOrder })?.id
+    }
+
+    /** 자동 등급 재계산(잠금 아니면). 매출 변경/되돌리기 후 호출. */
+    @Transactional
+    fun recomputeGrade(customerId: Long) {
+        val userId = TenantContext.currentUserId()
+        val customer = customerRepository.findByIdAndUserId(customerId, userId) ?: return
+        if (customer.gradeLocked) return
+        val count = statsFor(userId, customerId).count
+        val newGradeId = autoGradeId(userId, count)
+        if (newGradeId != null && newGradeId != customer.gradeId) {
+            customer.gradeId = newGradeId
+            customerRepository.save(customer)
+        }
+    }
+
+    /** 수동 등급 지정 → 잠금. */
     @Transactional
     fun updateGrade(
         id: Long,
-        grade: String,
+        gradeId: Long,
     ): CustomerResponse {
         val customer = load(id)
-        customer.grade = validGrade(grade)
-        return CustomerResponse.from(customerRepository.save(customer), statsFor(customer.userId, id))
+        gradeRepository.findByIdAndUserId(gradeId, customer.userId)
+            ?: throw AppException(CommonErrorCode.VALIDATION, "올바르지 않은 등급입니다")
+        customer.gradeId = gradeId
+        customer.gradeLocked = true
+        return toResponse(customerRepository.save(customer))
+    }
+
+    /** 자동 등급으로 되돌리기 → 잠금 해제 후 재계산. */
+    @Transactional
+    fun revertGradeToAuto(id: Long): CustomerResponse {
+        val customer = load(id)
+        customer.gradeLocked = false
+        customer.gradeId = autoGradeId(customer.userId, statsFor(customer.userId, id).count)
+        return toResponse(customerRepository.save(customer))
     }
 
     @Transactional
@@ -164,14 +225,20 @@ class CustomerService(
     ): CustomerResponse {
         val userId = TenantContext.currentUserId()
         customerRepository.findByUserIdAndPhone(userId, phone)?.let {
-            return CustomerResponse.from(it, statsFor(userId, requireNotNull(it.id)))
+            return toResponse(it)
         }
+        gradeService.ensureDefaults(userId)
         return try {
-            CustomerResponse.from(customerRepository.save(Customer(userId, name, phone)), CustomerStats.EMPTY)
+            val customer =
+                Customer(userId, name, phone).apply {
+                    gradeId = autoGradeId(userId, 0)
+                    gradeLocked = false
+                }
+            toResponse(customerRepository.save(customer))
         } catch (_: DataIntegrityViolationException) {
             // 동시 생성 레이스: 다른 트랜잭션이 먼저 생성 → 재조회
             val existing = requireNotNull(customerRepository.findByUserIdAndPhone(userId, phone))
-            CustomerResponse.from(existing, statsFor(userId, requireNotNull(existing.id)))
+            toResponse(existing)
         }
     }
 
@@ -185,6 +252,67 @@ class CustomerService(
     private fun load(id: Long): Customer =
         customerRepository.findByIdAndUserId(id, TenantContext.currentUserId())
             ?: throw AppException(CommonErrorCode.NOT_FOUND, "고객을 찾을 수 없습니다")
+
+    /** 단건 응답: 등급명·통계·대표사진(썸네일3·카운트)을 해석해 조립. */
+    private fun toResponse(customer: Customer): CustomerResponse {
+        val id = requireNotNull(customer.id)
+        val gradeName = customer.gradeId?.let { gradeRepository.findByIdAndUserId(it, customer.userId)?.name }
+        val (thumbs, count) = photoSummaryFor(customer.userId, id)
+        return CustomerResponse.from(customer, statsFor(customer.userId, id), gradeName, thumbs, count)
+    }
+
+    /** gradeId → 등급명 맵(테넌트 1쿼리). */
+    private fun gradeNamesById(userId: Long): Map<Long, String> =
+        gradeRepository
+            .findByUserIdOrderBySortOrderAsc(userId)
+            .associate { requireNotNull(it.id) to it.name }
+
+    /**
+     * 고객별 대표 썸네일 3장 + 카운트 (1쿼리). photos jsonb 의 첫 요소 url.
+     * photos jsonb 형태: [{"url":...,"originalName":...}] — photos->0->>'url' 이 대표 썸네일.
+     */
+    private fun photoSummaryByCustomer(userId: Long): Map<Long, Pair<List<String>, Int>> =
+        jdbcTemplate
+            .query(
+                """
+                SELECT customer_id,
+                       count(*) AS cnt,
+                       (array_agg((photos->0->>'url') ORDER BY created_at DESC)
+                          FILTER (WHERE jsonb_array_length(photos) > 0))[1:3] AS thumbs
+                FROM photo_cards
+                WHERE user_id = ?::bigint AND customer_id IS NOT NULL
+                GROUP BY customer_id
+                """.trimIndent(),
+                { rs, _ ->
+                    val arr = rs.getArray("thumbs")?.array as? Array<*>
+                    val thumbs = arr?.filterIsInstance<String>() ?: emptyList()
+                    rs.getLong("customer_id") to (thumbs to rs.getInt("cnt"))
+                },
+                userId,
+            ).toMap()
+
+    /** 단일 고객 대표 썸네일 3장 + 카운트. */
+    private fun photoSummaryFor(
+        userId: Long,
+        customerId: Long,
+    ): Pair<List<String>, Int> =
+        jdbcTemplate
+            .query(
+                """
+                SELECT count(*) AS cnt,
+                       (array_agg((photos->0->>'url') ORDER BY created_at DESC)
+                          FILTER (WHERE jsonb_array_length(photos) > 0))[1:3] AS thumbs
+                FROM photo_cards
+                WHERE user_id = ?::bigint AND customer_id = ?::bigint
+                """.trimIndent(),
+                { rs, _ ->
+                    val arr = rs.getArray("thumbs")?.array as? Array<*>
+                    val thumbs = arr?.filterIsInstance<String>() ?: emptyList()
+                    thumbs to rs.getInt("cnt")
+                },
+                userId,
+                customerId,
+            ).firstOrNull() ?: (emptyList<String>() to 0)
 
     private fun statsFor(
         userId: Long,
@@ -224,11 +352,6 @@ class CustomerService(
                 userId,
             ).toMap()
 
-    private fun validGrade(grade: String): String {
-        if (grade !in GRADES) throw AppException(CommonErrorCode.VALIDATION, "올바르지 않은 등급입니다")
-        return grade
-    }
-
     private fun validGender(gender: String?): String? {
         if (gender == null) return null
         if (gender !in GENDERS) throw AppException(CommonErrorCode.VALIDATION, "올바르지 않은 성별입니다")
@@ -236,9 +359,7 @@ class CustomerService(
     }
 
     private companion object {
-        const val DEFAULT_GRADE = "new"
         const val MAX_PAGE_SIZE = 50
-        val GRADES = setOf("new", "regular", "vip", "blacklist")
         val GENDERS = setOf("male", "female")
     }
 }

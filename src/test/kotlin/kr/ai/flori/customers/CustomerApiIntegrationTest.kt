@@ -44,7 +44,9 @@ class CustomerApiIntegrationTest {
                 content = objectMapper.writeValueAsString(mapOf("name" to "홍길동", "phone" to "01012345678"))
             }.andExpect {
                 status { isCreated() }
-                jsonPath("$.grade") { value("new") }
+                jsonPath("$.grade") { value("신규") }
+                jsonPath("$.gradeLocked") { value(false) }
+                jsonPath("$.photoCount") { value(0) }
             }
 
         mockMvc

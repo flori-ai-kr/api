@@ -1,6 +1,7 @@
 package kr.ai.flori.customers.dto
 
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import kr.ai.flori.common.validation.FieldLimits
 import kr.ai.flori.customers.entity.Customer
@@ -14,7 +15,6 @@ data class CustomerCreateRequest(
     @field:NotBlank(message = "전화번호는 필수입니다")
     @field:Size(max = FieldLimits.PHONE, message = "전화번호가 너무 깁니다")
     val phone: String?,
-    val grade: String? = null,
     val gender: String? = null,
     @field:Size(max = FieldLimits.MEMO, message = "메모가 너무 깁니다")
     val memo: String? = null,
@@ -25,15 +25,15 @@ data class CustomerUpdateRequest(
     val name: String? = null,
     @field:Size(max = FieldLimits.PHONE, message = "전화번호가 너무 깁니다")
     val phone: String? = null,
-    val grade: String? = null,
     val gender: String? = null,
     @field:Size(max = FieldLimits.MEMO, message = "메모가 너무 깁니다")
     val memo: String? = null,
 )
 
-data class UpdateGradeRequest(
-    @field:NotBlank(message = "등급은 필수입니다")
-    val grade: String?,
+/** 수동 등급 지정 요청. 지정 시 등급 잠금(자동 재계산 제외). */
+data class CustomerGradeAssignRequest(
+    @field:NotNull(message = "등급 id는 필수입니다")
+    val gradeId: Long?,
 )
 
 data class FindOrCreateCustomerRequest(
@@ -45,18 +45,26 @@ data class FindOrCreateCustomerRequest(
     val phone: String?,
 )
 
-/** 구매 통계는 sales에서 실시간 집계한 값. */
+/**
+ * 구매 통계는 sales에서 실시간 집계한 값.
+ * grade는 gradeId로 해석한 등급명(배지 표기용), gradeId/gradeLocked는 등급 관리 UI용.
+ * photoThumbnails/photoCount는 이 고객에 연결된 사진첩 대표 썸네일(최대 3)·총 카운트.
+ */
 data class CustomerResponse(
     val id: Long,
     val name: String,
     val phone: String,
-    val grade: String,
+    val gradeId: Long?,
+    val grade: String?,
+    val gradeLocked: Boolean,
     val gender: String?,
     val memo: String?,
     val totalPurchaseCount: Int,
     val totalPurchaseAmount: Long,
     val firstPurchaseDate: LocalDate?,
     val lastPurchaseDate: LocalDate?,
+    val photoThumbnails: List<String>,
+    val photoCount: Int,
     val createdAt: Instant,
     val updatedAt: Instant,
 ) {
@@ -64,18 +72,25 @@ data class CustomerResponse(
         fun from(
             c: Customer,
             stats: CustomerStats,
+            gradeName: String?,
+            photoThumbnails: List<String>,
+            photoCount: Int,
         ): CustomerResponse =
             CustomerResponse(
                 id = requireNotNull(c.id),
                 name = c.name,
                 phone = c.phone,
-                grade = c.grade,
+                gradeId = c.gradeId,
+                grade = gradeName,
+                gradeLocked = c.gradeLocked,
                 gender = c.gender,
                 memo = c.memo,
                 totalPurchaseCount = stats.count,
                 totalPurchaseAmount = stats.total,
                 firstPurchaseDate = stats.firstDate,
                 lastPurchaseDate = stats.lastDate,
+                photoThumbnails = photoThumbnails,
+                photoCount = photoCount,
                 createdAt = c.createdAt,
                 updatedAt = c.updatedAt,
             )
@@ -97,5 +112,5 @@ data class CustomerSearchResult(
     val id: Long,
     val name: String,
     val phone: String,
-    val grade: String,
+    val grade: String?,
 )

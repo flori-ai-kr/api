@@ -6,7 +6,6 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import jakarta.persistence.Transient
 import kr.ai.flori.common.entity.BaseEntity
 
 /**
@@ -28,16 +27,12 @@ class Customer(
     @Column(name = "id")
     var id: Long? = null
 
-    // 등급(커스텀 등급 테이블 참조). 실제 자동승급/잠금 로직은 Task 5에서 도입.
+    // 등급(커스텀 등급 테이블 소프트 참조). 자동승급/수동고정/되돌리기는 CustomerService가 관리.
     @Column(name = "grade_id")
     var gradeId: Long? = null
 
     @Column(name = "grade_locked", nullable = false)
     var gradeLocked: Boolean = false
-
-    // 레거시 등급 문자열 브리지(컬럼은 마이그레이션에서 제거됨). 비영속 — Task 5에서 등급 도메인으로 대체 예정.
-    @Transient
-    var grade: String = "new"
 
     @Column(name = "gender")
     var gender: String? = null
