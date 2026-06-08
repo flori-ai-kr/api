@@ -1,6 +1,6 @@
 # Flori API — 아키텍처 & 기술 선정 이유
 
-> 최종 업데이트: 2026-06-08
+> 최종 업데이트: 2026-06-08 (세션3: customer_grades + photo_cards.customer_id)
 
 이 문서는 Flori(꽃집 어드민) **모바일 앱 백엔드 API**의 기술 스택과 아키텍처를 설명한다. 단순히 "무엇을 쓰는가"가 아니라 **"왜 이것을 골랐는가"**에 초점을 맞춘다. 모든 선택에는 *기존 Next.js+Supabase 웹앱의 비즈니스 로직을 네이티브 앱이 호출 가능한 REST API로 재구현하고, 자체 AWS 인프라 위에 올린다*는 도메인 맥락이 반영되어 있다.
 
@@ -103,9 +103,9 @@ flowchart LR
 | `auth` | 회원가입(기본 설정 시드)·로그인·**카카오 소셜 로그인**·refresh 회전·로그아웃·`/me` |
 | `sales` | 매출 CRUD·무한스크롤·필터·**요약(GET /sales/summary)**·미수·**서버 입금계산**·**이름+전화번호로 고객 자동연결(findOrCreate)** |
 | `expenses` | 지출 + 고정비(this/all 분기·**@Scheduled 자동생성**)·**목록 페이지네이션(무한스크롤)**·**요약 집계(GET /expenses/summary)** |
-| `customers` | 고객 CRUD·findOrCreate·**실시간 구매통계** |
+| `customers` | 고객 CRUD·findOrCreate·**실시간 구매통계**·**커스텀 등급 CRUD + 구매횟수 자동승급/수동잠금** |
 | `reservations` / `schedules` | 예약(매출 전환·픽업)·일정·**리마인더/요약 푸시** |
-| `photos` | 사진카드(presigned 업로드·삭제·**다운로드**)·태그 |
+| `photos` | 사진카드(presigned 업로드·삭제·**다운로드**)·태그·**고객 직접 연결(customer_id 필터·소유권 검증)** |
 | `community` | 단일 커뮤니티 게시판(게시글·댓글·대댓글·좋아요·비밀글·soft delete)·이미지 업로드. **`@RequiresBusinessVerified` 게이팅 적용** |
 | `verification` | 사업자 인증 신청·상태 조회(PENDING/APPROVED/REJECTED/NONE)·presigned 업로드·게이팅(`@RequiresBusinessVerified`) |
 | `settings` | 매출/지출 설정·하단바·사용자 설정·푸시 구독·**테스트 발송** |
@@ -342,7 +342,7 @@ flowchart LR
     class DB d
 ```
 
-앱은 날짜·금액·결제수단을 보내고, 미수(`unpaid`)는 `is_unpaid` 영구 마커로 표시하고 총매출에서 제외한다. 결제수단 `card`는 지출의 `cardCompany`와 별개 — 매출에 카드사/수수료 필드는 없다. **고객 자동연결**: `customerId`가 없어도 이름·전화번호가 모두 제공되면 `CustomerService.findOrCreate`(전화번호 기준)로 고객을 조회 또는 생성해 `sales.customer_id`에 연결한다. 매출 수정 시 고객명·연락처가 변경되면 재해석하고, 연결된 예약(픽업)의 고객명·연락처도 동기화한다.
+앱은 날짜·금액·결제수단을 보내고, 미수(`unpaid`)는 `is_unpaid` 영구 마커로 표시하고 총매출에서 제외한다. 결제수단 `card`는 지출의 `cardCompany`와 별개 — 매출에 카드사/수수료 필드는 없다. **고객 자동연결**: `customerId`가 없어도 이름·전화번호가 모두 제공되면 `CustomerService.findOrCreate`(전화번호 기준)로 고객을 조회 또는 생성해 `sales.customer_id`에 연결한다. 매출 수정 시 고객명·연락처가 변경되면 재해석하고, 연결된 예약(픽업)의 고객명·연락처도 동기화한다. **등급 재계산 훅**: 매출 생성·수정·삭제 시 연결 고객(`customer_id`)이 있으면 `CustomerGradeService.recompute`를 호출해 구매횟수 기준 자동 등급을 갱신한다(`grade_locked=false` 고객만).
 
 ### 고정비 자동생성 — @Scheduled (KST 00:30)
 
@@ -411,6 +411,9 @@ erDiagram
     USERS ||--o{ COMMUNITY_LIKES : "user_id"
 
     CUSTOMERS ||--o{ SALES : "customer_id"
+    CUSTOMERS ||--o{ PHOTO_CARDS : "customer_id"
+    CUSTOMER_GRADES ||--o{ CUSTOMERS : "grade_id"
+    USERS ||--o{ CUSTOMER_GRADES : "user_id"
     SALES ||--o| RESERVATIONS : "reservations.sale_id"
     SALES ||--o{ PHOTO_CARDS : "sale_id"
     RECURRING_EXPENSES ||--o{ EXPENSES : "recurring_id"
@@ -466,12 +469,20 @@ erDiagram
         boolean reminder_sent
         boolean pickup_completed
     }
+    CUSTOMER_GRADES {
+        bigint id PK
+        bigint user_id FK
+        string name "등급명"
+        int threshold "NULL=수동전용"
+        int sort_order
+    }
     PHOTO_CARDS {
         bigint id PK
         bigint user_id FK
         text_array tags "text[]"
         jsonb photos "[{url,originalName}]"
         bigint sale_id FK
+        bigint customer_id FK "선택 논리참조"
     }
     COMMUNITY_POSTS {
         bigint id PK
@@ -516,7 +527,7 @@ erDiagram
 | 인증 | `POST /auth/oauth/{kakao,google,naver}`, `POST /auth/register/complete`, `POST /auth/{refresh,logout}`, `GET /me` | Public / Auth |
 | 매출 | `GET/POST/PATCH/DELETE /sales`, `GET /sales/summary`, `/sales/{id}/complete-unpaid`·`/revert-unpaid`, `/sales/suggestions` | Auth |
 | 지출·고정비 | `/expenses`(+`/expenses/summary`), `/recurring-expenses`(+`/toggle`·`/quick-add`·`/instances/{id}?scope=this\|all`) | Auth |
-| 고객 | `/customers`(+`/search`·`/check-phone`·`/{id}/sales`·`/find-or-create`·`/{id}/grade`) | Auth |
+| 고객 | `/customers`(+`/search`·`/check-phone`·`/{id}/sales`·`/find-or-create`·`/{id}/grade`·`/{id}/grade/auto`), `GET/POST/PATCH/DELETE /customer-grades` | Auth |
 | 예약·일정 | `/reservations`(+`/upcoming`·`/reminders`·`/convert-to-sale`·`/add-pickup`), `/schedules` | Auth |
 | 사진첩 | `GET/POST/PATCH/DELETE /photo-cards`, `POST /photo-cards/upload-targets`(신규 카드용), `POST /photo-cards/{id}/upload-targets`, `GET /photo-cards/{id}/photos/download`, `/photos/reorder`, `/photo-tags` | Auth |
 | 커뮤니티 | `GET/POST /community/posts`, `GET/PATCH/DELETE /community/posts/{id}`, `POST /community/posts/{id}/like`, `GET/POST /community/posts/{id}/comments`, `DELETE /community/comments/{id}`, `POST /community/upload-targets` | Auth + **사업자 인증** |
