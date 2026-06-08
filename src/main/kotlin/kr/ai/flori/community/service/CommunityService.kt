@@ -301,14 +301,7 @@ class CommunityService(
         return category
     }
 
-    private fun nicknameOf(userId: Long): String = nicknamesOf(listOf(userId))[userId] ?: UNKNOWN_NICKNAME
-
-    private fun nicknamesOf(userIds: Collection<Long>): Map<Long, String> {
-        if (userIds.isEmpty()) return emptyMap()
-        return userRepository
-            .findAllById(userIds.toSet())
-            .associate { requireNotNull(it.id) to it.nickname }
-    }
+    private fun nicknameOf(userId: Long): String = authorsOf(listOf(userId))[userId]?.nickname ?: UNKNOWN_NICKNAME
 
     private fun authorsOf(userIds: Collection<Long>): Map<Long, User> {
         if (userIds.isEmpty()) return emptyMap()
