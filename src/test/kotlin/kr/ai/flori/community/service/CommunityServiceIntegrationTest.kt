@@ -11,6 +11,9 @@ import kr.ai.flori.community.dto.CommentCreateRequest
 import kr.ai.flori.community.dto.PostCreateRequest
 import kr.ai.flori.community.dto.PostUpdateRequest
 import kr.ai.flori.community.error.CommunityErrorCode
+import kr.ai.flori.community.repository.CommunityCommentRepository
+import kr.ai.flori.community.repository.CommunityLikeRepository
+import kr.ai.flori.community.repository.CommunityPostRepository
 import kr.ai.flori.support.TestAccounts
 import kr.ai.flori.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
@@ -36,8 +39,24 @@ class CommunityServiceIntegrationTest {
     @Autowired
     lateinit var userRepository: UserRepository
 
+    @Autowired
+    lateinit var postRepository: CommunityPostRepository
+
+    @Autowired
+    lateinit var commentRepository: CommunityCommentRepository
+
+    @Autowired
+    lateinit var likeRepository: CommunityLikeRepository
+
+    // 커뮤니티는 테넌트 전역 공유 테이블이라 테스트 간 데이터가 누적되면 목록/카운트 단언이 흔들린다.
+    // 매 테스트 후 커뮤니티 데이터를 비워 메서드 실행 순서에 무관하게 격리한다.
     @AfterEach
-    fun tearDown() = TenantContext.clear()
+    fun tearDown() {
+        TenantContext.clear()
+        likeRepository.deleteAll()
+        commentRepository.deleteAll()
+        postRepository.deleteAll()
+    }
 
     private fun newUser(): Long {
         val email = "community-${UUID.randomUUID()}@flori.dev"
@@ -104,6 +123,37 @@ class CommunityServiceIntegrationTest {
         makeAdmin(me)
         val notice = communityService.createPost(post(category = "notice", title = "공지사항"))
         assertThat(notice.category).isEqualTo("notice")
+    }
+
+    @Test
+    fun `운영자가 쓴 글·댓글은 authorIsAdmin이 true`() {
+        val admin = newUser()
+        makeAdmin(admin)
+        switchTo(admin)
+        val created = communityService.createPost(post())
+        assertThat(created.authorIsAdmin).isTrue()
+
+        val comment = communityService.createComment(created.id, CommentCreateRequest("운영자 댓글", null, false))
+        assertThat(comment.authorIsAdmin).isTrue()
+
+        // 다른 사용자가 조회해도 작성자 운영자 여부는 그대로 노출된다
+        val other = newUser()
+        switchTo(other)
+        assertThat(communityService.getPost(created.id).authorIsAdmin).isTrue()
+        assertThat(communityService.listComments(created.id).first { it.id == comment.id }.authorIsAdmin).isTrue()
+    }
+
+    @Test
+    fun `일반 점주가 쓴 글·댓글은 authorIsAdmin이 false`() {
+        val me = newUser()
+        switchTo(me)
+        val created = communityService.createPost(post())
+        assertThat(created.authorIsAdmin).isFalse()
+        assertThat(communityService.getPost(created.id).authorIsAdmin).isFalse()
+
+        val comment = communityService.createComment(created.id, CommentCreateRequest("일반 댓글", null, false))
+        assertThat(comment.authorIsAdmin).isFalse()
+        assertThat(communityService.listComments(created.id).first { it.id == comment.id }.authorIsAdmin).isFalse()
     }
 
     @Test
