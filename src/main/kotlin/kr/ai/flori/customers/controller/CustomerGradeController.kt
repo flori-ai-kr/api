@@ -33,7 +33,7 @@ class CustomerGradeController(
     @PatchMapping("/{id}")
     fun update(
         @PathVariable id: Long,
-        @RequestBody req: CustomerGradeUpdateRequest,
+        @Valid @RequestBody req: CustomerGradeUpdateRequest,
     ): CustomerGradeResponse = service.update(id, req)
 
     @DeleteMapping("/{id}")

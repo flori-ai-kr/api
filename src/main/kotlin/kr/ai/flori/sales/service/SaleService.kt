@@ -207,8 +207,11 @@ class SaleService(
         sale.customerId = resolveCustomerId(userId, request.customerId, request.customerName, request.customerPhone)
         sale.memo = request.memo
         val saved = saleRepository.save(sale)
-        // 구매횟수 증가 → 연결 고객 등급 자동 재계산(잠금 아니면).
-        saved.customerId?.let { customerService.recomputeGrade(it) }
+        // recomputeGrade 는 raw JDBC 로 sales 를 집계하므로, INSERT 를 DB 에 반영(flush)한 뒤 재계산해야 한다.
+        saved.customerId?.let {
+            saleRepository.flush()
+            customerService.recomputeGrade(it)
+        }
         return single(saved)
     }
 
@@ -239,8 +242,13 @@ class SaleService(
         applyUnpaidTransition(sale, request)
         val saved = saleRepository.save(sale)
         syncLinkedReservations(saved)
+        // recomputeGrade 는 raw JDBC 로 sales 를 집계하므로, UPDATE 를 DB 에 반영(flush)한 뒤 재계산해야 한다.
         // 고객 연결이 바뀌면 이전·신규 고객 모두 영향(구매횟수 이동) → 각각 1회씩 재계산(중복 제거).
-        setOfNotNull(oldCustomerId, saved.customerId).forEach { customerService.recomputeGrade(it) }
+        val affectedCustomers = setOfNotNull(oldCustomerId, saved.customerId)
+        if (affectedCustomers.isNotEmpty()) {
+            saleRepository.flush()
+            affectedCustomers.forEach { customerService.recomputeGrade(it) }
+        }
         return single(saved)
     }
 

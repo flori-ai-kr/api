@@ -9,6 +9,7 @@ import kr.ai.flori.customers.dto.CustomerGradeUpdateRequest
 import kr.ai.flori.customers.entity.CustomerGrade
 import kr.ai.flori.customers.repository.CustomerGradeRepository
 import kr.ai.flori.customers.repository.CustomerRepository
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -82,21 +83,28 @@ class CustomerGradeService(
     /** 등급이 하나도 없는 테넌트에 기본 등급 4종 생성(신규0/단골5/VIP10/블랙리스트 수동). */
     @Transactional
     fun ensureDefaults(userId: Long) {
+        // 빠른 경로: 이미 등급이 있으면 즉시 반환.
         if (gradeRepository.countByUserId(userId) > 0L) return
-        DEFAULT_GRADES.forEachIndexed { i, (n, t) ->
+        // 동시 첫 요청(레이스 컨디션)에서 두 번째 스레드가 UNIQUE(user_id, name) 제약을 위반할 수 있다.
+        // 해당 예외는 다른 스레드가 이미 시드를 완료했다는 의미이므로 조용히 무시한다.
+        try {
+            DEFAULT_GRADES.forEachIndexed { i, (n, t) ->
+                gradeRepository.save(
+                    CustomerGrade(userId, n).apply {
+                        threshold = t
+                        sortOrder = i + 1
+                    },
+                )
+            }
             gradeRepository.save(
-                CustomerGrade(userId, n).apply {
-                    threshold = t
-                    sortOrder = i + 1
+                CustomerGrade(userId, "블랙리스트").apply {
+                    threshold = null
+                    sortOrder = BLACKLIST_SORT_ORDER
                 },
             )
+        } catch (_: DataIntegrityViolationException) {
+            // 다른 스레드가 동시에 시드를 완료한 경우 — 무시하고 진행.
         }
-        gradeRepository.save(
-            CustomerGrade(userId, "블랙리스트").apply {
-                threshold = null
-                sortOrder = BLACKLIST_SORT_ORDER
-            },
-        )
     }
 
     companion object {
