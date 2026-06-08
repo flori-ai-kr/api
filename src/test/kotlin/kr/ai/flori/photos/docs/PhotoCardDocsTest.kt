@@ -48,6 +48,14 @@ class PhotoCardDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.NUMBER)
                 .optional()
                 .description("연결된 매출 ID (미연결이면 null)"),
+            fieldWithPath("customerId")
+                .type(JsonFieldType.NUMBER)
+                .optional()
+                .description("직접 연결된 고객 ID (미연결이면 null)"),
+            fieldWithPath("customerName")
+                .type(JsonFieldType.STRING)
+                .optional()
+                .description("연결된 고객 이름 (배지 표시용, 미연결/삭제 시 null)"),
             fieldWithPath("createdAt").type(JsonFieldType.STRING).description("생성 시각 (ISO-8601)"),
             fieldWithPath("updatedAt").type(JsonFieldType.STRING).description("최종 수정 시각 (ISO-8601)"),
         )
@@ -116,6 +124,14 @@ class PhotoCardDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("연결된 매출 ID"),
+                                fieldWithPath("cards[].customerId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("직접 연결된 고객 ID"),
+                                fieldWithPath("cards[].customerName")
+                                    .type(JsonFieldType.STRING)
+                                    .optional()
+                                    .description("연결된 고객 이름"),
                                 fieldWithPath("cards[].createdAt")
                                     .type(JsonFieldType.STRING)
                                     .description("생성 시각 (ISO-8601)"),
@@ -195,6 +211,10 @@ class PhotoCardDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("연결할 매출 ID (본인 소유 검증)"),
+                                fieldWithPath("customerId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("직접 연결할 고객 ID (본인 소유 검증)"),
                             ),
                         responseFields = photoCardResponseFields,
                     ),
@@ -372,6 +392,14 @@ class PhotoCardDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
                                     .description("연결 매출 ID 변경"),
+                                fieldWithPath("customerId")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("직접 연결 고객 ID 변경 (본인 소유 검증, null=미변경)"),
+                                fieldWithPath("clearCustomer")
+                                    .type(JsonFieldType.BOOLEAN)
+                                    .optional()
+                                    .description("true이면 고객 연결 해제 (customerId 무시)"),
                             ),
                         responseFields = photoCardResponseFields,
                     ),

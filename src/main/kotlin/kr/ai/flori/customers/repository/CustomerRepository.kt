@@ -28,6 +28,11 @@ interface CustomerRepository : JpaRepository<Customer, Long> {
 
     fun findByUserIdOrderByCreatedAtDesc(userId: Long): List<Customer>
 
+    fun findByUserIdAndIdIn(
+        userId: Long,
+        ids: Collection<Long>,
+    ): List<Customer>
+
     fun findByUserIdAndPhone(
         userId: Long,
         phone: String,

@@ -24,16 +24,16 @@ interface PhotoCardRepository : JpaRepository<PhotoCard, Long> {
     ): List<PhotoCard>
 
     /**
-     * 커서 페이지네이션(updated_at desc) + 선택 필터(tag 포함, 고객별 sales 조인).
+     * 커서 페이지네이션(updated_at desc) + 선택 필터(tag 포함, 고객 직접 연결 customer_id).
      * NULL 파라미터는 CAST...IS NULL 로 필터 미적용 처리.
      */
     @Query(
         value =
-            "SELECT pc.* FROM photo_cards pc LEFT JOIN sales s ON pc.sale_id = s.id " +
+            "SELECT pc.* FROM photo_cards pc " +
                 "WHERE pc.user_id = :userId " +
                 "AND (CAST(:cursor AS timestamptz) IS NULL OR pc.updated_at < CAST(:cursor AS timestamptz)) " +
                 "AND (CAST(:tag AS text) IS NULL OR :tag = ANY(pc.tags)) " +
-                "AND (CAST(:customerId AS bigint) IS NULL OR s.customer_id = CAST(:customerId AS bigint)) " +
+                "AND (CAST(:customerId AS bigint) IS NULL OR pc.customer_id = CAST(:customerId AS bigint)) " +
                 "ORDER BY pc.updated_at DESC LIMIT :limit",
         nativeQuery = true,
     )
@@ -62,5 +62,16 @@ interface PhotoCardRepository : JpaRepository<PhotoCard, Long> {
     fun clearSaleReference(
         @Param("userId") userId: Long,
         @Param("saleId") saleId: Long,
+    ): Int
+
+    /** 고객 삭제 시 해당 고객에 연결된 사진 카드의 customer_id를 NULL로(카드 자체는 보존). */
+    @Modifying
+    @Query(
+        value = "UPDATE photo_cards SET customer_id = NULL WHERE user_id = :userId AND customer_id = :customerId",
+        nativeQuery = true,
+    )
+    fun clearCustomerReference(
+        @Param("userId") userId: Long,
+        @Param("customerId") customerId: Long,
     ): Int
 }

@@ -47,4 +47,7 @@ class PhotoCard(
 
     @Column(name = "sale_id")
     var saleId: Long? = null
+
+    @Column(name = "customer_id")
+    var customerId: Long? = null
 }

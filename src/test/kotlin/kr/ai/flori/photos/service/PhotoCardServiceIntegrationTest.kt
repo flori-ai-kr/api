@@ -41,6 +41,9 @@ class PhotoCardServiceIntegrationTest {
     lateinit var saleRepository: kr.ai.flori.sales.repository.SaleRepository
 
     @Autowired
+    lateinit var customerRepository: kr.ai.flori.customers.repository.CustomerRepository
+
+    @Autowired
     lateinit var authService: AuthService
 
     @Autowired
@@ -68,7 +71,7 @@ class PhotoCardServiceIntegrationTest {
                 cloudfront = StorageProperties.CloudFront("cdn.flori.dev"),
             ),
         )
-    private val signingService by lazy { PhotoCardService(photoCardRepository, presignService, saleRepository) }
+    private val signingService by lazy { PhotoCardService(photoCardRepository, presignService, saleRepository, customerRepository) }
 
     @AfterEach
     fun tearDown() = TenantContext.clear()

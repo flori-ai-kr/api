@@ -11,6 +11,7 @@ import kr.ai.flori.customers.dto.CustomerUpdateRequest
 import kr.ai.flori.customers.entity.Customer
 import kr.ai.flori.customers.repository.CustomerGradeRepository
 import kr.ai.flori.customers.repository.CustomerRepository
+import kr.ai.flori.photos.repository.PhotoCardRepository
 import kr.ai.flori.sales.dto.SaleResponse
 import kr.ai.flori.sales.dto.SalesPageResponse
 import kr.ai.flori.sales.repository.SaleRepository
@@ -34,6 +35,7 @@ class CustomerService(
     private val gradeRepository: CustomerGradeRepository,
     private val gradeService: CustomerGradeService,
     private val saleRepository: SaleRepository,
+    private val photoCardRepository: PhotoCardRepository,
     private val labelReader: LabelSettingReader,
     private val jdbcTemplate: JdbcTemplate,
 ) {
@@ -214,6 +216,8 @@ class CustomerService(
         val customer = load(id)
         // FK 미사용: 이 고객을 참조하던 매출의 customer_id를 직접 NULL 처리(매출 기록은 보존).
         saleRepository.clearCustomerReference(customer.userId, id)
+        // 사진 카드의 customer_id도 동일하게 NULL 처리(카드는 보존).
+        photoCardRepository.clearCustomerReference(customer.userId, id)
         customerRepository.delete(customer)
     }
 
