@@ -311,6 +311,7 @@ CREATE TABLE photo_cards (
   tags TEXT[] DEFAULT '{}',
   photos JSONB DEFAULT '[]',
   sale_id BIGINT,
+  customer_id BIGINT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -319,6 +320,7 @@ CREATE INDEX idx_photo_cards_tags ON photo_cards USING GIN(tags);
 CREATE INDEX idx_photo_cards_sale_id ON photo_cards(sale_id);
 CREATE INDEX idx_photo_cards_created_at ON photo_cards(created_at DESC);
 CREATE INDEX idx_photo_cards_user_id ON photo_cards(user_id);
+CREATE INDEX idx_photo_cards_user_customer ON photo_cards(user_id, customer_id);
 
 CREATE TRIGGER update_photo_cards_updated_at
   BEFORE UPDATE ON photo_cards FOR EACH ROW EXECUTE FUNCTION update_updated_at();
