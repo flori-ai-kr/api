@@ -521,7 +521,7 @@ erDiagram
 | 사진첩 | `GET/POST/PATCH/DELETE /photo-cards`, `POST /photo-cards/upload-targets`(신규 카드용), `POST /photo-cards/{id}/upload-targets`, `GET /photo-cards/{id}/photos/download`, `/photos/reorder`, `/photo-tags` | Auth |
 | 커뮤니티 | `GET/POST /community/posts`, `GET/PATCH/DELETE /community/posts/{id}`, `POST /community/posts/{id}/like`, `GET/POST /community/posts/{id}/comments`, `DELETE /community/comments/{id}`, `POST /community/upload-targets` | Auth + **사업자 인증** |
 | 사업자 인증 | `POST /verification/business/upload-target`, `POST /verification/business`, `GET /verification/business/me` | Auth |
-| 설정 | `/settings/{sale-categories,payment-methods,expense-*,preferences}`, `/push/{subscribe,unsubscribe,status,test}` | Auth |
+| 설정 | `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}`(CRUD), `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}/order`(순서 변경 `PUT`), `/settings/preferences`, `/push/{subscribe,unsubscribe,status,test}` | Auth |
 | 대시보드 | `GET /dashboard/today`·`/dashboard/month` | Auth |
 
 전체 계약은 `/swagger-ui.html`에서 확인한다(RestDocs 테스트가 생성한 스펙 + JWT bearerAuth 병합 → `/v3/api-docs`) — **flori-ai/mobile이 읽는 계약의 출처**.
