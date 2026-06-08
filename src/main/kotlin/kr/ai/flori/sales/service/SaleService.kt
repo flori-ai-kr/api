@@ -206,7 +206,10 @@ class SaleService(
         sale.customerPhone = request.customerPhone
         sale.customerId = resolveCustomerId(userId, request.customerId, request.customerName, request.customerPhone)
         sale.memo = request.memo
-        return single(saleRepository.save(sale))
+        val saved = saleRepository.save(sale)
+        // 구매횟수 증가 → 연결 고객 등급 자동 재계산(잠금 아니면).
+        saved.customerId?.let { customerService.recomputeGrade(it) }
+        return single(saved)
     }
 
     @Transactional
@@ -216,6 +219,7 @@ class SaleService(
     ): SaleResponse {
         val userId = TenantContext.currentUserId()
         val sale = load(id)
+        val oldCustomerId = sale.customerId
         request.date?.let { sale.date = it }
         request.amount?.let { sale.amount = it }
         request.categoryId?.let { sale.categoryId = labelReader.requireOwned(it, LabelDomains.SALE, LabelKinds.CATEGORY) }
@@ -235,6 +239,8 @@ class SaleService(
         applyUnpaidTransition(sale, request)
         val saved = saleRepository.save(sale)
         syncLinkedReservations(saved)
+        // 고객 연결이 바뀌면 이전·신규 고객 모두 영향(구매횟수 이동) → 각각 1회씩 재계산(중복 제거).
+        setOfNotNull(oldCustomerId, saved.customerId).forEach { customerService.recomputeGrade(it) }
         return single(saved)
     }
 
@@ -298,10 +304,17 @@ class SaleService(
     @Transactional
     fun delete(id: Long) {
         val sale = load(id)
+        val customerId = sale.customerId // 삭제 전 캡처(삭제 후엔 참조 불가).
         // FK 미사용: 이 매출을 참조하던 예약·사진 카드의 sale_id를 직접 NULL 처리(둘 다 보존).
         reservationRepository.clearSaleReference(sale.userId, id)
         photoCardRepository.clearSaleReference(sale.userId, id)
+        // recomputeGrade 는 raw JDBC 로 sales 를 집계하므로, 삭제를 DB에 반영(flush)한 뒤 재계산해야 한다.
         saleRepository.delete(sale)
+        // 구매횟수 감소 → 연결 고객 등급 자동 재계산(잠금 아니면 강등 가능).
+        customerId?.let {
+            saleRepository.flush()
+            customerService.recomputeGrade(it)
+        }
     }
 
     /** 단건 응답 — 현재 테넌트의 카테고리/결제수단/채널 라벨을 해석해 채운다. */
