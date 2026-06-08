@@ -71,10 +71,13 @@ class ProfileService(
 
         // soft delete — 계정 비활성화
         user.isActive = false
-        // 탈퇴 시 고유 제약(email/nickname) 해제: 임의 값으로 덮어쓰기
+        // 탈퇴 시 고유 제약(email/nickname/소셜 신원) 해제: 임의 값으로 덮어쓰기.
+        // provider_id까지 스크럽해야 같은 소셜 계정으로 깨끗하게 재가입(신규 신원)할 수 있다
+        // (안 풀면 (provider, provider_id) UNIQUE가 죽은 행에 묶여 영구 차단됨).
         val suffix = UUID.randomUUID().toString().take(SUFFIX_LENGTH)
         user.email = "withdrawn_${userId}_$suffix@deleted"
         user.nickname = "탈퇴회원_${userId}_$suffix"
+        user.providerId = "withdrawn_${userId}_$suffix"
         userRepository.save(user)
 
         // 프로필 삭제
