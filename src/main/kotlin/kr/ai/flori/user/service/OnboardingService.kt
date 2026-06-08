@@ -68,6 +68,7 @@ class OnboardingService(
                     UserProfile(
                         userId = userId,
                         storeName = request.name,
+                        phoneNumber = "",
                         regionSido = request.regionSido,
                     )
                 }

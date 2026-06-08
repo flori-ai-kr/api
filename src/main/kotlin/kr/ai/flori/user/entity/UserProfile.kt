@@ -24,6 +24,8 @@ class UserProfile(
     var userId: Long,
     @Column(name = "store_name", nullable = false)
     var storeName: String,
+    @Column(name = "phone_number", nullable = false)
+    var phoneNumber: String,
     @Column(name = "region_sido", nullable = false)
     var regionSido: String,
 ) : BaseEntity() {

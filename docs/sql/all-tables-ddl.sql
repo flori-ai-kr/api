@@ -60,6 +60,7 @@ CREATE TRIGGER update_users_updated_at
 CREATE TABLE user_profiles (
   user_id BIGINT PRIMARY KEY,
   store_name TEXT NOT NULL,
+  phone_number TEXT NOT NULL,
   profile_image_url TEXT,
   region_sido TEXT NOT NULL,
   region_sigungu TEXT,

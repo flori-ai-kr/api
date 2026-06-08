@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 import kr.ai.flori.common.validation.FieldLimits
 
@@ -128,6 +129,10 @@ data class RegisterCompleteRequest(
     @field:Size(max = FieldLimits.STORE_NAME, message = "가게명이 너무 깁니다")
     @field:Schema(description = "가게명", example = "헤이즐 플라워")
     val storeName: String,
+    @field:NotBlank(message = "전화번호는 필수입니다")
+    @field:Pattern(regexp = "^01\\d{8,9}$", message = "전화번호 형식이 올바르지 않습니다")
+    @field:Schema(description = "휴대폰 번호(숫자만, 하이픈 없음)", example = "01012345678")
+    val phoneNumber: String,
     @field:NotBlank(message = "닉네임은 필수입니다")
     @field:Size(max = FieldLimits.NAME, message = "닉네임이 너무 깁니다")
     @field:Schema(description = "계정 표시명(기본값=소셜 닉네임, 수정 가능)", example = "헤이즐")
