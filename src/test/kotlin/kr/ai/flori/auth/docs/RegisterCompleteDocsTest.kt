@@ -32,6 +32,7 @@ class RegisterCompleteDocsTest : RestDocsSupport() {
                         mapOf(
                             "registerToken" to registerToken,
                             "storeName" to "헤이즐 플라워",
+                            "phoneNumber" to "01012345678",
                             "nickname" to "헤이즐",
                             "email" to email,
                             "regionSido" to "서울특별시",
@@ -54,6 +55,7 @@ class RegisterCompleteDocsTest : RestDocsSupport() {
                             listOf(
                                 fieldWithPath("registerToken").type(JsonFieldType.STRING).description("소셜 로그인이 반환한 registerToken(5분 TTL)"),
                                 fieldWithPath("storeName").type(JsonFieldType.STRING).description("가게명(필수)"),
+                                fieldWithPath("phoneNumber").type(JsonFieldType.STRING).description("휴대폰 번호(숫자만, 하이픈 없음)"),
                                 fieldWithPath("nickname").type(JsonFieldType.STRING).description("계정 표시명(기본값=소셜 닉네임, 필수)"),
                                 fieldWithPath("email").type(JsonFieldType.STRING).description("로그인 이메일(기본값=소셜 이메일, 필수)"),
                                 fieldWithPath("regionSido").type(JsonFieldType.STRING).description("시/도(필수, 웹 enum 값)"),
