@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional
  * 구매 통계는 sales에서 실시간 집계(네이티브 SQL, SSOT).
  */
 @Service
+@Suppress("TooManyFunctions")
 class CustomerService(
     private val customerRepository: CustomerRepository,
     private val gradeRepository: CustomerGradeRepository,

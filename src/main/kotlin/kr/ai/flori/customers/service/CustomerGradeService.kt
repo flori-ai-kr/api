@@ -83,9 +83,27 @@ class CustomerGradeService(
     @Transactional
     fun ensureDefaults(userId: Long) {
         if (gradeRepository.countByUserId(userId) > 0L) return
-        listOf("신규" to 0, "단골" to 5, "VIP" to 10).forEachIndexed { i, (n, t) ->
-            gradeRepository.save(CustomerGrade(userId, n).apply { threshold = t; sortOrder = i + 1 })
+        DEFAULT_GRADES.forEachIndexed { i, (n, t) ->
+            gradeRepository.save(
+                CustomerGrade(userId, n).apply {
+                    threshold = t
+                    sortOrder = i + 1
+                },
+            )
         }
-        gradeRepository.save(CustomerGrade(userId, "블랙리스트").apply { threshold = null; sortOrder = 4 })
+        gradeRepository.save(
+            CustomerGrade(userId, "블랙리스트").apply {
+                threshold = null
+                sortOrder = BLACKLIST_SORT_ORDER
+            },
+        )
+    }
+
+    companion object {
+        /** 가입 시 자동 생성되는 기본 등급(등급명 to 자동 승급 임계 구매횟수). */
+        private val DEFAULT_GRADES = listOf("신규" to 0, "단골" to 5, "VIP" to 10)
+
+        /** 블랙리스트(수동 전용)의 정렬 순서 — DEFAULT_GRADES 뒤. */
+        private const val BLACKLIST_SORT_ORDER = 4
     }
 }

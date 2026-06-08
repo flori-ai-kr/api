@@ -24,6 +24,7 @@ import java.util.UUID
  * presigned 업로드는 소유권/장수/이미지 메타 검증 후 발급. 모든 쿼리 TenantContext 격리(HARD).
  */
 @Service
+@Suppress("TooManyFunctions")
 class PhotoCardService(
     private val photoCardRepository: PhotoCardRepository,
     private val s3PresignService: S3PresignService,

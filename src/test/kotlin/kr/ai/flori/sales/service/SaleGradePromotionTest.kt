@@ -127,9 +127,9 @@ class SaleGradePromotionTest {
     fun `등급 잠금 고객은 매출이 많아도 자동 재계산으로 바뀌지 않는다`() {
         val userId = newTenant()
         val c = create()
-        val 신규Id = requireNotNull(gradeRepository.findByUserIdOrderBySortOrderAsc(userId).first { it.name == "신규" }.id)
+        val newGradeId = requireNotNull(gradeRepository.findByUserIdOrderBySortOrderAsc(userId).first { it.name == "신규" }.id)
 
-        customerService.updateGrade(c.id, 신규Id) // 수동 고정 → 잠금
+        customerService.updateGrade(c.id, newGradeId) // 수동 고정 → 잠금
 
         repeat(12) { addSale(c.id) }
 

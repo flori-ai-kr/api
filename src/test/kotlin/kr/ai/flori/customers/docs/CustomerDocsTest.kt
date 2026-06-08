@@ -567,7 +567,11 @@ class CustomerDocsTest : RestDocsSupport() {
                 .get("/customer-grades") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") }
                 .andReturn()
                 .response.contentAsString
-        return objectMapper.readTree(res).last().get("id").asLong()
+        return objectMapper
+            .readTree(res)
+            .last()
+            .get("id")
+            .asLong()
     }
 
     @Test

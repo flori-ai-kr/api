@@ -142,10 +142,10 @@ class CustomerGradeRecomputeTest {
     fun `잠금 상태면 높은 구매횟수에도 자동 재계산이 등급을 바꾸지 않는다`() {
         val userId = newTenant()
         val c = create()
-        val 신규Id = requireNotNull(gradeRepository.findByUserIdOrderBySortOrderAsc(userId).first { it.name == "신규" }.id)
+        val newGradeId = requireNotNull(gradeRepository.findByUserIdOrderBySortOrderAsc(userId).first { it.name == "신규" }.id)
 
         // 수동으로 신규 고정
-        customerService.updateGrade(c.id, 신규Id)
+        customerService.updateGrade(c.id, newGradeId)
         addSales(c.id, 12)
         customerService.recomputeGrade(c.id)
 
@@ -172,10 +172,10 @@ class CustomerGradeRecomputeTest {
         val userId = newTenant()
         val c = create()
         addSales(c.id, 5) // 단골 자격
-        val 신규Id = requireNotNull(gradeRepository.findByUserIdOrderBySortOrderAsc(userId).first { it.name == "신규" }.id)
+        val newGradeId = requireNotNull(gradeRepository.findByUserIdOrderBySortOrderAsc(userId).first { it.name == "신규" }.id)
 
         // 잘못/임의 수동 지정으로 신규 고정
-        customerService.updateGrade(c.id, 신규Id)
+        customerService.updateGrade(c.id, newGradeId)
         assertThat(customerService.get(c.id).grade).isEqualTo("신규")
 
         val reverted = customerService.revertGradeToAuto(c.id)
