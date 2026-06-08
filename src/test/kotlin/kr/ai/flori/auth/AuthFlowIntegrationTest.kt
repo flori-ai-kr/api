@@ -149,6 +149,32 @@ class AuthFlowIntegrationTest {
     }
 
     @Test
+    fun `신규 사용자 me는 tourCompleted=false를 기본으로 준다`() {
+        val (access, _) = completeRegister(kakaoRegisterToken())
+
+        mockMvc
+            .get("/me") { header(HttpHeaders.AUTHORIZATION, "Bearer $access") }
+            .andExpect { status { isOk() } }
+            .andExpect { jsonPath("$.profile.tourCompleted") { value(false) } }
+    }
+
+    @Test
+    fun `tour complete 호출 후 me는 tourCompleted=true를 준다`() {
+        val (access, _) = completeRegister(kakaoRegisterToken())
+
+        // 완료 처리 → 204
+        mockMvc
+            .post("/me/tour/complete") { header(HttpHeaders.AUTHORIZATION, "Bearer $access") }
+            .andExpect { status { isNoContent() } }
+
+        // 이후 /me는 완료 플래그를 반영
+        mockMvc
+            .get("/me") { header(HttpHeaders.AUTHORIZATION, "Bearer $access") }
+            .andExpect { status { isOk() } }
+            .andExpect { jsonPath("$.profile.tourCompleted") { value(true) } }
+    }
+
+    @Test
     fun `신규 소셜 로그인은 registered=false와 registerToken을 준다`() {
         mockMvc
             .post("/auth/oauth/kakao") {

@@ -53,6 +53,12 @@ class UserController(
         @Valid @RequestBody request: ProfileUploadTargetRequest,
     ): ProfileUploadTargetResponse = profileService.createUploadTarget(TenantContext.currentUserId(), request.contentType)
 
+    @PostMapping("/me/tour/complete")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun completeTour() {
+        profileService.completeTour(TenantContext.currentUserId())
+    }
+
     @DeleteMapping("/me")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteAccount(

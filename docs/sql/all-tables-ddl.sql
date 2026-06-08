@@ -62,6 +62,7 @@ CREATE TABLE user_profiles (
   store_name TEXT NOT NULL,
   phone_number TEXT NOT NULL,
   profile_image_url TEXT,
+  tour_completed BOOLEAN NOT NULL DEFAULT FALSE,
   region_sido TEXT NOT NULL,
   region_sigungu TEXT,
   owner_age_range TEXT,

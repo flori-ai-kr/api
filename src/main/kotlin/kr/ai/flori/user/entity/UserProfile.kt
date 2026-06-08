@@ -32,6 +32,9 @@ class UserProfile(
     @Column(name = "profile_image_url")
     var profileImageUrl: String? = null
 
+    @Column(name = "tour_completed", nullable = false)
+    var tourCompleted: Boolean = false
+
     @Column(name = "region_sigungu")
     var regionSigungu: String? = null
 

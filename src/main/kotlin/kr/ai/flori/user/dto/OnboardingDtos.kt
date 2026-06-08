@@ -69,6 +69,8 @@ data class ProfileResponse(
     val specialties: List<String>,
     @field:Schema(description = "프로필 이미지 URL(미설정 시 null)")
     val profileImageUrl: String? = null,
+    @field:Schema(description = "인앱 투어 완료 여부")
+    val tourCompleted: Boolean,
 )
 
 /** GET /me/profile 전용 응답. 프로필 편집 화면에서 사용한다. */
