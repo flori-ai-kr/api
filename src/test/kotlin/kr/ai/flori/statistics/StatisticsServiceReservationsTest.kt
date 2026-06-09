@@ -7,6 +7,7 @@ import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.common.tenant.TenantContext
+import kr.ai.flori.pinDefaultTimeZoneToUtc
 import kr.ai.flori.reservations.dto.ReservationCreateRequest
 import kr.ai.flori.reservations.service.ReservationService
 import kr.ai.flori.statistics.service.StatisticsService
@@ -14,12 +15,15 @@ import kr.ai.flori.support.TestAccounts
 import kr.ai.flori.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.TimeZone
 import java.util.UUID
 
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
@@ -39,6 +43,35 @@ class StatisticsServiceReservationsTest {
 
     @Autowired
     lateinit var userRepository: UserRepository
+
+    companion object {
+        private lateinit var originalZone: TimeZone
+
+        /**
+         * 프로덕션 JVM 시간대 패리티: main()과 동일하게 JVM 기본 시간대를 UTC로 고정한다.
+         * 클래스 로드 시점(Spring 컨텍스트/HikariCP/pgjdbc 초기화 이전)에 적용되어야 하므로
+         * @BeforeAll이 아닌 companion init 블록에서 고정한다 — @SpringBootTest는 컨텍스트가
+         * @BeforeAll보다 먼저 부팅될 수 있다. 이로써 LocalTime(15,30) 삽입이 DB에 15:30으로
+         * 그대로 들어가고(환산 없음), "time" 직접 버킷팅이 "15-17"을 산출한다.
+         */
+        init {
+            originalZone = TimeZone.getDefault()
+            pinDefaultTimeZoneToUtc()
+        }
+
+        @JvmStatic
+        @BeforeAll
+        fun pinZone() {
+            // 안전망: 다른 테스트가 기본 시간대를 바꿔놨더라도 본 클래스 실행 동안 UTC 보장.
+            pinDefaultTimeZoneToUtc()
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun restoreZone() {
+            TimeZone.setDefault(originalZone)
+        }
+    }
 
     @AfterEach
     fun tearDown() = TenantContext.clear()

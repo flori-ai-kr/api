@@ -198,7 +198,7 @@ class StatisticsService(
 
         val total = reservationTotal(userId, from, to)
         val prevTotal = reservationTotal(userId, pFrom, pTo)
-        val dailyAvg = Math.round(total.toDouble() / days * 10) / 10.0
+        val dailyAvg = (total.toDouble() / days * 10).roundToInt() / 10.0
 
         val dowDistribution = reservationDowDistribution(userId, from, to)
         val hourDistribution = reservationHourDistribution(userId, from, to)
@@ -215,7 +215,7 @@ class StatisticsService(
                 busiestDow = busiest?.dow ?: -1,
                 busiestDowPct = busiest?.let { percentage(it.count, total) } ?: 0,
                 peakHourBucket = peak?.hourBucket ?: "",
-                peakHourPct = peak?.let { percentage(it.count, total) } ?: 0,
+                peakHourPct = peak?.let { percentage(it.count, hourDistribution.sumOf { d -> d.count }) } ?: 0,
             )
 
         return ReservationStatisticsResponse(
@@ -434,24 +434,22 @@ class StatisticsService(
         /** 예약 시간대 버킷 표준 순서. 정렬·결정성 보장에 사용. */
         val HOUR_BUCKETS = listOf("09-11", "11-13", "13-15", "15-17", "17-19", "19+")
 
-        /** UTC 저장 time → KST 환산 식(랩어라운드). */
-        const val KST_TIME = "(\"time\" + INTERVAL '9 hours')"
-
         /**
          * time → 시간대 버킷 매핑 CASE(time NULL 행은 호출부 WHERE에서 제외).
-         * DB의 time은 UTC로 저장(hibernate.jdbc.time_zone=UTC)되므로 KST(+9h)로 환산한 뒤 버킷팅한다.
-         * Postgres의 time + interval는 24시간 모듈로 랩어라운드한다(예: 06:30 UTC + 9h = 15:30 KST).
+         * time은 KST 리터럴 그대로 저장된다: JVM 기본 시간대가 시작 시 UTC로 고정(pinDefaultTimeZoneToUtc)되어
+         * `hibernate.jdbc.time_zone=UTC`와 오프셋 차가 0이 되므로, LocalTime(15,30)은 DB에 15:30으로 그대로
+         * 들어간다(시간대 환산 없음). 따라서 환산 없이 저장된 "time"에 직접 버킷팅한다.
          * 컬럼명 time은 예약어라 따옴표로 구분.
          */
         val HOUR_BUCKET_SQL =
             """
             CASE
-              WHEN EXTRACT(HOUR FROM $KST_TIME) >= 9 AND EXTRACT(HOUR FROM $KST_TIME) < 11 THEN '09-11'
-              WHEN EXTRACT(HOUR FROM $KST_TIME) >= 11 AND EXTRACT(HOUR FROM $KST_TIME) < 13 THEN '11-13'
-              WHEN EXTRACT(HOUR FROM $KST_TIME) >= 13 AND EXTRACT(HOUR FROM $KST_TIME) < 15 THEN '13-15'
-              WHEN EXTRACT(HOUR FROM $KST_TIME) >= 15 AND EXTRACT(HOUR FROM $KST_TIME) < 17 THEN '15-17'
-              WHEN EXTRACT(HOUR FROM $KST_TIME) >= 17 AND EXTRACT(HOUR FROM $KST_TIME) < 19 THEN '17-19'
-              WHEN EXTRACT(HOUR FROM $KST_TIME) >= 19 THEN '19+'
+              WHEN EXTRACT(HOUR FROM "time") >= 9 AND EXTRACT(HOUR FROM "time") < 11 THEN '09-11'
+              WHEN EXTRACT(HOUR FROM "time") >= 11 AND EXTRACT(HOUR FROM "time") < 13 THEN '11-13'
+              WHEN EXTRACT(HOUR FROM "time") >= 13 AND EXTRACT(HOUR FROM "time") < 15 THEN '13-15'
+              WHEN EXTRACT(HOUR FROM "time") >= 15 AND EXTRACT(HOUR FROM "time") < 17 THEN '15-17'
+              WHEN EXTRACT(HOUR FROM "time") >= 17 AND EXTRACT(HOUR FROM "time") < 19 THEN '17-19'
+              WHEN EXTRACT(HOUR FROM "time") >= 19 THEN '19+'
             END
             """.trimIndent()
     }
