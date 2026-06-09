@@ -58,3 +58,44 @@ data class ExpensesStatisticsResponse(
     val timeseries: List<ExpensesTimePoint>,
     val categoryDistribution: List<DistributionItem>,
 )
+
+data class ReservationKpi(
+    val total: Long,
+    val totalDeltaPct: Int,
+    val dailyAvg: Double,
+    // 0=일요일..6=토요일, 데이터 없으면 -1
+    val busiestDow: Int,
+    val busiestDowPct: Int,
+    // "15-17" 형식, 데이터 없으면 ""
+    val peakHourBucket: String,
+    val peakHourPct: Int,
+)
+
+data class ReservationTimePoint(
+    val date: LocalDate,
+    val count: Long,
+)
+
+data class HeatCell(
+    val dow: Int,
+    val hourBucket: String,
+    val count: Long,
+)
+
+data class DowCount(
+    val dow: Int,
+    val count: Long,
+)
+
+data class HourCount(
+    val hourBucket: String,
+    val count: Long,
+)
+
+data class ReservationStatisticsResponse(
+    val kpi: ReservationKpi,
+    val timeseries: List<ReservationTimePoint>,
+    val heatmap: List<HeatCell>,
+    val dowDistribution: List<DowCount>,
+    val hourDistribution: List<HourCount>,
+)

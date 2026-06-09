@@ -1,6 +1,7 @@
 package kr.ai.flori.statistics.controller
 
 import kr.ai.flori.statistics.dto.ExpensesStatisticsResponse
+import kr.ai.flori.statistics.dto.ReservationStatisticsResponse
 import kr.ai.flori.statistics.dto.SalesStatisticsResponse
 import kr.ai.flori.statistics.service.StatisticsService
 import org.springframework.format.annotation.DateTimeFormat
@@ -26,4 +27,10 @@ class StatisticsController(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) from: LocalDate,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) to: LocalDate,
     ): ExpensesStatisticsResponse = service.expensesStatistics(from, to)
+
+    @GetMapping("/reservations")
+    fun reservations(
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) from: LocalDate,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) to: LocalDate,
+    ): ReservationStatisticsResponse = service.reservationStatistics(from, to)
 }
