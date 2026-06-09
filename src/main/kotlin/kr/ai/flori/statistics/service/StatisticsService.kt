@@ -420,7 +420,8 @@ class StatisticsService(
     /** 등급별 고객 분포(전체 고객, 기간 무관). */
     private fun gradeDistribution(userId: Long): List<GradeCount> =
         jdbcTemplate.query(
-            "SELECT grade, COUNT(*) AS cnt FROM customers WHERE user_id = ?::bigint GROUP BY grade ORDER BY cnt DESC",
+            "SELECT COALESCE(grade, 'new') AS grade, COUNT(*) AS cnt " +
+                "FROM customers WHERE user_id = ?::bigint GROUP BY COALESCE(grade, 'new') ORDER BY cnt DESC",
             { rs, _ -> GradeCount(rs.getString("grade"), rs.getLong("cnt")) },
             userId,
         )
@@ -455,6 +456,7 @@ class StatisticsService(
             FROM sales s
             LEFT JOIN customers c ON c.id = s.customer_id AND c.user_id = s.user_id
             WHERE s.user_id = ?::bigint AND s.date BETWEEN ? AND ? AND s.payment_method_id IS NOT NULL
+              AND (s.customer_id IS NOT NULL OR s.customer_phone IS NOT NULL)
             GROUP BY COALESCE(s.customer_id::text, s.customer_phone), c.id, c.name, c.phone, c.grade, s.customer_phone
             ORDER BY amount DESC
             LIMIT ?
@@ -464,7 +466,7 @@ class StatisticsService(
                     customerId = rs.getLong("cid").takeUnless { rs.wasNull() },
                     name = rs.getString("name") ?: "",
                     phone = rs.getString("phone") ?: "",
-                    grade = rs.getString("grade"),
+                    grade = rs.getString("grade") ?: DEFAULT_GRADE,
                     purchaseCount = rs.getLong("cnt"),
                     totalAmount = rs.getLong("amount"),
                 )

@@ -143,6 +143,12 @@ class StatisticsServiceCustomersTest {
         assertThat(result.kpi.returningCustomers).isEqualTo(1)
         assertThat(result.kpi.returningRatePct).isEqualTo(50)
 
+        // 증감(delta): 직전 동일 길이 기간(30일: 5/2~5/31)과 비교.
+        // 직전 기간엔 재방문고객의 5/20 구매만 존재 → prev total 1, prev new 1(그 이전 선구매 없음), prev returning 0.
+        // 따라서 newDelta = 현재 신규(1) - 직전 신규(1) = 0, returningDelta = 현재 재방문(1) - 직전 재방문(0) = 1.
+        assertThat(result.kpi.newDelta).isEqualTo(0)
+        assertThat(result.kpi.returningDelta).isEqualTo(1)
+
         // 시계열: 신규 고객의 최초 구매일(6/1)에만 newCustomers=1 (재방문 고객의 6/2 구매는 신규 아님)
         assertThat(result.timeseries.first { it.date == LocalDate.of(2026, 6, 1) }.newCustomers).isEqualTo(1)
         assertThat(result.timeseries.none { it.date == LocalDate.of(2026, 6, 2) && it.newCustomers > 0 }).isTrue()
