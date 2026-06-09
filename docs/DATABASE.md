@@ -481,6 +481,24 @@ FCM(모바일)과 Web Push/VAPID(브라우저 PWA) 구독을 함께 관리. `Pus
 
 ---
 
+## 12. 사전등록 (waitlist)
+
+### `waitlist_registrations` — 사전등록
+
+출시 전 선착순 100명 공개 모집 테이블. **인증/테넌시와 무관한 유일한 비-테넌트 비즈니스 테이블** — `user_id` 없음, 로그인 불필요, RLS 적용 안 됨. 전화번호는 숫자만 정규화하여 UNIQUE로 저장해 중복 등록을 막는다.
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|------|------|------|------|
+| `id` | BIGINT | PK, IDENTITY | |
+| `shop_name` | VARCHAR(50) | NOT NULL | 가게명 |
+| `phone` | VARCHAR(20) | NOT NULL, UNIQUE | 전화번호(숫자 정규화 저장 — 하이픈 제거) |
+| `created_at` | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+
+- **테넌트 격리 예외**: 이 테이블만 `user_id`가 없다. 사전등록은 가입 전 공개 모집이므로 의도된 설계. `TenantIsolationGuardTest` 화이트리스트에 명시됨.
+- **마감 로직**: `WaitlistService`가 `count() >= 100` 시 `E-WL-002(CLOSED)` 반환. DB 제약이 아닌 서비스 레이어에서 관리.
+
+---
+
 ## 부록: 공통 규칙
 
 - **`update_updated_at()` 트리거 함수**: `updated_at` 컬럼이 있는 거의 모든 테이블에 BEFORE UPDATE 트리거로 부착. 예외: `notification_log`/`recurring_skips`(updated_at 없음).

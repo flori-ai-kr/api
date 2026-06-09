@@ -24,6 +24,9 @@ style:
   ReturnCount:
     active: true
     max: 3
+  # 낙관적 저장(중복 race condition 대비) 패턴 — CLOSED·DUPLICATE·RACE 3개 throw 허용
+  ThrowsCount:
+    max: 3
   # 라인 길이는 ktlint(포매터)가 관장 — detekt에서는 중복 검사 비활성
   MaxLineLength:
     active: false

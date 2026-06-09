@@ -92,3 +92,12 @@
 | `E-VRF-002` | ALREADY_REQUESTED (중복 신청) | 409 | 이미 `PENDING`/`APPROVED` 인증이 있는데 재신청 |
 | `E-VRF-003` | LICENSE_NOT_OWNED (등록증 소유권) | 403 | 등록증 URL 키가 본인 prefix(`business-licenses/{userId}/`)가 아님 |
 | `E-VRF-004` | INVALID_LICENSE_TYPE (파일 형식) | 400 | presign 시 허용되지 않은 contentType(jpeg·png·webp·pdf 외) |
+
+## E-WL-* (사전등록)
+
+> `waitlist/error/WaitlistErrorCode`. 출시 전 선착순 100명 공개 모집. 인증 불필요.
+
+| 코드 | 의미 | HTTP | 발생 지점 |
+|------|------|------|-----------|
+| `E-WL-001` | ALREADY_REGISTERED (중복 등록) | 409 | 이미 등록된 전화번호(정규화 후 UNIQUE 비교)로 재등록 시도 |
+| `E-WL-002` | CLOSED (모집 마감) | 409 | 등록 시도 시점에 등록 수가 정원(100명) 이상 |
