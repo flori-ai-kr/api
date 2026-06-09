@@ -1,6 +1,6 @@
 # Flori API — 아키텍처 & 기술 선정 이유
 
-> 최종 업데이트: 2026-06-08
+> 최종 업데이트: 2026-06-10
 
 이 문서는 Flori(꽃집 어드민) **모바일 앱 백엔드 API**의 기술 스택과 아키텍처를 설명한다. 단순히 "무엇을 쓰는가"가 아니라 **"왜 이것을 골랐는가"**에 초점을 맞춘다. 모든 선택에는 *기존 Next.js+Supabase 웹앱의 비즈니스 로직을 네이티브 앱이 호출 가능한 REST API로 재구현하고, 자체 AWS 인프라 위에 올린다*는 도메인 맥락이 반영되어 있다.
 
@@ -111,6 +111,7 @@ flowchart LR
 | `verification` | 사업자 인증 신청·상태 조회(PENDING/APPROVED/REJECTED/NONE)·presigned 업로드·게이팅(`@RequiresBusinessVerified`) |
 | `settings` | 매출/지출 설정·하단바·사용자 설정·푸시 구독·**테스트 발송** |
 | `dashboard` | 오늘/월 집계·**네이티브 SQL 통계** |
+| `statistics` | 기간별 통계 KPI + 일별 시계열 + 분포 — 매출·지출·예약·고객 4도메인. `StatisticsSupport`(공용 비율·증감·직전 기간 계산), `StatisticsService`(파사드). 미수 제외(`payment_method_id IS NOT NULL`), 최대 731일 범위 |
 
 ---
 
@@ -524,6 +525,7 @@ erDiagram
 | 사업자 인증 | `POST /verification/business/upload-target`, `POST /verification/business`, `GET /verification/business/me` | Auth |
 | 설정 | `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}`(CRUD), `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}/order`(순서 변경 `PUT`), `/settings/preferences`, `/push/{subscribe,unsubscribe,status,test}` | Auth |
 | 대시보드 | `GET /dashboard/today`·`/dashboard/month` | Auth |
+| 통계 | `GET /statistics/sales`, `GET /statistics/expenses`, `GET /statistics/reservations`, `GET /statistics/customers` (공통 쿼리파라미터: `from=yyyy-MM-dd&to=yyyy-MM-dd`, 최대 731일) — KPI(직전 동일 기간 증감) + 일별 시계열 + 분포 반환 | Auth |
 
 전체 계약은 `/swagger-ui.html`에서 확인한다(RestDocs 테스트가 생성한 스펙 + JWT bearerAuth 병합 → `/v3/api-docs`) — **flori-ai/mobile이 읽는 계약의 출처**.
 

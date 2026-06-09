@@ -36,7 +36,7 @@
 
 | 코드 | 의미 | HTTP | 비고 |
 |------|------|------|------|
-| `E-CMN-001` | VALIDATION (입력값 검증 실패) | 400 | `@Valid`, 제약 위반, 본문 파싱 실패, 도메인 값 검증 |
+| `E-CMN-001` | VALIDATION (입력값 검증 실패) | 400 | `@Valid`, 제약 위반, 본문 파싱 실패, 도메인 값 검증, 필수 쿼리 파라미터 누락(`MissingServletRequestParameterException`), 파라미터 타입 불일치(`MethodArgumentTypeMismatchException`·날짜 형식 오류 등) |
 | `E-CMN-002` | UNAUTHORIZED (인증 필요) | 401 | 미인증 접근, 세션/사용자 없음 |
 | `E-CMN-003` | INVALID_TOKEN (토큰 무효·만료) | 401 | access/register/refresh 토큰 무효·만료, OAuth 교환 실패 |
 | `E-CMN-004` | FORBIDDEN (권한 없음) | 403 | 접근 거부, 비활성 계정, 구독 필요 기능 |
