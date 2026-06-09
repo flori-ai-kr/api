@@ -19,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional
 class WaitlistService(
     private val repository: WaitlistRegistrationRepository,
 ) {
+    // 낙관적 저장: 마감 가드 + 사전 중복검사 + 저장 시 UNIQUE 경쟁 캐치로 throw가 3개 — 의도된 패턴
+    @Suppress("ThrowsCount")
     @Transactional
     fun register(request: WaitlistRegisterRequest): WaitlistRegisterResponse {
         if (repository.count() >= CAPACITY) {
