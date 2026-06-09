@@ -8,6 +8,7 @@ import kr.ai.flori.customers.dto.CustomerResponse
 import kr.ai.flori.customers.dto.CustomerSearchResult
 import kr.ai.flori.customers.dto.CustomerStats
 import kr.ai.flori.customers.dto.CustomerUpdateRequest
+import kr.ai.flori.customers.dto.PhotoThumbnail
 import kr.ai.flori.customers.entity.Customer
 import kr.ai.flori.customers.repository.CustomerGradeRepository
 import kr.ai.flori.customers.repository.CustomerRepository
@@ -49,7 +50,7 @@ class CustomerService(
         return customerRepository
             .findByUserIdOrderByCreatedAtDesc(userId)
             .map { c ->
-                val (thumbs, count) = photoSummary[c.id] ?: (emptyList<String>() to 0)
+                val (thumbs, count) = photoSummary[c.id] ?: (emptyList<PhotoThumbnail>() to 0)
                 CustomerResponse.from(
                     c,
                     statsByCustomer[c.id] ?: CustomerStats.EMPTY,
@@ -275,49 +276,70 @@ class CustomerService(
     /**
      * 고객별 대표 썸네일 6장 + 카운트 (1쿼리). photos jsonb 의 첫 요소 url.
      * photos jsonb 형태: [{"url":...,"originalName":...}] — photos->0->>'url' 이 대표 썸네일.
+     * thumb_urls / thumb_ids 는 동일한 ORDER BY + FILTER 적용으로 인덱스 정렬이 보장된다.
      */
-    private fun photoSummaryByCustomer(userId: Long): Map<Long, Pair<List<String>, Int>> =
+    private fun photoSummaryByCustomer(userId: Long): Map<Long, Pair<List<PhotoThumbnail>, Int>> =
         jdbcTemplate
             .query(
                 """
                 SELECT customer_id,
                        count(*) AS cnt,
                        (array_agg((photos->0->>'url') ORDER BY created_at DESC)
-                          FILTER (WHERE jsonb_array_length(photos) > 0))[1:6] AS thumbs
+                          FILTER (WHERE jsonb_array_length(photos) > 0))[1:6] AS thumb_urls,
+                       (array_agg(id            ORDER BY created_at DESC)
+                          FILTER (WHERE jsonb_array_length(photos) > 0))[1:6] AS thumb_ids
                 FROM photo_cards
                 WHERE user_id = ?::bigint AND customer_id IS NOT NULL
                 GROUP BY customer_id
                 """.trimIndent(),
                 { rs, _ ->
-                    val arr = rs.getArray("thumbs")?.array as? Array<*>
-                    val thumbs = arr?.filterIsInstance<String>() ?: emptyList()
+                    val urlArr = rs.getArray("thumb_urls")?.array as? Array<*>
+                    val idArr = rs.getArray("thumb_ids")?.array as? Array<*>
+                    val thumbs =
+                        urlArr
+                            ?.indices
+                            ?.mapNotNull { i ->
+                                val url = urlArr[i] as? String ?: return@mapNotNull null
+                                val cardId = (idArr?.getOrNull(i) as? Long) ?: return@mapNotNull null
+                                PhotoThumbnail(url, cardId)
+                            } ?: emptyList()
                     rs.getLong("customer_id") to (thumbs to rs.getInt("cnt"))
                 },
                 userId,
             ).toMap()
 
-    /** 단일 고객 대표 썸네일 6장 + 카운트. */
+    /** 단일 고객 대표 썸네일 6장 + 카운트. thumb_urls / thumb_ids 는 동일 ORDER BY + FILTER 로 정렬이 보장된다. */
     private fun photoSummaryFor(
         userId: Long,
         customerId: Long,
-    ): Pair<List<String>, Int> =
+    ): Pair<List<PhotoThumbnail>, Int> =
         jdbcTemplate
             .query(
                 """
                 SELECT count(*) AS cnt,
                        (array_agg((photos->0->>'url') ORDER BY created_at DESC)
-                          FILTER (WHERE jsonb_array_length(photos) > 0))[1:6] AS thumbs
+                          FILTER (WHERE jsonb_array_length(photos) > 0))[1:6] AS thumb_urls,
+                       (array_agg(id            ORDER BY created_at DESC)
+                          FILTER (WHERE jsonb_array_length(photos) > 0))[1:6] AS thumb_ids
                 FROM photo_cards
                 WHERE user_id = ?::bigint AND customer_id = ?::bigint
                 """.trimIndent(),
                 { rs, _ ->
-                    val arr = rs.getArray("thumbs")?.array as? Array<*>
-                    val thumbs = arr?.filterIsInstance<String>() ?: emptyList()
+                    val urlArr = rs.getArray("thumb_urls")?.array as? Array<*>
+                    val idArr = rs.getArray("thumb_ids")?.array as? Array<*>
+                    val thumbs =
+                        urlArr
+                            ?.indices
+                            ?.mapNotNull { i ->
+                                val url = urlArr[i] as? String ?: return@mapNotNull null
+                                val cardId = (idArr?.getOrNull(i) as? Long) ?: return@mapNotNull null
+                                PhotoThumbnail(url, cardId)
+                            } ?: emptyList()
                     thumbs to rs.getInt("cnt")
                 },
                 userId,
                 customerId,
-            ).firstOrNull() ?: (emptyList<String>() to 0)
+            ).firstOrNull() ?: (emptyList<PhotoThumbnail>() to 0)
 
     private fun statsFor(
         userId: Long,

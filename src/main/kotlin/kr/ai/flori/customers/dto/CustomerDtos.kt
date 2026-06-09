@@ -45,10 +45,16 @@ data class FindOrCreateCustomerRequest(
     val phone: String?,
 )
 
+/** 고객 대표 사진 썸네일 — url + 사진첩 딥링크용 cardId. */
+data class PhotoThumbnail(
+    val url: String,
+    val cardId: Long,
+)
+
 /**
  * 구매 통계는 sales에서 실시간 집계한 값.
  * grade는 gradeId로 해석한 등급명(배지 표기용), gradeId/gradeLocked는 등급 관리 UI용.
- * photoThumbnails/photoCount는 이 고객에 연결된 사진첩 대표 썸네일(최대 3)·총 카운트.
+ * photoThumbnails/photoCount는 이 고객에 연결된 사진첩 대표 썸네일(최대 6)·총 카운트.
  */
 data class CustomerResponse(
     val id: Long,
@@ -63,7 +69,7 @@ data class CustomerResponse(
     val totalPurchaseAmount: Long,
     val firstPurchaseDate: LocalDate?,
     val lastPurchaseDate: LocalDate?,
-    val photoThumbnails: List<String>,
+    val photoThumbnails: List<PhotoThumbnail>,
     val photoCount: Int,
     val createdAt: Instant,
     val updatedAt: Instant,
@@ -73,7 +79,7 @@ data class CustomerResponse(
             c: Customer,
             stats: CustomerStats,
             gradeName: String?,
-            photoThumbnails: List<String>,
+            photoThumbnails: List<PhotoThumbnail>,
             photoCount: Int,
         ): CustomerResponse =
             CustomerResponse(

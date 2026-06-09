@@ -6,6 +6,7 @@ import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.customers.dto.CustomerCreateRequest
+import kr.ai.flori.customers.dto.PhotoThumbnail
 import kr.ai.flori.customers.repository.CustomerGradeRepository
 import kr.ai.flori.sales.dto.SaleCreateRequest
 import kr.ai.flori.sales.service.SaleService
@@ -191,36 +192,42 @@ class CustomerGradeRecomputeTest {
         customerService.recomputeGrade(c.id)
 
         // 사진첩 카드 4장(각 1장 이상의 photo) — 대표 썸네일은 최신순 최대 6개이므로 4장 모두 반환된다.
-        repeat(4) { i ->
-            jdbcTemplate.update(
-                """
-                INSERT INTO photo_cards (user_id, title, photos, customer_id, created_at)
-                VALUES (?::bigint, ?, ?::jsonb, ?::bigint, NOW() + (? || ' seconds')::interval)
-                """.trimIndent(),
-                userId,
-                "card$i",
-                """[{"url":"https://cdn/u$i.jpg","originalName":"u$i.jpg"}]""",
-                c.id,
-                i, // 단조 증가 created_at → i=3 이 최신
+        val cardIds =
+            (0..3).map { i ->
+                jdbcTemplate.queryForObject(
+                    """
+                    INSERT INTO photo_cards (user_id, title, photos, customer_id, created_at)
+                    VALUES (?::bigint, ?, ?::jsonb, ?::bigint, NOW() + (? || ' seconds')::interval)
+                    RETURNING id
+                    """.trimIndent(),
+                    Long::class.java,
+                    userId,
+                    "card$i",
+                    """[{"url":"https://cdn/u$i.jpg","originalName":"u$i.jpg"}]""",
+                    c.id,
+                    i, // 단조 증가 created_at → i=3 이 최신
+                )!!
+            }
+        // 최신순 정렬: i=3이 가장 큰 created_at → cardIds[3], cardIds[2], cardIds[1], cardIds[0]
+        val expectedThumbs =
+            listOf(
+                PhotoThumbnail("https://cdn/u3.jpg", cardIds[3]),
+                PhotoThumbnail("https://cdn/u2.jpg", cardIds[2]),
+                PhotoThumbnail("https://cdn/u1.jpg", cardIds[1]),
+                PhotoThumbnail("https://cdn/u0.jpg", cardIds[0]),
             )
-        }
 
         val fromGet = customerService.get(c.id)
         assertThat(fromGet.grade).isEqualTo("단골")
         assertThat(fromGet.photoCount).isEqualTo(4)
         assertThat(fromGet.photoThumbnails).hasSize(4)
-        // 최신순 4장: u3, u2, u1, u0
-        assertThat(fromGet.photoThumbnails).containsExactly(
-            "https://cdn/u3.jpg",
-            "https://cdn/u2.jpg",
-            "https://cdn/u1.jpg",
-            "https://cdn/u0.jpg",
-        )
+        // 최신순 4장: u3, u2, u1, u0 (각각 cardId 포함)
+        assertThat(fromGet.photoThumbnails).containsExactlyElementsOf(expectedThumbs)
 
         val fromList = customerService.list().first { it.id == c.id }
         assertThat(fromList.grade).isEqualTo("단골")
         assertThat(fromList.photoCount).isEqualTo(4)
         assertThat(fromList.photoThumbnails).hasSize(4)
-        assertThat(fromList.photoThumbnails.first()).isEqualTo("https://cdn/u3.jpg")
+        assertThat(fromList.photoThumbnails.first()).isEqualTo(expectedThumbs.first())
     }
 }
