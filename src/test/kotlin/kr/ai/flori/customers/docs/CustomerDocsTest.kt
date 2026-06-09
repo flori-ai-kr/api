@@ -61,7 +61,7 @@ class CustomerDocsTest : RestDocsSupport() {
                 .description("[서버 계산 SSOT] 최근 구매일 (yyyy-MM-dd, 구매 없으면 null)"),
             fieldWithPath("photoThumbnails")
                 .type(JsonFieldType.ARRAY)
-                .description("이 고객에 연결된 사진첩 대표 썸네일 url (최신순 최대 3장)"),
+                .description("이 고객에 연결된 사진첩 대표 썸네일 url (최신순 최대 6장)"),
             fieldWithPath("photoCount")
                 .type(JsonFieldType.NUMBER)
                 .description("이 고객에 연결된 사진첩 카드 총 개수"),
@@ -244,7 +244,7 @@ class CustomerDocsTest : RestDocsSupport() {
                                     .description("[서버 계산 SSOT] 최근 구매일 (yyyy-MM-dd)"),
                                 fieldWithPath("[].photoThumbnails")
                                     .type(JsonFieldType.ARRAY)
-                                    .description("대표 썸네일 url (최신순 최대 3장)"),
+                                    .description("대표 썸네일 url (최신순 최대 6장)"),
                                 fieldWithPath("[].photoCount")
                                     .type(JsonFieldType.NUMBER)
                                     .description("연결된 사진첩 카드 총 개수"),

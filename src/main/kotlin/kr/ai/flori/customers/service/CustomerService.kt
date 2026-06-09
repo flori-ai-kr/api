@@ -258,7 +258,7 @@ class CustomerService(
         customerRepository.findByIdAndUserId(id, TenantContext.currentUserId())
             ?: throw AppException(CommonErrorCode.NOT_FOUND, "고객을 찾을 수 없습니다")
 
-    /** 단건 응답: 등급명·통계·대표사진(썸네일3·카운트)을 해석해 조립. */
+    /** 단건 응답: 등급명·통계·대표사진(썸네일6·카운트)을 해석해 조립. */
     private fun toResponse(customer: Customer): CustomerResponse {
         val id = requireNotNull(customer.id)
         val gradeName = customer.gradeId?.let { gradeRepository.findByIdAndUserId(it, customer.userId)?.name }
@@ -273,7 +273,7 @@ class CustomerService(
             .associate { requireNotNull(it.id) to it.name }
 
     /**
-     * 고객별 대표 썸네일 3장 + 카운트 (1쿼리). photos jsonb 의 첫 요소 url.
+     * 고객별 대표 썸네일 6장 + 카운트 (1쿼리). photos jsonb 의 첫 요소 url.
      * photos jsonb 형태: [{"url":...,"originalName":...}] — photos->0->>'url' 이 대표 썸네일.
      */
     private fun photoSummaryByCustomer(userId: Long): Map<Long, Pair<List<String>, Int>> =
@@ -283,7 +283,7 @@ class CustomerService(
                 SELECT customer_id,
                        count(*) AS cnt,
                        (array_agg((photos->0->>'url') ORDER BY created_at DESC)
-                          FILTER (WHERE jsonb_array_length(photos) > 0))[1:3] AS thumbs
+                          FILTER (WHERE jsonb_array_length(photos) > 0))[1:6] AS thumbs
                 FROM photo_cards
                 WHERE user_id = ?::bigint AND customer_id IS NOT NULL
                 GROUP BY customer_id
@@ -296,7 +296,7 @@ class CustomerService(
                 userId,
             ).toMap()
 
-    /** 단일 고객 대표 썸네일 3장 + 카운트. */
+    /** 단일 고객 대표 썸네일 6장 + 카운트. */
     private fun photoSummaryFor(
         userId: Long,
         customerId: Long,
@@ -306,7 +306,7 @@ class CustomerService(
                 """
                 SELECT count(*) AS cnt,
                        (array_agg((photos->0->>'url') ORDER BY created_at DESC)
-                          FILTER (WHERE jsonb_array_length(photos) > 0))[1:3] AS thumbs
+                          FILTER (WHERE jsonb_array_length(photos) > 0))[1:6] AS thumbs
                 FROM photo_cards
                 WHERE user_id = ?::bigint AND customer_id = ?::bigint
                 """.trimIndent(),

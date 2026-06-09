@@ -184,13 +184,13 @@ class CustomerGradeRecomputeTest {
     }
 
     @Test
-    fun `list과 get 응답에 등급명·대표썸네일(최대3)·사진카운트가 포함된다`() {
+    fun `list과 get 응답에 등급명·대표썸네일(최대6)·사진카운트가 포함된다`() {
         val userId = newTenant()
         val c = create()
         addSales(c.id, 5)
         customerService.recomputeGrade(c.id)
 
-        // 사진첩 카드 4장(각 1장 이상의 photo) — 대표 썸네일은 최신순 최대 3개여야 한다.
+        // 사진첩 카드 4장(각 1장 이상의 photo) — 대표 썸네일은 최신순 최대 6개이므로 4장 모두 반환된다.
         repeat(4) { i ->
             jdbcTemplate.update(
                 """
@@ -208,18 +208,19 @@ class CustomerGradeRecomputeTest {
         val fromGet = customerService.get(c.id)
         assertThat(fromGet.grade).isEqualTo("단골")
         assertThat(fromGet.photoCount).isEqualTo(4)
-        assertThat(fromGet.photoThumbnails).hasSize(3)
-        // 최신순 3장: u3, u2, u1
+        assertThat(fromGet.photoThumbnails).hasSize(4)
+        // 최신순 4장: u3, u2, u1, u0
         assertThat(fromGet.photoThumbnails).containsExactly(
             "https://cdn/u3.jpg",
             "https://cdn/u2.jpg",
             "https://cdn/u1.jpg",
+            "https://cdn/u0.jpg",
         )
 
         val fromList = customerService.list().first { it.id == c.id }
         assertThat(fromList.grade).isEqualTo("단골")
         assertThat(fromList.photoCount).isEqualTo(4)
-        assertThat(fromList.photoThumbnails).hasSize(3)
+        assertThat(fromList.photoThumbnails).hasSize(4)
         assertThat(fromList.photoThumbnails.first()).isEqualTo("https://cdn/u3.jpg")
     }
 }
