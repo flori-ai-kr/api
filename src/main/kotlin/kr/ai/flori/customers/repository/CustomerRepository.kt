@@ -1,6 +1,7 @@
 package kr.ai.flori.customers.repository
 
 import kr.ai.flori.customers.entity.Customer
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
@@ -41,6 +42,20 @@ interface CustomerRepository : JpaRepository<Customer, Long> {
     fun findTop10ByUserIdAndNameContainingIgnoreCaseOrderByCreatedAtDesc(
         userId: Long,
         name: String,
+    ): List<Customer>
+
+    /** 이름·연락처·메모로 검색(테넌트 격리). 자동완성/목록 검색 공용. limit은 Pageable로 제어. */
+    @Query(
+        "SELECT c FROM Customer c WHERE c.userId = :userId AND (" +
+            "LOWER(c.name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+            "c.phone LIKE CONCAT('%', :q, '%') OR " +
+            "LOWER(c.memo) LIKE LOWER(CONCAT('%', :q, '%'))" +
+            ") ORDER BY c.createdAt DESC",
+    )
+    fun searchByNameOrMemo(
+        @Param("userId") userId: Long,
+        @Param("q") q: String,
+        pageable: Pageable,
     ): List<Customer>
 
     fun findFirstByUserIdAndPhoneAndIdNot(

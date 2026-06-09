@@ -84,7 +84,7 @@ class CustomerService(
         val userId = TenantContext.currentUserId()
         val gradeNames = gradeNamesById(userId)
         return customerRepository
-            .findTop10ByUserIdAndNameContainingIgnoreCaseOrderByCreatedAtDesc(userId, query)
+            .searchByNameOrMemo(userId, query, PageRequest.of(0, 10))
             .map { CustomerSearchResult(requireNotNull(it.id), it.name, it.phone, it.gradeId?.let(gradeNames::get)) }
     }
 
