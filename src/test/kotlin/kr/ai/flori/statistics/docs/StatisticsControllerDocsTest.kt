@@ -193,6 +193,99 @@ class StatisticsControllerDocsTest : RestDocsSupport() {
             }
     }
 
+    private fun seedCustomer(token: String) {
+        mockMvc
+            .post("/customers") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    json(
+                        mapOf(
+                            "name" to "김하늘",
+                            "phone" to "010-1234-5678",
+                            "grade" to "vip",
+                            "gender" to "female",
+                        ),
+                    )
+            }.andReturn()
+        // 고객 연결 매출(미수 제외) — 신규/TOP 집계용
+        mockMvc
+            .post("/sales") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    json(
+                        mapOf(
+                            "date" to LocalDate.now().toString(),
+                            "categoryId" to saleCategoryId(token),
+                            "amount" to 80_000,
+                            "paymentMethodId" to salePaymentId(token),
+                            "customerName" to "김하늘",
+                            "customerPhone" to "010-1234-5678",
+                        ),
+                    )
+            }.andReturn()
+    }
+
+    @Test
+    fun `고객 통계 문서화`() {
+        val token = signupAndToken()
+        seedCustomer(token)
+        val today = LocalDate.now().toString()
+
+        mockMvc
+            .get("/statistics/customers") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                param("from", today)
+                param("to", today)
+            }.andExpect { status { isOk() } }
+            .andDo {
+                handle(
+                    docs(
+                        identifier = "statistics-customers",
+                        responseSchema = "CustomerStatisticsResponse",
+                        tag = "Statistics",
+                        summary = "고객 통계 (KPI + 일별 신규 시계열 + 등급/성별 분포 + TOP 고객, 신규·재방문은 전화번호 기준·미수 제외)",
+                        responseFields =
+                            listOf(
+                                fieldWithPath("kpi.total").type(JsonFieldType.NUMBER).description("기간 내 구매 고객 수(미수 제외, 전화번호 distinct)"),
+                                fieldWithPath("kpi.newCustomers").type(JsonFieldType.NUMBER).description("신규 고객 수(기간 내 최초 구매)"),
+                                fieldWithPath("kpi.newDelta").type(JsonFieldType.NUMBER).description("신규 고객 증감(명, 직전 기간 대비)"),
+                                fieldWithPath("kpi.returningCustomers").type(JsonFieldType.NUMBER).description("재방문 고객 수(기간 이전 구매 이력 존재)"),
+                                fieldWithPath("kpi.returningDelta").type(JsonFieldType.NUMBER).description("재방문 고객 증감(명, 직전 기간 대비)"),
+                                fieldWithPath("kpi.returningRatePct").type(JsonFieldType.NUMBER).description("재방문율(%, 재방문/전체, 전체 0이면 0)"),
+                                fieldWithPath("timeseries").type(JsonFieldType.ARRAY).description("일별 신규 고객 시계열(그날이 전체 최초 구매일)"),
+                                fieldWithPath("timeseries[].date").type(JsonFieldType.STRING).optional().description("일자 (yyyy-MM-dd)"),
+                                fieldWithPath("timeseries[].newCustomers").type(JsonFieldType.NUMBER).optional().description("해당일 신규 고객 수"),
+                                fieldWithPath("gradeDistribution").type(JsonFieldType.ARRAY).description("등급별 고객 분포(전체 고객, 기간 무관)"),
+                                fieldWithPath(
+                                    "gradeDistribution[].grade",
+                                ).type(JsonFieldType.STRING).optional().description("등급(new/regular/vip/blacklist)"),
+                                fieldWithPath("gradeDistribution[].count").type(JsonFieldType.NUMBER).optional().description("해당 등급 고객 수"),
+                                fieldWithPath("genderDistribution").type(JsonFieldType.ARRAY).description("성별 고객 분포(전체 고객, 기간 무관)"),
+                                fieldWithPath(
+                                    "genderDistribution[].gender",
+                                ).type(JsonFieldType.STRING).optional().description("성별(male/female, 미지정 시 null)"),
+                                fieldWithPath("genderDistribution[].count").type(JsonFieldType.NUMBER).optional().description("해당 성별 고객 수"),
+                                fieldWithPath("topCustomers").type(JsonFieldType.ARRAY).description("TOP 고객(기간 내 구매 금액 내림차순, 최대 10명)"),
+                                fieldWithPath(
+                                    "topCustomers[].customerId",
+                                ).type(JsonFieldType.NUMBER).optional().description("고객 ID(미연결 시 null)"),
+                                fieldWithPath("topCustomers[].name").type(JsonFieldType.STRING).optional().description("고객명"),
+                                fieldWithPath("topCustomers[].phone").type(JsonFieldType.STRING).optional().description("전화번호"),
+                                fieldWithPath("topCustomers[].grade").type(JsonFieldType.STRING).optional().description("등급(미매칭 시 'new')"),
+                                fieldWithPath(
+                                    "topCustomers[].purchaseCount",
+                                ).type(JsonFieldType.NUMBER).optional().description("기간 내 구매 건수"),
+                                fieldWithPath(
+                                    "topCustomers[].totalAmount",
+                                ).type(JsonFieldType.NUMBER).optional().description("기간 내 구매 합계(원)"),
+                            ),
+                    ),
+                )
+            }
+    }
+
     @Test
     fun `예약 통계 문서화`() {
         val token = signupAndToken()

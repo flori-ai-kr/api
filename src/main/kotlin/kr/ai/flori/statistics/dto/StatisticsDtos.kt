@@ -99,3 +99,45 @@ data class ReservationStatisticsResponse(
     val dowDistribution: List<DowCount>,
     val hourDistribution: List<HourCount>,
 )
+
+data class CustomerKpi(
+    // 기간 내 구매한 distinct 고객 수
+    val total: Long,
+    val newCustomers: Long,
+    val newDelta: Long,
+    val returningCustomers: Long,
+    val returningDelta: Long,
+    val returningRatePct: Int,
+)
+
+data class CustomerNewPoint(
+    val date: LocalDate,
+    val newCustomers: Long,
+)
+
+data class GradeCount(
+    val grade: String,
+    val count: Long,
+)
+
+data class GenderCount(
+    val gender: String?,
+    val count: Long,
+)
+
+data class TopCustomer(
+    val customerId: Long?,
+    val name: String,
+    val phone: String,
+    val grade: String,
+    val purchaseCount: Long,
+    val totalAmount: Long,
+)
+
+data class CustomerStatisticsResponse(
+    val kpi: CustomerKpi,
+    val timeseries: List<CustomerNewPoint>,
+    val gradeDistribution: List<GradeCount>,
+    val genderDistribution: List<GenderCount>,
+    val topCustomers: List<TopCustomer>,
+)

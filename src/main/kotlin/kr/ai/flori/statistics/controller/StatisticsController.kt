@@ -1,5 +1,6 @@
 package kr.ai.flori.statistics.controller
 
+import kr.ai.flori.statistics.dto.CustomerStatisticsResponse
 import kr.ai.flori.statistics.dto.ExpensesStatisticsResponse
 import kr.ai.flori.statistics.dto.ReservationStatisticsResponse
 import kr.ai.flori.statistics.dto.SalesStatisticsResponse
@@ -33,4 +34,10 @@ class StatisticsController(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) from: LocalDate,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) to: LocalDate,
     ): ReservationStatisticsResponse = service.reservationStatistics(from, to)
+
+    @GetMapping("/customers")
+    fun customers(
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) from: LocalDate,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) to: LocalDate,
+    ): CustomerStatisticsResponse = service.customerStatistics(from, to)
 }
