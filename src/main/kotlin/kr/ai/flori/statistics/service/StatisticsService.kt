@@ -1,5 +1,7 @@
 package kr.ai.flori.statistics.service
 
+import kr.ai.flori.common.error.AppException
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.settings.entity.LabelDomains
 import kr.ai.flori.settings.entity.LabelKinds
@@ -31,6 +33,7 @@ class StatisticsService(
         from: LocalDate,
         to: LocalDate,
     ): SalesStatisticsResponse {
+        if (from.isAfter(to)) throw AppException(CommonErrorCode.VALIDATION, "from must not be after to")
         val userId = TenantContext.currentUserId()
         val days = ChronoUnit.DAYS.between(from, to) + 1
         val pFrom = from.minusDays(days)
@@ -54,9 +57,9 @@ class StatisticsService(
         return SalesStatisticsResponse(
             kpi = kpi,
             timeseries = timeseries(userId, from, to),
-            categoryDistribution = distribution(userId, from, to, "category_id", LabelKinds.CATEGORY, cur.total),
-            paymentDistribution = distribution(userId, from, to, "payment_method_id", LabelKinds.PAYMENT, cur.total),
-            channelDistribution = distribution(userId, from, to, "channel_id", LabelKinds.CHANNEL, cur.total),
+            categoryDistribution = distribution(userId, from, to, GroupColumn.CATEGORY, LabelKinds.CATEGORY, cur.total),
+            paymentDistribution = distribution(userId, from, to, GroupColumn.PAYMENT, LabelKinds.PAYMENT, cur.total),
+            channelDistribution = distribution(userId, from, to, GroupColumn.CHANNEL, LabelKinds.CHANNEL, cur.total),
         )
     }
 
@@ -109,21 +112,21 @@ class StatisticsService(
         userId: Long,
         from: LocalDate,
         to: LocalDate,
-        groupColumn: String,
-        kind: String,
+        groupColumn: GroupColumn,
+        labelKind: String,
         totalAmount: Long,
     ): List<DistributionItem> {
         val rows =
             jdbcTemplate.query(
-                "SELECT $groupColumn AS gid, COUNT(*) AS cnt, SUM(amount) AS amount " +
+                "SELECT ${groupColumn.sql} AS gid, COUNT(*) AS cnt, SUM(amount) AS amount " +
                     "FROM sales WHERE user_id = ?::bigint AND date BETWEEN ? AND ? AND payment_method_id IS NOT NULL " +
-                    "GROUP BY $groupColumn ORDER BY amount DESC",
+                    "GROUP BY ${groupColumn.sql} ORDER BY amount DESC",
                 { rs, _ -> Triple(rs.getLong("gid").takeUnless { rs.wasNull() }, rs.getLong("cnt"), rs.getLong("amount")) },
                 userId,
                 Date.valueOf(from),
                 Date.valueOf(to),
             )
-        val labels = labelReader.labelMap(LabelDomains.SALE, kind)
+        val labels = labelReader.labelMap(LabelDomains.SALE, labelKind)
         return rows.map {
             DistributionItem(it.first, it.first?.let { id -> labels[id] } ?: ETC, it.third, it.second, percentage(it.third, totalAmount))
         }
@@ -137,7 +140,20 @@ class StatisticsService(
     private fun pct(
         cur: Long,
         prev: Long,
-    ): Int = if (prev == 0L) (if (cur > 0L) PERCENT else 0) else Math.round((cur - prev) * PERCENT.toDouble() / prev).toInt()
+    ): Int {
+        if (prev == 0L) return if (cur > 0L) PERCENT else 0
+        val v = (cur - prev) * PERCENT.toDouble() / prev
+        return v.coerceIn(Int.MIN_VALUE.toDouble(), Int.MAX_VALUE.toDouble()).roundToInt()
+    }
+
+    /** distribution(...) SQL에 보간되는 그룹 컬럼 화이트리스트. 허용 집합을 타입으로 강제한다. */
+    private enum class GroupColumn(
+        val sql: String,
+    ) {
+        CATEGORY("category_id"),
+        PAYMENT("payment_method_id"),
+        CHANNEL("channel_id"),
+    }
 
     private data class Aggregate(
         val total: Long,
