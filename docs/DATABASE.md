@@ -75,7 +75,7 @@ users (1) ── (N) community_posts / community_comments / community_likes  [au
 | `email` | VARCHAR(255) | NOT NULL, UNIQUE | 온보딩에서 항상 채워짐 (소셜 전용) |
 | `nickname` | VARCHAR(100) | NOT NULL, UNIQUE | 계정 표시명/닉네임. **전역 유일**(`uq_users_nickname`, 정확 일치) — 향후 커뮤니티 기능 대비. 가게명과 분리(가게명은 `user_profiles.store_name`) |
 | `provider` | VARCHAR(20) | NOT NULL, DEFAULT 'LOCAL' | 소셜 제공자 (KAKAO/GOOGLE/NAVER 등) |
-| `provider_id` | VARCHAR(255) | | 소셜 측 사용자 식별자 |
+| `provider_id` | VARCHAR(255) | | 소셜 측 사용자 식별자. **탈퇴 시 `withdrawn_{id}_{rand}` 로 스크럽** — `(provider, provider_id)` UNIQUE 해제로 같은 소셜 계정 재가입 허용 |
 | `is_active` | BOOLEAN | NOT NULL, DEFAULT TRUE | |
 | `is_admin` | BOOLEAN | NOT NULL, DEFAULT FALSE | 운영 관리자 여부. 커뮤니티 공지(notice) 작성·비밀글/댓글 열람·타인 글 삭제 권한 판정 |
 | `created_at` / `updated_at` | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | 트리거로 updated_at 자동 갱신 |
@@ -120,6 +120,8 @@ JWT refresh 회전/무효화 추적. **원문이 아닌 SHA-256 해시만 저장
 |------|------|------|------|
 | `user_id` | BIGINT | **PK**→users 논리참조 | |
 | `store_name` | TEXT | NOT NULL | 가게명 (`users.nickname`과 분리) |
+| `phone_number` | TEXT | NOT NULL | 휴대폰 번호 (숫자만, 하이픈 없음). 온보딩 시 필수 수집 — **PII, 응답 DTO에 노출하지 않음** |
+| `profile_image_url` | TEXT | | 프로필 이미지 URL (S3/CloudFront) |
 | `region_sido` | TEXT | NOT NULL | 시/도 |
 | `region_sigungu` | TEXT | | 시/군/구 |
 | `owner_age_range` | TEXT | | 사장 연령대 |

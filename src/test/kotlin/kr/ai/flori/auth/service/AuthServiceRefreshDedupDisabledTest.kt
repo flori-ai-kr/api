@@ -46,6 +46,7 @@ class AuthServiceRefreshDedupDisabledTest {
                 RegisterCompleteRequest(
                     registerToken = registerToken,
                     storeName = "헤이즐 플라워",
+                    phoneNumber = "01012345678",
                     nickname = "헤이즐-${UUID.randomUUID()}",
                     email = email,
                     regionSido = "서울특별시",

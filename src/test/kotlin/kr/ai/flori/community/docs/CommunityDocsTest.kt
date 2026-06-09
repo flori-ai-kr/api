@@ -64,6 +64,7 @@ class CommunityDocsTest : RestDocsSupport() {
         listOf(
             fieldWithPath("${prefix}id").type(JsonFieldType.NUMBER).description("게시글 ID"),
             fieldWithPath("${prefix}authorNickname").type(JsonFieldType.STRING).description("작성자 닉네임"),
+            fieldWithPath("${prefix}authorIsAdmin").type(JsonFieldType.BOOLEAN).description("작성자 운영자 여부"),
             fieldWithPath("${prefix}category").type(JsonFieldType.STRING).description("카테고리"),
             fieldWithPath("${prefix}title").type(JsonFieldType.STRING).description("제목"),
             subsectionWithPath("${prefix}content").type(JsonFieldType.OBJECT).description("본문(Tiptap JSON). 비권한 비밀글은 빈 객체"),
@@ -86,6 +87,7 @@ class CommunityDocsTest : RestDocsSupport() {
             fieldWithPath("[].postId").type(JsonFieldType.NUMBER).description("게시글 ID"),
             fieldWithPath("[].parentId").type(JsonFieldType.NUMBER).optional().description("부모 댓글 ID(대댓글이면, 아니면 null)"),
             fieldWithPath("[].authorNickname").type(JsonFieldType.STRING).description("작성자 닉네임"),
+            fieldWithPath("[].authorIsAdmin").type(JsonFieldType.BOOLEAN).description("작성자 운영자 여부"),
             fieldWithPath("[].content").type(JsonFieldType.STRING).description("내용(비권한 비밀댓글/삭제 댓글은 빈 문자열)"),
             fieldWithPath("[].isSecret").type(JsonFieldType.BOOLEAN).description("비밀댓글 여부"),
             fieldWithPath("[].isMine").type(JsonFieldType.BOOLEAN).description("현재 사용자 작성 여부"),
@@ -437,6 +439,7 @@ class CommunityDocsTest : RestDocsSupport() {
                                 fieldWithPath("postId").type(JsonFieldType.NUMBER).description("게시글 ID"),
                                 fieldWithPath("parentId").type(JsonFieldType.NUMBER).optional().description("부모 댓글 ID(없으면 null)"),
                                 fieldWithPath("authorNickname").type(JsonFieldType.STRING).description("작성자 닉네임"),
+                                fieldWithPath("authorIsAdmin").type(JsonFieldType.BOOLEAN).description("작성자 운영자 여부"),
                                 fieldWithPath("content").type(JsonFieldType.STRING).description("내용"),
                                 fieldWithPath("isSecret").type(JsonFieldType.BOOLEAN).description("비밀댓글 여부"),
                                 fieldWithPath("isMine").type(JsonFieldType.BOOLEAN).description("현재 사용자 작성 여부"),

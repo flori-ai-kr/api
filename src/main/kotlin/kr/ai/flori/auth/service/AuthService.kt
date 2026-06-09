@@ -193,6 +193,7 @@ class AuthService(
             UserProfile(
                 userId = userId,
                 storeName = request.storeName,
+                phoneNumber = request.phoneNumber,
                 regionSido = request.regionSido,
             ).apply {
                 regionSigungu = request.regionSigungu

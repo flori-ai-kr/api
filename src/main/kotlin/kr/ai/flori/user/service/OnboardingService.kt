@@ -65,9 +65,13 @@ class OnboardingService(
             userProfileRepository
                 .findById(userId)
                 .orElseGet {
+                    // 정상 흐름에선 register/complete가 프로필을 먼저 생성하므로 이 분기는 도달하지 않는다
+                    // (프로필 행이 없는 레거시/고아 users 행의 방어적 폴백). 전화번호는 이 편집 경로의
+                    // 범위 밖(OnboardingRequest에 phoneNumber 없음)이라 빈 문자열로 둔다 — 운영자 백필 대상.
                     UserProfile(
                         userId = userId,
                         storeName = request.name,
+                        phoneNumber = "",
                         regionSido = request.regionSido,
                     )
                 }

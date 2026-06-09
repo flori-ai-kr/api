@@ -91,6 +91,7 @@ data class PostsPageResponse(
 data class PostResponse(
     val id: Long,
     val authorNickname: String,
+    val authorIsAdmin: Boolean,
     val category: String,
     val title: String,
     val content: JsonNode,
@@ -110,6 +111,7 @@ data class PostResponse(
         fun of(
             post: CommunityPost,
             authorNickname: String,
+            authorIsAdmin: Boolean,
             liked: Boolean,
             isMine: Boolean,
             canView: Boolean,
@@ -117,6 +119,7 @@ data class PostResponse(
             PostResponse(
                 id = requireNotNull(post.id),
                 authorNickname = authorNickname,
+                authorIsAdmin = authorIsAdmin,
                 category = post.category,
                 title = post.title,
                 content = if (canView) post.content else JsonNodeFactory.instance.objectNode(),
@@ -144,6 +147,7 @@ data class CommentResponse(
     val postId: Long,
     val parentId: Long?,
     val authorNickname: String,
+    val authorIsAdmin: Boolean,
     val content: String,
     val isSecret: Boolean,
     val isMine: Boolean,
@@ -155,6 +159,7 @@ data class CommentResponse(
         fun of(
             comment: CommunityComment,
             authorNickname: String,
+            authorIsAdmin: Boolean,
             isMine: Boolean,
             canView: Boolean,
         ): CommentResponse {
@@ -165,6 +170,7 @@ data class CommentResponse(
                 postId = comment.postId,
                 parentId = comment.parentId,
                 authorNickname = authorNickname,
+                authorIsAdmin = authorIsAdmin,
                 content = if (visible) comment.content else "",
                 isSecret = comment.isSecret,
                 isMine = isMine,

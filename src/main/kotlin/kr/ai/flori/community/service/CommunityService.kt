@@ -23,6 +23,7 @@ import kr.ai.flori.community.error.CommunityErrorCode
 import kr.ai.flori.community.repository.CommunityCommentRepository
 import kr.ai.flori.community.repository.CommunityLikeRepository
 import kr.ai.flori.community.repository.CommunityPostRepository
+import kr.ai.flori.user.entity.User
 import kr.ai.flori.user.repository.UserRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
@@ -65,7 +66,7 @@ class CommunityService(
         val pageable = PageRequest.of(offset / limit, limit)
         val page = postRepository.findFeed(category?.takeIf { it.isNotBlank() }, searchPattern, pageable)
         val posts = page.content
-        val nicknames = nicknamesOf(posts.map { it.authorUserId })
+        val authors = authorsOf(posts.map { it.authorUserId })
         val likedIds =
             if (posts.isEmpty()) {
                 emptySet()
@@ -74,9 +75,11 @@ class CommunityService(
             }
         val responses =
             posts.map { post ->
+                val author = authors[post.authorUserId]
                 PostResponse.of(
                     post = post,
-                    authorNickname = nicknames[post.authorUserId] ?: UNKNOWN_NICKNAME,
+                    authorNickname = author?.nickname ?: UNKNOWN_NICKNAME,
+                    authorIsAdmin = author?.isAdmin ?: false,
                     liked = post.id in likedIds,
                     isMine = post.authorUserId == viewer.id,
                     canView = canViewPost(post, viewer),
@@ -89,9 +92,11 @@ class CommunityService(
     fun getPost(id: Long): PostResponse {
         val viewer = viewer()
         val post = loadPost(id)
+        val author = authorsOf(listOf(post.authorUserId))[post.authorUserId]
         return PostResponse.of(
             post = post,
-            authorNickname = nicknameOf(post.authorUserId),
+            authorNickname = author?.nickname ?: UNKNOWN_NICKNAME,
+            authorIsAdmin = author?.isAdmin ?: false,
             liked = likeRepository.existsByPostIdAndUserId(id, viewer.id),
             isMine = post.authorUserId == viewer.id,
             canView = canViewPost(post, viewer),
@@ -113,7 +118,7 @@ class CommunityService(
         post.isSecret = request.isSecret
         post.imageUrls = request.imageUrls.toTypedArray()
         val saved = postRepository.save(post)
-        return PostResponse.of(saved, nicknameOf(viewer.id), liked = false, isMine = true, canView = true)
+        return PostResponse.of(saved, nicknameOf(viewer.id), authorIsAdmin = viewer.isAdmin, liked = false, isMine = true, canView = true)
     }
 
     @Transactional
@@ -135,6 +140,7 @@ class CommunityService(
         return PostResponse.of(
             post = saved,
             authorNickname = nicknameOf(saved.authorUserId),
+            authorIsAdmin = viewer.isAdmin,
             liked = likeRepository.existsByPostIdAndUserId(id, viewer.id),
             isMine = true,
             canView = true,
@@ -193,13 +199,15 @@ class CommunityService(
         val viewer = viewer()
         val post = loadPost(postId)
         val comments = commentRepository.findByPostIdOrderByCreatedAtAsc(postId)
-        val nicknames = nicknamesOf(comments.map { it.authorUserId })
+        val authors = authorsOf(comments.map { it.authorUserId })
         val authorById = comments.mapNotNull { c -> c.id?.let { it to c.authorUserId } }.toMap()
         return comments.map { comment ->
             val parentAuthorId = comment.parentId?.let { authorById[it] }
+            val author = authors[comment.authorUserId]
             CommentResponse.of(
                 comment = comment,
-                authorNickname = nicknames[comment.authorUserId] ?: UNKNOWN_NICKNAME,
+                authorNickname = author?.nickname ?: UNKNOWN_NICKNAME,
+                authorIsAdmin = author?.isAdmin ?: false,
                 isMine = comment.authorUserId == viewer.id,
                 canView = canViewComment(comment, post.authorUserId, parentAuthorId, viewer),
             )
@@ -237,7 +245,7 @@ class CommunityService(
         comment.isSecret = secret
         val saved = commentRepository.save(comment)
         postRepository.adjustCommentCount(postId, 1)
-        return CommentResponse.of(saved, nicknameOf(viewer.id), isMine = true, canView = true)
+        return CommentResponse.of(saved, nicknameOf(viewer.id), authorIsAdmin = viewer.isAdmin, isMine = true, canView = true)
     }
 
     @Transactional
@@ -293,13 +301,13 @@ class CommunityService(
         return category
     }
 
-    private fun nicknameOf(userId: Long): String = nicknamesOf(listOf(userId))[userId] ?: UNKNOWN_NICKNAME
+    private fun nicknameOf(userId: Long): String = authorsOf(listOf(userId))[userId]?.nickname ?: UNKNOWN_NICKNAME
 
-    private fun nicknamesOf(userIds: Collection<Long>): Map<Long, String> {
+    private fun authorsOf(userIds: Collection<Long>): Map<Long, User> {
         if (userIds.isEmpty()) return emptyMap()
         return userRepository
             .findAllById(userIds.toSet())
-            .associate { requireNotNull(it.id) to it.nickname }
+            .associateBy { requireNotNull(it.id) }
     }
 
     private fun validateImageMeta(

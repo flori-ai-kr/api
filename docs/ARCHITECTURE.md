@@ -100,13 +100,14 @@ flowchart LR
 
 | 도메인 패키지 | 책임 |
 |---|---|
-| `auth` | 회원가입(기본 설정 시드)·로그인·**카카오 소셜 로그인**·refresh 회전·로그아웃·`/me` |
+| `auth` | 회원가입(기본 설정 시드)·로그인·**카카오 소셜 로그인**·refresh 회전·로그아웃·`/me`. 가입 완료(`/auth/register/complete`) 시 `phoneNumber` 필수 수집(PII — 응답 DTO 비노출) |
+| `user` | 프로필 수정·아바타 업로드·탈퇴(`DELETE /me`). 탈퇴 시 email·nickname·**provider_id** 스크럽(재가입 허용) |
 | `sales` | 매출 CRUD·무한스크롤·필터·**요약(GET /sales/summary)**·미수·**서버 입금계산**·**이름+전화번호로 고객 자동연결(findOrCreate)** |
 | `expenses` | 지출 + 고정비(this/all 분기·**@Scheduled 자동생성**)·**목록 페이지네이션(무한스크롤)**·**요약 집계(GET /expenses/summary)** |
 | `customers` | 고객 CRUD·findOrCreate·**실시간 구매통계** |
 | `reservations` / `schedules` | 예약(매출 전환·픽업)·일정·**리마인더/요약 푸시** |
 | `photos` | 사진카드(presigned 업로드·삭제·**다운로드**)·태그 |
-| `community` | 단일 커뮤니티 게시판(게시글·댓글·대댓글·좋아요·비밀글·soft delete)·이미지 업로드. **`@RequiresBusinessVerified` 게이팅 적용** |
+| `community` | 단일 커뮤니티 게시판(게시글·댓글·대댓글·좋아요·비밀글·soft delete)·이미지 업로드. **`@RequiresBusinessVerified` 게이팅 적용**. `PostResponse`·`CommentResponse`에 `authorIsAdmin` 노출(작성자 관리자 배지용) |
 | `verification` | 사업자 인증 신청·상태 조회(PENDING/APPROVED/REJECTED/NONE)·presigned 업로드·게이팅(`@RequiresBusinessVerified`) |
 | `settings` | 매출/지출 설정·하단바·사용자 설정·푸시 구독·**테스트 발송** |
 | `dashboard` | 오늘/월 집계·**네이티브 SQL 통계** |
@@ -513,7 +514,7 @@ erDiagram
 
 | 도메인 | 대표 엔드포인트 | 권한 |
 |---|---|---|
-| 인증 | `POST /auth/oauth/{kakao,google,naver}`, `POST /auth/register/complete`, `POST /auth/{refresh,logout}`, `GET /me` | Public / Auth |
+| 인증 | `POST /auth/oauth/{kakao,google,naver}`, `POST /auth/register/complete`(+`phoneNumber`), `POST /auth/{refresh,logout}`, `GET /me`, `DELETE /me` | Public / Auth |
 | 매출 | `GET/POST/PATCH/DELETE /sales`, `GET /sales/summary`, `/sales/{id}/complete-unpaid`·`/revert-unpaid`, `/sales/suggestions` | Auth |
 | 지출·고정비 | `/expenses`(+`/expenses/summary`), `/recurring-expenses`(+`/toggle`·`/quick-add`·`/instances/{id}?scope=this\|all`) | Auth |
 | 고객 | `/customers`(+`/search`·`/check-phone`·`/{id}/sales`·`/find-or-create`·`/{id}/grade`) | Auth |
@@ -550,6 +551,7 @@ erDiagram
 | **소유권 재검증** | `customer_id`·다건 `ids` 등 외부 식별자 소유 확인 | 교차 테넌트 식별자 주입 |
 | **소셜 전용 인증** | 이메일/비밀번호 가입 폐지(비밀번호 미저장). 신원은 OAuth providerId로만 도출 | 자격증명 노출 |
 | **소셜 로그인** | `SocialOAuthClient` 인터페이스(KAKAO/GOOGLE/NAVER 빈 분리) — 4xx/5xx·네트워크 오류를 `AppException(INVALID_TOKEN)`으로 변환(원인 체이닝, 500 노출 방지). 신규 신원은 User 미생성·registerToken만 발급(신원은 본문이 아닌 토큰에서만 도출). 동시 첫 가입 경쟁은 DataIntegrityViolationException 캐치(멱등) | 제공자 API 오류 노출·중복 사용자 생성·신원 위조 |
+| **탈퇴(계정 삭제)** | `ProfileService.deleteAccount` — email·nickname·**provider_id** 세 고유 컬럼을 임의 값으로 스크럽(`withdrawn_{id}_{rand}`). `provider_id`까지 스크럽해야 `(provider, provider_id)` UNIQUE가 해제되어 **같은 소셜 계정으로 재가입 가능** | 탈퇴 후 신원 잠금(영구 재가입 불가) |
 | **refresh 회전** | 불투명 난수 + SHA-256 해시 저장, 사용 시 회전·로그아웃 시 무효(캐시도 함께 무효화). **멱등 윈도** — 같은 raw refresh 토큰으로 짧은 윈도(기본 30초, `JWT_REFRESH_DEDUP_TTL`) 내 중복 호출 시 회전 1회만 수행하고 동일 토큰 반환(Caffeine 인메모리 캐시). 윈도 밖 재사용은 INVALID_TOKEN. 멀티 인스턴스 시 dedup 비공유 한계 | 토큰 탈취/재사용·동시 refresh race 로그아웃 |
 | **내부 API** | `InternalAuthVerifier` — `MessageDigest.isEqual` 타이밍-세이프, 키 미설정 시 전면 차단 | 수집 API 무단 호출 |
 | **입력 검증** | Jakarta Validation `@Valid`, 결제수단/등급/상태 화이트리스트 | 잘못된 입력 |

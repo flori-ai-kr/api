@@ -92,11 +92,13 @@ class AuthServiceIntegrationTest {
         registerToken: String,
         email: String,
         storeName: String = "헤이즐 플라워",
+        phoneNumber: String = "01012345678",
         // 닉네임은 전역 유일(uq_users_nickname)이므로 기본값을 호출마다 고유하게 생성한다.
         nickname: String = "헤이즐-${UUID.randomUUID()}",
     ) = RegisterCompleteRequest(
         registerToken = registerToken,
         storeName = storeName,
+        phoneNumber = phoneNumber,
         nickname = nickname,
         email = email,
         regionSido = "서울특별시",
