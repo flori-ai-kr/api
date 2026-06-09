@@ -69,6 +69,29 @@ class SettingsServiceIntegrationTest {
     }
 
     @Test
+    fun `순서 변경은 sort_order를 재부여하고 조회에 반영된다`() {
+        newTenant()
+        val before = saleCategoryService.list().map { it.id }
+        val reversed = before.reversed()
+
+        val after = saleCategoryService.reorder(reversed)
+        assertThat(after.map { it.id }).isEqualTo(reversed)
+        // 재조회해도 새 순서 유지
+        assertThat(saleCategoryService.list().map { it.id }).isEqualTo(reversed)
+    }
+
+    @Test
+    fun `순서 목록이 현재 항목과 불일치하면 거부된다`() {
+        newTenant()
+        val ids = saleCategoryService.list().map { it.id }
+        // 일부 누락 → VALIDATION
+        assertThatThrownBy { saleCategoryService.reorder(ids.drop(1)) }
+            .isInstanceOfSatisfying(AppException::class.java) {
+                assertThat(it.errorCode).isEqualTo(CommonErrorCode.VALIDATION)
+            }
+    }
+
+    @Test
     fun `중복 value 카테고리는 409`() {
         newTenant()
         saleCategoryService.add("커스텀", "custom_x")

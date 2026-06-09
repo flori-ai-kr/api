@@ -57,6 +57,22 @@ abstract class LabelSettingService(
         repository.delete(load(id))
     }
 
+    /**
+     * 순서 변경. orderedIds 는 현재 (user,domain,kind) 전체 항목 id 와 정확히 일치해야 한다(부분/외부 id 거부).
+     * 나열 순서대로 sort_order 를 1..N 으로 재부여한다.
+     */
+    @Transactional
+    open fun reorder(orderedIds: List<Long>): List<LabelSettingResponse> {
+        val userId = TenantContext.currentUserId()
+        val items = repository.findByUserIdAndDomainAndKindOrderBySortOrderAsc(userId, domain, kind)
+        val byId = items.associateBy { requireNotNull(it.id) }
+        if (orderedIds.size != items.size || orderedIds.toSet() != byId.keys) {
+            throw AppException(CommonErrorCode.VALIDATION, "순서 목록이 현재 항목과 일치하지 않습니다")
+        }
+        orderedIds.forEachIndexed { idx, id -> byId.getValue(id).sortOrder = idx + 1 }
+        return repository.saveAll(items).sortedBy { it.sortOrder }.map(::toResponse)
+    }
+
     private fun load(id: Long): LabelSetting =
         repository.findByIdAndUserIdAndDomainAndKind(id, TenantContext.currentUserId(), domain, kind)
             ?: throw AppException(CommonErrorCode.NOT_FOUND, "설정을 찾을 수 없습니다")
