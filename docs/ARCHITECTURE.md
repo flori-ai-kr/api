@@ -109,6 +109,7 @@ flowchart LR
 | `photos` | 사진카드(presigned 업로드·삭제·**다운로드**)·태그 |
 | `community` | 단일 커뮤니티 게시판(게시글·댓글·대댓글·좋아요·비밀글·soft delete)·이미지 업로드. **`@RequiresBusinessVerified` 게이팅 적용**. `PostResponse`·`CommentResponse`에 `authorIsAdmin` 노출(작성자 관리자 배지용) |
 | `verification` | 사업자 인증 신청·상태 조회(PENDING/APPROVED/REJECTED/NONE)·presigned 업로드·게이팅(`@RequiresBusinessVerified`) |
+| `waitlist` | 출시 전 선착순 100명 사전등록(공개 모집). 인증/테넌시 없음. `POST /waitlist`, `GET /waitlist/count` |
 | `settings` | 매출/지출 설정·하단바·사용자 설정·푸시 구독·**테스트 발송** |
 | `dashboard` | 오늘/월 집계·**네이티브 SQL 통계** |
 | `statistics` | 기간별 통계 KPI + 일별 시계열 + 분포 — 매출·지출·예약·고객 4도메인. `StatisticsSupport`(공용 비율·증감·직전 기간 계산), `StatisticsService`(파사드). 미수 제외(`payment_method_id IS NOT NULL`), 최대 731일 범위 |
@@ -526,6 +527,7 @@ erDiagram
 | 설정 | `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}`(CRUD), `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}/order`(순서 변경 `PUT`), `/settings/preferences`, `/push/{subscribe,unsubscribe,status,test}` | Auth |
 | 대시보드 | `GET /dashboard/today`·`/dashboard/month` | Auth |
 | 통계 | `GET /statistics/sales`, `GET /statistics/expenses`, `GET /statistics/reservations`, `GET /statistics/customers` (공통 쿼리파라미터: `from=yyyy-MM-dd&to=yyyy-MM-dd`, 최대 731일) — KPI(직전 동일 기간 증감) + 일별 시계열 + 분포 반환 | Auth |
+| 사전등록 | `POST /waitlist`(201, 등록), `GET /waitlist/count`(카운트 조회) | **Public** (인증 불필요) |
 
 전체 계약은 `/swagger-ui.html`에서 확인한다(RestDocs 테스트가 생성한 스펙 + JWT bearerAuth 병합 → `/v3/api-docs`) — **flori-ai/mobile이 읽는 계약의 출처**.
 
@@ -561,6 +563,7 @@ erDiagram
 | **S3** | presigned PUT/GET 짧은 만료, 소유권/이미지 메타·최대 장수 검증 후 발급; 삭제는 best-effort(DB 정리 우선) | 무단 업로드·비인가 다운로드 |
 | **커뮤니티 권한** | `users.is_admin`으로 공지(notice) 작성·비밀글/댓글 열람·타인 글 삭제 판정. 수정은 작성자만 | 권한 없는 콘텐츠 수정·열람 |
 | **사업자 인증 게이팅** | `@RequiresBusinessVerified` 어노테이션 → `BusinessVerifiedInterceptor`가 APPROVED 행 보유 여부 검증. 미인증 시 E-VRF-001(403). `/verification/business/**`(인증 입구)는 게이팅 제외 | 미인증 사용자의 커뮤니티 접근 |
+| **사전등록 공개 라우트** | `SecurityConfig`에서 `/waitlist`, `/waitlist/count` `permitAll`. 인증 없이 접근 가능한 유일한 비즈니스 엔드포인트(헬스 제외). 전화번호 UNIQUE + 정원(100) 서비스 레이어 강제 | 공개 모집 중복 등록 방지 |
 | **CORS / 헤더** | origin 화이트리스트, `X-Frame-Options: DENY`·`nosniff`·`Referrer-Policy` | XSS/클릭재킹/크로스사이트 |
 | **에러 응답** | 표준 `{code, message}`, 내부 디테일·시크릿 비노출 | 정보 노출 |
 | **시크릿** | 전부 `${ENV}` 참조, 코드/깃에 시크릿 없음 | 시크릿 유출 |
@@ -575,7 +578,8 @@ AppException(errorCode: ErrorCode, message)
     ├── CommonErrorCode       (common/error)         — 횡단 코드  E-CMN-*
     ├── AuthErrorCode         (auth/error)            — 도메인 코드 E-AUTH-*
     ├── CommunityErrorCode    (community/error)       — 도메인 코드 E-CMNT-*
-    └── VerificationErrorCode (verification/error)   — 도메인 코드 E-VRF-*
+    ├── VerificationErrorCode (verification/error)   — 도메인 코드 E-VRF-*
+    └── WaitlistErrorCode     (waitlist/error)       — 도메인 코드 E-WL-*
         (새 도메인은 <domain>/error 에 enum 추가)
 ```
 
