@@ -65,6 +65,7 @@ src/main/kotlin/kr/ai/flori/
 ├── community/             # 커뮤니티 게시판(단일 공유) · 비밀글/댓글·대댓글·좋아요·soft delete
 ├── verification/          # 사업자 인증 (신청·상태조회·presigned 업로드·게이팅)
 ├── dashboard/             # 오늘/월 집계 · 네이티브 SQL 통계
+├── statistics/            # 기간별 통계 API (/statistics/**) — 매출·지출·예약·고객 KPI + 일별 시계열 + 분포. JdbcTemplate 네이티브 SQL. 도메인별 서비스(Sales/Expenses/Reservation/CustomerStatisticsService) + StatisticsSupport(공용 증감·비율·기간 계산) + 파사드(StatisticsService) + StatisticsController
 ├── admin/                 # 운영자 콘솔 API (/admin/**, @RequiresAdmin · cross-tenant) — 통계·인증심사·유저·AI헬스 프록시
 ├── ai/                    # AI 게이트웨이 (/ai/**) — web↔ai-server(FastAPI) 중개 + 모든 AI 호출 DB 로깅. 채팅/proactive/OCR예약/confirm. ai-server는 내부망 stateless
 └── common/                # 횡단 관심사
