@@ -32,8 +32,12 @@ class WaitlistService(
         }
         try {
             repository.save(WaitlistRegistration(shopName = request.shopName.trim(), phone = phone))
-        } catch (e: DataIntegrityViolationException) {
-            throw AppException(WaitlistErrorCode.ALREADY_REGISTERED, cause = e)
+        } catch (
+            @Suppress("SwallowedException") e: DataIntegrityViolationException,
+        ) {
+            // cause를 전달하지 않는다: JDBC 제약위반 메시지("Key (phone)=(010...) already exists")가
+            // 글로벌 핸들러 로그에 전화번호(PII)를 남기는 것을 막는다. 동시 등록 경쟁은 멱등 409로 변환.
+            throw AppException(WaitlistErrorCode.ALREADY_REGISTERED)
         }
         val count = repository.count()
         return WaitlistRegisterResponse(count = count, capacity = CAPACITY, closed = count >= CAPACITY)
