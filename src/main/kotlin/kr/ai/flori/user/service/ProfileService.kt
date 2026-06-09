@@ -58,16 +58,6 @@ class ProfileService(
     }
 
     @Transactional
-    fun completeTour(userId: Long) {
-        val profile =
-            userProfileRepository
-                .findById(userId)
-                .orElseThrow { AppException(CommonErrorCode.NOT_FOUND, "프로필을 찾을 수 없습니다") }
-        profile.tourCompleted = true
-        userProfileRepository.save(profile)
-    }
-
-    @Transactional
     @Suppress("UnusedParameter")
     fun deleteAccount(
         userId: Long,

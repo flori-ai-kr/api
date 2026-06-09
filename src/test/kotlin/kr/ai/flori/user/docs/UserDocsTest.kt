@@ -47,7 +47,6 @@ class UserDocsTest : RestDocsSupport() {
                                 fieldWithPath(
                                     "profile.profileImageUrl",
                                 ).type(JsonFieldType.STRING).optional().description("프로필 이미지 URL(미설정 시 null)"),
-                                fieldWithPath("profile.tourCompleted").type(JsonFieldType.BOOLEAN).description("인앱 투어 완료 여부"),
                             ),
                     ),
                 )
@@ -95,7 +94,6 @@ class UserDocsTest : RestDocsSupport() {
                                 fieldWithPath(
                                     "profile.profileImageUrl",
                                 ).type(JsonFieldType.STRING).optional().description("프로필 이미지 URL(미설정 시 null)"),
-                                fieldWithPath("profile.tourCompleted").type(JsonFieldType.BOOLEAN).description("인앱 투어 완료 여부"),
                             ),
                     ),
                 )

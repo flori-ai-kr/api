@@ -127,7 +127,6 @@ JWT refresh 회전/무효화 추적. **원문이 아닌 SHA-256 해시만 저장
 | `owner_age_range` | TEXT | | 사장 연령대 |
 | `interests` | TEXT[] | NOT NULL, DEFAULT '{}' | 관심사 (배열) |
 | `specialties` | TEXT[] | NOT NULL, DEFAULT '{}' | 전문 분야 (배열) |
-| `tour_completed` | BOOLEAN | NOT NULL, DEFAULT FALSE | 인앱 제품 투어 1회 노출 플래그. FALSE이면 다음 첫 진입 시 투어를 노출 |
 | `created_at` / `updated_at` | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | 트리거 갱신 |
 
 ### `user_preferences` — 사용자 설정 (key-value 스토어)

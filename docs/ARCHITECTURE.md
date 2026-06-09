@@ -101,7 +101,7 @@ flowchart LR
 | 도메인 패키지 | 책임 |
 |---|---|
 | `auth` | 회원가입(기본 설정 시드)·로그인·**카카오 소셜 로그인**·refresh 회전·로그아웃·`/me`. 가입 완료(`/auth/register/complete`) 시 `phoneNumber` 필수 수집(PII — 응답 DTO 비노출) |
-| `user` | 프로필 수정·아바타 업로드·탈퇴(`DELETE /me`)·**인앱 투어 완료(`POST /me/tour/complete`)**. 탈퇴 시 email·nickname·**provider_id** 스크럽(재가입 허용) |
+| `user` | 프로필 수정·아바타 업로드·탈퇴(`DELETE /me`). 탈퇴 시 email·nickname·**provider_id** 스크럽(재가입 허용) |
 | `sales` | 매출 CRUD·무한스크롤·필터·**요약(GET /sales/summary)**·미수·**서버 입금계산**·**이름+전화번호로 고객 자동연결(findOrCreate)** |
 | `expenses` | 지출 + 고정비(this/all 분기·**@Scheduled 자동생성**)·**목록 페이지네이션(무한스크롤)**·**요약 집계(GET /expenses/summary)** |
 | `customers` | 고객 CRUD·findOrCreate·**실시간 구매통계** |
@@ -514,7 +514,7 @@ erDiagram
 
 | 도메인 | 대표 엔드포인트 | 권한 |
 |---|---|---|
-| 인증 | `POST /auth/oauth/{kakao,google,naver}`, `POST /auth/register/complete`(+`phoneNumber`), `POST /auth/{refresh,logout}`, `GET /me`, `POST /me/tour/complete`, `DELETE /me` | Public / Auth |
+| 인증 | `POST /auth/oauth/{kakao,google,naver}`, `POST /auth/register/complete`(+`phoneNumber`), `POST /auth/{refresh,logout}`, `GET /me`, `DELETE /me` | Public / Auth |
 | 매출 | `GET/POST/PATCH/DELETE /sales`, `GET /sales/summary`, `/sales/{id}/complete-unpaid`·`/revert-unpaid`, `/sales/suggestions` | Auth |
 | 지출·고정비 | `/expenses`(+`/expenses/summary`), `/recurring-expenses`(+`/toggle`·`/quick-add`·`/instances/{id}?scope=this\|all`) | Auth |
 | 고객 | `/customers`(+`/search`·`/check-phone`·`/{id}/sales`·`/find-or-create`·`/{id}/grade`) | Auth |

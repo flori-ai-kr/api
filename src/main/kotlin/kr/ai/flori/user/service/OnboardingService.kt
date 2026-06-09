@@ -109,5 +109,4 @@ fun UserProfile.toResponse(): ProfileResponse =
         interests = interests.toList(),
         specialties = specialties.toList(),
         profileImageUrl = profileImageUrl,
-        tourCompleted = tourCompleted,
     )
