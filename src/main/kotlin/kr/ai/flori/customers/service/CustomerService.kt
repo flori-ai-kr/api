@@ -84,7 +84,7 @@ class CustomerService(
         val userId = TenantContext.currentUserId()
         val gradeNames = gradeNamesById(userId)
         return customerRepository
-            .searchByNameOrMemo(userId, query, PageRequest.of(0, 10))
+            .searchByNameOrMemo(userId, query, PageRequest.of(0, SEARCH_LIMIT))
             .map { CustomerSearchResult(requireNotNull(it.id), it.name, it.phone, it.gradeId?.let(gradeNames::get)) }
     }
 
@@ -387,6 +387,7 @@ class CustomerService(
 
     private companion object {
         const val MAX_PAGE_SIZE = 50
+        const val SEARCH_LIMIT = 10
         val GENDERS = setOf("male", "female")
     }
 }
