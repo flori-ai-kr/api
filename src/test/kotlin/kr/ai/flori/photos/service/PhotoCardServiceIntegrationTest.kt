@@ -38,6 +38,9 @@ class PhotoCardServiceIntegrationTest {
     lateinit var photoCardRepository: PhotoCardRepository
 
     @Autowired
+    lateinit var jdbcTemplate: org.springframework.jdbc.core.JdbcTemplate
+
+    @Autowired
     lateinit var saleRepository: kr.ai.flori.sales.repository.SaleRepository
 
     @Autowired
@@ -94,6 +97,27 @@ class PhotoCardServiceIntegrationTest {
         val page = photoCardService.list(null, null, null)
         assertThat(page.cards).hasSize(2)
         assertThat(page.hasMore).isFalse()
+    }
+
+    @Test
+    fun `커서 페이지네이션이 동일 updated_at 다수여도 전진하며 전부 순회한다`() {
+        val userId = newTenant()
+        repeat(20) { card() }
+        // 모든 카드 updated_at 동일 강제 — id 보조키 없으면 키셋이 깨져 무한루프 나던 케이스 재현
+        jdbcTemplate.update("UPDATE photo_cards SET updated_at = '2026-06-09T15:16:00Z' WHERE user_id = ?", userId)
+
+        val seen = mutableSetOf<Long>()
+        var cursor: String? = null
+        var hasMore = true
+        var guard = 0
+        while (hasMore) {
+            val page = photoCardService.list(null, cursor, null)
+            page.cards.forEach { seen.add(it.id) }
+            cursor = page.nextCursor
+            hasMore = page.hasMore
+            check(guard++ < 100) { "무한 페이지네이션 — 커서가 전진하지 않음" }
+        }
+        assertThat(seen).hasSize(20)
     }
 
     @Test
