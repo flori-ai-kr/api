@@ -34,3 +34,27 @@ data class SalesStatisticsResponse(
     val paymentDistribution: List<DistributionItem>,
     val channelDistribution: List<DistributionItem>,
 )
+
+data class ExpensesKpi(
+    val totalAmount: Long,
+    val totalAmountDeltaPct: Int,
+    val count: Long,
+    val countDelta: Long,
+    // 총지출 / 총매출(미수 제외), round, 매출 0이면 0
+    val expenseRatioPct: Int,
+    // 매출(미수 제외) - 지출
+    val netProfit: Long,
+    val netProfitDeltaPct: Int,
+)
+
+data class ExpensesTimePoint(
+    val date: LocalDate,
+    val expense: Long,
+    val netProfit: Long,
+)
+
+data class ExpensesStatisticsResponse(
+    val kpi: ExpensesKpi,
+    val timeseries: List<ExpensesTimePoint>,
+    val categoryDistribution: List<DistributionItem>,
+)

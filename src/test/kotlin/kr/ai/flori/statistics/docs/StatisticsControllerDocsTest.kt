@@ -25,6 +25,15 @@ class StatisticsControllerDocsTest : RestDocsSupport() {
             fieldWithPath("$prefix.percentage").type(JsonFieldType.NUMBER).optional().description("전체 대비 비율(0–100)"),
         )
 
+    private fun expenseDistributionFields(prefix: String) =
+        listOf(
+            fieldWithPath("$prefix.id").type(JsonFieldType.NUMBER).optional().description("카테고리 ID (미지정/삭제 시 null)"),
+            fieldWithPath("$prefix.label").type(JsonFieldType.STRING).optional().description("표시명 (null이면 '기타')"),
+            fieldWithPath("$prefix.amount").type(JsonFieldType.NUMBER).optional().description("지출 합계(원)"),
+            fieldWithPath("$prefix.count").type(JsonFieldType.NUMBER).optional().description("지출 건수"),
+            fieldWithPath("$prefix.percentage").type(JsonFieldType.NUMBER).optional().description("전체 대비 비율(0–100)"),
+        )
+
     private fun seedData(token: String) {
         val today = LocalDate.now().toString()
         // 카드 매출
@@ -55,6 +64,23 @@ class StatisticsControllerDocsTest : RestDocsSupport() {
                             "categoryId" to saleCategoryId(token, "vase"),
                             "amount" to 50_000,
                             "paymentMethodId" to salePaymentId(token, "cash"),
+                        ),
+                    )
+            }.andReturn()
+        // 지출
+        mockMvc
+            .post("/expenses") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    json(
+                        mapOf(
+                            "date" to today,
+                            "itemName" to "장미 도매",
+                            "categoryId" to expenseCategoryId(token),
+                            "unitPrice" to 30_000,
+                            "quantity" to 1,
+                            "paymentMethodId" to expensePaymentId(token),
                         ),
                     )
             }.andReturn()
@@ -104,6 +130,49 @@ class StatisticsControllerDocsTest : RestDocsSupport() {
                                     fieldWithPath("channelDistribution").type(JsonFieldType.ARRAY).description("채널별 분포"),
                                 ) +
                                 distributionFields("channelDistribution[]"),
+                    ),
+                )
+            }
+    }
+
+    @Test
+    fun `지출 통계 문서화`() {
+        val token = signupAndToken()
+        seedData(token)
+        val today = LocalDate.now().toString()
+
+        mockMvc
+            .get("/statistics/expenses") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                param("from", today)
+                param("to", today)
+            }.andExpect { status { isOk() } }
+            .andDo {
+                handle(
+                    docs(
+                        identifier = "statistics-expenses",
+                        responseSchema = "ExpensesStatisticsResponse",
+                        tag = "Statistics",
+                        summary = "지출 통계 (KPI + 일별 지출·순이익 시계열 + 카테고리 분포, 직전 동일 길이 기간 대비 증감)",
+                        responseFields =
+                            listOf(
+                                fieldWithPath("kpi.totalAmount").type(JsonFieldType.NUMBER).description("총 지출액(원)"),
+                                fieldWithPath("kpi.totalAmountDeltaPct").type(JsonFieldType.NUMBER).description("총 지출 증감률(%, 직전 기간 대비)"),
+                                fieldWithPath("kpi.count").type(JsonFieldType.NUMBER).description("지출 건수"),
+                                fieldWithPath("kpi.countDelta").type(JsonFieldType.NUMBER).description("지출 건수 증감(건, 직전 기간 대비)"),
+                                fieldWithPath(
+                                    "kpi.expenseRatioPct",
+                                ).type(JsonFieldType.NUMBER).description("매출 대비 지출 비율(%, 미수 제외 매출 기준, 매출 0이면 0)"),
+                                fieldWithPath("kpi.netProfit").type(JsonFieldType.NUMBER).description("순이익(원, 미수 제외 매출 - 지출)"),
+                                fieldWithPath("kpi.netProfitDeltaPct").type(JsonFieldType.NUMBER).description("순이익 증감률(%, 직전 기간 대비)"),
+                                fieldWithPath("timeseries").type(JsonFieldType.ARRAY).description("일별 지출·순이익 시계열"),
+                                fieldWithPath("timeseries[].date").type(JsonFieldType.STRING).optional().description("일자 (yyyy-MM-dd)"),
+                                fieldWithPath("timeseries[].expense").type(JsonFieldType.NUMBER).optional().description("해당일 지출 합계(원)"),
+                                fieldWithPath(
+                                    "timeseries[].netProfit",
+                                ).type(JsonFieldType.NUMBER).optional().description("해당일 순이익(원, 미수 제외 매출 - 지출)"),
+                                fieldWithPath("categoryDistribution").type(JsonFieldType.ARRAY).description("카테고리별 지출 분포"),
+                            ) + expenseDistributionFields("categoryDistribution[]"),
                     ),
                 )
             }
