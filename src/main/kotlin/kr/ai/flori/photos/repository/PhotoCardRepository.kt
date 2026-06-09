@@ -31,15 +31,19 @@ interface PhotoCardRepository : JpaRepository<PhotoCard, Long> {
         value =
             "SELECT pc.* FROM photo_cards pc " +
                 "WHERE pc.user_id = :userId " +
-                "AND (CAST(:cursor AS timestamptz) IS NULL OR pc.updated_at < CAST(:cursor AS timestamptz)) " +
+                // (updated_at, id) 복합 키셋 — 동일 updated_at 다수여도 id로 안정적 페이지네이션
+                "AND (CAST(:cursorTs AS timestamptz) IS NULL " +
+                "  OR pc.updated_at < CAST(:cursorTs AS timestamptz) " +
+                "  OR (pc.updated_at = CAST(:cursorTs AS timestamptz) AND pc.id < :cursorId)) " +
                 "AND (CAST(:tag AS text) IS NULL OR :tag = ANY(pc.tags)) " +
                 "AND (CAST(:customerId AS bigint) IS NULL OR pc.customer_id = CAST(:customerId AS bigint)) " +
-                "ORDER BY pc.updated_at DESC LIMIT :limit",
+                "ORDER BY pc.updated_at DESC, pc.id DESC LIMIT :limit",
         nativeQuery = true,
     )
     fun findPage(
         @Param("userId") userId: Long,
-        @Param("cursor") cursor: String?,
+        @Param("cursorTs") cursorTs: String?,
+        @Param("cursorId") cursorId: Long?,
         @Param("tag") tag: String?,
         @Param("customerId") customerId: String?,
         @Param("limit") limit: Int,

@@ -89,6 +89,6 @@ data class PhotoCardResponse(
 
 data class PhotoCardsPageResponse(
     val cards: List<PhotoCardResponse>,
-    val nextCursor: Instant?,
+    val nextCursor: String?,
     val hasMore: Boolean,
 )

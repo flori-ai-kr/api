@@ -38,10 +38,14 @@ class PhotoCardService(
         customerId: String?,
     ): PhotoCardsPageResponse {
         val userId = TenantContext.currentUserId()
-        val rows = photoCardRepository.findPage(userId, cursor, tag, customerId, PAGE_SIZE + 1)
+        // 복합 커서 "updatedAt|id" 파싱(구형=ts만 → id MAX로 같은 ts 전부 포함, 프론트가 dedupe).
+        val sep = cursor?.lastIndexOf('|') ?: -1
+        val cursorTs = cursor?.let { if (sep >= 0) it.substring(0, sep) else it }
+        val cursorId = (cursor?.takeIf { sep >= 0 }?.substring(sep + 1)?.toLongOrNull()) ?: Long.MAX_VALUE
+        val rows = photoCardRepository.findPage(userId, cursorTs, cursorId, tag, customerId, PAGE_SIZE + 1)
         val hasMore = rows.size > PAGE_SIZE
         val cards = if (hasMore) rows.take(PAGE_SIZE) else rows
-        val nextCursor = if (hasMore) cards.last().updatedAt else null
+        val nextCursor = if (hasMore) "${cards.last().updatedAt}|${cards.last().id}" else null
         // N+1 회피: 페이지의 distinct customerId 들을 1쿼리로 이름 맵 조회.
         val nameMap = customerNames(userId, cards.mapNotNull { it.customerId }.toSet())
         return PhotoCardsPageResponse(
