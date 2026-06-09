@@ -17,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest
 @SpringBootTest
 class WaitlistServiceIntegrationTest {
     @Autowired private lateinit var service: WaitlistService
+
     @Autowired private lateinit var repository: WaitlistRegistrationRepository
 
     @BeforeEach
@@ -35,9 +36,10 @@ class WaitlistServiceIntegrationTest {
     @Test
     fun `같은 번호(형식만 다름)로 재등록하면 ALREADY_REGISTERED`() {
         service.register(WaitlistRegisterRequest(shopName = "A", phone = "01099998888"))
-        val ex = assertThrows<AppException> {
-            service.register(WaitlistRegisterRequest(shopName = "B", phone = "010-9999-8888"))
-        }
+        val ex =
+            assertThrows<AppException> {
+                service.register(WaitlistRegisterRequest(shopName = "B", phone = "010-9999-8888"))
+            }
         assertThat(ex.errorCode).isEqualTo(WaitlistErrorCode.ALREADY_REGISTERED)
     }
 
