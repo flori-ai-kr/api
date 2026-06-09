@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.sql.Date
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 /**
  * 지출 통계. 지출 합계·건수·카테고리 분포는 expenses(total_amount)로 산출하고,
@@ -33,6 +34,9 @@ class ExpensesStatisticsService(
         to: LocalDate,
     ): ExpensesStatisticsResponse {
         if (from.isAfter(to)) throw AppException(CommonErrorCode.VALIDATION, "from must not be after to")
+        if (ChronoUnit.DAYS.between(from, to) > StatisticsSupport.MAX_RANGE_DAYS) {
+            throw AppException(CommonErrorCode.VALIDATION, "조회 기간이 너무 깁니다")
+        }
         val userId = TenantContext.currentUserId()
         val prev = support.previousPeriod(from, to)
 

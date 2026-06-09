@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.sql.Date
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 /**
  * 매출 통계. 집계는 네이티브 SQL(JdbcTemplate), 모든 쿼리 user_id 바인딩(테넌트 격리·인젝션 방지).
@@ -34,6 +35,9 @@ class SalesStatisticsService(
         to: LocalDate,
     ): SalesStatisticsResponse {
         if (from.isAfter(to)) throw AppException(CommonErrorCode.VALIDATION, "from must not be after to")
+        if (ChronoUnit.DAYS.between(from, to) > StatisticsSupport.MAX_RANGE_DAYS) {
+            throw AppException(CommonErrorCode.VALIDATION, "조회 기간이 너무 깁니다")
+        }
         val userId = TenantContext.currentUserId()
         val prev = support.previousPeriod(from, to)
 

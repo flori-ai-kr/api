@@ -128,7 +128,6 @@ data class GenderCount(
 data class TopCustomer(
     val customerId: Long?,
     val name: String,
-    val phone: String,
     val grade: String,
     val purchaseCount: Long,
     val totalAmount: Long,

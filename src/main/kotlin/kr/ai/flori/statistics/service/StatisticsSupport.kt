@@ -29,12 +29,18 @@ class StatisticsSupport {
         total: Long,
     ): Int = if (total > 0) (amount.toDouble() / total * PERCENT).roundToInt() else 0
 
-    /** 직전 대비 증감률(%). prev=0이면 cur>0일 때 100, 아니면 0. Int 범위로 클램프. */
+    /** 직전 대비 증감률(%). prev=0이면 cur>0→100, cur<0→-100, cur=0→0. Int 범위로 클램프. */
     fun pct(
         cur: Long,
         prev: Long,
     ): Int {
-        if (prev == 0L) return if (cur > 0L) PERCENT else 0
+        if (prev == 0L) {
+            return when {
+                cur > 0L -> PERCENT
+                cur < 0L -> -PERCENT
+                else -> 0
+            }
+        }
         val v = (cur - prev) * PERCENT.toDouble() / prev
         return v.coerceIn(Int.MIN_VALUE.toDouble(), Int.MAX_VALUE.toDouble()).roundToInt()
     }
@@ -47,6 +53,9 @@ class StatisticsSupport {
 
     companion object {
         const val PERCENT = 100
+
+        /** 조회 기간 상한(일). 약 2년 — 웹 최대 프리셋('올해')을 넉넉히 수용한다. */
+        const val MAX_RANGE_DAYS = 731L
 
         /** id가 null인(설정에서 삭제됐거나 미지정) 집계 버킷의 표시 라벨. */
         const val ETC = "기타"

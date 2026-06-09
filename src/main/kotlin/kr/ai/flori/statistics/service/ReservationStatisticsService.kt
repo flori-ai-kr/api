@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.sql.Date
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import kotlin.math.roundToInt
 
 /**
@@ -32,13 +33,18 @@ class ReservationStatisticsService(
         to: LocalDate,
     ): ReservationStatisticsResponse {
         if (from.isAfter(to)) throw AppException(CommonErrorCode.VALIDATION, "from must not be after to")
+        if (ChronoUnit.DAYS.between(from, to) > StatisticsSupport.MAX_RANGE_DAYS) {
+            throw AppException(CommonErrorCode.VALIDATION, "조회 기간이 너무 깁니다")
+        }
         val userId = TenantContext.currentUserId()
         val prev = support.previousPeriod(from, to)
+        // 현재 기간 길이(일). previousPeriod가 (to-from)+1로 산출한 동일 길이를 재사용한다.
+        val periodDays = prev.days
 
         val total = reservationTotal(userId, from, to)
         val prevTotal = reservationTotal(userId, prev.from, prev.to)
         // 일평균을 소수 1자리로 반올림(예: 2.36 → 2.4).
-        val dailyAvg = (total.toDouble() / prev.days * ONE_DECIMAL_SCALE).roundToInt() / ONE_DECIMAL_SCALE
+        val dailyAvg = (total.toDouble() / periodDays * ONE_DECIMAL_SCALE).roundToInt() / ONE_DECIMAL_SCALE
 
         val dowDistribution = reservationDowDistribution(userId, from, to)
         val hourDistribution = reservationHourDistribution(userId, from, to)

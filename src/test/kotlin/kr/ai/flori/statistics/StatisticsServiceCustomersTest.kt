@@ -122,6 +122,21 @@ class StatisticsServiceCustomersTest {
         ),
     )
 
+    /** 이름 없이 전화번호만 있는 매출 — resolveCustomerId가 customer_id를 NULL로 둔다(전화 매칭은 통계 쿼리가 수행). */
+    private fun phoneOnlySale(
+        date: LocalDate,
+        amount: Int,
+        customerPhone: String,
+    ) = saleService.create(
+        SaleCreateRequest(
+            date = date,
+            categoryId = labelId(LabelKinds.CATEGORY, "basic_bouquet"),
+            amount = amount,
+            paymentMethodId = labelId(LabelKinds.PAYMENT, "card"),
+            customerPhone = customerPhone,
+        ),
+    )
+
     @Test
     fun `고객 통계는 신규·재방문·등급·성별·TOP을 산출한다`() {
         newTenant()
@@ -167,6 +182,37 @@ class StatisticsServiceCustomersTest {
         assertThat(top.totalAmount).isEqualTo(50_000)
         assertThat(top.purchaseCount).isEqualTo(1)
         assertThat(top.grade).isEqualTo("vip")
+    }
+
+    @Test
+    fun `TOP 고객은 customer_id 매출과 전화번호-only 매출이 섞여도 한 행으로 합쳐진다`() {
+        newTenant()
+        // 등록 고객 → 이름+전화 매출은 customer_id로 연결된다.
+        customerService.create(CustomerCreateRequest(name = "혼합고객", phone = "010-3333-3333", grade = "vip", gender = "female"))
+        sale(LocalDate.of(2026, 6, 1), 40_000, "혼합고객", "010-3333-3333") // customer_id 연결
+        // 이름 없이 전화만 있는 매출 → customer_id는 NULL이지만 전화번호로 같은 고객과 매칭되어야 한다.
+        phoneOnlySale(LocalDate.of(2026, 6, 3), 25_000, "010-3333-3333")
+
+        val result = statisticsService.customerStatistics(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30))
+
+        // 같은 논리 고객이 한 행으로 — 두 매출이 합산(40000+25000=65000, 2건).
+        assertThat(result.topCustomers).hasSize(1)
+        val top = result.topCustomers.first()
+        assertThat(top.name).isEqualTo("혼합고객")
+        assertThat(top.grade).isEqualTo("vip")
+        assertThat(top.purchaseCount).isEqualTo(2)
+        assertThat(top.totalAmount).isEqualTo(65_000)
+    }
+
+    @Test
+    fun `조회 기간이 상한을 초과하면 검증 에러(400)를 던진다`() {
+        newTenant()
+        val from = LocalDate.of(2024, 1, 1)
+        assertThatThrownBy {
+            statisticsService.customerStatistics(from, from.plusDays(732))
+        }.isInstanceOf(AppException::class.java)
+            .extracting { (it as AppException).errorCode }
+            .isEqualTo(CommonErrorCode.VALIDATION)
     }
 
     @Test

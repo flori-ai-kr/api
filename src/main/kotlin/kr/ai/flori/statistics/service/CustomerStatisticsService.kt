@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.sql.Date
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 /**
  * 고객 통계. 신규/재방문 판정은 customer_phone 기준이며(대시보드와 동일 규약), 구매는 미수 제외
@@ -31,6 +32,9 @@ class CustomerStatisticsService(
         to: LocalDate,
     ): CustomerStatisticsResponse {
         if (from.isAfter(to)) throw AppException(CommonErrorCode.VALIDATION, "from must not be after to")
+        if (ChronoUnit.DAYS.between(from, to) > StatisticsSupport.MAX_RANGE_DAYS) {
+            throw AppException(CommonErrorCode.VALIDATION, "조회 기간이 너무 깁니다")
+        }
         val userId = TenantContext.currentUserId()
         val prev = support.previousPeriod(from, to)
 
@@ -130,9 +134,11 @@ class CustomerStatisticsService(
         )
 
     /**
-     * 기간 내 구매(미수 제외) TOP 고객(금액 내림차순 10명). customer_id가 있으면 그 기준으로,
-     * 없으면 customer_phone 기준으로 묶는다. 등급/이름/전화는 customers를 LEFT JOIN해 정규화하고
-     * 매칭 고객이 없으면 등급은 'new'.
+     * 기간 내 구매(미수 제외) TOP 고객(금액 내림차순 10명). 한 논리 고객 = 한 행이 되도록,
+     * 먼저 단일 안정 키(customer_id가 있으면 그 id, 없고 전화번호가 등록 고객과 매칭되면 그 고객 id,
+     * 그래도 없으면 전화번호 문자열)로 매출을 선집계한 뒤 customers를 한 번만 LEFT JOIN한다.
+     * 이렇게 하면 동일 고객이 customer_id 매출과 전화번호-only 매출을 섞어 가져도 한 행으로 합쳐진다.
+     * 등급/이름은 customers를 우선하고, 매칭 고객이 없으면 등급은 'new'.
      */
     private fun topCustomers(
         userId: Long,
@@ -141,18 +147,35 @@ class CustomerStatisticsService(
     ): List<TopCustomer> =
         jdbcTemplate.query(
             """
+            WITH keyed AS (
+              SELECT
+                COALESCE(s.customer_id, cp.id) AS key_customer_id,
+                CASE WHEN s.customer_id IS NULL AND cp.id IS NULL THEN s.customer_phone END AS key_phone,
+                s.customer_name,
+                s.amount
+              FROM sales s
+              LEFT JOIN customers cp ON cp.user_id = s.user_id AND cp.phone = s.customer_phone
+              WHERE s.user_id = ?::bigint AND s.date BETWEEN ? AND ? AND s.payment_method_id IS NOT NULL
+                AND (s.customer_id IS NOT NULL OR s.customer_phone IS NOT NULL)
+            ),
+            agg AS (
+              SELECT
+                key_customer_id,
+                key_phone,
+                MAX(customer_name) AS fallback_name,
+                COUNT(*) AS cnt,
+                SUM(amount) AS amount
+              FROM keyed
+              GROUP BY key_customer_id, key_phone
+            )
             SELECT
               c.id AS cid,
-              COALESCE(c.name, MAX(s.customer_name)) AS name,
-              COALESCE(c.phone, s.customer_phone) AS phone,
+              COALESCE(c.name, agg.fallback_name) AS name,
               COALESCE(c.grade, ?) AS grade,
-              COUNT(*) AS cnt,
-              SUM(s.amount) AS amount
-            FROM sales s
-            LEFT JOIN customers c ON c.id = s.customer_id AND c.user_id = s.user_id
-            WHERE s.user_id = ?::bigint AND s.date BETWEEN ? AND ? AND s.payment_method_id IS NOT NULL
-              AND (s.customer_id IS NOT NULL OR s.customer_phone IS NOT NULL)
-            GROUP BY COALESCE(s.customer_id::text, s.customer_phone), c.id, c.name, c.phone, c.grade, s.customer_phone
+              agg.cnt AS cnt,
+              agg.amount AS amount
+            FROM agg
+            LEFT JOIN customers c ON c.id = agg.key_customer_id AND c.user_id = ?::bigint
             ORDER BY amount DESC
             LIMIT ?
             """.trimIndent(),
@@ -160,16 +183,16 @@ class CustomerStatisticsService(
                 TopCustomer(
                     customerId = rs.getLong("cid").takeUnless { rs.wasNull() },
                     name = rs.getString("name") ?: "",
-                    phone = rs.getString("phone") ?: "",
                     grade = rs.getString("grade") ?: DEFAULT_GRADE,
                     purchaseCount = rs.getLong("cnt"),
                     totalAmount = rs.getLong("amount"),
                 )
             },
-            DEFAULT_GRADE,
             userId,
             Date.valueOf(from),
             Date.valueOf(to),
+            DEFAULT_GRADE,
+            userId,
             TOP_CUSTOMERS_LIMIT,
         )
 

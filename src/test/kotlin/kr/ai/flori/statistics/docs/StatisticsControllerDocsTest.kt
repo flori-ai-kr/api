@@ -272,7 +272,6 @@ class StatisticsControllerDocsTest : RestDocsSupport() {
                                     "topCustomers[].customerId",
                                 ).type(JsonFieldType.NUMBER).optional().description("고객 ID(미연결 시 null)"),
                                 fieldWithPath("topCustomers[].name").type(JsonFieldType.STRING).optional().description("고객명"),
-                                fieldWithPath("topCustomers[].phone").type(JsonFieldType.STRING).optional().description("전화번호"),
                                 fieldWithPath("topCustomers[].grade").type(JsonFieldType.STRING).optional().description("등급(미매칭 시 'new')"),
                                 fieldWithPath(
                                     "topCustomers[].purchaseCount",
