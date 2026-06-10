@@ -23,7 +23,4 @@ class PhotoTag(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     var id: Long? = null
-
-    @Column(name = "color")
-    var color: String = "#6b7280"
 }

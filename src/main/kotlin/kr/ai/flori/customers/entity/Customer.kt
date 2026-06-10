@@ -27,8 +27,12 @@ class Customer(
     @Column(name = "id")
     var id: Long? = null
 
-    @Column(name = "grade")
-    var grade: String = "new"
+    // 등급(커스텀 등급 테이블 소프트 참조). 자동승급/수동고정/되돌리기는 CustomerService가 관리.
+    @Column(name = "grade_id")
+    var gradeId: Long? = null
+
+    @Column(name = "grade_locked", nullable = false)
+    var gradeLocked: Boolean = false
 
     @Column(name = "gender")
     var gender: String? = null

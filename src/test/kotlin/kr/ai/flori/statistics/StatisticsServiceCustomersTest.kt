@@ -8,6 +8,7 @@ import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.customers.dto.CustomerCreateRequest
+import kr.ai.flori.customers.service.CustomerGradeService
 import kr.ai.flori.customers.service.CustomerService
 import kr.ai.flori.pinDefaultTimeZoneToUtc
 import kr.ai.flori.sales.dto.SaleCreateRequest
@@ -41,6 +42,9 @@ class StatisticsServiceCustomersTest {
 
     @Autowired
     lateinit var customerService: CustomerService
+
+    @Autowired
+    lateinit var gradeService: CustomerGradeService
 
     @Autowired
     lateinit var authService: AuthService
@@ -137,12 +141,19 @@ class StatisticsServiceCustomersTest {
         ),
     )
 
+    /** 기본 등급 시드 후 해당 고객을 VIP로 수동 지정(잠금) — 등급 분포/TOP 검증용. */
+    private fun assignVip(customerId: Long) {
+        val vipId = requireNotNull(gradeService.list().first { it.name == "VIP" }.id)
+        customerService.updateGrade(customerId, vipId)
+    }
+
     @Test
     fun `고객 통계는 신규·재방문·등급·성별·TOP을 산출한다`() {
         newTenant()
-        // 등급·성별 분포용 고객 등록
-        customerService.create(CustomerCreateRequest(name = "신규고객", phone = "010-1111-1111", grade = "new", gender = "female"))
-        customerService.create(CustomerCreateRequest(name = "재방문고객", phone = "010-2222-2222", grade = "vip", gender = "male"))
+        // 등급·성별 분포용 고객 등록 (등급은 커스텀 등급 모델 — VIP 수동 지정)
+        customerService.create(CustomerCreateRequest(name = "신규고객", phone = "010-1111-1111", gender = "female"))
+        val vip = customerService.create(CustomerCreateRequest(name = "재방문고객", phone = "010-2222-2222", gender = "male"))
+        assignVip(requireNotNull(vip.id))
 
         // 재방문 고객: 기간 이전(5/20)에 선구매 + 기간 내(6/2) 구매
         sale(LocalDate.of(2026, 5, 20), 10_000, "재방문고객", "010-2222-2222")
@@ -168,9 +179,9 @@ class StatisticsServiceCustomersTest {
         assertThat(result.timeseries.first { it.date == LocalDate.of(2026, 6, 1) }.newCustomers).isEqualTo(1)
         assertThat(result.timeseries.none { it.date == LocalDate.of(2026, 6, 2) && it.newCustomers > 0 }).isTrue()
 
-        // 등급 분포: new 1, vip 1
-        assertThat(result.gradeDistribution.first { it.grade == "new" }.count).isEqualTo(1)
-        assertThat(result.gradeDistribution.first { it.grade == "vip" }.count).isEqualTo(1)
+        // 등급 분포: 신규 1(기본), VIP 1(수동 지정)
+        assertThat(result.gradeDistribution.first { it.grade == "신규" }.count).isEqualTo(1)
+        assertThat(result.gradeDistribution.first { it.grade == "VIP" }.count).isEqualTo(1)
 
         // 성별 분포: female 1, male 1
         assertThat(result.genderDistribution.first { it.gender == "female" }.count).isEqualTo(1)
@@ -181,14 +192,15 @@ class StatisticsServiceCustomersTest {
         val top = result.topCustomers.first()
         assertThat(top.totalAmount).isEqualTo(50_000)
         assertThat(top.purchaseCount).isEqualTo(1)
-        assertThat(top.grade).isEqualTo("vip")
+        assertThat(top.grade).isEqualTo("VIP")
     }
 
     @Test
     fun `TOP 고객은 customer_id 매출과 전화번호-only 매출이 섞여도 한 행으로 합쳐진다`() {
         newTenant()
         // 등록 고객 → 이름+전화 매출은 customer_id로 연결된다.
-        customerService.create(CustomerCreateRequest(name = "혼합고객", phone = "010-3333-3333", grade = "vip", gender = "female"))
+        val mixed = customerService.create(CustomerCreateRequest(name = "혼합고객", phone = "010-3333-3333", gender = "female"))
+        assignVip(requireNotNull(mixed.id))
         sale(LocalDate.of(2026, 6, 1), 40_000, "혼합고객", "010-3333-3333") // customer_id 연결
         // 이름 없이 전화만 있는 매출 → customer_id는 NULL이지만 전화번호로 같은 고객과 매칭되어야 한다.
         phoneOnlySale(LocalDate.of(2026, 6, 3), 25_000, "010-3333-3333")
@@ -199,7 +211,7 @@ class StatisticsServiceCustomersTest {
         assertThat(result.topCustomers).hasSize(1)
         val top = result.topCustomers.first()
         assertThat(top.name).isEqualTo("혼합고객")
-        assertThat(top.grade).isEqualTo("vip")
+        assertThat(top.grade).isEqualTo("VIP")
         assertThat(top.purchaseCount).isEqualTo(2)
         assertThat(top.totalAmount).isEqualTo(65_000)
     }
@@ -218,7 +230,7 @@ class StatisticsServiceCustomersTest {
     @Test
     fun `다른 테넌트의 고객은 집계에 포함되지 않는다`() {
         newTenant()
-        customerService.create(CustomerCreateRequest(name = "타테넌트", phone = "010-9999-9999", grade = "new", gender = "female"))
+        customerService.create(CustomerCreateRequest(name = "타테넌트", phone = "010-9999-9999", gender = "female"))
         sale(LocalDate.of(2026, 6, 1), 30_000, "타테넌트", "010-9999-9999")
 
         newTenant() // 새 사용자(데이터 없음)

@@ -9,4 +9,6 @@ enum class DiscordChannel(
 ) {
     SIGNUP({ it.signupWebhookUrl }),
     VERIFICATION({ it.verificationWebhookUrl }),
+    WAITLIST({ it.waitlistWebhookUrl }),
+    INTERVIEW({ it.interviewWebhookUrl }),
 }
