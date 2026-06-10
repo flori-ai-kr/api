@@ -64,7 +64,8 @@ src/main/kotlin/kr/ai/flori/
 ├── settings/              # 카드사 · 매출/지출 설정 · 하단바 · 푸시 구독
 ├── community/             # 커뮤니티 게시판(단일 공유) · 비밀글/댓글·대댓글·좋아요·soft delete
 ├── verification/          # 사업자 인증 (신청·상태조회·presigned 업로드·게이팅)
-├── waitlist/              # 사전등록 공개 모집 (인증 불필요 — POST /waitlist, GET /waitlist/count)
+├── waitlist/              # 사전등록 공개 모집 (인증 불필요 — POST /waitlist, GET /waitlist/count). 식별자: 이메일(정규화 UNIQUE)
+├── interview/             # 유저 인터뷰 모집 (공개 — POST /interview, 이름+전화번호). 신청 시 Discord INTERVIEW 채널 비동기 알림
 ├── dashboard/             # 오늘/월 집계 · 네이티브 SQL 통계
 ├── statistics/            # 기간별 통계 API (/statistics/**) — 매출·지출·예약·고객 KPI + 일별 시계열 + 분포. JdbcTemplate 네이티브 SQL. 도메인별 서비스(Sales/Expenses/Reservation/CustomerStatisticsService) + StatisticsSupport(공용 증감·비율·기간 계산) + 파사드(StatisticsService) + StatisticsController
 ├── admin/                 # 운영자 콘솔 API (/admin/**, @RequiresAdmin · cross-tenant) — 통계·인증심사·유저·AI헬스 프록시
@@ -151,7 +152,7 @@ src/main/kotlin/kr/ai/flori/
 | 푸시 | `common/push/PushService.kt`, `FirebasePushService.kt` |
 | 사업자 인증 게이팅 | `verification/gating/RequiresBusinessVerified.kt`, `BusinessVerifiedInterceptor.kt` |
 | 운영자 콘솔 게이팅 | `admin/gating/RequiresAdmin.kt`, `AdminInterceptor.kt` (User.isAdmin 재검증, `/admin/**`) |
-| Discord 알림 | `common/notification/discord/DiscordNotifier.kt`, `DiscordChannel.kt`, `DiscordProperties.kt` |
+| Discord 알림 | `common/notification/discord/DiscordNotifier.kt`, `DiscordChannel.kt`, `DiscordProperties.kt` — 채널: SIGNUP·VERIFICATION·WAITLIST·INTERVIEW |
 | CORS / OpenAPI 설정 | `common/config/CorsConfig.kt`, `OpenApiConfig.kt` |
 | 헬스체크 | `common/health/HealthController.kt` |
 | 입력 길이 상한 SSOT | `common/validation/FieldLimits.kt` |
