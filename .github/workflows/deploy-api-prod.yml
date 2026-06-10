@@ -1,21 +1,20 @@
 # ==============================================================================
-# flori api (Spring Boot/Kotlin) CI/CD — DEV
+# flori api (Spring Boot/Kotlin) CI/CD — PROD
 # ==============================================================================
-# 배치: flori-ai-kr/api 리포 .github/workflows/deploy-api-dev.yml (별도 레포, 코드 루트)
-# 흐름: ARM64 네이티브 Docker 빌드(bootJar -x test) → ECR(flori-dev/api) → SSH deploy.api.sh
-# 테스트는 ci.yml 이 전담(같은 push). deploy 는 빌드/배포만 — Zonky 통합테스트 중복 실행 제거로 단축.
-# 패턴: aws-infra/.github/workflows/api/deploy-optigen-dev.yml 과 동일 (ubuntu-24.04-arm, QEMU 불필요)
+# 흐름: ARM64 네이티브 Docker 빌드(bootJar -x test) → ECR(flori-prod/api) → SSH deploy.api.sh
+# 트리거: main push (dev 워크플로는 dev 브랜치 전용으로 분리됨).
+# 테스트는 ci.yml 이 전담(같은 push). deploy 는 빌드/배포만.
 #
-# GitHub Secrets (org 또는 repo dev Environment):
-#   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY  (flori-gha-ecr)
-#   SSH_HOST (= flori-dev-app EIP 3.35.191.16) / SSH_USER (ec2-user) / SSH_PRIVATE_KEY (flori-key.pem)
+# GitHub Environment `prod` secrets:
+#   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY  (flori-prod/* push 권한)
+#   SSH_HOST (= flori-prod-app EIP) / SSH_USER (ec2-user) / SSH_PRIVATE_KEY (flori-key.pem)
 # ==============================================================================
 
-name: 🚀 Deploy api (DEV)
+name: 🚀 Deploy api (PROD)
 
 on:
   push:
-    branches: [dev]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -23,12 +22,12 @@ permissions:
 
 env:
   AWS_REGION: ap-northeast-2
-  ECR_REPOSITORY: flori-dev/api
+  ECR_REPOSITORY: flori-prod/api
 
 jobs:
   build-and-push:
     name: 빌드 및 ECR Push
-    runs-on: ubuntu-24.04-arm # ARM64 네이티브 (build.gradle 에 Zonky arm64v8 바이너리 추가로 테스트 통과). public 레포 무료 러너
+    runs-on: ubuntu-24.04-arm
     outputs:
       image_tag: ${{ steps.meta.outputs.tags }}
     steps:
@@ -69,7 +68,7 @@ jobs:
     name: EC2 배포
     needs: build-and-push
     runs-on: ubuntu-latest
-    environment: dev
+    environment: prod
     steps:
       - name: SSH 배포
         uses: appleboy/ssh-action@v1.0.3
