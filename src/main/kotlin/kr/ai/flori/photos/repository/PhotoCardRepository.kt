@@ -1,0 +1,66 @@
+package kr.ai.flori.photos.repository
+
+import kr.ai.flori.photos.entity.PhotoCard
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
+
+interface PhotoCardRepository : JpaRepository<PhotoCard, Long> {
+    fun findByIdAndUserId(
+        id: Long,
+        userId: Long,
+    ): PhotoCard?
+
+    fun findFirstByUserIdAndSaleId(
+        userId: Long,
+        saleId: Long,
+    ): PhotoCard?
+
+    /** 매출 목록의 썸네일 표시용: 여러 sale_id에 연결된 사진 카드 일괄 조회. */
+    fun findByUserIdAndSaleIdIn(
+        userId: Long,
+        saleIds: Collection<Long>,
+    ): List<PhotoCard>
+
+    /**
+     * 커서 페이지네이션(updated_at desc) + 선택 필터(tag 포함, 고객별 sales 조인).
+     * NULL 파라미터는 CAST...IS NULL 로 필터 미적용 처리.
+     */
+    @Query(
+        value =
+            "SELECT pc.* FROM photo_cards pc LEFT JOIN sales s ON pc.sale_id = s.id " +
+                "WHERE pc.user_id = :userId " +
+                "AND (CAST(:cursor AS timestamptz) IS NULL OR pc.updated_at < CAST(:cursor AS timestamptz)) " +
+                "AND (CAST(:tag AS text) IS NULL OR :tag = ANY(pc.tags)) " +
+                "AND (CAST(:customerId AS bigint) IS NULL OR s.customer_id = CAST(:customerId AS bigint)) " +
+                "ORDER BY pc.updated_at DESC LIMIT :limit",
+        nativeQuery = true,
+    )
+    fun findPage(
+        @Param("userId") userId: Long,
+        @Param("cursor") cursor: String?,
+        @Param("tag") tag: String?,
+        @Param("customerId") customerId: String?,
+        @Param("limit") limit: Int,
+    ): List<PhotoCard>
+
+    /** 태그 삭제 시 해당 태그를 사용하는 카드들에서 태그명 제거. */
+    @Modifying
+    @Query(
+        value = "UPDATE photo_cards SET tags = array_remove(tags, :tagName) WHERE user_id = :userId AND :tagName = ANY(tags)",
+        nativeQuery = true,
+    )
+    fun removeTagFromCards(
+        @Param("userId") userId: Long,
+        @Param("tagName") tagName: String,
+    ): Int
+
+    /** 매출 삭제 시 해당 매출에 연결된 사진 카드의 sale_id를 NULL로(카드 자체는 보존). */
+    @Modifying
+    @Query("UPDATE PhotoCard p SET p.saleId = null WHERE p.userId = :userId AND p.saleId = :saleId")
+    fun clearSaleReference(
+        @Param("userId") userId: Long,
+        @Param("saleId") saleId: Long,
+    ): Int
+}

@@ -21,5 +21,21 @@ application-local.yml
 .DS_Store
 *.log
 
-# Claude Code 로컬 아티팩트
-.claude/
+# Claude Code 로컬 설정/아티팩트 (프레임워크 자산은 커밋, 로컬만 제외)
+.claude/settings.local.json
+.claude/settings.local.*.json
+.claude/.env.local*
+.claude/local/
+.claude/plans/
+.claude/agent-memory/
+.claude/worktrees/
+
+# 스킬별 시크릿
+.claude/skills/*/.env*
+.claude/skills/*/secrets/
+.claude/skills/*/*/*secret*
+.claude/skills/*/*/*key*
+.claude/skills/*/*/*token*
+!.claude/skills/*/modules/*token*.md
+
+/logs/

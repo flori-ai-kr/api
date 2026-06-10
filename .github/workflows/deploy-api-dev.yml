@@ -1,0 +1,81 @@
+# ==============================================================================
+# flori api (Spring Boot/Kotlin) CI/CD — DEV
+# ==============================================================================
+# 배치: flori-ai-kr/api 리포 .github/workflows/deploy-api-dev.yml (별도 레포, 코드 루트)
+# 흐름: ARM64 네이티브 Docker 빌드(bootJar -x test) → ECR(flori-dev/api) → SSH deploy.api.sh
+# 테스트는 ci.yml 이 전담(같은 push). deploy 는 빌드/배포만 — Zonky 통합테스트 중복 실행 제거로 단축.
+# 패턴: aws-infra/.github/workflows/api/deploy-optigen-dev.yml 과 동일 (ubuntu-24.04-arm, QEMU 불필요)
+#
+# GitHub Secrets (org 또는 repo dev Environment):
+#   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY  (flori-gha-ecr)
+#   SSH_HOST (= flori-dev-app EIP 3.35.191.16) / SSH_USER (ec2-user) / SSH_PRIVATE_KEY (flori-key.pem)
+# ==============================================================================
+
+name: 🚀 Deploy api (DEV)
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: flori-dev/api
+
+jobs:
+  build-and-push:
+    name: 빌드 및 ECR Push
+    runs-on: ubuntu-24.04-arm # ARM64 네이티브 (build.gradle 에 Zonky arm64v8 바이너리 추가로 테스트 통과). public 레포 무료 러너
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+      - name: AWS 인증 설정
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: ECR 로그인
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: 이미지 태그 생성
+        id: meta
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          TIMESTAMP=$(TZ='Asia/Seoul' date +'%Y%m%d%H%M%S')
+          echo "tags=${TIMESTAMP}-${SHORT_SHA}" >> $GITHUB_OUTPUT
+      - name: Docker Buildx 설정
+        uses: docker/setup-buildx-action@v3
+      - name: Docker 이미지 빌드 및 Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.meta.outputs.tags }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+          platforms: linux/arm64
+          provenance: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: EC2 배포
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: SSH 배포
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            /home/ec2-user/scripts/deploy.api.sh ${{ needs.build-and-push.outputs.image_tag }}

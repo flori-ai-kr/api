@@ -1,0 +1,336 @@
+package kr.ai.flori.statistics.docs
+
+import kr.ai.flori.common.docs.RestDocsSupport
+import org.junit.jupiter.api.Test
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
+import org.springframework.restdocs.payload.JsonFieldType
+import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
+import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.post
+import java.time.LocalDate
+
+/**
+ * StatisticsController RestDocs 문서화.
+ * JWT 인증 — 분포·시계열이 비지 않도록 매출을 시드한다.
+ * 분포/시계열 배열 항목 필드는 .optional()로 선언해 빈 배열에서도 검증을 통과한다.
+ */
+class StatisticsControllerDocsTest : RestDocsSupport() {
+    private fun distributionFields(prefix: String) =
+        listOf(
+            fieldWithPath("$prefix.id").type(JsonFieldType.NUMBER).optional().description("그룹 ID (미지정/삭제 시 null)"),
+            fieldWithPath("$prefix.label").type(JsonFieldType.STRING).optional().description("표시명 (null이면 '기타')"),
+            fieldWithPath("$prefix.amount").type(JsonFieldType.NUMBER).optional().description("매출 합계(원)"),
+            fieldWithPath("$prefix.count").type(JsonFieldType.NUMBER).optional().description("매출 건수"),
+            fieldWithPath("$prefix.percentage").type(JsonFieldType.NUMBER).optional().description("전체 대비 비율(0–100)"),
+        )
+
+    private fun expenseDistributionFields(prefix: String) =
+        listOf(
+            fieldWithPath("$prefix.id").type(JsonFieldType.NUMBER).optional().description("카테고리 ID (미지정/삭제 시 null)"),
+            fieldWithPath("$prefix.label").type(JsonFieldType.STRING).optional().description("표시명 (null이면 '기타')"),
+            fieldWithPath("$prefix.amount").type(JsonFieldType.NUMBER).optional().description("지출 합계(원)"),
+            fieldWithPath("$prefix.count").type(JsonFieldType.NUMBER).optional().description("지출 건수"),
+            fieldWithPath("$prefix.percentage").type(JsonFieldType.NUMBER).optional().description("전체 대비 비율(0–100)"),
+        )
+
+    private fun seedData(token: String) {
+        val today = LocalDate.now().toString()
+        // 카드 매출
+        mockMvc
+            .post("/sales") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    json(
+                        mapOf(
+                            "date" to today,
+                            "categoryId" to saleCategoryId(token),
+                            "amount" to 100_000,
+                            "paymentMethodId" to salePaymentId(token),
+                            "channelId" to saleChannelId(token),
+                        ),
+                    )
+            }.andReturn()
+        // 현금 매출
+        mockMvc
+            .post("/sales") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    json(
+                        mapOf(
+                            "date" to today,
+                            "categoryId" to saleCategoryId(token, "vase"),
+                            "amount" to 50_000,
+                            "paymentMethodId" to salePaymentId(token, "cash"),
+                        ),
+                    )
+            }.andReturn()
+        // 지출
+        mockMvc
+            .post("/expenses") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    json(
+                        mapOf(
+                            "date" to today,
+                            "itemName" to "장미 도매",
+                            "categoryId" to expenseCategoryId(token),
+                            "unitPrice" to 30_000,
+                            "quantity" to 1,
+                            "paymentMethodId" to expensePaymentId(token),
+                        ),
+                    )
+            }.andReturn()
+        // 예약(시간대·히트맵 집계용)
+        mockMvc
+            .post("/reservations") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    json(
+                        mapOf(
+                            "date" to today,
+                            "time" to "15:30:00",
+                            "customerName" to "김하늘",
+                            "title" to "픽업 꽃다발",
+                        ),
+                    )
+            }.andReturn()
+    }
+
+    @Test
+    fun `매출 통계 문서화`() {
+        val token = signupAndToken()
+        seedData(token)
+        val today = LocalDate.now().toString()
+
+        mockMvc
+            .get("/statistics/sales") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                param("from", today)
+                param("to", today)
+            }.andExpect { status { isOk() } }
+            .andDo {
+                handle(
+                    docs(
+                        identifier = "statistics-sales",
+                        responseSchema = "SalesStatisticsResponse",
+                        tag = "Statistics",
+                        summary = "매출 통계 (KPI + 일별 시계열 + 카테고리/결제수단/채널 분포, 미수 제외, 직전 동일 길이 기간 대비 증감)",
+                        responseFields =
+                            listOf(
+                                fieldWithPath("kpi.totalAmount").type(JsonFieldType.NUMBER).description("총 매출액(원, 미수 제외)"),
+                                fieldWithPath("kpi.totalAmountDeltaPct").type(JsonFieldType.NUMBER).description("총 매출 증감률(%, 직전 기간 대비)"),
+                                fieldWithPath("kpi.count").type(JsonFieldType.NUMBER).description("매출 건수(미수 제외)"),
+                                fieldWithPath("kpi.countDelta").type(JsonFieldType.NUMBER).description("매출 건수 증감(건, 직전 기간 대비)"),
+                                fieldWithPath("kpi.avgOrderValue").type(JsonFieldType.NUMBER).description("객단가(원)"),
+                                fieldWithPath("kpi.avgOrderValueDeltaPct").type(JsonFieldType.NUMBER).description("객단가 증감률(%, 직전 기간 대비)"),
+                                fieldWithPath("kpi.unpaidBalance").type(JsonFieldType.NUMBER).description("미수 잔액(원)"),
+                                fieldWithPath("kpi.unpaidCount").type(JsonFieldType.NUMBER).description("미수 건수"),
+                                fieldWithPath("timeseries").type(JsonFieldType.ARRAY).description("일별 매출 시계열(미수 제외)"),
+                                fieldWithPath("timeseries[].date").type(JsonFieldType.STRING).optional().description("일자 (yyyy-MM-dd)"),
+                                fieldWithPath("timeseries[].amount").type(JsonFieldType.NUMBER).optional().description("해당일 매출 합계(원)"),
+                                fieldWithPath("timeseries[].count").type(JsonFieldType.NUMBER).optional().description("해당일 매출 건수"),
+                                fieldWithPath("categoryDistribution").type(JsonFieldType.ARRAY).description("카테고리별 분포"),
+                            ) +
+                                distributionFields("categoryDistribution[]") +
+                                listOf(
+                                    fieldWithPath("paymentDistribution").type(JsonFieldType.ARRAY).description("결제수단별 분포"),
+                                ) +
+                                distributionFields("paymentDistribution[]") +
+                                listOf(
+                                    fieldWithPath("channelDistribution").type(JsonFieldType.ARRAY).description("채널별 분포"),
+                                ) +
+                                distributionFields("channelDistribution[]"),
+                    ),
+                )
+            }
+    }
+
+    @Test
+    fun `지출 통계 문서화`() {
+        val token = signupAndToken()
+        seedData(token)
+        val today = LocalDate.now().toString()
+
+        mockMvc
+            .get("/statistics/expenses") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                param("from", today)
+                param("to", today)
+            }.andExpect { status { isOk() } }
+            .andDo {
+                handle(
+                    docs(
+                        identifier = "statistics-expenses",
+                        responseSchema = "ExpensesStatisticsResponse",
+                        tag = "Statistics",
+                        summary = "지출 통계 (KPI + 일별 지출·순이익 시계열 + 카테고리 분포, 직전 동일 길이 기간 대비 증감)",
+                        responseFields =
+                            listOf(
+                                fieldWithPath("kpi.totalAmount").type(JsonFieldType.NUMBER).description("총 지출액(원)"),
+                                fieldWithPath("kpi.totalAmountDeltaPct").type(JsonFieldType.NUMBER).description("총 지출 증감률(%, 직전 기간 대비)"),
+                                fieldWithPath("kpi.count").type(JsonFieldType.NUMBER).description("지출 건수"),
+                                fieldWithPath("kpi.countDelta").type(JsonFieldType.NUMBER).description("지출 건수 증감(건, 직전 기간 대비)"),
+                                fieldWithPath(
+                                    "kpi.expenseRatioPct",
+                                ).type(JsonFieldType.NUMBER).description("매출 대비 지출 비율(%, 미수 제외 매출 기준, 매출 0이면 0)"),
+                                fieldWithPath("kpi.netProfit").type(JsonFieldType.NUMBER).description("순이익(원, 미수 제외 매출 - 지출)"),
+                                fieldWithPath("kpi.netProfitDeltaPct").type(JsonFieldType.NUMBER).description("순이익 증감률(%, 직전 기간 대비)"),
+                                fieldWithPath("timeseries").type(JsonFieldType.ARRAY).description("일별 지출·순이익 시계열"),
+                                fieldWithPath("timeseries[].date").type(JsonFieldType.STRING).optional().description("일자 (yyyy-MM-dd)"),
+                                fieldWithPath("timeseries[].expense").type(JsonFieldType.NUMBER).optional().description("해당일 지출 합계(원)"),
+                                fieldWithPath(
+                                    "timeseries[].netProfit",
+                                ).type(JsonFieldType.NUMBER).optional().description("해당일 순이익(원, 미수 제외 매출 - 지출)"),
+                                fieldWithPath("categoryDistribution").type(JsonFieldType.ARRAY).description("카테고리별 지출 분포"),
+                            ) + expenseDistributionFields("categoryDistribution[]"),
+                    ),
+                )
+            }
+    }
+
+    private fun seedCustomer(token: String) {
+        mockMvc
+            .post("/customers") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    json(
+                        mapOf(
+                            "name" to "김하늘",
+                            "phone" to "010-1234-5678",
+                            "grade" to "vip",
+                            "gender" to "female",
+                        ),
+                    )
+            }.andReturn()
+        // 고객 연결 매출(미수 제외) — 신규/TOP 집계용
+        mockMvc
+            .post("/sales") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    json(
+                        mapOf(
+                            "date" to LocalDate.now().toString(),
+                            "categoryId" to saleCategoryId(token),
+                            "amount" to 80_000,
+                            "paymentMethodId" to salePaymentId(token),
+                            "customerName" to "김하늘",
+                            "customerPhone" to "010-1234-5678",
+                        ),
+                    )
+            }.andReturn()
+    }
+
+    @Test
+    fun `고객 통계 문서화`() {
+        val token = signupAndToken()
+        seedCustomer(token)
+        val today = LocalDate.now().toString()
+
+        mockMvc
+            .get("/statistics/customers") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                param("from", today)
+                param("to", today)
+            }.andExpect { status { isOk() } }
+            .andDo {
+                handle(
+                    docs(
+                        identifier = "statistics-customers",
+                        responseSchema = "CustomerStatisticsResponse",
+                        tag = "Statistics",
+                        summary = "고객 통계 (KPI + 일별 신규 시계열 + 등급/성별 분포 + TOP 고객, 신규·재방문은 전화번호 기준·미수 제외)",
+                        responseFields =
+                            listOf(
+                                fieldWithPath("kpi.total").type(JsonFieldType.NUMBER).description("기간 내 구매 고객 수(미수 제외, 전화번호 distinct)"),
+                                fieldWithPath("kpi.newCustomers").type(JsonFieldType.NUMBER).description("신규 고객 수(기간 내 최초 구매)"),
+                                fieldWithPath("kpi.newDelta").type(JsonFieldType.NUMBER).description("신규 고객 증감(명, 직전 기간 대비)"),
+                                fieldWithPath("kpi.returningCustomers").type(JsonFieldType.NUMBER).description("재방문 고객 수(기간 이전 구매 이력 존재)"),
+                                fieldWithPath("kpi.returningDelta").type(JsonFieldType.NUMBER).description("재방문 고객 증감(명, 직전 기간 대비)"),
+                                fieldWithPath("kpi.returningRatePct").type(JsonFieldType.NUMBER).description("재방문율(%, 재방문/전체, 전체 0이면 0)"),
+                                fieldWithPath("timeseries").type(JsonFieldType.ARRAY).description("일별 신규 고객 시계열(그날이 전체 최초 구매일)"),
+                                fieldWithPath("timeseries[].date").type(JsonFieldType.STRING).optional().description("일자 (yyyy-MM-dd)"),
+                                fieldWithPath("timeseries[].newCustomers").type(JsonFieldType.NUMBER).optional().description("해당일 신규 고객 수"),
+                                fieldWithPath("gradeDistribution").type(JsonFieldType.ARRAY).description("등급별 고객 분포(전체 고객, 기간 무관)"),
+                                fieldWithPath(
+                                    "gradeDistribution[].grade",
+                                ).type(JsonFieldType.STRING).optional().description("등급(new/regular/vip/blacklist)"),
+                                fieldWithPath("gradeDistribution[].count").type(JsonFieldType.NUMBER).optional().description("해당 등급 고객 수"),
+                                fieldWithPath("genderDistribution").type(JsonFieldType.ARRAY).description("성별 고객 분포(전체 고객, 기간 무관)"),
+                                fieldWithPath(
+                                    "genderDistribution[].gender",
+                                ).type(JsonFieldType.STRING).optional().description("성별(male/female, 미지정 시 null)"),
+                                fieldWithPath("genderDistribution[].count").type(JsonFieldType.NUMBER).optional().description("해당 성별 고객 수"),
+                                fieldWithPath("topCustomers").type(JsonFieldType.ARRAY).description("TOP 고객(기간 내 구매 금액 내림차순, 최대 10명)"),
+                                fieldWithPath(
+                                    "topCustomers[].customerId",
+                                ).type(JsonFieldType.NUMBER).optional().description("고객 ID(미연결 시 null)"),
+                                fieldWithPath("topCustomers[].name").type(JsonFieldType.STRING).optional().description("고객명"),
+                                fieldWithPath("topCustomers[].grade").type(JsonFieldType.STRING).optional().description("등급(미매칭 시 'new')"),
+                                fieldWithPath(
+                                    "topCustomers[].purchaseCount",
+                                ).type(JsonFieldType.NUMBER).optional().description("기간 내 구매 건수"),
+                                fieldWithPath(
+                                    "topCustomers[].totalAmount",
+                                ).type(JsonFieldType.NUMBER).optional().description("기간 내 구매 합계(원)"),
+                            ),
+                    ),
+                )
+            }
+    }
+
+    @Test
+    fun `예약 통계 문서화`() {
+        val token = signupAndToken()
+        seedData(token)
+        val today = LocalDate.now().toString()
+
+        mockMvc
+            .get("/statistics/reservations") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                param("from", today)
+                param("to", today)
+            }.andExpect { status { isOk() } }
+            .andDo {
+                handle(
+                    docs(
+                        identifier = "statistics-reservations",
+                        responseSchema = "ReservationStatisticsResponse",
+                        tag = "Statistics",
+                        summary = "예약 통계 (KPI + 일별 시계열 + 요일×시간대 히트맵 + 요일/시간대 분포, 상태 무관 전체 집계, 시간대는 KST 기준)",
+                        responseFields =
+                            listOf(
+                                fieldWithPath("kpi.total").type(JsonFieldType.NUMBER).description("총 예약 건수"),
+                                fieldWithPath("kpi.totalDeltaPct").type(JsonFieldType.NUMBER).description("총 예약 증감률(%, 직전 기간 대비)"),
+                                fieldWithPath("kpi.dailyAvg").type(JsonFieldType.NUMBER).description("일평균 예약 건수(소수 1자리)"),
+                                fieldWithPath("kpi.busiestDow").type(JsonFieldType.NUMBER).description("최다 예약 요일(0=일..6=토, 데이터 없으면 -1)"),
+                                fieldWithPath("kpi.busiestDowPct").type(JsonFieldType.NUMBER).description("최다 요일 비중(%, 전체 대비)"),
+                                fieldWithPath(
+                                    "kpi.peakHourBucket",
+                                ).type(JsonFieldType.STRING).description("피크 시간대 버킷(예: '15-17', 데이터 없으면 '')"),
+                                fieldWithPath("kpi.peakHourPct").type(JsonFieldType.NUMBER).description("피크 시간대 비중(%, 전체 대비)"),
+                                fieldWithPath("timeseries").type(JsonFieldType.ARRAY).description("일별 예약 건수 시계열"),
+                                fieldWithPath("timeseries[].date").type(JsonFieldType.STRING).optional().description("일자 (yyyy-MM-dd)"),
+                                fieldWithPath("timeseries[].count").type(JsonFieldType.NUMBER).optional().description("해당일 예약 건수"),
+                                fieldWithPath("heatmap").type(JsonFieldType.ARRAY).description("요일×시간대 히트맵(시간 미지정 예약 제외)"),
+                                fieldWithPath("heatmap[].dow").type(JsonFieldType.NUMBER).optional().description("요일(0=일..6=토)"),
+                                fieldWithPath("heatmap[].hourBucket").type(JsonFieldType.STRING).optional().description("시간대 버킷(KST)"),
+                                fieldWithPath("heatmap[].count").type(JsonFieldType.NUMBER).optional().description("해당 셀 예약 건수"),
+                                fieldWithPath("dowDistribution").type(JsonFieldType.ARRAY).description("요일별 분포(시간 미지정 포함)"),
+                                fieldWithPath("dowDistribution[].dow").type(JsonFieldType.NUMBER).optional().description("요일(0=일..6=토)"),
+                                fieldWithPath("dowDistribution[].count").type(JsonFieldType.NUMBER).optional().description("해당 요일 예약 건수"),
+                                fieldWithPath("hourDistribution").type(JsonFieldType.ARRAY).description("시간대별 분포(시간 미지정 제외, KST)"),
+                                fieldWithPath("hourDistribution[].hourBucket").type(JsonFieldType.STRING).optional().description("버킷(KST)"),
+                                fieldWithPath("hourDistribution[].count").type(JsonFieldType.NUMBER).optional().description("해당 시간대 건수"),
+                            ),
+                    ),
+                )
+            }
+    }
+}

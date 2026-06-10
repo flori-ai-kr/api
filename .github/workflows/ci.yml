@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # Gradle 캐시 + 래퍼(gradle-wrapper.jar) 무결성 검증(공급망 보안)
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          validate-wrappers: true
+
+      # build = ktlint + detekt + 전체 테스트(Zonky 임베디드 PostgreSQL) + JaCoCo line 80% 게이트 + bootJar 패키징.
+      # 테스트가 실제 PostgreSQL을 기동하므로 별도 DB 서비스 컨테이너 불필요.
+      - name: Build, test & coverage gate
+        run: ./gradlew build --no-daemon --stacktrace
+
+      # 실패 시 디버깅용 리포트 업로드(테스트 / 커버리지 / ktlint)
+      - name: Upload reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-reports
+          path: |
+            build/reports/tests/
+            build/reports/jacoco/
+            build/reports/ktlint/
+          retention-days: 7

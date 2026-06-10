@@ -1,0 +1,15 @@
+# 테스트 전용(test 프로필). Zonky 임베디드 PostgreSQL에 docs/sql DDL을 적용한다.
+# 운영/로컬 bootRun은 스키마를 수동 적용(DDL 직접 관리)하므로 sql.init을 켜지 않는다 — 테스트만 켠다.
+# 경로는 프로젝트 루트 기준 file: 참조(Gradle test 작업 디렉터리 = 루트).
+# 테스트 전용 JWT 시크릿(깃 기본 dev 시크릿과 달라야 가드 통과 — 다중 프로필 문자열 오판 회피).
+jwt:
+  secret: flori-test-only-jwt-secret-32bytes-or-more-xyz
+
+spring:
+  sql:
+    init:
+      mode: always
+      schema-locations: file:docs/sql/all-tables-ddl.sql
+      # plpgsql 트리거 함수의 $$ 본문에 든 세미콜론을 ScriptUtils가 statement 구분자로
+      # 오해하지 않도록, 파일 전체를 한 statement로 PG에 전달한다(서버가 dollar-quote를 파싱).
+      separator: "^^^ END OF SCRIPT ^^^"

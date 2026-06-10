@@ -1,0 +1,129 @@
+package kr.ai.flori.settings
+
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
+import kr.ai.flori.auth.service.AuthService
+import kr.ai.flori.common.error.AppException
+import kr.ai.flori.common.error.CommonErrorCode
+import kr.ai.flori.common.security.JwtTokenProvider
+import kr.ai.flori.common.tenant.TenantContext
+import kr.ai.flori.settings.service.PushSubscriptionService
+import kr.ai.flori.settings.service.SaleCategorySettingService
+import kr.ai.flori.settings.service.UserPreferenceService
+import kr.ai.flori.support.TestAccounts
+import kr.ai.flori.user.repository.UserRepository
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import java.util.UUID
+
+@AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
+@SpringBootTest
+class SettingsServiceIntegrationTest {
+    @Autowired
+    lateinit var saleCategoryService: SaleCategorySettingService
+
+    @Autowired
+    lateinit var userPreferenceService: UserPreferenceService
+
+    @Autowired
+    lateinit var pushSubscriptionService: PushSubscriptionService
+
+    @Autowired
+    lateinit var authService: AuthService
+
+    @Autowired
+    lateinit var tokenProvider: JwtTokenProvider
+
+    @Autowired
+    lateinit var userRepository: UserRepository
+
+    @AfterEach
+    fun tearDown() = TenantContext.clear()
+
+    private fun newTenant(): Long {
+        val email = "set-${UUID.randomUUID()}@flori.dev"
+        TestAccounts.register(authService, tokenProvider, email)
+        val userId = requireNotNull(userRepository.findByEmail(email)).id!!
+        TenantContext.set(userId)
+        return userId
+    }
+
+    @Test
+    fun `매출 카테고리는 가입 시드(11) + 추가·수정·삭제`() {
+        newTenant()
+        assertThat(saleCategoryService.list()).hasSize(11)
+
+        val added = saleCategoryService.add("발렌타인 꽃다발", "valentine")
+        assertThat(added.value).isEqualTo("valentine")
+        assertThat(saleCategoryService.list()).hasSize(12)
+
+        val updated = saleCategoryService.update(added.id, "발렌타인 특별")
+        assertThat(updated.label).isEqualTo("발렌타인 특별")
+
+        saleCategoryService.delete(added.id)
+        assertThat(saleCategoryService.list()).hasSize(11)
+    }
+
+    @Test
+    fun `순서 변경은 sort_order를 재부여하고 조회에 반영된다`() {
+        newTenant()
+        val before = saleCategoryService.list().map { it.id }
+        val reversed = before.reversed()
+
+        val after = saleCategoryService.reorder(reversed)
+        assertThat(after.map { it.id }).isEqualTo(reversed)
+        // 재조회해도 새 순서 유지
+        assertThat(saleCategoryService.list().map { it.id }).isEqualTo(reversed)
+    }
+
+    @Test
+    fun `순서 목록이 현재 항목과 불일치하면 거부된다`() {
+        newTenant()
+        val ids = saleCategoryService.list().map { it.id }
+        // 일부 누락 → VALIDATION
+        assertThatThrownBy { saleCategoryService.reorder(ids.drop(1)) }
+            .isInstanceOfSatisfying(AppException::class.java) {
+                assertThat(it.errorCode).isEqualTo(CommonErrorCode.VALIDATION)
+            }
+    }
+
+    @Test
+    fun `중복 value 카테고리는 409`() {
+        newTenant()
+        saleCategoryService.add("커스텀", "custom_x")
+        assertThatThrownBy { saleCategoryService.add("다른이름", "custom_x") }
+            .isInstanceOfSatisfying(AppException::class.java) {
+                assertThat(it.errorCode).isEqualTo(CommonErrorCode.CONFLICT)
+            }
+    }
+
+    @Test
+    fun `사용자 설정은 기본값 후 변경 저장`() {
+        newTenant()
+        assertThat(userPreferenceService.get().bottomNavItems).contains("sales")
+        val items = listOf("dashboard", "sales", "expenses", "customers")
+        assertThat(userPreferenceService.updateBottomNav(items).bottomNavItems).isEqualTo(items)
+        assertThat(userPreferenceService.get().bottomNavItems).isEqualTo(items)
+    }
+
+    @Test
+    fun `푸시 구독 등록·상태·해지`() {
+        newTenant()
+        assertThat(pushSubscriptionService.status().subscribed).isFalse()
+        pushSubscriptionService.subscribe("fcm-token-${UUID.randomUUID()}", null, null, "test-agent")
+        assertThat(pushSubscriptionService.status().subscribed).isTrue()
+    }
+
+    @Test
+    fun `다른 테넌트의 설정은 격리된다`() {
+        newTenant()
+        saleCategoryService.add("내것", "mine_only")
+        newTenant() // 다른 사용자
+        assertThat(saleCategoryService.list().map { it.value }).doesNotContain("mine_only")
+        assertThat(saleCategoryService.list()).hasSize(11) // 본인 시드만
+    }
+}

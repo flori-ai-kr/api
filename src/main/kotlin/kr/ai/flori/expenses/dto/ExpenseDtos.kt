@@ -1,0 +1,122 @@
+package kr.ai.flori.expenses.dto
+
+import jakarta.validation.constraints.Min
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Size
+import kr.ai.flori.common.validation.FieldLimits
+import kr.ai.flori.expenses.entity.Expense
+import java.time.Instant
+import java.time.LocalDate
+
+data class ExpenseCreateRequest(
+    @field:NotNull(message = "날짜는 필수입니다")
+    val date: LocalDate?,
+    @field:NotBlank(message = "물품명은 필수입니다")
+    @field:Size(max = FieldLimits.ITEM_NAME, message = "물품명이 너무 깁니다")
+    val itemName: String?,
+    @field:NotNull(message = "카테고리는 필수입니다")
+    val categoryId: Long?,
+    @field:NotNull @field:Min(0, message = "단가는 0 이상이어야 합니다")
+    val unitPrice: Int?,
+    @field:Min(1, message = "수량은 1 이상이어야 합니다")
+    val quantity: Int = 1,
+    @field:NotNull(message = "결제방식은 필수입니다")
+    val paymentMethodId: Long?,
+    @field:Size(max = FieldLimits.CARD_COMPANY, message = "카드사명이 너무 깁니다")
+    val cardCompany: String? = null,
+    @field:Size(max = FieldLimits.VENDOR, message = "거래처가 너무 깁니다")
+    val vendor: String? = null,
+    @field:Size(max = FieldLimits.MEMO, message = "메모가 너무 깁니다")
+    val memo: String? = null,
+)
+
+data class ExpenseUpdateRequest(
+    val date: LocalDate? = null,
+    @field:Size(max = FieldLimits.ITEM_NAME, message = "물품명이 너무 깁니다")
+    val itemName: String? = null,
+    val categoryId: Long? = null,
+    @field:Min(0, message = "단가는 0 이상이어야 합니다")
+    val unitPrice: Int? = null,
+    @field:Min(1, message = "수량은 1 이상이어야 합니다")
+    val quantity: Int? = null,
+    val paymentMethodId: Long? = null,
+    @field:Size(max = FieldLimits.CARD_COMPANY, message = "카드사명이 너무 깁니다")
+    val cardCompany: String? = null,
+    @field:Size(max = FieldLimits.VENDOR, message = "거래처가 너무 깁니다")
+    val vendor: String? = null,
+    @field:Size(max = FieldLimits.MEMO, message = "메모가 너무 깁니다")
+    val memo: String? = null,
+)
+
+data class ExpenseResponse(
+    val id: Long,
+    val date: LocalDate,
+    val itemName: String,
+    val categoryId: Long?,
+    val categoryLabel: String?,
+    val unitPrice: Int,
+    val quantity: Int,
+    val totalAmount: Int,
+    val paymentMethodId: Long?,
+    val paymentMethodLabel: String?,
+    val cardCompany: String?,
+    val vendor: String?,
+    val memo: String?,
+    val recurringId: Long?,
+    val isRecurringModified: Boolean,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+) {
+    companion object {
+        fun from(
+            e: Expense,
+            categoryLabel: String?,
+            paymentMethodLabel: String?,
+        ): ExpenseResponse =
+            ExpenseResponse(
+                id = requireNotNull(e.id),
+                date = e.date,
+                itemName = e.itemName,
+                categoryId = e.categoryId,
+                categoryLabel = categoryLabel,
+                unitPrice = e.unitPrice,
+                quantity = e.quantity,
+                totalAmount = e.totalAmount,
+                paymentMethodId = e.paymentMethodId,
+                paymentMethodLabel = paymentMethodLabel,
+                cardCompany = e.cardCompany,
+                vendor = e.vendor,
+                memo = e.memo,
+                recurringId = e.recurringId,
+                isRecurringModified = e.isRecurringModified,
+                createdAt = e.createdAt,
+                updatedAt = e.updatedAt,
+            )
+    }
+}
+
+data class ExpenseSuggestionsResponse(
+    val itemNames: List<String>,
+    val vendors: List<String>,
+    val memos: List<String>,
+)
+
+/** 지출 목록 페이지 응답(무한스크롤). */
+data class ExpensePageResponse(
+    val expenses: List<ExpenseResponse>,
+    val hasMore: Boolean,
+)
+
+/** 지출 요약: 총액·건수 + 카테고리별 합계(breakdown 바). 색은 web이 categoryId로 매핑. */
+data class ExpensesSummaryResponse(
+    val total: Long,
+    val count: Long,
+    val byCategory: List<ExpenseCategorySlice>,
+)
+
+data class ExpenseCategorySlice(
+    val categoryId: Long?,
+    val categoryLabel: String,
+    val amount: Long,
+)

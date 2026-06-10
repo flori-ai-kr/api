@@ -1,0 +1,2 @@
+# 증분 스키마 변경 스크립트 디렉터리
+# yy-mm-dd-{슬러그}.sql + yy-mm-dd-{슬러그}-rollback.sql 형식. README.md "스키마 변경 절차" 참조.

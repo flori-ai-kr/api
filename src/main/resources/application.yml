@@ -1,24 +1,20 @@
 spring:
   application:
-    name: hazel-server
+    name: flori-ai-api
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/hazel}
-    username: ${DB_USER:hazel}
-    password: ${DB_PASSWORD:hazel}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/flori}
+    username: ${DB_USER:flori}
+    password: ${DB_PASSWORD:flori}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      # 스키마의 SSOT는 Flyway. 엔티티-스키마 정합성은 validate로 강제.
+      # 스키마의 SSOT는 docs/sql DDL(직접 관리). 엔티티-스키마 정합성은 validate로 강제(스키마 생성/변경 안 함).
       ddl-auto: validate
     open-in-view: false
     properties:
       hibernate.jdbc.time_zone: UTC
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
-    baseline-on-migrate: false
 
 server:
   port: ${SERVER_PORT:8080}
@@ -28,14 +24,20 @@ jwt:
   secret: ${JWT_SECRET:local-dev-insecure-jwt-secret-please-change-32bytes+}
   access-ttl-seconds: ${JWT_ACCESS_TTL:900}        # 15분
   refresh-ttl-seconds: ${JWT_REFRESH_TTL:1209600}  # 14일
+  # 동시/중복 refresh 멱등 윈도(초). 같은 refresh 토큰으로 이 시간 내 다시 호출하면 회전을 1회만 하고
+  # 같은 결과를 돌려준다(프리페치/멀티탭/쿠키저장 실패 재시도로 인한 rotation race → 로그아웃 방지).
+  # 0 이하면 멱등 비활성(매 호출 회전, 즉시 재사용은 INVALID_TOKEN).
+  refresh-dedup-ttl-seconds: ${JWT_REFRESH_DEDUP_TTL:30}
 
 # CORS 허용 origin (앱/웹). 콤마 구분.
 cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8081}
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3100,http://localhost:8081}
 
-# 운영 에러 알림 (미설정 시 콘솔 로깅으로 폴백)
+# Discord 알림 (미설정 시 콘솔 로깅으로 폴백)
 discord:
-  webhook-url: ${DISCORD_WEBHOOK_URL:}
+  webhook-url: ${DISCORD_WEBHOOK_URL:}                              # 운영 에러(DiscordErrorReporter)
+  signup-webhook-url: ${DISCORD_SIGNUP_WEBHOOK_URL:}                # 유저 가입 알림
+  verification-webhook-url: ${DISCORD_VERIFICATION_WEBHOOK_URL:}    # 사업자 인증 신청 알림
 
 # S3 presigned 업로드 (bucket 미설정 시 관련 빈 미생성 — 로컬 부팅 가능)
 aws:
@@ -46,10 +48,17 @@ aws:
   cloudfront:
     domain: ${CLOUDFRONT_DOMAIN:}
 
-# FCM 푸시 (enabled=true 일 때만 Firebase 초기화)
+# FCM 푸시 (enabled=true 일 때만 Firebase 초기화) — 모바일 앱 대상
 fcm:
   enabled: ${FCM_ENABLED:false}
   credentials: ${FCM_CREDENTIALS:}
+
+# Web Push(VAPID) — 브라우저(PWA) 대상. public/private 키 모두 설정 시 실제 발송, 아니면 로깅 폴백.
+# public-key는 web의 NEXT_PUBLIC_VAPID_PUBLIC_KEY와 동일한 키페어여야 한다(짝이 맞아야 발송 가능).
+vapid:
+  public-key: ${VAPID_PUBLIC_KEY:}
+  private-key: ${VAPID_PRIVATE_KEY:}
+  subject: ${VAPID_SUBJECT:mailto:admin@flori.ai.kr}
 
 # 내부 API(수집/브로드캐스트) Bearer 키. 미설정 시 내부 API 접근 차단.
 internal:
@@ -59,11 +68,31 @@ internal:
 revenuecat:
   webhook-secret: ${REVENUECAT_WEBHOOK_SECRET:}
 
+# 운영 콘솔 AI 헬스 프록시 타깃. 미설정(빈 값) 시 해당 타깃은 응답에서 생략된다.
+ai:
+  health:
+    server-url: ${AI_HEALTH_SERVER_URL:}
+    litellm-url: ${AI_HEALTH_LITELLM_URL:}
+  # AI 게이트웨이 — ai-server(FastAPI, 내부망). base-url 빈 값이면 AI 기능 비활성.
+  gateway:
+    base-url: ${AI_SERVER_URL:}
+    internal-key: ${AI_INTERNAL_KEY:}
+    chat-model: ${AI_CHAT_MODEL:claude-sonnet-4-6}
+    usage-cap-per-day: ${AI_USAGE_CAP_PER_DAY:500}
+    proposal-ttl-seconds: ${AI_PROPOSAL_TTL_SECONDS:86400}
+
 springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
+  # 문서 본문 = RestDocs 생성 스펙(static/docs/open-api-3.0.1.json).
+  # OpenApiConfig가 그 스펙(paths/components)을 읽어 bearerAuth 보안 스킴과 합쳐 /v3/api-docs로 노출하고,
+  # swagger-ui는 그 병합본을 보여준다(→ Authorize 버튼 동작).
+  # packages-to-scan: 더미 패키지로 컨트롤러 스캔 비활성(@Operation 제거됨 → 스캔 시 RestDocs 리치 경로 덮어쓰기 방지).
+  packages-to-scan: kr.ai.flori.__docs_from_restdocs_only__
   api-docs:
-    path: /v3/api-docs
+    enabled: ${SPRINGDOC_API_DOCS_ENABLED:true}     # 운영에선 env로 false 주입 → API 계약 비공개
+  swagger-ui:
+    enabled: ${SPRINGDOC_SWAGGER_UI_ENABLED:true}   # 운영에선 env로 false
+    path: /swagger-ui.html
+    persist-authorization: true   # 토큰 1회 입력 시 새로고침/요청 간 유지(운영 Swagger 비활성 권장)
 
 management:
   endpoints:
@@ -74,3 +103,18 @@ management:
     health:
       probes:
         enabled: true
+
+# 카카오 OAuth (소셜 로그인). client-secret은 운영에서 env 주입(커밋 금지).
+kakao:
+  rest-api-key: ${KAKAO_REST_API_KEY:}
+  client-secret: ${KAKAO_CLIENT_SECRET:}
+
+# 구글 OAuth (소셜 로그인). 자격증명은 운영에서 env 주입(커밋 금지).
+google:
+  client-id: ${GOOGLE_CLIENT_ID:}
+  client-secret: ${GOOGLE_CLIENT_SECRET:}
+
+# 네이버 OAuth (소셜 로그인). 자격증명은 운영에서 env 주입(커밋 금지).
+naver:
+  client-id: ${NAVER_CLIENT_ID:}
+  client-secret: ${NAVER_CLIENT_SECRET:}

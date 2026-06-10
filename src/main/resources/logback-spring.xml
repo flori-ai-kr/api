@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!--
+      Flori 서버 로깅 구성.
+      - local        : 색상 텍스트 콘솔(traceId 포함). 프로필 미지정 시에도 이 동작을 기본값으로 사용.
+      - !local(운영) : LogstashEncoder JSON을 stdout으로만 출력(컨테이너 표준출력 → 플랫폼이 수집).
+                       롤링 파일 appender 없음(컨테이너 환경).
+      로그 레벨은 LOG_LEVEL 환경변수로 조정 가능(기본 INFO).
+    -->
+
+    <springProperty name="APP_NAME" source="spring.application.name" defaultValue="flori-ai-api"/>
+    <property name="LOG_LEVEL" value="${LOG_LEVEL:-INFO}"/>
+    <!-- 로컬 로그 파일 경로(기본 logs/). LOG_PATH 환경변수로 변경 가능. -->
+    <property name="LOG_PATH" value="${LOG_PATH:-logs}"/>
+
+    <!-- traceId(MDC)를 패턴에 포함 — 한 요청의 모든 로그를 묶어 추적. 콘솔은 예외 발생 시 스택 자동 첨부. -->
+    <property name="CONSOLE_PATTERN"
+              value="%d{HH:mm:ss.SSS} %highlight(%-5level) %cyan([%X{traceId:-}]) %yellow(%-40.40logger{39}) : %msg%n"/>
+    <!-- 파일은 전체 스택(%ex{full}) 포함 — 로컬 디버깅용 -->
+    <property name="FILE_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{36} - %msg%n%ex{full}"/>
+
+    <!-- ==================== 운영(JSON, stdout) ==================== -->
+    <springProfile name="!local">
+        <appender name="STDOUT_JSON" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <timeZone>Asia/Seoul</timeZone>
+                <includeMdcKeyName>traceId</includeMdcKeyName>
+                <customFields>{"service":"flori-ai-api"}</customFields>
+            </encoder>
+        </appender>
+
+        <root level="${LOG_LEVEL}">
+            <appender-ref ref="STDOUT_JSON"/>
+        </root>
+    </springProfile>
+
+    <!-- ==================== 로컬(컬러 콘솔 + 롤링 파일) + 프로필 미지정 기본값 ==================== -->
+    <springProfile name="local | default">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>${CONSOLE_PATTERN}</pattern>
+            </encoder>
+        </appender>
+
+        <!-- INFO 파일(ERROR 제외, DEBUG/TRACE 폭증 방지: INFO 이상만) -->
+        <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/flori-server.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/flori-server-%d{yyyy-MM-dd}.log</fileNamePattern>
+                <maxHistory>14</maxHistory>
+            </rollingPolicy>
+            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                <level>INFO</level>
+            </filter>
+            <filter class="ch.qos.logback.classic.filter.LevelFilter">
+                <level>ERROR</level>
+                <onMatch>DENY</onMatch>
+                <onMismatch>ACCEPT</onMismatch>
+            </filter>
+            <encoder>
+                <pattern>${FILE_PATTERN}</pattern>
+            </encoder>
+        </appender>
+
+        <!-- ERROR 전용 파일(전체 스택트레이스) -->
+        <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/flori-server-error.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/flori-server-error-%d{yyyy-MM-dd}.log</fileNamePattern>
+                <maxHistory>30</maxHistory>
+            </rollingPolicy>
+            <filter class="ch.qos.logback.classic.filter.LevelFilter">
+                <level>ERROR</level>
+                <onMatch>ACCEPT</onMatch>
+                <onMismatch>DENY</onMismatch>
+            </filter>
+            <encoder>
+                <pattern>${FILE_PATTERN}</pattern>
+            </encoder>
+        </appender>
+
+        <root level="${LOG_LEVEL}">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="INFO_FILE"/>
+            <appender-ref ref="ERROR_FILE"/>
+        </root>
+    </springProfile>
+
+    <!-- ==================== 공통: 프레임워크 노이즈 로거는 INFO로 억제 ==================== -->
+    <logger name="org.apache.coyote" level="INFO"/>
+    <logger name="org.apache.tomcat" level="INFO"/>
+    <logger name="org.hibernate" level="INFO"/>
+    <logger name="org.springframework.web" level="INFO"/>
+    <logger name="org.springframework.security" level="INFO"/>
+
+</configuration>
