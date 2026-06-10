@@ -91,4 +91,7 @@ data class PhotoCardsPageResponse(
     val cards: List<PhotoCardResponse>,
     val nextCursor: String?,
     val hasMore: Boolean,
+    // 상단 요약 헤더용 — 현재 필터(tag·customer) 기준 전체 카드 수·전체 사진 장수(페이지 무관).
+    val totalCards: Long,
+    val totalPhotos: Long,
 )

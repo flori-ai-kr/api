@@ -28,13 +28,13 @@ class PhotoTagController(
     @ResponseStatus(HttpStatus.CREATED)
     fun create(
         @Valid @RequestBody request: PhotoTagCreateRequest,
-    ): PhotoTagResponse = photoTagService.create(requireNotNull(request.name), request.color)
+    ): PhotoTagResponse = photoTagService.create(requireNotNull(request.name))
 
     @PutMapping("/{id}")
     fun update(
         @PathVariable id: Long,
         @Valid @RequestBody request: PhotoTagUpdateRequest,
-    ): PhotoTagResponse = photoTagService.update(id, requireNotNull(request.name), requireNotNull(request.color))
+    ): PhotoTagResponse = photoTagService.update(id, requireNotNull(request.name))
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

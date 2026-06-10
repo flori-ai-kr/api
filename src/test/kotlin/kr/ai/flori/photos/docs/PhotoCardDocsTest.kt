@@ -145,6 +145,12 @@ class PhotoCardDocsTest : RestDocsSupport() {
                                 fieldWithPath("hasMore")
                                     .type(JsonFieldType.BOOLEAN)
                                     .description("다음 페이지 존재 여부 (무한스크롤용)"),
+                                fieldWithPath("totalCards")
+                                    .type(JsonFieldType.NUMBER)
+                                    .description("현재 필터 기준 전체 카드 수 (페이지 무관, 요약 헤더용)"),
+                                fieldWithPath("totalPhotos")
+                                    .type(JsonFieldType.NUMBER)
+                                    .description("현재 필터 기준 전체 사진 장수 (페이지 무관, 요약 헤더용)"),
                             ),
                     ),
                 )

@@ -129,6 +129,26 @@ class PhotoCardServiceIntegrationTest {
     }
 
     @Test
+    fun `목록 응답에 총 카드수·총 사진장수가 필터 기준으로 집계된다`() {
+        newTenant()
+        photoCardService.create(
+            PhotoCardCreateRequest(title = "행사용", tags = listOf("행사"), photos = listOf(PhotoFile("u1", "a.jpg"), PhotoFile("u2", "b.jpg"))),
+        )
+        photoCardService.create(
+            PhotoCardCreateRequest(title = "개인용", tags = listOf("개인"), photos = listOf(PhotoFile("u3", "c.jpg"))),
+        )
+
+        val all = photoCardService.list(null, null, null)
+        assertThat(all.totalCards).isEqualTo(2)
+        assertThat(all.totalPhotos).isEqualTo(3)
+
+        // 필터(tag) 적용 시 총계도 그 필터 기준이어야 한다.
+        val filtered = photoCardService.list("행사", null, null)
+        assertThat(filtered.totalCards).isEqualTo(1)
+        assertThat(filtered.totalPhotos).isEqualTo(2)
+    }
+
+    @Test
     fun `사진 순서변경·1장 삭제가 동작한다`() {
         newTenant()
         val c =

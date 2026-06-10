@@ -36,22 +36,29 @@ class PhotoCardService(
         tag: String?,
         cursor: String?,
         customerId: String?,
+        from: String? = null,
+        to: String? = null,
     ): PhotoCardsPageResponse {
         val userId = TenantContext.currentUserId()
         // 복합 커서 "updatedAt|id" 파싱(구형=ts만 → id MAX로 같은 ts 전부 포함, 프론트가 dedupe).
         val sep = cursor?.lastIndexOf('|') ?: -1
         val cursorTs = cursor?.let { if (sep >= 0) it.substring(0, sep) else it }
         val cursorId = (cursor?.takeIf { sep >= 0 }?.substring(sep + 1)?.toLongOrNull()) ?: Long.MAX_VALUE
-        val rows = photoCardRepository.findPage(userId, cursorTs, cursorId, tag, customerId, PAGE_SIZE + 1)
+        val rows = photoCardRepository.findPage(userId, cursorTs, cursorId, tag, customerId, from, to, PAGE_SIZE + 1)
         val hasMore = rows.size > PAGE_SIZE
         val cards = if (hasMore) rows.take(PAGE_SIZE) else rows
         val nextCursor = if (hasMore) "${cards.last().updatedAt}|${cards.last().id}" else null
         // N+1 회피: 페이지의 distinct customerId 들을 1쿼리로 이름 맵 조회.
         val nameMap = customerNames(userId, cards.mapNotNull { it.customerId }.toSet())
+        // 상단 요약 헤더용 총계(현재 필터 기준, 커서 무관). 네이티브 단일행 → List<Object[]>.
+        // 집계 쿼리는 항상 1행이지만 방어적으로 firstOrNull 처리.
+        val totals = photoCardRepository.countTotals(userId, tag, customerId, from, to).firstOrNull()
         return PhotoCardsPageResponse(
             cards.map { PhotoCardResponse.from(it, it.customerId?.let(nameMap::get)) },
             nextCursor,
             hasMore,
+            totalCards = (totals?.get(0) as? Number)?.toLong() ?: 0L,
+            totalPhotos = (totals?.get(1) as? Number)?.toLong() ?: 0L,
         )
     }
 
@@ -67,6 +74,7 @@ class PhotoCardService(
     @Transactional
     fun create(request: PhotoCardCreateRequest): PhotoCardResponse {
         requirePhotoLimit(request.photos.size)
+        requireTagLimit(request.tags.size)
         val card = PhotoCard(TenantContext.currentUserId(), requireNotNull(request.title))
         card.memo = request.memo
         card.tags = request.tags.toTypedArray()
@@ -84,7 +92,10 @@ class PhotoCardService(
         val card = load(id)
         request.title?.let { card.title = it }
         request.memo?.let { card.memo = it }
-        request.tags?.let { card.tags = it.toTypedArray() }
+        request.tags?.let {
+            requireTagLimit(it.size)
+            card.tags = it.toTypedArray()
+        }
         request.photos?.let {
             requirePhotoLimit(it.size)
             card.photos = it
@@ -219,6 +230,12 @@ class PhotoCardService(
         }
     }
 
+    private fun requireTagLimit(count: Int) {
+        if (count > MAX_TAGS_PER_CARD) {
+            throw AppException(CommonErrorCode.VALIDATION, "태그는 최대 ${MAX_TAGS_PER_CARD}개까지 등록할 수 있습니다")
+        }
+    }
+
     private fun load(id: Long): PhotoCard =
         photoCardRepository.findByIdAndUserId(id, TenantContext.currentUserId())
             ?: throw AppException(CommonErrorCode.NOT_FOUND, "사진 카드를 찾을 수 없습니다")
@@ -260,6 +277,7 @@ class PhotoCardService(
     private companion object {
         const val PAGE_SIZE = 8
         const val MAX_PHOTOS_PER_CARD = 10
+        const val MAX_TAGS_PER_CARD = 3
         const val MAX_FILE_SIZE_BYTES = 10L * 1024 * 1024
         val ALLOWED_IMAGE_TYPES = setOf("image/jpeg", "image/png", "image/gif", "image/webp", "image/avif", "image/heic")
     }

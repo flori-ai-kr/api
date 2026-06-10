@@ -33,7 +33,9 @@ class PhotoCardController(
         @RequestParam(required = false) tag: String?,
         @RequestParam(required = false) cursor: String?,
         @RequestParam(required = false) customerId: String?,
-    ): PhotoCardsPageResponse = photoCardService.list(tag, cursor, customerId)
+        @RequestParam(required = false) from: String?,
+        @RequestParam(required = false) to: String?,
+    ): PhotoCardsPageResponse = photoCardService.list(tag, cursor, customerId, from, to)
 
     @GetMapping("/by-sale/{saleId}")
     fun bySale(
