@@ -57,10 +57,10 @@ src/main/kotlin/kr/ai/flori/
 ├── user/                  # 사용자 / 내 정보(/me) · 프로필 수정 · 탈퇴
 ├── sales/                 # 매출 기록 · 미수(unpaid) 처리
 ├── expenses/              # 지출 + 고정비 자동 생성(@Scheduled)
-├── customers/             # 고객 (find-or-create, 실시간 통계)
+├── customers/             # 고객 (find-or-create, 실시간 통계, 커스텀 등급·자동승급·수동잠금)
 ├── reservations/          # 예약 (판매 전환, 픽업)
 ├── schedules/             # 일정 (리마인더 푸시)
-├── photos/                # 갤러리 (presigned 업로드) · 태그
+├── photos/                # 갤러리 (presigned 업로드) · 태그 · 고객 연결(customer_id 직접 필터)
 ├── settings/              # 카드사 · 매출/지출 설정 · 하단바 · 푸시 구독
 ├── community/             # 커뮤니티 게시판(단일 공유) · 비밀글/댓글·대댓글·좋아요·soft delete
 ├── verification/          # 사업자 인증 (신청·상태조회·presigned 업로드·게이팅)

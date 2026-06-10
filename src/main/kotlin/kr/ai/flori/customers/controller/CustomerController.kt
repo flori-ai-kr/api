@@ -2,11 +2,11 @@ package kr.ai.flori.customers.controller
 
 import jakarta.validation.Valid
 import kr.ai.flori.customers.dto.CustomerCreateRequest
+import kr.ai.flori.customers.dto.CustomerGradeAssignRequest
 import kr.ai.flori.customers.dto.CustomerResponse
 import kr.ai.flori.customers.dto.CustomerSearchResult
 import kr.ai.flori.customers.dto.CustomerUpdateRequest
 import kr.ai.flori.customers.dto.FindOrCreateCustomerRequest
-import kr.ai.flori.customers.dto.UpdateGradeRequest
 import kr.ai.flori.customers.service.CustomerService
 import kr.ai.flori.sales.dto.SalesPageResponse
 import org.springframework.http.HttpStatus
@@ -77,8 +77,13 @@ class CustomerController(
     @PatchMapping("/{id}/grade")
     fun updateGrade(
         @PathVariable id: Long,
-        @Valid @RequestBody request: UpdateGradeRequest,
-    ): CustomerResponse = customerService.updateGrade(id, requireNotNull(request.grade))
+        @Valid @RequestBody request: CustomerGradeAssignRequest,
+    ): CustomerResponse = customerService.updateGrade(id, requireNotNull(request.gradeId))
+
+    @PatchMapping("/{id}/grade/auto")
+    fun revertGradeToAuto(
+        @PathVariable id: Long,
+    ): CustomerResponse = customerService.revertGradeToAuto(id)
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

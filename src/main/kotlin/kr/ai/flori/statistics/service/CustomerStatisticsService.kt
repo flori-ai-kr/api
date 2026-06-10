@@ -116,11 +116,14 @@ class CustomerStatisticsService(
             Date.valueOf(to),
         )
 
-    /** 등급별 고객 분포(전체 고객, 기간 무관). */
+    /** 등급별 고객 분포(전체 고객, 기간 무관). 커스텀 등급(grade_id→customer_grades.name), 미지정은 기본 등급. */
     private fun gradeDistribution(userId: Long): List<GradeCount> =
+        // DEFAULT_GRADE는 신뢰 상수라 인라인(GROUP BY에 바인드 파라미터를 두면 PG가 타입 추론 실패). null·기본등급명은 한 그룹.
         jdbcTemplate.query(
-            "SELECT COALESCE(grade, 'new') AS grade, COUNT(*) AS cnt " +
-                "FROM customers WHERE user_id = ?::bigint GROUP BY COALESCE(grade, 'new') ORDER BY cnt DESC",
+            "SELECT COALESCE(g.name, '$DEFAULT_GRADE') AS grade, COUNT(*) AS cnt " +
+                "FROM customers c " +
+                "LEFT JOIN customer_grades g ON g.id = c.grade_id AND g.user_id = c.user_id " +
+                "WHERE c.user_id = ?::bigint GROUP BY COALESCE(g.name, '$DEFAULT_GRADE') ORDER BY cnt DESC",
             { rs, _ -> GradeCount(rs.getString("grade"), rs.getLong("cnt")) },
             userId,
         )
@@ -171,11 +174,12 @@ class CustomerStatisticsService(
             SELECT
               c.id AS cid,
               COALESCE(c.name, agg.fallback_name) AS name,
-              COALESCE(c.grade, ?) AS grade,
+              COALESCE(g.name, ?) AS grade,
               agg.cnt AS cnt,
               agg.amount AS amount
             FROM agg
             LEFT JOIN customers c ON c.id = agg.key_customer_id AND c.user_id = ?::bigint
+            LEFT JOIN customer_grades g ON g.id = c.grade_id AND g.user_id = c.user_id
             ORDER BY amount DESC
             LIMIT ?
             """.trimIndent(),
@@ -206,7 +210,7 @@ class CustomerStatisticsService(
         /** TOP 고객 노출 상한. */
         const val TOP_CUSTOMERS_LIMIT = 10
 
-        /** customers 매칭이 없는 집계 버킷의 기본 등급(customers.grade DEFAULT와 동일). */
-        const val DEFAULT_GRADE = "new"
+        /** 등급 미지정(grade_id NULL) 또는 customers 매칭이 없는 버킷의 기본 등급명(기본 시드 첫 등급). */
+        const val DEFAULT_GRADE = "신규"
     }
 }

@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.put
 /**
  * PhotoTags API RestDocs 문서화.
  * 실제 보안 체인 + Zonky PG에서 각 엔드포인트를 1회 호출하며 OpenAPI 스펙을 생성한다.
- * 색상 미지정 시 서버가 랜덤 색상을 부여한다.
+ * 태그는 이름만 가진다(색상 개념 폐기 — #해시태그 텍스트 표시).
  */
 class PhotoTagDocsTest : RestDocsSupport() {
     /** PhotoTagResponse 공통 응답 필드 — 단건/목록에서 재사용 */
@@ -24,7 +24,6 @@ class PhotoTagDocsTest : RestDocsSupport() {
         listOf(
             fieldWithPath("id").type(JsonFieldType.NUMBER).description("태그 ID"),
             fieldWithPath("name").type(JsonFieldType.STRING).description("태그 이름"),
-            fieldWithPath("color").type(JsonFieldType.STRING).description("태그 색상 (hex 코드, 예: #ff0000)"),
             fieldWithPath("createdAt").type(JsonFieldType.STRING).description("생성 시각 (ISO-8601)"),
         )
 
@@ -32,14 +31,13 @@ class PhotoTagDocsTest : RestDocsSupport() {
     private fun createTag(
         token: String,
         name: String = "웨딩",
-        color: String = "#ff5733",
     ): String {
         val res =
             mockMvc
                 .post("/photo-tags") {
                     header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                     contentType = MediaType.APPLICATION_JSON
-                    content = json(mapOf("name" to name, "color" to color))
+                    content = json(mapOf("name" to name))
                 }.andReturn()
                 .response.contentAsString
         return objectMapper.readTree(res).get("id").asText()
@@ -50,8 +48,8 @@ class PhotoTagDocsTest : RestDocsSupport() {
     @Test
     fun `태그 목록 조회 문서화`() {
         val token = signupAndToken()
-        createTag(token, "웨딩", "#ff5733")
-        createTag(token, "부케", "#3366ff")
+        createTag(token, "웨딩")
+        createTag(token, "부케")
 
         mockMvc
             .get("/photo-tags") {
@@ -69,9 +67,6 @@ class PhotoTagDocsTest : RestDocsSupport() {
                                 fieldWithPath("[]").type(JsonFieldType.ARRAY).description("태그 목록"),
                                 fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("태그 ID"),
                                 fieldWithPath("[].name").type(JsonFieldType.STRING).description("태그 이름"),
-                                fieldWithPath("[].color")
-                                    .type(JsonFieldType.STRING)
-                                    .description("태그 색상 (hex 코드)"),
                                 fieldWithPath("[].createdAt")
                                     .type(JsonFieldType.STRING)
                                     .description("생성 시각 (ISO-8601)"),
@@ -95,7 +90,6 @@ class PhotoTagDocsTest : RestDocsSupport() {
                     json(
                         mapOf(
                             "name" to "행사",
-                            "color" to "#4caf50",
                         ),
                     )
             }.andExpect { status { isCreated() } }
@@ -106,16 +100,12 @@ class PhotoTagDocsTest : RestDocsSupport() {
                         requestSchema = "PhotoTagCreateRequest",
                         responseSchema = "PhotoTagResponse",
                         tag = "PhotoTags",
-                        summary = "태그 생성 (색상 미지정 시 랜덤 hex 색상 부여)",
+                        summary = "태그 생성 (이름만, 계정 내 유일)",
                         requestFields =
                             listOf(
                                 fieldWithPath("name")
                                     .type(JsonFieldType.STRING)
                                     .description("태그 이름 (필수, 계정 내 유일)"),
-                                fieldWithPath("color")
-                                    .type(JsonFieldType.STRING)
-                                    .optional()
-                                    .description("태그 색상 (hex 코드, 미지정 시 서버 랜덤 부여)"),
                             ),
                         responseFields = photoTagResponseFields,
                     ),
@@ -128,7 +118,7 @@ class PhotoTagDocsTest : RestDocsSupport() {
     @Test
     fun `태그 수정 문서화`() {
         val token = signupAndToken()
-        val id = createTag(token, "수정전태그", "#aaaaaa")
+        val id = createTag(token, "수정전태그")
 
         mockMvc
             .put("/photo-tags/$id") {
@@ -139,7 +129,6 @@ class PhotoTagDocsTest : RestDocsSupport() {
                     json(
                         mapOf(
                             "name" to "수정후태그",
-                            "color" to "#1565c0",
                         ),
                     )
             }.andExpect { status { isOk() } }
@@ -150,16 +139,13 @@ class PhotoTagDocsTest : RestDocsSupport() {
                         requestSchema = "PhotoTagUpdateRequest",
                         responseSchema = "PhotoTagResponse",
                         tag = "PhotoTags",
-                        summary = "태그 수정 (이름·색상 전체 교체)",
+                        summary = "태그 수정 (이름 교체)",
                         pathParameters = listOf(parameterWithName("id").description("태그 ID")),
                         requestFields =
                             listOf(
                                 fieldWithPath("name")
                                     .type(JsonFieldType.STRING)
                                     .description("새 태그 이름 (필수)"),
-                                fieldWithPath("color")
-                                    .type(JsonFieldType.STRING)
-                                    .description("새 태그 색상 hex 코드 (필수)"),
                             ),
                         responseFields = photoTagResponseFields,
                     ),
@@ -172,7 +158,7 @@ class PhotoTagDocsTest : RestDocsSupport() {
     @Test
     fun `태그 삭제 문서화`() {
         val token = signupAndToken()
-        val id = createTag(token, "삭제대상태그", "#e53935")
+        val id = createTag(token, "삭제대상태그")
 
         mockMvc
             .delete("/photo-tags/$id") {

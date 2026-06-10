@@ -10,7 +10,6 @@ import kr.ai.flori.photos.repository.PhotoTagRepository
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import kotlin.random.Random
 
 /**
  * 사진 태그 서비스. 태그 삭제 시 카드들에서 해당 태그명을 함께 제거.
@@ -28,14 +27,10 @@ class PhotoTagService(
             .map(PhotoTagResponse::from)
 
     @Transactional
-    fun create(
-        name: String,
-        color: String?,
-    ): PhotoTagResponse {
+    fun create(name: String): PhotoTagResponse {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) throw AppException(CommonErrorCode.VALIDATION, "태그 이름을 입력해주세요")
         val tag = PhotoTag(TenantContext.currentUserId(), trimmed)
-        tag.color = color ?: randomColor()
         return PhotoTagResponse.from(saveUnique(tag))
     }
 
@@ -43,13 +38,11 @@ class PhotoTagService(
     fun update(
         id: Long,
         name: String,
-        color: String,
     ): PhotoTagResponse {
         val tag = load(id)
         val trimmed = name.trim()
         if (trimmed.isEmpty()) throw AppException(CommonErrorCode.VALIDATION, "태그 이름을 입력해주세요")
         tag.name = trimmed
-        tag.color = color
         return PhotoTagResponse.from(saveUnique(tag))
     }
 
@@ -71,22 +64,4 @@ class PhotoTagService(
     private fun load(id: Long): PhotoTag =
         photoTagRepository.findByIdAndUserId(id, TenantContext.currentUserId())
             ?: throw AppException(CommonErrorCode.NOT_FOUND, "태그를 찾을 수 없습니다")
-
-    private fun randomColor(): String = TAG_COLORS[Random.nextInt(TAG_COLORS.size)]
-
-    private companion object {
-        val TAG_COLORS =
-            listOf(
-                "#f5f5f5",
-                "#ec4899",
-                "#ef4444",
-                "#eab308",
-                "#a855f7",
-                "#6366f1",
-                "#14b8a6",
-                "#f97316",
-                "#22c55e",
-                "#3b82f6",
-            )
-    }
 }

@@ -4,6 +4,7 @@ import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.storage.S3PresignService
 import kr.ai.flori.common.tenant.TenantContext
+import kr.ai.flori.customers.repository.CustomerRepository
 import kr.ai.flori.photos.dto.FileMetaRequest
 import kr.ai.flori.photos.dto.PhotoCardCreateRequest
 import kr.ai.flori.photos.dto.PhotoCardResponse
@@ -23,43 +24,64 @@ import java.util.UUID
  * presigned 업로드는 소유권/장수/이미지 메타 검증 후 발급. 모든 쿼리 TenantContext 격리(HARD).
  */
 @Service
+@Suppress("TooManyFunctions")
 class PhotoCardService(
     private val photoCardRepository: PhotoCardRepository,
     private val s3PresignService: S3PresignService,
     private val saleRepository: SaleRepository,
+    private val customerRepository: CustomerRepository,
 ) {
     @Transactional(readOnly = true)
     fun list(
         tag: String?,
         cursor: String?,
         customerId: String?,
+        from: String? = null,
+        to: String? = null,
     ): PhotoCardsPageResponse {
         val userId = TenantContext.currentUserId()
-        val rows = photoCardRepository.findPage(userId, cursor, tag, customerId, PAGE_SIZE + 1)
+        // 복합 커서 "updatedAt|id" 파싱(구형=ts만 → id MAX로 같은 ts 전부 포함, 프론트가 dedupe).
+        val sep = cursor?.lastIndexOf('|') ?: -1
+        val cursorTs = cursor?.let { if (sep >= 0) it.substring(0, sep) else it }
+        val cursorId = (cursor?.takeIf { sep >= 0 }?.substring(sep + 1)?.toLongOrNull()) ?: Long.MAX_VALUE
+        val rows = photoCardRepository.findPage(userId, cursorTs, cursorId, tag, customerId, from, to, PAGE_SIZE + 1)
         val hasMore = rows.size > PAGE_SIZE
         val cards = if (hasMore) rows.take(PAGE_SIZE) else rows
-        val nextCursor = if (hasMore) cards.last().updatedAt else null
-        return PhotoCardsPageResponse(cards.map(PhotoCardResponse::from), nextCursor, hasMore)
+        val nextCursor = if (hasMore) "${cards.last().updatedAt}|${cards.last().id}" else null
+        // N+1 회피: 페이지의 distinct customerId 들을 1쿼리로 이름 맵 조회.
+        val nameMap = customerNames(userId, cards.mapNotNull { it.customerId }.toSet())
+        // 상단 요약 헤더용 총계(현재 필터 기준, 커서 무관). 네이티브 단일행 → List<Object[]>.
+        // 집계 쿼리는 항상 1행이지만 방어적으로 firstOrNull 처리.
+        val totals = photoCardRepository.countTotals(userId, tag, customerId, from, to).firstOrNull()
+        return PhotoCardsPageResponse(
+            cards.map { PhotoCardResponse.from(it, it.customerId?.let(nameMap::get)) },
+            nextCursor,
+            hasMore,
+            totalCards = (totals?.get(0) as? Number)?.toLong() ?: 0L,
+            totalPhotos = (totals?.get(1) as? Number)?.toLong() ?: 0L,
+        )
     }
 
     @Transactional(readOnly = true)
-    fun get(id: Long): PhotoCardResponse = PhotoCardResponse.from(load(id))
+    fun get(id: Long): PhotoCardResponse = toResponse(load(id))
 
     @Transactional(readOnly = true)
     fun getBySaleId(saleId: Long): PhotoCardResponse? =
         photoCardRepository
             .findFirstByUserIdAndSaleId(TenantContext.currentUserId(), saleId)
-            ?.let(PhotoCardResponse::from)
+            ?.let(::toResponse)
 
     @Transactional
     fun create(request: PhotoCardCreateRequest): PhotoCardResponse {
         requirePhotoLimit(request.photos.size)
+        requireTagLimit(request.tags.size)
         val card = PhotoCard(TenantContext.currentUserId(), requireNotNull(request.title))
         card.memo = request.memo
         card.tags = request.tags.toTypedArray()
         card.photos = request.photos
         card.saleId = request.saleId?.also { verifySaleOwnership(it) }
-        return PhotoCardResponse.from(photoCardRepository.save(card))
+        card.customerId = request.customerId?.also { verifyCustomerOwnership(it) }
+        return toResponse(photoCardRepository.save(card))
     }
 
     @Transactional
@@ -70,7 +92,10 @@ class PhotoCardService(
         val card = load(id)
         request.title?.let { card.title = it }
         request.memo?.let { card.memo = it }
-        request.tags?.let { card.tags = it.toTypedArray() }
+        request.tags?.let {
+            requireTagLimit(it.size)
+            card.tags = it.toTypedArray()
+        }
         request.photos?.let {
             requirePhotoLimit(it.size)
             card.photos = it
@@ -79,7 +104,16 @@ class PhotoCardService(
             verifySaleOwnership(it)
             card.saleId = it
         }
-        return PhotoCardResponse.from(photoCardRepository.save(card))
+        // saleId 와 동일하게 null=미변경. 연결 해제는 clearCustomer 플래그로만 처리.
+        if (request.clearCustomer) {
+            card.customerId = null
+        } else {
+            request.customerId?.let {
+                verifyCustomerOwnership(it)
+                card.customerId = it
+            }
+        }
+        return toResponse(photoCardRepository.save(card))
     }
 
     /** 카드 삭제 + 연결된 S3 객체 정리(best-effort). */
@@ -110,7 +144,7 @@ class PhotoCardService(
     ): PhotoCardResponse {
         val card = load(id)
         card.photos = photos
-        return PhotoCardResponse.from(photoCardRepository.save(card))
+        return toResponse(photoCardRepository.save(card))
     }
 
     @Transactional
@@ -122,7 +156,7 @@ class PhotoCardService(
         // 단건 삭제도 S3 객체까지 정리(전체 카드 삭제와 동일) — 안 그러면 CloudFront에 고아 객체가 공개로 남는다.
         if (card.photos.any { it.url == photoUrl }) s3PresignService.deleteByUrl(photoUrl)
         card.photos = card.photos.filterNot { it.url == photoUrl }
-        return PhotoCardResponse.from(photoCardRepository.save(card))
+        return toResponse(photoCardRepository.save(card))
     }
 
     /**
@@ -196,6 +230,12 @@ class PhotoCardService(
         }
     }
 
+    private fun requireTagLimit(count: Int) {
+        if (count > MAX_TAGS_PER_CARD) {
+            throw AppException(CommonErrorCode.VALIDATION, "태그는 최대 ${MAX_TAGS_PER_CARD}개까지 등록할 수 있습니다")
+        }
+    }
+
     private fun load(id: Long): PhotoCard =
         photoCardRepository.findByIdAndUserId(id, TenantContext.currentUserId())
             ?: throw AppException(CommonErrorCode.NOT_FOUND, "사진 카드를 찾을 수 없습니다")
@@ -207,9 +247,37 @@ class PhotoCardService(
         }
     }
 
+    /** 고객 연동(customer_id) 소유권 검증 — 타 테넌트 고객 연결 차단. */
+    private fun verifyCustomerOwnership(customerId: Long) {
+        if (customerRepository.findByIdAndUserId(customerId, TenantContext.currentUserId()) == null) {
+            throw AppException(CommonErrorCode.VALIDATION, "유효하지 않은 고객입니다")
+        }
+    }
+
+    /** 단건 응답: 연결 고객명(테넌트 스코프) 해석해 조립. */
+    private fun toResponse(card: PhotoCard): PhotoCardResponse {
+        val name =
+            card.customerId?.let {
+                customerRepository.findByIdAndUserId(it, TenantContext.currentUserId())?.name
+            }
+        return PhotoCardResponse.from(card, name)
+    }
+
+    /** customerId → 고객명 맵(테넌트 1쿼리). 빈 입력이면 빈 맵. */
+    private fun customerNames(
+        userId: Long,
+        ids: Set<Long>,
+    ): Map<Long, String> =
+        if (ids.isEmpty()) {
+            emptyMap()
+        } else {
+            customerRepository.findByUserIdAndIdIn(userId, ids).associate { requireNotNull(it.id) to it.name }
+        }
+
     private companion object {
         const val PAGE_SIZE = 8
         const val MAX_PHOTOS_PER_CARD = 10
+        const val MAX_TAGS_PER_CARD = 3
         const val MAX_FILE_SIZE_BYTES = 10L * 1024 * 1024
         val ALLOWED_IMAGE_TYPES = setOf("image/jpeg", "image/png", "image/gif", "image/webp", "image/avif", "image/heic")
     }

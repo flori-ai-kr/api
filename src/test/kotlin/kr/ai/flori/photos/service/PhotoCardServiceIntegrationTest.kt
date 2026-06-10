@@ -38,7 +38,13 @@ class PhotoCardServiceIntegrationTest {
     lateinit var photoCardRepository: PhotoCardRepository
 
     @Autowired
+    lateinit var jdbcTemplate: org.springframework.jdbc.core.JdbcTemplate
+
+    @Autowired
     lateinit var saleRepository: kr.ai.flori.sales.repository.SaleRepository
+
+    @Autowired
+    lateinit var customerRepository: kr.ai.flori.customers.repository.CustomerRepository
 
     @Autowired
     lateinit var authService: AuthService
@@ -68,7 +74,7 @@ class PhotoCardServiceIntegrationTest {
                 cloudfront = StorageProperties.CloudFront("cdn.flori.dev"),
             ),
         )
-    private val signingService by lazy { PhotoCardService(photoCardRepository, presignService, saleRepository) }
+    private val signingService by lazy { PhotoCardService(photoCardRepository, presignService, saleRepository, customerRepository) }
 
     @AfterEach
     fun tearDown() = TenantContext.clear()
@@ -94,11 +100,52 @@ class PhotoCardServiceIntegrationTest {
     }
 
     @Test
+    fun `커서 페이지네이션이 동일 updated_at 다수여도 전진하며 전부 순회한다`() {
+        val userId = newTenant()
+        repeat(20) { card() }
+        // 모든 카드 updated_at 동일 강제 — id 보조키 없으면 키셋이 깨져 무한루프 나던 케이스 재현
+        jdbcTemplate.update("UPDATE photo_cards SET updated_at = '2026-06-09T15:16:00Z' WHERE user_id = ?", userId)
+
+        val seen = mutableSetOf<Long>()
+        var cursor: String? = null
+        var hasMore = true
+        var guard = 0
+        while (hasMore) {
+            val page = photoCardService.list(null, cursor, null)
+            page.cards.forEach { seen.add(it.id) }
+            cursor = page.nextCursor
+            hasMore = page.hasMore
+            check(guard++ < 100) { "무한 페이지네이션 — 커서가 전진하지 않음" }
+        }
+        assertThat(seen).hasSize(20)
+    }
+
+    @Test
     fun `태그 필터로 조회한다`() {
         newTenant()
         card(tags = listOf("행사"))
         card(tags = listOf("개인"))
         assertThat(photoCardService.list("행사", null, null).cards).hasSize(1)
+    }
+
+    @Test
+    fun `목록 응답에 총 카드수·총 사진장수가 필터 기준으로 집계된다`() {
+        newTenant()
+        photoCardService.create(
+            PhotoCardCreateRequest(title = "행사용", tags = listOf("행사"), photos = listOf(PhotoFile("u1", "a.jpg"), PhotoFile("u2", "b.jpg"))),
+        )
+        photoCardService.create(
+            PhotoCardCreateRequest(title = "개인용", tags = listOf("개인"), photos = listOf(PhotoFile("u3", "c.jpg"))),
+        )
+
+        val all = photoCardService.list(null, null, null)
+        assertThat(all.totalCards).isEqualTo(2)
+        assertThat(all.totalPhotos).isEqualTo(3)
+
+        // 필터(tag) 적용 시 총계도 그 필터 기준이어야 한다.
+        val filtered = photoCardService.list("행사", null, null)
+        assertThat(filtered.totalCards).isEqualTo(1)
+        assertThat(filtered.totalPhotos).isEqualTo(2)
     }
 
     @Test

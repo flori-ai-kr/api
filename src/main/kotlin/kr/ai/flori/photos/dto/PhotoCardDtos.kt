@@ -14,6 +14,7 @@ data class PhotoCardCreateRequest(
     val tags: List<String> = emptyList(),
     val photos: List<PhotoFile> = emptyList(),
     val saleId: Long? = null,
+    val customerId: Long? = null,
 )
 
 data class PhotoCardUpdateRequest(
@@ -22,6 +23,9 @@ data class PhotoCardUpdateRequest(
     val tags: List<String>? = null,
     val photos: List<PhotoFile>? = null,
     val saleId: Long? = null,
+    val customerId: Long? = null,
+    // 명시적 해제 플래그(saleId 와 동일하게 null=미변경 이므로, 연결 해제는 이 플래그로 구분).
+    val clearCustomer: Boolean = false,
 )
 
 data class ReorderPhotosRequest(
@@ -58,11 +62,16 @@ data class PhotoCardResponse(
     val tags: List<String>,
     val photos: List<PhotoFile>,
     val saleId: Long?,
+    val customerId: Long?,
+    val customerName: String?,
     val createdAt: Instant,
     val updatedAt: Instant,
 ) {
     companion object {
-        fun from(c: PhotoCard): PhotoCardResponse =
+        fun from(
+            c: PhotoCard,
+            customerName: String? = null,
+        ): PhotoCardResponse =
             PhotoCardResponse(
                 id = requireNotNull(c.id),
                 title = c.title,
@@ -70,6 +79,8 @@ data class PhotoCardResponse(
                 tags = c.tags.toList(),
                 photos = c.photos,
                 saleId = c.saleId,
+                customerId = c.customerId,
+                customerName = customerName,
                 createdAt = c.createdAt,
                 updatedAt = c.updatedAt,
             )
@@ -78,6 +89,9 @@ data class PhotoCardResponse(
 
 data class PhotoCardsPageResponse(
     val cards: List<PhotoCardResponse>,
-    val nextCursor: Instant?,
+    val nextCursor: String?,
     val hasMore: Boolean,
+    // 상단 요약 헤더용 — 현재 필터(tag·customer) 기준 전체 카드 수·전체 사진 장수(페이지 무관).
+    val totalCards: Long,
+    val totalPhotos: Long,
 )

@@ -9,6 +9,7 @@ import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.customers.dto.CustomerCreateRequest
 import kr.ai.flori.customers.dto.CustomerUpdateRequest
+import kr.ai.flori.customers.repository.CustomerGradeRepository
 import kr.ai.flori.sales.dto.SaleCreateRequest
 import kr.ai.flori.sales.service.SaleService
 import kr.ai.flori.settings.entity.LabelDomains
@@ -45,6 +46,9 @@ class CustomerServiceIntegrationTest {
 
     @Autowired
     lateinit var labelSettingRepository: LabelSettingRepository
+
+    @Autowired
+    lateinit var gradeRepository: CustomerGradeRepository
 
     @AfterEach
     fun tearDown() = TenantContext.clear()
@@ -85,12 +89,23 @@ class CustomerServiceIntegrationTest {
     ) = customerService.create(CustomerCreateRequest(name = name, phone = phone))
 
     @Test
-    fun `생성 시 기본 등급은 new이며 통계는 0이다`() {
-        newTenant()
+    fun `생성 시 기본 등급은 최저등급(신규)이며 잠금 해제·통계는 0이다`() {
+        val userId = newTenant()
         val customer = create()
-        assertThat(customer.grade).isEqualTo("new")
+        assertThat(customer.grade).isEqualTo("신규")
+        assertThat(customer.gradeLocked).isFalse()
+        assertThat(customer.gradeId).isEqualTo(lowestGradeId(userId))
         assertThat(customer.totalPurchaseCount).isZero()
     }
+
+    /** 기본 시드 등급 중 최저 sort_order = '신규' id. */
+    private fun lowestGradeId(userId: Long): Long =
+        requireNotNull(gradeRepository.findByUserIdOrderBySortOrderAsc(userId).minByOrNull { it.sortOrder }?.id)
+
+    private fun gradeId(
+        userId: Long,
+        name: String,
+    ): Long = requireNotNull(gradeRepository.findByUserIdOrderBySortOrderAsc(userId).first { it.name == name }.id)
 
     @Test
     fun `중복 전화번호 생성은 DUPLICATE`() {
@@ -103,19 +118,25 @@ class CustomerServiceIntegrationTest {
     }
 
     @Test
-    fun `등급 변경과 부분 수정이 동작한다`() {
-        newTenant()
+    fun `등급 수동 지정(잠금)과 부분 수정이 동작한다`() {
+        val userId = newTenant()
         val c = create()
-        assertThat(customerService.updateGrade(c.id, "vip").grade).isEqualTo("vip")
+        val vipId = gradeId(userId, "VIP")
+        val updated = customerService.updateGrade(c.id, vipId)
+        assertThat(updated.grade).isEqualTo("VIP")
+        assertThat(updated.gradeId).isEqualTo(vipId)
+        assertThat(updated.gradeLocked).isTrue()
         assertThat(customerService.update(c.id, CustomerUpdateRequest(memo = "단골")).memo).isEqualTo("단골")
     }
 
     @Test
-    fun `잘못된 등급은 거부된다`() {
+    fun `존재하지 않는 등급 id 지정은 거부된다`() {
         newTenant()
         val c = create()
-        assertThatThrownBy { customerService.updateGrade(c.id, "platinum") }
-            .isInstanceOf(AppException::class.java)
+        assertThatThrownBy { customerService.updateGrade(c.id, 999_999L) }
+            .isInstanceOfSatisfying(AppException::class.java) {
+                assertThat(it.errorCode).isEqualTo(CommonErrorCode.VALIDATION)
+            }
     }
 
     @Test
