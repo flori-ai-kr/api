@@ -24,6 +24,10 @@ class UserProfile(
     var userId: Long,
     @Column(name = "store_name", nullable = false)
     var storeName: String,
+    // PII: 점주 본인 연락처. ProfileResponse/FullProfileResponse 등 응답 DTO에 절대 노출하지 말 것
+    // (공유 어드민 콘솔 드릴다운 포함). 운영자 참고용으로만 저장한다.
+    @Column(name = "phone_number", nullable = false)
+    var phoneNumber: String,
     @Column(name = "region_sido", nullable = false)
     var regionSido: String,
 ) : BaseEntity() {

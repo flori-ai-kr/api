@@ -5,6 +5,9 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
 import kr.ai.flori.auth.oauth.SocialOAuthClient
 import kr.ai.flori.auth.oauth.SocialUserInfo
+import kr.ai.flori.common.security.JwtTokenProvider
+import kr.ai.flori.user.repository.UserProfileRepository
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -36,6 +39,12 @@ class AuthFlowIntegrationTest {
 
     @Autowired
     lateinit var objectMapper: ObjectMapper
+
+    @Autowired
+    lateinit var tokenProvider: JwtTokenProvider
+
+    @Autowired
+    lateinit var userProfileRepository: UserProfileRepository
 
     /** 매 인증마다 고유 (provider, providerId)를 반환해 항상 "신규 신원"이 되게 하는 스텁. */
     @TestConfiguration
@@ -78,6 +87,7 @@ class AuthFlowIntegrationTest {
                         body(
                             "registerToken" to registerToken,
                             "storeName" to "헤이즐 플라워",
+                            "phoneNumber" to "01012345678",
                             // 닉네임 전역 유일(uq_users_nickname) — 메서드 간 공유 DB 충돌 방지 위해 고유 생성
                             "nickname" to "헤이즐-${UUID.randomUUID()}",
                             "email" to email,
@@ -98,6 +108,11 @@ class AuthFlowIntegrationTest {
             .get("/me") { header(HttpHeaders.AUTHORIZATION, "Bearer $access") }
             .andExpect { status { isOk() } }
             .andExpect { jsonPath("$.profile.storeName") { value("헤이즐 플라워") } }
+
+        // 가입 시 입력한 전화번호가 user_profiles에 저장됐는지 확인
+        val userId = tokenProvider.parse(access)!!.userId
+        val profile = userProfileRepository.findById(userId).orElseThrow()
+        assertThat(profile.phoneNumber).isEqualTo("01012345678")
 
         // refresh 회전 → 새 토큰
         val refreshResponse =
@@ -172,6 +187,7 @@ class AuthFlowIntegrationTest {
                     body(
                         "registerToken" to registerToken,
                         "storeName" to "다른 가게",
+                        "phoneNumber" to "01012345678",
                         "nickname" to "다른 닉",
                         "email" to "dup-${UUID.randomUUID()}@flori.dev",
                         "regionSido" to "서울특별시",
@@ -196,6 +212,24 @@ class AuthFlowIntegrationTest {
     }
 
     @Test
+    fun `전화번호 형식이 틀리면 400`() {
+        mockMvc
+            .post("/auth/register/complete") {
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    body(
+                        "registerToken" to kakaoRegisterToken(),
+                        "storeName" to "헤이즐 플라워",
+                        // 숫자만·^01\d{8,9}$ 패턴 위반
+                        "phoneNumber" to "123",
+                        "nickname" to "헤이즐-${UUID.randomUUID()}",
+                        "email" to "flow-${UUID.randomUUID()}@flori.dev",
+                        "regionSido" to "서울특별시",
+                    )
+            }.andExpect { status { isBadRequest() } }
+    }
+
+    @Test
     fun `위조된 registerToken 가입 완료는 401`() {
         mockMvc
             .post("/auth/register/complete") {
@@ -204,6 +238,7 @@ class AuthFlowIntegrationTest {
                     body(
                         "registerToken" to "forged.invalid.token",
                         "storeName" to "헤이즐 플라워",
+                        "phoneNumber" to "01012345678",
                         "nickname" to "헤이즐",
                         "email" to "flow-${UUID.randomUUID()}@flori.dev",
                         "regionSido" to "서울특별시",
@@ -231,6 +266,7 @@ class AuthFlowIntegrationTest {
                     body(
                         "registerToken" to kakaoRegisterToken(),
                         "storeName" to "가게",
+                        "phoneNumber" to "01012345678",
                         "nickname" to nickname,
                         "email" to "nick-${UUID.randomUUID()}@flori.dev",
                         "regionSido" to "서울특별시",

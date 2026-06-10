@@ -36,7 +36,7 @@
 
 | 코드 | 의미 | HTTP | 비고 |
 |------|------|------|------|
-| `E-CMN-001` | VALIDATION (입력값 검증 실패) | 400 | `@Valid`, 제약 위반, 본문 파싱 실패, 도메인 값 검증 |
+| `E-CMN-001` | VALIDATION (입력값 검증 실패) | 400 | `@Valid`, 제약 위반, 본문 파싱 실패, 도메인 값 검증, 필수 쿼리 파라미터 누락(`MissingServletRequestParameterException`), 파라미터 타입 불일치(`MethodArgumentTypeMismatchException`·날짜 형식 오류 등) |
 | `E-CMN-002` | UNAUTHORIZED (인증 필요) | 401 | 미인증 접근, 세션/사용자 없음 |
 | `E-CMN-003` | INVALID_TOKEN (토큰 무효·만료) | 401 | access/register/refresh 토큰 무효·만료, OAuth 교환 실패 |
 | `E-CMN-004` | FORBIDDEN (권한 없음) | 403 | 접근 거부, 비활성 계정, 구독 필요 기능 |
@@ -92,3 +92,12 @@
 | `E-VRF-002` | ALREADY_REQUESTED (중복 신청) | 409 | 이미 `PENDING`/`APPROVED` 인증이 있는데 재신청 |
 | `E-VRF-003` | LICENSE_NOT_OWNED (등록증 소유권) | 403 | 등록증 URL 키가 본인 prefix(`business-licenses/{userId}/`)가 아님 |
 | `E-VRF-004` | INVALID_LICENSE_TYPE (파일 형식) | 400 | presign 시 허용되지 않은 contentType(jpeg·png·webp·pdf 외) |
+
+## E-WL-* (사전등록)
+
+> `waitlist/error/WaitlistErrorCode`. 출시 전 선착순 100명 공개 모집. 인증 불필요.
+
+| 코드 | 의미 | HTTP | 발생 지점 |
+|------|------|------|-----------|
+| `E-WL-001` | ALREADY_REGISTERED (중복 등록) | 409 | 이미 등록된 전화번호(정규화 후 UNIQUE 비교)로 재등록 시도 |
+| `E-WL-002` | CLOSED (모집 마감) | 409 | 등록 시도 시점에 등록 수가 정원(100명) 이상 |

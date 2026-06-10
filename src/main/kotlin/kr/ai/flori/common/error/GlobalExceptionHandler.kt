@@ -7,9 +7,11 @@ import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.context.request.WebRequest
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 
 /**
  * 표준 에러 응답 변환 + 예기치 못한 오류의 Discord 리포팅.
@@ -56,6 +58,20 @@ class GlobalExceptionHandler(
     // 본문 파싱 실패(필수 필드 누락·타입 불일치·깨진 JSON)는 클라이언트 오류 → 400 (내부 디테일 비노출, Discord 미전송)
     @ExceptionHandler(HttpMessageNotReadableException::class)
     fun handleNotReadable(): ResponseEntity<ErrorResponse> = errorResponse(CommonErrorCode.VALIDATION, "요청 본문을 해석할 수 없습니다")
+
+    // 필수 쿼리/요청 파라미터 누락 → 400 (클라이언트 오류, Discord 미전송)
+    @ExceptionHandler(MissingServletRequestParameterException::class)
+    fun handleMissingParam(ex: MissingServletRequestParameterException): ResponseEntity<ErrorResponse> {
+        log.warn("필수 파라미터 누락: {}", ex.parameterName)
+        return errorResponse(CommonErrorCode.VALIDATION, "필수 파라미터가 누락되었습니다: ${ex.parameterName}")
+    }
+
+    // 쿼리/경로 파라미터 타입 불일치(예: 날짜 형식 오류) → 400 (클라이언트 오류, Discord 미전송)
+    @ExceptionHandler(MethodArgumentTypeMismatchException::class)
+    fun handleTypeMismatch(ex: MethodArgumentTypeMismatchException): ResponseEntity<ErrorResponse> {
+        log.warn("파라미터 타입 불일치: {}", ex.name)
+        return errorResponse(CommonErrorCode.VALIDATION, "파라미터 형식이 올바르지 않습니다: ${ex.name}")
+    }
 
     @ExceptionHandler(DataIntegrityViolationException::class)
     fun handleDataIntegrity(ex: DataIntegrityViolationException): ResponseEntity<ErrorResponse> {

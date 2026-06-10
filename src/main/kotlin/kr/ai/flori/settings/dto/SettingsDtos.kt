@@ -19,6 +19,13 @@ data class LabelSettingUpdateRequest(
     val label: String?,
 )
 
+/** 라벨 순서 변경 — 새 순서대로 나열한 항목 id 목록(현재 (domain,kind) 전체와 정확히 일치해야 함). */
+data class LabelReorderRequest(
+    @field:NotNull(message = "순서(ids)는 필수입니다")
+    @field:Size(min = 1, max = 200, message = "항목 수가 올바르지 않습니다")
+    val ids: List<Long>?,
+)
+
 data class LabelSettingResponse(
     val id: Long,
     val value: String,

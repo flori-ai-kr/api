@@ -1,6 +1,7 @@
 package kr.ai.flori.settings.controller
 
 import jakarta.validation.Valid
+import kr.ai.flori.settings.dto.LabelReorderRequest
 import kr.ai.flori.settings.dto.LabelSettingCreateRequest
 import kr.ai.flori.settings.dto.LabelSettingResponse
 import kr.ai.flori.settings.dto.LabelSettingUpdateRequest
@@ -48,6 +49,11 @@ class SaleSettingsController(
         categoryService.delete(id)
     }
 
+    @PutMapping("/sale-categories/order")
+    fun reorderCategories(
+        @Valid @RequestBody request: LabelReorderRequest,
+    ): List<LabelSettingResponse> = categoryService.reorder(requireNotNull(request.ids))
+
     @GetMapping("/payment-methods")
     fun payments(): List<LabelSettingResponse> = paymentService.list()
 
@@ -71,6 +77,11 @@ class SaleSettingsController(
         paymentService.delete(id)
     }
 
+    @PutMapping("/payment-methods/order")
+    fun reorderPayments(
+        @Valid @RequestBody request: LabelReorderRequest,
+    ): List<LabelSettingResponse> = paymentService.reorder(requireNotNull(request.ids))
+
     @GetMapping("/sale-channels")
     fun channels(): List<LabelSettingResponse> = channelService.list()
 
@@ -93,4 +104,9 @@ class SaleSettingsController(
     ) {
         channelService.delete(id)
     }
+
+    @PutMapping("/sale-channels/order")
+    fun reorderChannels(
+        @Valid @RequestBody request: LabelReorderRequest,
+    ): List<LabelSettingResponse> = channelService.reorder(requireNotNull(request.ids))
 }

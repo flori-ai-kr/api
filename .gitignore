@@ -21,16 +21,6 @@ application-local.yml
 .DS_Store
 *.log
 
-# ===========================================
-# MoAI-ADK / Claude Code
-# ===========================================
-# 백업 (init --force 등)
-.moai-backups/
-*.backup/
-*-backup/
-*_backup_*/
-*.backup
-
 # Claude Code 로컬 설정/아티팩트 (프레임워크 자산은 커밋, 로컬만 제외)
 .claude/settings.local.json
 .claude/settings.local.*.json
@@ -47,14 +37,5 @@ application-local.yml
 .claude/skills/*/*/*key*
 .claude/skills/*/*/*token*
 !.claude/skills/*/modules/*token*.md
-
-# MoAI 로컬 전용 (git pull 동기화 제외)
-.moai/status_line.sh
-.moai/memory/
-.moai/worktrees/
-.moai/logs/
-.moai/reports/
-.moai/evolution/telemetry/*.jsonl
-!.moai/evolution/telemetry/.gitkeep
 
 /logs/

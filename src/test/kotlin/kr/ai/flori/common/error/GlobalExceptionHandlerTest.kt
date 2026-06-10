@@ -6,6 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 /**
@@ -52,6 +53,24 @@ class GlobalExceptionHandlerTest {
         assertThat(response).doesNotContain("token=secret123")
     }
 
+    @Test
+    fun `필수 파라미터 누락은 400으로 매핑되며 Discord 리포팅하지 않는다`() {
+        mockMvc.get("/dummy/param").andExpect {
+            status { isBadRequest() }
+            jsonPath("$.code") { value("E-CMN-001") }
+        }
+        assertThat(reporter.reported).isNull()
+    }
+
+    @Test
+    fun `파라미터 타입 불일치는 400으로 매핑되며 Discord 리포팅하지 않는다`() {
+        mockMvc.get("/dummy/param") { param("n", "not-a-number") }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.code") { value("E-CMN-001") }
+        }
+        assertThat(reporter.reported).isNull()
+    }
+
     @RestController
     class DummyController {
         @GetMapping("/dummy/app")
@@ -62,6 +81,11 @@ class GlobalExceptionHandlerTest {
 
         @GetMapping("/dummy/boom")
         fun boom(): Nothing = throw IllegalStateException("db lost token=secret123")
+
+        @GetMapping("/dummy/param")
+        fun param(
+            @RequestParam n: Int,
+        ): String = n.toString()
     }
 
     class RecordingReporter : DiscordErrorReporter("") {

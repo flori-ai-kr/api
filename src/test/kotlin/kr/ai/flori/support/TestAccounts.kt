@@ -27,6 +27,7 @@ object TestAccounts {
         // 닉네임(users.nickname)은 전역 유일(uq_users_nickname)이므로 호출마다 고유 기본값을 생성해 충돌을 피한다.
         nickname: String = "사장님-${UUID.randomUUID()}",
         storeName: String = "테스트 가게",
+        phoneNumber: String = "01012345678",
         regionSido: String = "서울특별시",
     ): TokenResponse {
         val registerToken = tokenProvider.generateRegisterToken(provider, providerId, email, nickname)
@@ -34,6 +35,7 @@ object TestAccounts {
             RegisterCompleteRequest(
                 registerToken = registerToken,
                 storeName = storeName,
+                phoneNumber = phoneNumber,
                 nickname = nickname,
                 email = email,
                 regionSido = regionSido,
