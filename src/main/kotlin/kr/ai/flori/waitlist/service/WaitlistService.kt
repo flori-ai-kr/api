@@ -6,7 +6,9 @@ import kr.ai.flori.waitlist.dto.WaitlistRegisterRequest
 import kr.ai.flori.waitlist.dto.WaitlistRegisterResponse
 import kr.ai.flori.waitlist.entity.WaitlistRegistration
 import kr.ai.flori.waitlist.error.WaitlistErrorCode
+import kr.ai.flori.waitlist.event.WaitlistRegisteredEvent
 import kr.ai.flori.waitlist.repository.WaitlistRegistrationRepository
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -14,10 +16,12 @@ import org.springframework.transaction.annotation.Transactional
 /**
  * 사전등록 서비스. 인증/테넌시 없음(공개 모집).
  * 선착순 [CAPACITY]명까지. email은 trim+소문자로 정규화·중복검사. email·shopName 모두 필수.
+ * 저장 커밋 후 [WaitlistRegisteredEvent]를 발행해 Discord 알림을 비동기로 보낸다.
  */
 @Service
 class WaitlistService(
     private val repository: WaitlistRegistrationRepository,
+    private val eventPublisher: ApplicationEventPublisher,
 ) {
     // 낙관적 저장: 마감 가드 + 사전 중복검사 + 저장 시 UNIQUE 경쟁 캐치로 throw가 3개 — 의도된 패턴
     @Suppress("ThrowsCount")
@@ -45,6 +49,9 @@ class WaitlistService(
             throw AppException(WaitlistErrorCode.ALREADY_REGISTERED)
         }
         val count = repository.count()
+        eventPublisher.publishEvent(
+            WaitlistRegisteredEvent(email = email, shopName = request.shopName.trim(), count = count, capacity = CAPACITY),
+        )
         return WaitlistRegisterResponse(count = count, capacity = CAPACITY, closed = count >= CAPACITY)
     }
 

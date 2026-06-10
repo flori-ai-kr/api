@@ -19,5 +19,6 @@ enum class CommonErrorCode(
     FORBIDDEN("E-CMN-004", HttpStatus.FORBIDDEN, "권한이 없습니다"),
     NOT_FOUND("E-CMN-005", HttpStatus.NOT_FOUND, "대상을 찾을 수 없습니다"),
     CONFLICT("E-CMN-006", HttpStatus.CONFLICT, "이미 존재합니다"),
+    TOO_MANY_REQUESTS("E-CMN-007", HttpStatus.TOO_MANY_REQUESTS, "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요"),
     INTERNAL("E-CMN-999", HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다"),
 }

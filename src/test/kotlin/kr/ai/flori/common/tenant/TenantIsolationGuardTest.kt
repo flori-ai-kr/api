@@ -67,6 +67,8 @@ class TenantIsolationGuardTest {
             "BusinessVerificationRepository#findByStatusOrderByCreatedAtDesc",
             // 대기자 명단(공개 모집): 인증/테넌시 없는 단일 전역 테이블 — email 중복 검사는 전역 unique 제약 대응
             "WaitlistRegistrationRepository#existsByEmail",
+            // 유저 인터뷰 모집(공개): 인증/테넌시 없는 단일 전역 테이블 — phone 중복 검사는 전역 unique 제약 대응
+            "InterviewRequestRepository#existsByPhone",
         )
 
     @Test

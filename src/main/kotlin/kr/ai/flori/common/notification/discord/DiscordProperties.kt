@@ -12,4 +12,8 @@ data class DiscordProperties(
     val signupWebhookUrl: String = "",
     /** 사업자 인증 신청 알림 채널 (DISCORD_VERIFICATION_WEBHOOK_URL). */
     val verificationWebhookUrl: String = "",
+    /** 사전등록 알림 채널 (DISCORD_WAITLIST_WEBHOOK_URL). */
+    val waitlistWebhookUrl: String = "",
+    /** 유저 인터뷰 신청 알림 채널 (DISCORD_INTERVIEW_WEBHOOK_URL). */
+    val interviewWebhookUrl: String = "",
 )

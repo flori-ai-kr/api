@@ -48,6 +48,7 @@ class SecurityConfig(
                 authorize("/auth/nickname/check", permitAll)
                 authorize("/waitlist", permitAll)
                 authorize("/waitlist/count", permitAll)
+                authorize("/interview", permitAll)
                 authorize("/health", permitAll)
                 authorize("/actuator/health/**", permitAll) // 헬스만 공개, 그 외 actuator는 인증 필요
                 authorize("/actuator/info", permitAll)
