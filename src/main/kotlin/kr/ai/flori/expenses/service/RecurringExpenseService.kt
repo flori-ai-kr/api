@@ -3,8 +3,6 @@ package kr.ai.flori.expenses.service
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
-import kr.ai.flori.common.util.KST
-import kr.ai.flori.expenses.dto.ExpenseResponse
 import kr.ai.flori.expenses.dto.RecurringExpenseRequest
 import kr.ai.flori.expenses.dto.RecurringExpenseResponse
 import kr.ai.flori.expenses.dto.RecurringInstanceUpdateRequest
@@ -19,10 +17,9 @@ import kr.ai.flori.settings.entity.LabelKinds
 import kr.ai.flori.settings.service.LabelSettingReader
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDate
 
 /**
- * 고정비 템플릿 서비스(CRUD·토글·빠른추가) + iOS 스타일 "이것만/이후 모두" 분기.
+ * 고정비 템플릿 서비스(CRUD·토글) + iOS 스타일 "이것만/이후 모두" 분기.
  * 모든 쿼리는 TenantContext userId로 격리(HARD).
  * 카테고리는 label_settings.id 간접참조 — 쓰기 시 소유권 검증, 응답 시 id→label 해석.
  */
@@ -108,30 +105,6 @@ class RecurringExpenseService(
         val rule = loadRule(id)
         rule.isActive = isActive
         return ruleResponse(recurringRepository.save(rule), categoryLabels(), paymentLabels())
-    }
-
-    /** 빠른 추가: 오늘 날짜로 즉시 지출 생성. 수동 추가이므로 recurring_id 미연결(자동생성 멱등 충돌 회피). */
-    @Transactional
-    fun quickAdd(id: Long): ExpenseResponse {
-        val rule = loadRule(id)
-        val expense =
-            Expense(
-                userId = rule.userId,
-                date = LocalDate.now(KST),
-                itemName = rule.itemName,
-                categoryId = rule.categoryId,
-                unitPrice = rule.unitPrice,
-                quantity = rule.quantity,
-                totalAmount = rule.unitPrice * rule.quantity,
-                paymentMethodId = rule.paymentMethodId,
-            )
-        expense.vendor = rule.vendor
-        expense.memo = rule.memo
-        return ExpenseResponse.from(
-            expenseRepository.save(expense),
-            rule.categoryId?.let { categoryLabels()[it] },
-            rule.paymentMethodId?.let { paymentLabels()[it] },
-        )
     }
 
     /** 이것만 수정: 인스턴스만 변경하고 템플릿과 분리 표시. */

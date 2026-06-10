@@ -130,15 +130,6 @@ class RecurringExpenseServiceIntegrationTest {
     }
 
     @Test
-    fun `빠른추가는 오늘 지출을 만들고 템플릿과 분리된다`() {
-        newTenant()
-        val rule = monthlyRule()
-        val expense = service.quickAdd(rule.id)
-        assertThat(expense.recurringId).isNull()
-        assertThat(expense.totalAmount).isEqualTo(500_000)
-    }
-
-    @Test
     fun `이것만 수정은 인스턴스만 바꾸고 템플릿은 유지한다`() {
         newTenant()
         val rule = monthlyRule()

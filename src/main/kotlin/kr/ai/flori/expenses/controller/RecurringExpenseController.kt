@@ -1,7 +1,6 @@
 package kr.ai.flori.expenses.controller
 
 import jakarta.validation.Valid
-import kr.ai.flori.expenses.dto.ExpenseResponse
 import kr.ai.flori.expenses.dto.RecurringExpenseRequest
 import kr.ai.flori.expenses.dto.RecurringExpenseResponse
 import kr.ai.flori.expenses.dto.RecurringInstanceUpdateRequest
@@ -61,12 +60,6 @@ class RecurringExpenseController(
         @PathVariable id: Long,
         @Valid @RequestBody request: ToggleActiveRequest,
     ): RecurringExpenseResponse = service.toggleActive(id, requireNotNull(request.isActive))
-
-    @PostMapping("/{id}/quick-add")
-    @ResponseStatus(HttpStatus.CREATED)
-    fun quickAdd(
-        @PathVariable id: Long,
-    ): ExpenseResponse = service.quickAdd(id)
 
     @PatchMapping("/instances/{expenseId}")
     fun updateInstance(
