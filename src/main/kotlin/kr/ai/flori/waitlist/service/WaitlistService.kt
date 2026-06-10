@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional
 
 /**
  * 사전등록 서비스. 인증/테넌시 없음(공개 모집).
- * 선착순 [CAPACITY]명까지. phone은 숫자만 남겨 정규화·중복검사.
+ * 선착순 [CAPACITY]명까지. email은 trim+소문자로 정규화·중복검사. email·shopName 모두 필수.
  */
 @Service
 class WaitlistService(
@@ -26,17 +26,22 @@ class WaitlistService(
         if (repository.count() >= CAPACITY) {
             throw AppException(WaitlistErrorCode.CLOSED)
         }
-        val phone = normalizePhone(request.phone)
-        if (repository.existsByPhone(phone)) {
+        val email = normalizeEmail(request.email)
+        if (repository.existsByEmail(email)) {
             throw AppException(WaitlistErrorCode.ALREADY_REGISTERED)
         }
         try {
-            repository.save(WaitlistRegistration(shopName = request.shopName.trim(), phone = phone))
+            repository.save(
+                WaitlistRegistration(
+                    email = email,
+                    shopName = request.shopName.trim(),
+                ),
+            )
         } catch (
             @Suppress("SwallowedException") e: DataIntegrityViolationException,
         ) {
-            // cause를 전달하지 않는다: JDBC 제약위반 메시지("Key (phone)=(010...) already exists")가
-            // 글로벌 핸들러 로그에 전화번호(PII)를 남기는 것을 막는다. 동시 등록 경쟁은 멱등 409로 변환.
+            // cause를 전달하지 않는다: JDBC 제약위반 메시지("Key (email)=(...) already exists")가
+            // 글로벌 핸들러 로그에 이메일(PII)을 남기는 것을 막는다. 동시 등록 경쟁은 멱등 409로 변환.
             throw AppException(WaitlistErrorCode.ALREADY_REGISTERED)
         }
         val count = repository.count()
@@ -49,7 +54,7 @@ class WaitlistService(
         return WaitlistCountResponse(count = count, capacity = CAPACITY, closed = count >= CAPACITY)
     }
 
-    private fun normalizePhone(raw: String): String = raw.filter { it.isDigit() }
+    private fun normalizeEmail(raw: String): String = raw.trim().lowercase()
 
     companion object {
         const val CAPACITY = 100

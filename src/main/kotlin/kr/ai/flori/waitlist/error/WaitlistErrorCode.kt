@@ -9,6 +9,6 @@ enum class WaitlistErrorCode(
     override val status: HttpStatus,
     override val defaultMessage: String,
 ) : ErrorCode {
-    ALREADY_REGISTERED("E-WL-001", HttpStatus.CONFLICT, "이미 사전등록된 번호예요"),
+    ALREADY_REGISTERED("E-WL-001", HttpStatus.CONFLICT, "이미 사전등록된 이메일이에요"),
     CLOSED("E-WL-002", HttpStatus.CONFLICT, "사전등록이 마감되었어요 (선착순 100명)"),
 }

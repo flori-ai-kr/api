@@ -10,15 +10,16 @@ import kr.ai.flori.common.entity.BaseCreatedEntity
 
 /**
  * 사전등록 1건. 인증/테넌시와 무관한 공개 모집 데이터.
- * phone은 정규화(숫자만)하여 저장하며 UNIQUE로 중복 등록을 막는다.
+ * email은 정규화(trim+소문자)하여 저장하며 UNIQUE로 중복 등록을 막는다.
+ * email·shopName 모두 필수.
  */
 @Entity
 @Table(name = "waitlist_registrations")
 class WaitlistRegistration(
+    @Column(name = "email", nullable = false, unique = true)
+    var email: String,
     @Column(name = "shop_name", nullable = false)
     var shopName: String,
-    @Column(name = "phone", nullable = false, unique = true)
-    var phone: String,
 ) : BaseCreatedEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
