@@ -74,8 +74,9 @@ class GlobalExceptionHandler(
     }
 
     @ExceptionHandler(DataIntegrityViolationException::class)
-    fun handleDataIntegrity(ex: DataIntegrityViolationException): ResponseEntity<ErrorResponse> {
-        log.warn("데이터 제약 위반: {}", ex.mostSpecificCause.message)
+    fun handleDataIntegrity(): ResponseEntity<ErrorResponse> {
+        // JDBC 제약위반 메시지에는 위반 값(전화번호·이메일 등 PII)이 포함될 수 있어 로깅하지 않는다.
+        log.warn("데이터 제약 위반 (상세 미기록 — PII 보호)")
         return errorResponse(CommonErrorCode.CONFLICT, null)
     }
 

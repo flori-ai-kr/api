@@ -5,6 +5,15 @@
 jwt:
   secret: flori-test-only-jwt-secret-32bytes-or-more-xyz
 
+# 테스트는 Discord 실제 전송 금지. 빌드는 'local,test' 프로필로 돌아 application-local.yml의
+# 실제 웹훅 URL이 로드되므로(test가 나중=우선), 여기서 전부 빈 값으로 덮어써 콘솔 폴백으로 강제한다.
+discord:
+  webhook-url: ""
+  signup-webhook-url: ""
+  verification-webhook-url: ""
+  waitlist-webhook-url: ""
+  interview-webhook-url: ""
+
 spring:
   sql:
     init:

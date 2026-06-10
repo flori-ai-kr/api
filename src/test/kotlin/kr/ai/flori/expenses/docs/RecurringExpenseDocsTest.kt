@@ -411,93 +411,14 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
             }
     }
 
-    // ── 6. 빠른 추가 ───────────────────────────────────────────────────────────
-
-    @Test
-    fun `고정비 빠른 추가 문서화`() {
-        val token = signupAndToken()
-        val id = createRecurring(token)
-
-        mockMvc
-            .post("/recurring-expenses/$id/quick-add") {
-                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/recurring-expenses/{id}/quick-add")
-                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-            }.andExpect { status { isCreated() } }
-            .andDo {
-                handle(
-                    docs(
-                        identifier = "recurring-expense-quick-add",
-                        responseSchema = "ExpenseResponse",
-                        tag = "RecurringExpenses",
-                        summary = "빠른 추가 (오늘 날짜로 즉시 지출 생성, 템플릿과 분리)",
-                        pathParameters = listOf(parameterWithName("id").description("고정비 ID")),
-                        responseFields =
-                            listOf(
-                                fieldWithPath("id").type(JsonFieldType.NUMBER).description("생성된 지출 ID"),
-                                fieldWithPath("date")
-                                    .type(JsonFieldType.STRING)
-                                    .description("지출 발생일 (오늘 날짜, yyyy-MM-dd)"),
-                                fieldWithPath("itemName").type(JsonFieldType.STRING).description("물품명"),
-                                fieldWithPath("categoryId").type(JsonFieldType.NUMBER).optional().description("카테고리 ID"),
-                                fieldWithPath("categoryLabel").type(JsonFieldType.STRING).optional().description("카테고리 이름"),
-                                fieldWithPath("unitPrice").type(JsonFieldType.NUMBER).description("단가(원)"),
-                                fieldWithPath("quantity").type(JsonFieldType.NUMBER).description("수량"),
-                                fieldWithPath("totalAmount")
-                                    .type(JsonFieldType.NUMBER)
-                                    .description("[서버 계산 SSOT] 총액 = 단가 × 수량"),
-                                fieldWithPath("paymentMethodId").type(JsonFieldType.NUMBER).optional().description("결제수단 ID"),
-                                fieldWithPath("paymentMethodLabel")
-                                    .type(JsonFieldType.STRING)
-                                    .optional()
-                                    .description("결제수단 이름"),
-                                fieldWithPath("cardCompany")
-                                    .type(JsonFieldType.STRING)
-                                    .optional()
-                                    .description("카드사"),
-                                fieldWithPath("vendor")
-                                    .type(JsonFieldType.STRING)
-                                    .optional()
-                                    .description("거래처"),
-                                fieldWithPath("memo")
-                                    .type(JsonFieldType.STRING)
-                                    .optional()
-                                    .description("비고"),
-                                fieldWithPath("recurringId")
-                                    .type(JsonFieldType.NUMBER)
-                                    .optional()
-                                    .description("빠른 추가는 템플릿 분리 — null 반환"),
-                                fieldWithPath("isRecurringModified")
-                                    .type(JsonFieldType.BOOLEAN)
-                                    .description("고정비 인스턴스 개별 수정 여부"),
-                                fieldWithPath("createdAt")
-                                    .type(JsonFieldType.STRING)
-                                    .description("생성 시각 (ISO-8601)"),
-                                fieldWithPath("updatedAt")
-                                    .type(JsonFieldType.STRING)
-                                    .description("최종 수정 시각 (ISO-8601)"),
-                            ),
-                    ),
-                )
-            }
-    }
-
     // ── 7. 인스턴스 수정 (scope=this) ─────────────────────────────────────────
 
     @Test
     fun `고정비 인스턴스 이것만 수정 문서화`() {
         val token = signupAndToken()
-        // 고정비 생성 후 스케줄러 없이 quickAdd 로 인스턴스 확보
         val recurringId = createRecurring(token)
-        val expenseId =
-            objectMapper
-                .readTree(
-                    mockMvc
-                        .post("/recurring-expenses/$recurringId/quick-add") {
-                            header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-                        }.andReturn()
-                        .response.contentAsString,
-                ).get("id")
-                .asText()
+        // 고정비 생성 후 스케줄러로 인스턴스 확보 (룰: 매월 15일)
+        val expenseId = generateInstance(recurringId, LocalDate.of(2026, 6, 15))
 
         mockMvc
             .patch("/recurring-expenses/instances/$expenseId") {
@@ -644,16 +565,8 @@ class RecurringExpenseDocsTest : RestDocsSupport() {
     fun `고정비 인스턴스 이것만 삭제 문서화`() {
         val token = signupAndToken()
         val recurringId = createRecurring(token)
-        val expenseId =
-            objectMapper
-                .readTree(
-                    mockMvc
-                        .post("/recurring-expenses/$recurringId/quick-add") {
-                            header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-                        }.andReturn()
-                        .response.contentAsString,
-                ).get("id")
-                .asText()
+        // 고정비 생성 후 스케줄러로 인스턴스 확보 (룰: 매월 15일)
+        val expenseId = generateInstance(recurringId, LocalDate.of(2026, 6, 15))
 
         mockMvc
             .delete("/recurring-expenses/instances/$expenseId") {

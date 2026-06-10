@@ -29,15 +29,20 @@ jwt:
   # 0 이하면 멱등 비활성(매 호출 회전, 즉시 재사용은 INVALID_TOKEN).
   refresh-dedup-ttl-seconds: ${JWT_REFRESH_DEDUP_TTL:30}
 
-# CORS 허용 origin (앱/웹). 콤마 구분.
+# CORS 허용 origin (앱/웹/홈페이지). 콤마 구분.
+# - 3000: homepage(랜딩) 로컬, 3100: web(admin) 로컬, 8081: 모바일 로컬
+# - https://flori.ai.kr: 운영 홈페이지(정적 사이트가 공개 waitlist API 직접 호출)
+# prod 는 CORS_ALLOWED_ORIGINS 환경변수로 명시 주입(운영 도메인만) 권장.
 cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3100,http://localhost:8081}
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3100,http://localhost:8081}
 
 # Discord 알림 (미설정 시 콘솔 로깅으로 폴백)
 discord:
   webhook-url: ${DISCORD_WEBHOOK_URL:}                              # 운영 에러(DiscordErrorReporter)
   signup-webhook-url: ${DISCORD_SIGNUP_WEBHOOK_URL:}                # 유저 가입 알림
   verification-webhook-url: ${DISCORD_VERIFICATION_WEBHOOK_URL:}    # 사업자 인증 신청 알림
+  waitlist-webhook-url: ${DISCORD_WAITLIST_WEBHOOK_URL:}            # 사전등록 알림
+  interview-webhook-url: ${DISCORD_INTERVIEW_WEBHOOK_URL:}          # 유저 인터뷰 신청 알림
 
 # S3 presigned 업로드 (bucket 미설정 시 관련 빈 미생성 — 로컬 부팅 가능)
 aws:

@@ -1,6 +1,6 @@
 # Flori API — 아키텍처 & 기술 선정 이유
 
-> 최종 업데이트: 2026-06-10 (세션3: customer_grades + photo_cards.customer_id + 사진첩 총계·기간필터·태그 색상 제거)
+> 최종 업데이트: 2026-06-10 (세션1-launch: interview 모집 모듈 + Discord WAITLIST·INTERVIEW 채널 + waitlist 식별자 phone→email 전환)
 
 이 문서는 Flori(꽃집 어드민) **모바일 앱 백엔드 API**의 기술 스택과 아키텍처를 설명한다. 단순히 "무엇을 쓰는가"가 아니라 **"왜 이것을 골랐는가"**에 초점을 맞춘다. 모든 선택에는 *기존 Next.js+Supabase 웹앱의 비즈니스 로직을 네이티브 앱이 호출 가능한 REST API로 재구현하고, 자체 AWS 인프라 위에 올린다*는 도메인 맥락이 반영되어 있다.
 
@@ -109,7 +109,8 @@ flowchart LR
 | `photos` | 사진카드(presigned 업로드·삭제·**다운로드**)·**#해시태그(색상 없음·카드당 최대 3)**·**고객 직접 연결(customer_id 필터·소유권 검증)**·**총계 집계(totalCards/totalPhotos)·기간필터(created_at)** |
 | `community` | 단일 커뮤니티 게시판(게시글·댓글·대댓글·좋아요·비밀글·soft delete)·이미지 업로드. **`@RequiresBusinessVerified` 게이팅 적용**. `PostResponse`·`CommentResponse`에 `authorIsAdmin` 노출(작성자 관리자 배지용) |
 | `verification` | 사업자 인증 신청·상태 조회(PENDING/APPROVED/REJECTED/NONE)·presigned 업로드·게이팅(`@RequiresBusinessVerified`) |
-| `waitlist` | 출시 전 선착순 100명 사전등록(공개 모집). 인증/테넌시 없음. `POST /waitlist`, `GET /waitlist/count` |
+| `waitlist` | 출시 전 선착순 100명 사전등록(공개 모집). 인증/테넌시 없음. `POST /waitlist`(이메일+가게명), `GET /waitlist/count`. 등록 시 Discord WAITLIST 채널 비동기 알림 |
+| `interview` | 유저 인터뷰 모집(공개). 인증/테넌시 없음. `POST /interview`(이름+전화번호). 신청 시 Discord INTERVIEW 채널 비동기 알림. `/waitlist`·`/interview`(POST) 공용 레이트리밋 인터셉터 적용 |
 | `settings` | 매출/지출 설정·하단바·사용자 설정·푸시 구독·**테스트 발송** |
 | `dashboard` | 오늘/월 집계·**네이티브 SQL 통계** |
 | `statistics` | 기간별 통계 KPI + 일별 시계열 + 분포 — 매출·지출·예약·고객 4도메인. `StatisticsSupport`(공용 비율·증감·직전 기간 계산), `StatisticsService`(파사드). 미수 제외(`payment_method_id IS NOT NULL`), 최대 731일 범위 |
@@ -529,7 +530,7 @@ erDiagram
 |---|---|---|
 | 인증 | `POST /auth/oauth/{kakao,google,naver}`, `POST /auth/register/complete`(+`phoneNumber`), `POST /auth/{refresh,logout}`, `GET /me`, `DELETE /me` | Public / Auth |
 | 매출 | `GET/POST/PATCH/DELETE /sales`, `GET /sales/summary`, `/sales/{id}/complete-unpaid`·`/revert-unpaid`, `/sales/suggestions` | Auth |
-| 지출·고정비 | `/expenses`(+`/expenses/summary`), `/recurring-expenses`(+`/toggle`·`/quick-add`·`/instances/{id}?scope=this\|all`) | Auth |
+| 지출·고정비 | `/expenses`(+`/expenses/summary`), `/recurring-expenses`(+`/toggle`·`/instances/{id}?scope=this\|all`) | Auth |
 | 고객 | `/customers`(+`/search`·`/check-phone`·`/{id}/sales`·`/find-or-create`·`/{id}/grade`·`/{id}/grade/auto`), `GET/POST/PATCH/DELETE /customer-grades` | Auth |
 | 예약·일정 | `/reservations`(+`/upcoming`·`/reminders`·`/convert-to-sale`·`/add-pickup`), `/schedules` | Auth |
 | 사진첩 | `GET/POST/PATCH/DELETE /photo-cards`, `POST /photo-cards/upload-targets`(신규 카드용), `POST /photo-cards/{id}/upload-targets`, `GET /photo-cards/{id}/photos/download`, `/photos/reorder`, `/photo-tags` | Auth |
@@ -538,7 +539,8 @@ erDiagram
 | 설정 | `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}`(CRUD), `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}/order`(순서 변경 `PUT`), `/settings/preferences`, `/push/{subscribe,unsubscribe,status,test}` | Auth |
 | 대시보드 | `GET /dashboard/today`·`/dashboard/month` | Auth |
 | 통계 | `GET /statistics/sales`, `GET /statistics/expenses`, `GET /statistics/reservations`, `GET /statistics/customers` (공통 쿼리파라미터: `from=yyyy-MM-dd&to=yyyy-MM-dd`, 최대 731일) — KPI(직전 동일 기간 증감) + 일별 시계열 + 분포 반환 | Auth |
-| 사전등록 | `POST /waitlist`(201, 등록), `GET /waitlist/count`(카운트 조회) | **Public** (인증 불필요) |
+| 사전등록 | `POST /waitlist`(201, 이메일+가게명 등록), `GET /waitlist/count`(카운트 조회) | **Public** (인증 불필요) |
+| 인터뷰 모집 | `POST /interview`(201, 이름+전화번호 신청) | **Public** (인증 불필요) |
 
 전체 계약은 `/swagger-ui.html`에서 확인한다(RestDocs 테스트가 생성한 스펙 + JWT bearerAuth 병합 → `/v3/api-docs`) — **flori-ai/mobile이 읽는 계약의 출처**.
 
@@ -574,7 +576,7 @@ erDiagram
 | **S3** | presigned PUT/GET 짧은 만료, 소유권/이미지 메타·최대 장수 검증 후 발급; 삭제는 best-effort(DB 정리 우선) | 무단 업로드·비인가 다운로드 |
 | **커뮤니티 권한** | `users.is_admin`으로 공지(notice) 작성·비밀글/댓글 열람·타인 글 삭제 판정. 수정은 작성자만 | 권한 없는 콘텐츠 수정·열람 |
 | **사업자 인증 게이팅** | `@RequiresBusinessVerified` 어노테이션 → `BusinessVerifiedInterceptor`가 APPROVED 행 보유 여부 검증. 미인증 시 E-VRF-001(403). `/verification/business/**`(인증 입구)는 게이팅 제외 | 미인증 사용자의 커뮤니티 접근 |
-| **사전등록 공개 라우트** | `SecurityConfig`에서 `/waitlist`, `/waitlist/count` `permitAll`. 인증 없이 접근 가능한 유일한 비즈니스 엔드포인트(헬스 제외). 전화번호 UNIQUE + 정원(100) 서비스 레이어 강제 | 공개 모집 중복 등록 방지 |
+| **사전등록·인터뷰 공개 라우트** | `SecurityConfig`에서 `/waitlist`, `/waitlist/count`, `/interview` `permitAll`. 이메일 UNIQUE(waitlist) / 전화번호 UNIQUE(interview) + 정원(100, waitlist) 서비스 레이어 강제. `/waitlist`·`/interview`(POST) 공용 레이트리밋 인터셉터(`WebConfig`) | 공개 모집 중복 등록·도배 방지 |
 | **CORS / 헤더** | origin 화이트리스트, `X-Frame-Options: DENY`·`nosniff`·`Referrer-Policy` | XSS/클릭재킹/크로스사이트 |
 | **에러 응답** | 표준 `{code, message}`, 내부 디테일·시크릿 비노출 | 정보 노출 |
 | **시크릿** | 전부 `${ENV}` 참조, 코드/깃에 시크릿 없음 | 시크릿 유출 |
@@ -590,7 +592,8 @@ AppException(errorCode: ErrorCode, message)
     ├── AuthErrorCode         (auth/error)            — 도메인 코드 E-AUTH-*
     ├── CommunityErrorCode    (community/error)       — 도메인 코드 E-CMNT-*
     ├── VerificationErrorCode (verification/error)   — 도메인 코드 E-VRF-*
-    └── WaitlistErrorCode     (waitlist/error)       — 도메인 코드 E-WL-*
+    ├── WaitlistErrorCode     (waitlist/error)       — 도메인 코드 E-WL-*
+    └── InterviewErrorCode    (interview/error)      — 도메인 코드 E-IV-*
         (새 도메인은 <domain>/error 에 enum 추가)
 ```
 
@@ -652,6 +655,8 @@ flowchart LR
 | `DISCORD_WEBHOOK_URL` | 에러 알림 (`DiscordErrorReporter`) |
 | `DISCORD_SIGNUP_WEBHOOK_URL` | 신규 가입 알림 (`DiscordChannel.SIGNUP`) |
 | `DISCORD_VERIFICATION_WEBHOOK_URL` | 사업자 인증 신청 알림 (`DiscordChannel.VERIFICATION`) |
+| `DISCORD_WAITLIST_WEBHOOK_URL` | 사전등록 알림 (`DiscordChannel.WAITLIST`) |
+| `DISCORD_INTERVIEW_WEBHOOK_URL` | 인터뷰 신청 알림 (`DiscordChannel.INTERVIEW`) |
 | `INTERNAL_API_KEY` | 내부 수집 API |
 | `CORS_ALLOWED_ORIGINS` | 앱/웹 origin 화이트리스트 |
 | `KAKAO_REST_API_KEY` / `KAKAO_CLIENT_SECRET` | 카카오 OAuth (시크릿 '사용 안 함'이면 빈 값) |

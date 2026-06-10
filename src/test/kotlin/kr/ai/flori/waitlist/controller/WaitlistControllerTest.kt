@@ -37,7 +37,10 @@ class WaitlistControllerTest {
             .`when`(
                 service.register(Mockito.any(WaitlistRegisterRequest::class.java) ?: WaitlistRegisterRequest("", "")),
             ).thenReturn(WaitlistRegisterResponse(1, 100, false))
-        val body = objectMapper.writeValueAsString(WaitlistRegisterRequest("헤이즐", "010-1234-5678"))
+        val body =
+            objectMapper.writeValueAsString(
+                WaitlistRegisterRequest(email = "hazel@flori.ai.kr", shopName = "헤이즐"),
+            )
         mockMvc
             .post("/waitlist") {
                 contentType = MediaType.APPLICATION_JSON
@@ -60,8 +63,8 @@ class WaitlistControllerTest {
     }
 
     @Test
-    fun `POST waitlist 가게명 누락 시 400`() {
-        val body = objectMapper.writeValueAsString(WaitlistRegisterRequest("", "010-1234-5678"))
+    fun `POST waitlist 이메일 형식 오류 시 400`() {
+        val body = objectMapper.writeValueAsString(WaitlistRegisterRequest(email = "not-an-email", shopName = "헤이즐"))
         mockMvc
             .post("/waitlist") {
                 contentType = MediaType.APPLICATION_JSON

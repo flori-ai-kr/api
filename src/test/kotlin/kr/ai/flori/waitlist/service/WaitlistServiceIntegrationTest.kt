@@ -26,27 +26,27 @@ class WaitlistServiceIntegrationTest {
     }
 
     @Test
-    fun `등록하면 카운트가 증가하고 전화번호는 정규화되어 저장된다`() {
-        val res = service.register(WaitlistRegisterRequest(shopName = "헤이즐", phone = "010-1234-5678"))
+    fun `등록하면 카운트가 증가하고 이메일은 정규화(소문자)되어 저장된다`() {
+        val res = service.register(WaitlistRegisterRequest(email = "Hazel@Flori.AI.kr", shopName = "헤이즐"))
         assertThat(res.count).isEqualTo(1L)
         assertThat(res.closed).isFalse()
-        assertThat(repository.existsByPhone("01012345678")).isTrue()
+        assertThat(repository.existsByEmail("hazel@flori.ai.kr")).isTrue()
     }
 
     @Test
-    fun `같은 번호(형식만 다름)로 재등록하면 ALREADY_REGISTERED`() {
-        service.register(WaitlistRegisterRequest(shopName = "A", phone = "01099998888"))
+    fun `같은 이메일(대소문자만 다름)로 재등록하면 ALREADY_REGISTERED`() {
+        service.register(WaitlistRegisterRequest(email = "dup@flori.ai.kr", shopName = "A"))
         val ex =
             assertThrows<AppException> {
-                service.register(WaitlistRegisterRequest(shopName = "B", phone = "010-9999-8888"))
+                service.register(WaitlistRegisterRequest(email = "DUP@flori.ai.kr", shopName = "B"))
             }
         assertThat(ex.errorCode).isEqualTo(WaitlistErrorCode.ALREADY_REGISTERED)
     }
 
     @Test
     fun `여러 건 등록해도 정원 미만이면 closed=false`() {
-        service.register(WaitlistRegisterRequest(shopName = "A", phone = "01000000001"))
-        val res = service.register(WaitlistRegisterRequest(shopName = "B", phone = "01000000002"))
+        service.register(WaitlistRegisterRequest(email = "a@flori.ai.kr", shopName = "A"))
+        val res = service.register(WaitlistRegisterRequest(email = "b@flori.ai.kr", shopName = "B"))
         assertThat(res.closed).isFalse()
         assertThat(res.count).isEqualTo(2L)
     }
