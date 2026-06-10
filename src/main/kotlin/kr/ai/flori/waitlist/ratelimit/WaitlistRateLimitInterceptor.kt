@@ -15,8 +15,9 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * 사전등록(POST /waitlist) IP 기반 rate limit.
  *
- * 공개 엔드포인트라 봇/도배로 선착순 슬롯이 소진되는 걸 막는 방어선이다.
+ * 공개 엔드포인트(POST /waitlist · POST /interview)를 봇/도배로부터 막는 방어선이다.
  * 윈도(기본 10분) 내 IP당 허용 횟수(기본 5)를 넘으면 429.
+ * 카운터 키는 (요청 경로 + IP) — 한 엔드포인트의 사용량이 다른 엔드포인트 쿼터를 잠식하지 않도록 분리한다.
  * GET /count 는 정상 폴링이라 제한하지 않는다(인터셉터를 POST에만 적용 + 메서드 가드).
  *
  * Caffeine 인메모리(단일 인스턴스 기준) — JWT dedup과 동일한 경량 패턴.
@@ -43,7 +44,9 @@ class WaitlistRateLimitInterceptor(
         if (!request.method.equals("POST", ignoreCase = true)) return true
 
         val ip = ClientContext.current()?.ip ?: request.remoteAddr ?: "unknown"
-        val count = counters.get(ip) { AtomicInteger(0) }.incrementAndGet()
+        // 경로별로 카운터 분리 — /waitlist 와 /interview 가 서로의 쿼터를 잠식하지 않게 한다.
+        val key = "${request.requestURI}|$ip"
+        val count = counters.get(key) { AtomicInteger(0) }.incrementAndGet()
         if (count > maxPerWindow) {
             throw AppException(CommonErrorCode.TOO_MANY_REQUESTS)
         }
