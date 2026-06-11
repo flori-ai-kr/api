@@ -4,6 +4,7 @@ import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.customers.repository.CustomerRepository
+import kr.ai.flori.customers.service.CustomerGradeService
 import kr.ai.flori.customers.service.CustomerService
 import kr.ai.flori.photos.repository.PhotoCardRepository
 import kr.ai.flori.reservations.repository.ReservationRepository
@@ -35,6 +36,7 @@ class SaleService(
     private val saleRepository: SaleRepository,
     private val customerRepository: CustomerRepository,
     private val customerService: CustomerService,
+    private val gradeService: CustomerGradeService,
     private val reservationRepository: ReservationRepository,
     private val photoCardRepository: PhotoCardRepository,
     private val labelReader: LabelSettingReader,
@@ -141,7 +143,7 @@ class SaleService(
         // recomputeGrade 는 raw JDBC 로 sales 를 집계하므로, INSERT 를 DB 에 반영(flush)한 뒤 재계산해야 한다.
         saved.customerId?.let {
             saleRepository.flush()
-            customerService.recomputeGrade(it)
+            gradeService.recomputeGrade(it)
         }
         return single(saved)
     }
@@ -178,7 +180,7 @@ class SaleService(
         val affectedCustomers = setOfNotNull(oldCustomerId, saved.customerId)
         if (affectedCustomers.isNotEmpty()) {
             saleRepository.flush()
-            affectedCustomers.forEach { customerService.recomputeGrade(it) }
+            affectedCustomers.forEach { gradeService.recomputeGrade(it) }
         }
         return single(saved)
     }
@@ -252,7 +254,7 @@ class SaleService(
         // 구매횟수 감소 → 연결 고객 등급 자동 재계산(잠금 아니면 강등 가능).
         customerId?.let {
             saleRepository.flush()
-            customerService.recomputeGrade(it)
+            gradeService.recomputeGrade(it)
         }
     }
 

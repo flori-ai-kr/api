@@ -35,6 +35,9 @@ class CustomerGradeRecomputeTest {
     lateinit var customerService: CustomerService
 
     @Autowired
+    lateinit var gradeService: CustomerGradeService
+
+    @Autowired
     lateinit var saleService: SaleService
 
     @Autowired
@@ -117,25 +120,25 @@ class CustomerGradeRecomputeTest {
 
         // 0건 → 신규
         val c0 = create()
-        customerService.recomputeGrade(c0.id)
+        gradeService.recomputeGrade(c0.id)
         assertThat(gradeName(c0.id)).isEqualTo("신규")
 
         // 4건 → 신규 (단골 임계 5 미만)
         val c4 = create()
         addSales(c4.id, 4)
-        customerService.recomputeGrade(c4.id)
+        gradeService.recomputeGrade(c4.id)
         assertThat(gradeName(c4.id)).isEqualTo("신규")
 
         // 5건 → 단골
         val c5 = create()
         addSales(c5.id, 5)
-        customerService.recomputeGrade(c5.id)
+        gradeService.recomputeGrade(c5.id)
         assertThat(gradeName(c5.id)).isEqualTo("단골")
 
         // 10건 → VIP
         val c10 = create()
         addSales(c10.id, 10)
-        customerService.recomputeGrade(c10.id)
+        gradeService.recomputeGrade(c10.id)
         assertThat(gradeName(c10.id)).isEqualTo("VIP")
     }
 
@@ -148,7 +151,7 @@ class CustomerGradeRecomputeTest {
         // 수동으로 신규 고정
         customerService.updateGrade(c.id, newGradeId)
         addSales(c.id, 12)
-        customerService.recomputeGrade(c.id)
+        gradeService.recomputeGrade(c.id)
 
         val after = customerService.get(c.id)
         assertThat(after.grade).isEqualTo("신규")
@@ -189,7 +192,7 @@ class CustomerGradeRecomputeTest {
         val userId = newTenant()
         val c = create()
         addSales(c.id, 5)
-        customerService.recomputeGrade(c.id)
+        gradeService.recomputeGrade(c.id)
 
         // 사진첩 카드 4장(각 1장 이상의 photo) — 대표 썸네일은 최신순 최대 6개이므로 4장 모두 반환된다.
         val cardIds =

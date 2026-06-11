@@ -138,7 +138,7 @@ class CustomerService(
         }
         gradeService.ensureDefaults(userId)
         val customer = Customer(userId, requireNotNull(request.name), phone)
-        customer.gradeId = autoGradeId(userId, 0)
+        customer.gradeId = gradeService.gradeIdFor(userId, 0)
         customer.gradeLocked = false
         customer.gender = validGender(request.gender)
         customer.memo = request.memo
@@ -156,31 +156,6 @@ class CustomerService(
         request.gender?.let { customer.gender = validGender(it) }
         request.memo?.let { customer.memo = it }
         return toResponse(saveUnique(customer))
-    }
-
-    /** 구매횟수 기준 적정 등급 id. threshold 있는 등급 중 threshold<=count 최대, 없으면 최저 sort_order. */
-    private fun autoGradeId(
-        userId: Long,
-        count: Int,
-    ): Long? {
-        val grades = gradeRepository.findByUserIdOrderBySortOrderAsc(userId)
-        if (grades.isEmpty()) return null
-        val eligible = grades.filter { it.threshold != null && it.threshold!! <= count }.maxByOrNull { it.threshold!! }
-        return (eligible ?: grades.minByOrNull { it.sortOrder })?.id
-    }
-
-    /** 자동 등급 재계산(잠금 아니면). 매출 변경/되돌리기 후 호출. */
-    @Transactional
-    fun recomputeGrade(customerId: Long) {
-        val userId = TenantContext.currentUserId()
-        val customer = customerRepository.findByIdAndUserId(customerId, userId) ?: return
-        if (customer.gradeLocked) return
-        val count = queryRepository.statsFor(userId, customerId).count
-        val newGradeId = autoGradeId(userId, count)
-        if (newGradeId != null && newGradeId != customer.gradeId) {
-            customer.gradeId = newGradeId
-            customerRepository.save(customer)
-        }
     }
 
     /** 수동 등급 지정 → 잠금. */
@@ -202,7 +177,7 @@ class CustomerService(
     fun revertGradeToAuto(id: Long): CustomerResponse {
         val customer = load(id)
         customer.gradeLocked = false
-        customer.gradeId = autoGradeId(customer.userId, queryRepository.statsFor(customer.userId, id).count)
+        customer.gradeId = gradeService.gradeIdFor(customer.userId, queryRepository.statsFor(customer.userId, id).count)
         return toResponse(customerRepository.save(customer))
     }
 
@@ -230,7 +205,7 @@ class CustomerService(
         return try {
             val customer =
                 Customer(userId, name, phone).apply {
-                    gradeId = autoGradeId(userId, 0)
+                    gradeId = gradeService.gradeIdFor(userId, 0)
                     gradeLocked = false
                 }
             toResponse(customerRepository.save(customer))
