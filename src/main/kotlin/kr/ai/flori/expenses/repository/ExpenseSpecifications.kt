@@ -44,13 +44,16 @@ object ExpenseSpecifications {
             }
             if (!search.isNullOrBlank()) {
                 val pattern = "%${search.lowercase().replace("%", "\\%").replace("_", "\\_")}%"
+                // ESCAPE 미지정 시 Hibernate 6가 이스케이프를 무효화해 summary(JDBC)와 결과가 갈린다 — 명시 필수.
                 predicates +=
                     cb.or(
-                        cb.like(cb.lower(root.get("itemName")), pattern),
-                        cb.like(cb.lower(root.get("vendor")), pattern),
-                        cb.like(cb.lower(root.get("memo")), pattern),
+                        cb.like(cb.lower(root.get("itemName")), pattern, ESCAPE_CHAR),
+                        cb.like(cb.lower(root.get("vendor")), pattern, ESCAPE_CHAR),
+                        cb.like(cb.lower(root.get("memo")), pattern, ESCAPE_CHAR),
                     )
             }
             cb.and(*predicates.toTypedArray())
         }
+
+    private const val ESCAPE_CHAR = '\\'
 }
