@@ -256,7 +256,7 @@ fun handleUnexpected(ex: Exception, request: WebRequest): ResponseEntity<ErrorRe
 
 - 지출총액: `unit_price * quantity`
 - 고정비 발생 판정: 주/월/연·격주·말일 클램핑 — `RecurringScheduleEvaluator`(순수 로직)가 `RecurringExpenseGenerator`에서 분리
-- **고객 등급 자동승급**: `SaleService`가 매출 생성·수정·삭제 후 `CustomerGradeService.recompute(customerId)` 훅을 호출 → `customer_grades.threshold` 기준으로 구매횟수에 맞는 가장 높은 등급 배정(`grade_locked=false` 고객만). 수동 잠금(`grade_locked=true`)은 재계산 대상에서 제외되며 `PATCH /customers/{id}/grade/auto`로 해제
+- **고객 등급 자동승급**: `SaleService`가 매출 생성·수정·삭제 후 `CustomerGradeService.recomputeGrade(customerId)` 훅을 호출 → `customer_grades.threshold` 기준으로 구매횟수에 맞는 가장 높은 등급 배정(`grade_locked=false` 고객만). 수동 잠금(`grade_locked=true`)은 재계산 대상에서 제외되며 `PATCH /customers/{id}/grade/auto`로 해제
 
 예: `RecurringScheduleEvaluator`(발생 판정 순수 함수)와 `RecurringExpenseGenerator`(@Scheduled 진입점)가 역할을 나눈다. 서비스는 "언제 생성할지", 계산기는 "어떻게 판정할지"를 담당.
 
@@ -361,7 +361,7 @@ class Coupon(
 ```
 > `data class`가 아니라 `class` + `var`를 쓰는 이유는 [KOTLIN.md §엔티티](KOTLIN.md) 참고.
 > 생성 시각만 필요한 append-only/이력 엔티티는 `BaseCreatedEntity`를 상속한다. `updated_at`이 없거나(예: `UserPreferences`) 타임스탬프가 아예 없는 엔티티만 베이스를 쓰지 않는다.
-> **다중 필드 상태 전이**(예: 미수 완료 = `is_unpaid=false` + 결제수단 교체 동시 변경)는 서비스가 흩뿌리지 말고 엔티티 도메인 메서드(`sale.completeUnpaid(paymentMethod)`)로 캡슐화한다.
+> **다중 필드 상태 전이**(예: 미수 완료 = 결제수단 확정 + 마커 유지 동시 변경)는 한 서비스가 소유해야 한다. 미수 전이 규칙은 `SaleUnpaidService`가 단독 소유(`complete`/`revert`/`applyTransition`)하고, `SaleService`는 수정 시 `unpaidService.applyTransition(sale, request)`로 위임한다.
 
 **2. 리포지토리** — `coupons/repository/CouponRepository.kt`. **반드시 `...AndUserId` 메서드로** 격리.
 ```kotlin

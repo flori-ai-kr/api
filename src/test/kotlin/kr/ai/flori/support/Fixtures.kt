@@ -59,8 +59,13 @@ object Fixtures {
     fun customer(
         userId: Long,
         name: String = "테스트고객",
-        phone: String = "010${(10_000_000..99_999_999).random()}",
+        // (user_id, phone) UNIQUE — 랜덤 대신 단조 증가 시퀀스로 충돌을 원천 차단.
+        phone: String = "010${"%08d".format(phoneSeq.incrementAndGet())}",
     ): Customer = Customer(userId, name, phone)
+
+    private val phoneSeq =
+        java.util.concurrent.atomic
+            .AtomicLong(0)
 
     /** 가입 시드로 생성된 실제 라벨 id 조회(예: SALE/PAYMENT/"cash"). 14개 테스트 파일 복붙 패턴의 SSOT. */
     fun labelId(

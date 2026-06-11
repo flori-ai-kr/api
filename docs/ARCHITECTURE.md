@@ -346,7 +346,7 @@ flowchart LR
     class DB d
 ```
 
-앱은 날짜·금액·결제수단을 보내고, 미수(`unpaid`)는 `is_unpaid` 영구 마커로 표시하고 총매출에서 제외한다. 결제수단 `card`는 지출의 `cardCompany`와 별개 — 매출에 카드사/수수료 필드는 없다. **고객 자동연결**: `customerId`가 없어도 이름·전화번호가 모두 제공되면 `CustomerService.findOrCreate`(전화번호 기준)로 고객을 조회 또는 생성해 `sales.customer_id`에 연결한다. 매출 수정 시 고객명·연락처가 변경되면 재해석하고, 연결된 예약(픽업)의 고객명·연락처도 동기화한다. **등급 재계산 훅**: 매출 생성·수정·삭제 시 연결 고객(`customer_id`)이 있으면 `CustomerGradeService.recompute`를 호출해 구매횟수 기준 자동 등급을 갱신한다(`grade_locked=false` 고객만).
+앱은 날짜·금액·결제수단을 보내고, 미수(`unpaid`)는 `is_unpaid` 영구 마커로 표시하고 총매출에서 제외한다. 결제수단 `card`는 지출의 `cardCompany`와 별개 — 매출에 카드사/수수료 필드는 없다. **고객 자동연결**: `customerId`가 없어도 이름·전화번호가 모두 제공되면 `CustomerService.findOrCreate`(전화번호 기준)로 고객을 조회 또는 생성해 `sales.customer_id`에 연결한다. 매출 수정 시 고객명·연락처가 변경되면 재해석하고, 연결된 예약(픽업)의 고객명·연락처도 동기화한다. **등급 재계산 훅**: 매출 생성·수정·삭제 시 연결 고객(`customer_id`)이 있으면 `CustomerGradeService.recomputeGrade`를 호출해 구매횟수 기준 자동 등급을 갱신한다(`grade_locked=false` 고객만).
 
 ### 고정비 자동생성 — @Scheduled (KST 00:30)
 

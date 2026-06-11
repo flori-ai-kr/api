@@ -83,7 +83,7 @@ src/main/kotlin/kr/ai/flori/
     ├── security/          # JWT, SecurityConfig, 내부 인증
     ├── storage/           # S3 presign
     ├── tenant/            # TenantContext (멀티테넌시)
-    ├── util/              # DateRanges 등
+    ├── util/              # DateRanges, Paging 등
     └── validation/        # 입력 길이 상한 SSOT (FieldLimits)
 ```
 

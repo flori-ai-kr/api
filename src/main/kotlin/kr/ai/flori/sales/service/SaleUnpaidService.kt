@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 /**
  * 미수(외상) 상태 전이의 단일 소유자. 미수는 payment_method_id=NULL + is_unpaid=true 로 표현한다.
  * is_unpaid 마커는 완료 후에도 유지된다('미수였던 건' 추적용) — 정산 여부는 payment_method_id 로 판단.
+ * 등급 재계산은 호출하지 않는다 — 미수 전이는 매출 건수를 바꾸지 않아 등급(구매횟수 기준)에 영향이 없다.
  */
 @Service
 class SaleUnpaidService(
@@ -49,6 +50,9 @@ class SaleUnpaidService(
      * - isUnpaid=true  : 미수로 되돌림(결제수단 비움 → 매출 합계 제외)
      * - isUnpaid=false : 결제 완료로 전환(마커 OFF + 결제수단 확정)
      * - isUnpaid=null  : 미수 상태 불변, 결제수단만(제공 시) 반영
+     *
+     * 트랜잭션을 직접 열지 않는다 — 반드시 @Transactional 호출자(SaleService.update)의 트랜잭션 안에서
+     * 같은 영속 엔티티에 적용해야 한다.
      */
     fun applyTransition(
         sale: Sale,
