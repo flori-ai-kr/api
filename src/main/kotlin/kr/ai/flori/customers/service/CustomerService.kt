@@ -11,6 +11,7 @@ import kr.ai.flori.customers.dto.CustomerUpdateRequest
 import kr.ai.flori.customers.dto.PhotoThumbnail
 import kr.ai.flori.customers.entity.Customer
 import kr.ai.flori.customers.repository.CustomerGradeRepository
+import kr.ai.flori.customers.repository.CustomerQueryRepository
 import kr.ai.flori.customers.repository.CustomerRepository
 import kr.ai.flori.photos.repository.PhotoCardRepository
 import kr.ai.flori.sales.dto.SaleResponse
@@ -22,7 +23,6 @@ import kr.ai.flori.settings.service.LabelSettingReader
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
-import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -39,14 +39,14 @@ class CustomerService(
     private val saleRepository: SaleRepository,
     private val photoCardRepository: PhotoCardRepository,
     private val labelReader: LabelSettingReader,
-    private val jdbcTemplate: JdbcTemplate,
+    private val queryRepository: CustomerQueryRepository,
 ) {
     @Transactional(readOnly = true)
     fun list(): List<CustomerResponse> {
         val userId = TenantContext.currentUserId()
-        val statsByCustomer = aggregateStats(userId)
+        val statsByCustomer = queryRepository.aggregateStats(userId)
         val gradeNames = gradeNamesById(userId)
-        val photoSummary = photoSummaryByCustomer(userId)
+        val photoSummary = queryRepository.photoSummaryByCustomer(userId)
         return customerRepository
             .findByUserIdOrderByCreatedAtDesc(userId)
             .map { c ->
@@ -69,14 +69,7 @@ class CustomerService(
 
     /** 고객별 구매(매출) 건수 일괄 조회. 예약 카드의 'N번 방문' 배지 등 enrichment 용도. */
     @Transactional(readOnly = true)
-    fun purchaseCountsByCustomer(): Map<Long, Int> =
-        jdbcTemplate
-            .query(
-                "SELECT customer_id, count(*) AS cnt FROM sales " +
-                    "WHERE user_id = ?::bigint AND customer_id IS NOT NULL GROUP BY customer_id",
-                { rs, _ -> rs.getLong("customer_id") to rs.getInt("cnt") },
-                TenantContext.currentUserId(),
-            ).toMap()
+    fun purchaseCountsByCustomer(): Map<Long, Int> = queryRepository.purchaseCounts(TenantContext.currentUserId())
 
     @Transactional(readOnly = true)
     fun searchByName(query: String): List<CustomerSearchResult> {
@@ -182,7 +175,7 @@ class CustomerService(
         val userId = TenantContext.currentUserId()
         val customer = customerRepository.findByIdAndUserId(customerId, userId) ?: return
         if (customer.gradeLocked) return
-        val count = statsFor(userId, customerId).count
+        val count = queryRepository.statsFor(userId, customerId).count
         val newGradeId = autoGradeId(userId, count)
         if (newGradeId != null && newGradeId != customer.gradeId) {
             customer.gradeId = newGradeId
@@ -209,7 +202,7 @@ class CustomerService(
     fun revertGradeToAuto(id: Long): CustomerResponse {
         val customer = load(id)
         customer.gradeLocked = false
-        customer.gradeId = autoGradeId(customer.userId, statsFor(customer.userId, id).count)
+        customer.gradeId = autoGradeId(customer.userId, queryRepository.statsFor(customer.userId, id).count)
         return toResponse(customerRepository.save(customer))
     }
 
@@ -263,8 +256,8 @@ class CustomerService(
     private fun toResponse(customer: Customer): CustomerResponse {
         val id = requireNotNull(customer.id)
         val gradeName = customer.gradeId?.let { gradeRepository.findByIdAndUserId(it, customer.userId)?.name }
-        val (thumbs, count) = photoSummaryFor(customer.userId, id)
-        return CustomerResponse.from(customer, statsFor(customer.userId, id), gradeName, thumbs, count)
+        val (thumbs, count) = queryRepository.photoSummaryFor(customer.userId, id)
+        return CustomerResponse.from(customer, queryRepository.statsFor(customer.userId, id), gradeName, thumbs, count)
     }
 
     /** gradeId → 등급명 맵(테넌트 1쿼리). */
@@ -272,112 +265,6 @@ class CustomerService(
         gradeRepository
             .findByUserIdOrderBySortOrderAsc(userId)
             .associate { requireNotNull(it.id) to it.name }
-
-    /**
-     * 고객별 대표 썸네일 6장 + 카운트 (1쿼리). photos jsonb 의 첫 요소 url.
-     * photos jsonb 형태: [{"url":...,"originalName":...}] — photos->0->>'url' 이 대표 썸네일.
-     * thumb_urls / thumb_ids 는 동일한 ORDER BY + FILTER 적용으로 인덱스 정렬이 보장된다.
-     */
-    private fun photoSummaryByCustomer(userId: Long): Map<Long, Pair<List<PhotoThumbnail>, Int>> =
-        jdbcTemplate
-            .query(
-                """
-                SELECT customer_id,
-                       count(*) AS cnt,
-                       (array_agg((photos->0->>'url') ORDER BY created_at DESC)
-                          FILTER (WHERE jsonb_array_length(photos) > 0))[1:6] AS thumb_urls,
-                       (array_agg(id            ORDER BY created_at DESC)
-                          FILTER (WHERE jsonb_array_length(photos) > 0))[1:6] AS thumb_ids
-                FROM photo_cards
-                WHERE user_id = ?::bigint AND customer_id IS NOT NULL
-                GROUP BY customer_id
-                """.trimIndent(),
-                { rs, _ ->
-                    val urlArr = rs.getArray("thumb_urls")?.array as? Array<*>
-                    val idArr = rs.getArray("thumb_ids")?.array as? Array<*>
-                    val thumbs =
-                        urlArr
-                            ?.indices
-                            ?.mapNotNull { i ->
-                                val url = urlArr[i] as? String ?: return@mapNotNull null
-                                val cardId = (idArr?.getOrNull(i) as? Long) ?: return@mapNotNull null
-                                PhotoThumbnail(url, cardId)
-                            } ?: emptyList()
-                    rs.getLong("customer_id") to (thumbs to rs.getInt("cnt"))
-                },
-                userId,
-            ).toMap()
-
-    /** 단일 고객 대표 썸네일 6장 + 카운트. thumb_urls / thumb_ids 는 동일 ORDER BY + FILTER 로 정렬이 보장된다. */
-    private fun photoSummaryFor(
-        userId: Long,
-        customerId: Long,
-    ): Pair<List<PhotoThumbnail>, Int> =
-        jdbcTemplate
-            .query(
-                """
-                SELECT count(*) AS cnt,
-                       (array_agg((photos->0->>'url') ORDER BY created_at DESC)
-                          FILTER (WHERE jsonb_array_length(photos) > 0))[1:6] AS thumb_urls,
-                       (array_agg(id            ORDER BY created_at DESC)
-                          FILTER (WHERE jsonb_array_length(photos) > 0))[1:6] AS thumb_ids
-                FROM photo_cards
-                WHERE user_id = ?::bigint AND customer_id = ?::bigint
-                """.trimIndent(),
-                { rs, _ ->
-                    val urlArr = rs.getArray("thumb_urls")?.array as? Array<*>
-                    val idArr = rs.getArray("thumb_ids")?.array as? Array<*>
-                    val thumbs =
-                        urlArr
-                            ?.indices
-                            ?.mapNotNull { i ->
-                                val url = urlArr[i] as? String ?: return@mapNotNull null
-                                val cardId = (idArr?.getOrNull(i) as? Long) ?: return@mapNotNull null
-                                PhotoThumbnail(url, cardId)
-                            } ?: emptyList()
-                    thumbs to rs.getInt("cnt")
-                },
-                userId,
-                customerId,
-            ).firstOrNull() ?: (emptyList<PhotoThumbnail>() to 0)
-
-    private fun statsFor(
-        userId: Long,
-        customerId: Long,
-    ): CustomerStats =
-        jdbcTemplate
-            .query(
-                "SELECT count(*) AS cnt, COALESCE(SUM(amount), 0) AS total, MIN(date) AS first_date, MAX(date) AS last_date " +
-                    "FROM sales WHERE user_id = ?::bigint AND customer_id = ?::bigint",
-                { rs, _ ->
-                    CustomerStats(
-                        rs.getInt("cnt"),
-                        rs.getLong("total"),
-                        rs.getDate("first_date")?.toLocalDate(),
-                        rs.getDate("last_date")?.toLocalDate(),
-                    )
-                },
-                userId,
-                customerId,
-            ).firstOrNull() ?: CustomerStats.EMPTY
-
-    private fun aggregateStats(userId: Long): Map<Long, CustomerStats> =
-        jdbcTemplate
-            .query(
-                "SELECT customer_id, count(*) AS cnt, COALESCE(SUM(amount), 0) AS total, " +
-                    "MIN(date) AS first_date, MAX(date) AS last_date " +
-                    "FROM sales WHERE user_id = ?::bigint AND customer_id IS NOT NULL GROUP BY customer_id",
-                { rs, _ ->
-                    rs.getLong("customer_id") to
-                        CustomerStats(
-                            rs.getInt("cnt"),
-                            rs.getLong("total"),
-                            rs.getDate("first_date")?.toLocalDate(),
-                            rs.getDate("last_date")?.toLocalDate(),
-                        )
-                },
-                userId,
-            ).toMap()
 
     private fun validGender(gender: String?): String? {
         if (gender == null) return null
