@@ -156,6 +156,9 @@ src/main/kotlin/kr/ai/flori/
 | CORS / OpenAPI 설정 | `common/config/CorsConfig.kt`, `OpenApiConfig.kt` |
 | 헬스체크 | `common/health/HealthController.kt` |
 | 입력 길이 상한 SSOT | `common/validation/FieldLimits.kt` |
+| 페이지네이션 변환 SSOT | `common/util/Paging.kt` (offsetLimit/pageSize — coerce·offset→page 공식 통일) |
+| 네이티브 SQL 집계 (QueryRepository 패턴) | `customers/repository/CustomerQueryRepository.kt`, `sales/repository/SaleSummaryQueryRepository.kt`, `expenses/repository/ExpenseSummaryQueryRepository.kt` — SQL은 서비스가 아닌 repository 레이어에 |
+| 테스트 공용 헬퍼 | `src/test/.../support/` — `TestTenants`(테넌트 부트스트랩), `Fixtures`(엔티티 빌더·라벨 id 조회), `TestAccounts`(가입 경로) |
 | AI 일일 사용량 캡 (원자적 강제) | `ai/service/AiUsageGuard.kt` |
 
 ---
@@ -183,6 +186,7 @@ docs/
 ├── conventions/           # 컨벤션 ADR (결정과 근거, 작업 전 필독)
 ├── guides/                # how-to 가이드
 ├── plans/                 # 구현 계획
+├── refactoring/           # 리팩터링 기록 (문제→이유→개선)
 └── troubleshooting/       # 문제 해결 기록
 ```
 
@@ -190,4 +194,4 @@ docs/
 
 - 모든 문서는 한국어로 작성한다. 코드/식별자/함수명/타입은 영어.
 - 코드와 문서를 함께 갱신한다.
-- `docs/conventions/`·`guides/`·`plans/`·`troubleshooting/` 하위 문서 파일명은 `yy-mm-dd-{슬러그}.md`(2자리 연도). 단, 루트의 대문자 레퍼런스 문서(`ARCHITECTURE.md` 등)는 네이밍을 그대로 유지한다.
+- `docs/conventions/`·`guides/`·`plans/`·`refactoring/`·`troubleshooting/` 하위 문서 파일명은 `yy-mm-dd-{슬러그}.md`(2자리 연도). 단, 루트의 대문자 레퍼런스 문서(`ARCHITECTURE.md` 등)는 네이밍을 그대로 유지한다.

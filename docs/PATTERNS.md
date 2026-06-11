@@ -35,7 +35,7 @@ Controller   ── HTTP 관심사만: 라우팅, @Valid, 파라미터 정규화
 Service      ── 비즈니스 로직: 테넌트 격리, 계산(SSOT), 트랜잭션 경계, 엔티티↔DTO 변환
   │
   ▼
-Repository   ── 데이터 접근만: Spring Data JPA 인터페이스. user_id 필터가 들어간 메서드.
+Repository   ── 데이터 접근만: Spring Data JPA 인터페이스 + 네이티브 SQL 집계는 {Domain}QueryRepository.
   │
   ▼
 PostgreSQL
@@ -61,7 +61,7 @@ class SaleController(
 }
 ```
 
-> 컨트롤러가 하는 "정규화"의 예: `list`에서 `limit.coerceIn(1, 100)`으로 페이지 크기를 강제(과도한 limit 방어). 비즈니스 규칙이 아닌 HTTP 입력 위생이므로 컨트롤러에 둔다.
+> 페이지네이션 보정(limit 상한 등)은 서비스가 `Paging.offsetLimit/pageSize`(`common/util/Paging.kt`)로 처리한다 — 보정 규칙·offset→page 공식의 SSOT. 컨트롤러는 파라미터를 그대로 전달한다.
 
 **Service** — 로직·격리·트랜잭션. ([`SaleService.kt`](../src/main/kotlin/kr/ai/flori/sales/service/SaleService.kt))
 
@@ -90,6 +90,8 @@ interface SaleRepository :
     fun findByIdAndUserId(id: Long, userId: Long): Sale?   // ← 메서드 이름이 곧 쿼리
 }
 ```
+
+**QueryRepository** — JPA로 안 되는 네이티브 SQL 집계(SUM/FILTER, jsonb, array_agg)는 서비스에 넣지 말고 `{Domain}QueryRepository`(@Repository + JdbcTemplate)로 둔다. 메서드는 호출부가 넘긴 `userId`로 격리하고, 임베디드 PostgreSQL로 직접 테스트한다. (예: [`CustomerQueryRepository.kt`](../src/main/kotlin/kr/ai/flori/customers/repository/CustomerQueryRepository.kt), [`SaleSummaryQueryRepository.kt`](../src/main/kotlin/kr/ai/flori/sales/repository/SaleSummaryQueryRepository.kt) — 배경: `docs/refactoring/26-06-11-service-sql-layering.md`)
 
 **패키지 규칙**: 도메인별로 `kr.ai.flori.<domain>` 아래 `controller / service / repository / entity / dto` 하위 패키지를 둔다. 도메인에 속하지 않는 횡단 관심사(보안·에러·테넌트·S3·푸시·설정)는 `kr.ai.flori.common/`.
 
@@ -287,6 +289,7 @@ class RecurringExpenseGenerator(
 | [`common/domain/ReservationStatuses.kt`](../src/main/kotlin/kr/ai/flori/common/domain/ReservationStatuses.kt) | `ReservationStatuses.PENDING/CONFIRMED/COMPLETED/CANCELLED` + `ALL` |
 | [`auth/entity/RefreshTokenStatuses.kt`](../src/main/kotlin/kr/ai/flori/auth/entity/RefreshTokenStatuses.kt) | `RefreshTokenStatuses.ACTIVE/ROTATED/LOGGED_OUT/EXPIRED` — refresh_tokens.status 문자열 상수 |
 | [`common/util/DateRanges.kt`](../src/main/kotlin/kr/ai/flori/common/util/DateRanges.kt) | `KST`(=`ZoneId.of("Asia/Seoul")`), `monthRange(month)` (YYYY/YYYY-MM/YYYY-MM-DD → 시작·끝 날짜, 잘못된 형식은 400 VALIDATION) |
+| [`common/util/Paging.kt`](../src/main/kotlin/kr/ai/flori/common/util/Paging.kt) | `offsetLimit(offset, limit, maxLimit, sort)` / `pageSize(page, size, maxSize, sort)` — 보정(coerce)·offset→page 변환 SSOT. 상한값은 각 서비스가 소유 |
 
 > 도메인 상태/수단 문자열은 새로 만들지 말고 `common/domain`의 상수를 쓴다. 새 상태군이 생기면 같은 패턴으로 `common/domain`에 추가한다(예: `ReservationStatuses`).
 
@@ -306,6 +309,8 @@ val today = LocalDate.now(KST)
 
 - 통합 테스트는 **Zonky 임베디드 PostgreSQL**에서 실제 스키마(`spring.sql.init`로 `docs/sql` DDL 적용)·쿼리를 돈다(H2 같은 가짜 DB가 아님). 클래스에 `@AutoConfigureEmbeddedDatabase(provider = ZONKY)`.
 - **모든 도메인에 멀티테넌시 격리 테스트 필수** — "다른 user의 데이터를 조회/수정할 수 없다"를 검증.
+- **공용 헬퍼**(`src/test/.../support/`): `TestTenants.bootstrap(...)`(가입→userId→TenantContext 설정 한 줄), `Fixtures.sale/customer/expense(...)`(엔티티 빌더), `Fixtures.labelId(...)`(시드 라벨 id 조회). 신규 테스트는 newTenant()/라벨 조회를 복붙하지 말고 이 헬퍼를 쓴다.
+- QueryRepository·Specifications는 서비스를 거치지 않고 **직접 테스트**한다(예: `SaleSummaryQueryRepositoryTest`, `SaleSpecificationsTest` — 목록·summary 필터 규약 정합 cross-check 포함).
 - 계산·규칙(영업일, 고정비 발생 판정, 수수료)은 **순수 함수 단위 테스트**로 빠르게 검증.
 - 검증 게이트: `./gradlew build test`가 ktlint + detekt + 전체 테스트 + **JaCoCo line 80% 커버리지**를 한 번에 돌린다. **통과해야만 커밋.** (현재 89%)
 
