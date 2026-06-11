@@ -5,7 +5,6 @@ import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.common.util.Paging
 import kr.ai.flori.common.util.monthRange
-import kr.ai.flori.expenses.dto.ExpenseCategorySlice
 import kr.ai.flori.expenses.dto.ExpenseCreateRequest
 import kr.ai.flori.expenses.dto.ExpensePageResponse
 import kr.ai.flori.expenses.dto.ExpenseResponse
@@ -15,15 +14,13 @@ import kr.ai.flori.expenses.dto.ExpensesSummaryResponse
 import kr.ai.flori.expenses.entity.Expense
 import kr.ai.flori.expenses.repository.ExpenseRepository
 import kr.ai.flori.expenses.repository.ExpenseSpecifications
+import kr.ai.flori.expenses.repository.ExpenseSummaryQueryRepository
 import kr.ai.flori.settings.entity.LabelDomains
 import kr.ai.flori.settings.entity.LabelKinds
 import kr.ai.flori.settings.service.LabelSettingReader
 import org.springframework.data.domain.Sort
-import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.sql.Date
-import java.time.LocalDate
 
 /**
  * 지출 서비스. 모든 쿼리는 TenantContext userId로 격리(HARD).
@@ -34,7 +31,7 @@ import java.time.LocalDate
 class ExpenseService(
     private val expenseRepository: ExpenseRepository,
     private val labelReader: LabelSettingReader,
-    private val jdbcTemplate: JdbcTemplate,
+    private val summaryRepository: ExpenseSummaryQueryRepository,
 ) {
     @Transactional(readOnly = true)
     fun list(month: String?): List<ExpenseResponse> {
@@ -73,6 +70,7 @@ class ExpenseService(
         return ExpensePageResponse(page.content.map { toResponse(it, catMap, payMap) }, page.hasNext())
     }
 
+    /** 지출 요약(총액·건수 + 카테고리별 합계). 필터 규약·집계는 ExpenseSummaryQueryRepository 참조. */
     @Suppress("LongParameterList")
     @Transactional(readOnly = true)
     fun summary(
@@ -82,85 +80,8 @@ class ExpenseService(
         categories: List<Long>?,
         payments: List<Long>?,
         search: String?,
-    ): ExpensesSummaryResponse {
-        val userId = TenantContext.currentUserId()
-
-        val totalSql = StringBuilder(TOTAL_SELECT)
-        val totalParams = mutableListOf<Any>(userId)
-        appendFilters(totalSql, totalParams, month, startDate, endDate, categories, payments, search)
-        val totals =
-            jdbcTemplate.queryForObject(
-                totalSql.toString(),
-                { rs, _ -> rs.getLong("total") to rs.getLong("cnt") },
-                *totalParams.toTypedArray(),
-            ) ?: (0L to 0L)
-
-        val catSql = StringBuilder(BY_CATEGORY_SELECT)
-        val catParams = mutableListOf<Any>(userId)
-        appendFilters(catSql, catParams, month, startDate, endDate, categories, payments, search)
-        catSql.append(" GROUP BY ls.id, ls.label ORDER BY amount DESC")
-        val slices =
-            jdbcTemplate.query(
-                catSql.toString(),
-                { rs, _ ->
-                    ExpenseCategorySlice(
-                        (rs.getObject("cat_id") as? Number)?.toLong(),
-                        rs.getString("cat_label") ?: "미분류",
-                        rs.getLong("amount"),
-                    )
-                },
-                *catParams.toTypedArray(),
-            )
-        return ExpensesSummaryResponse(totals.first, totals.second, slices)
-    }
-
-    @Suppress("LongParameterList")
-    private fun appendFilters(
-        sql: StringBuilder,
-        params: MutableList<Any>,
-        month: String?,
-        startDate: String?,
-        endDate: String?,
-        categories: List<Long>?,
-        payments: List<Long>?,
-        search: String?,
-    ) {
-        if (!startDate.isNullOrBlank() && !endDate.isNullOrBlank()) {
-            sql.append(" AND e.date BETWEEN ? AND ?")
-            params.add(Date.valueOf(LocalDate.parse(startDate)))
-            params.add(Date.valueOf(LocalDate.parse(endDate)))
-        } else {
-            monthRange(month)?.let { (start, end) ->
-                sql.append(" AND e.date BETWEEN ? AND ?")
-                params.add(Date.valueOf(start))
-                params.add(Date.valueOf(end))
-            }
-        }
-        appendInClause(sql, params, "e.category_id", categories)
-        appendInClause(sql, params, "e.payment_method_id", payments)
-        if (!search.isNullOrBlank()) {
-            val pattern = "%${search.lowercase().replace("%", "\\%").replace("_", "\\_")}%"
-            sql.append(" AND (lower(e.item_name) LIKE ? OR lower(e.vendor) LIKE ? OR lower(e.memo) LIKE ?)")
-            repeat(SEARCH_FIELD_COUNT) { params.add(pattern) }
-        }
-    }
-
-    private fun appendInClause(
-        sql: StringBuilder,
-        params: MutableList<Any>,
-        column: String,
-        values: List<*>?,
-    ) {
-        require(column in ALLOWED_SUMMARY_COLUMNS) { "허용되지 않은 집계 컬럼: $column" }
-        if (values.isNullOrEmpty()) return
-        sql
-            .append(" AND ")
-            .append(column)
-            .append(" IN (")
-            .append(values.joinToString(",") { "?" })
-            .append(")")
-        values.forEach { params.add(it as Any) }
-    }
+    ): ExpensesSummaryResponse =
+        summaryRepository.summarize(TenantContext.currentUserId(), month, startDate, endDate, categories, payments, search)
 
     @Transactional(readOnly = true)
     fun get(id: Long): ExpenseResponse = toResponse(load(id), categoryLabels(), paymentLabels())
@@ -243,16 +164,5 @@ class ExpenseService(
 
     companion object {
         private const val MAX_LIMIT = 100
-        private const val SEARCH_FIELD_COUNT = 3
-        private val ALLOWED_SUMMARY_COLUMNS = setOf("e.category_id", "e.payment_method_id")
-        private const val TOTAL_SELECT =
-            "SELECT COALESCE(SUM(e.total_amount), 0) AS total, COUNT(*) AS cnt FROM expenses e WHERE e.user_id = ?"
-        private val BY_CATEGORY_SELECT =
-            """
-            SELECT ls.id AS cat_id, COALESCE(ls.label, '미분류') AS cat_label,
-                   COALESCE(SUM(e.total_amount), 0) AS amount
-            FROM expenses e LEFT JOIN label_settings ls ON ls.id = e.category_id AND ls.user_id = e.user_id
-            WHERE e.user_id = ?
-            """.trimIndent()
     }
 }

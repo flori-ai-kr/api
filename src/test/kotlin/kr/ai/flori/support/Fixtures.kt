@@ -1,6 +1,7 @@
 package kr.ai.flori.support
 
 import kr.ai.flori.customers.entity.Customer
+import kr.ai.flori.expenses.entity.Expense
 import kr.ai.flori.sales.entity.Sale
 import kr.ai.flori.settings.repository.LabelSettingRepository
 import java.time.LocalDate
@@ -29,6 +30,31 @@ object Fixtures {
                 this.customerName = customerName
                 this.memo = memo
             }
+
+    fun expense(
+        userId: Long,
+        date: LocalDate = LocalDate.of(2026, 6, 1),
+        itemName: String = "장미 사입",
+        categoryId: Long? = 1L,
+        unitPrice: Int = 10_000,
+        quantity: Int = 1,
+        paymentMethodId: Long? = 1L,
+        vendor: String? = null,
+        memo: String? = null,
+    ): Expense =
+        Expense(
+            userId = userId,
+            date = date,
+            itemName = itemName,
+            categoryId = categoryId,
+            unitPrice = unitPrice,
+            quantity = quantity,
+            totalAmount = unitPrice * quantity,
+            paymentMethodId = paymentMethodId,
+        ).apply {
+            this.vendor = vendor
+            this.memo = memo
+        }
 
     fun customer(
         userId: Long,
