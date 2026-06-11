@@ -5,6 +5,7 @@ import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.storage.S3PresignService
 import kr.ai.flori.common.tenant.TenantContext
+import kr.ai.flori.common.util.Paging
 import kr.ai.flori.common.validation.FieldLimits
 import kr.ai.flori.community.domain.CommunityCategories
 import kr.ai.flori.community.dto.CommentCreateRequest
@@ -25,7 +26,6 @@ import kr.ai.flori.community.repository.CommunityLikeRepository
 import kr.ai.flori.community.repository.CommunityPostRepository
 import kr.ai.flori.user.entity.User
 import kr.ai.flori.user.repository.UserRepository
-import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -63,7 +63,7 @@ class CommunityService(
     ): PostsPageResponse {
         val viewer = viewer()
         val searchPattern = search?.takeIf { it.isNotBlank() }?.let { "%${it.lowercase()}%" }
-        val pageable = PageRequest.of(offset / limit, limit)
+        val pageable = Paging.offsetLimit(offset, limit, MAX_LIMIT)
         val page = postRepository.findFeed(category?.takeIf { it.isNotBlank() }, searchPattern, pageable)
         val posts = page.content
         val authors = authorsOf(posts.map { it.authorUserId })
@@ -332,6 +332,7 @@ class CommunityService(
     }
 
     private companion object {
+        const val MAX_LIMIT = 100
         const val UNKNOWN_NICKNAME = "알 수 없음"
         const val MAX_COMMENT_DEPTH = 5
         const val MAX_FILE_SIZE_BYTES = 10L * 1024 * 1024

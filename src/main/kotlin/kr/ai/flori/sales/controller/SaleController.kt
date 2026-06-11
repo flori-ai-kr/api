@@ -40,11 +40,7 @@ class SaleController(
         @RequestParam(required = false) payment: List<Long>?,
         @RequestParam(required = false) channel: List<Long>?,
         @RequestParam(required = false) search: String?,
-    ): SalesPageResponse {
-        val safeLimit = limit.coerceIn(MIN_LIMIT, MAX_LIMIT)
-        val safeOffset = offset.coerceAtLeast(0)
-        return saleService.list(month, startDate, endDate, safeOffset, safeLimit, category, payment, channel, search)
-    }
+    ): SalesPageResponse = saleService.list(month, startDate, endDate, offset, limit, category, payment, channel, search)
 
     @GetMapping("/summary")
     fun summary(
@@ -94,10 +90,5 @@ class SaleController(
         @PathVariable id: Long,
     ) {
         saleService.delete(id)
-    }
-
-    private companion object {
-        const val MIN_LIMIT = 1
-        const val MAX_LIMIT = 100
     }
 }

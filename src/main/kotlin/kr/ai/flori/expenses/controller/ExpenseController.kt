@@ -36,11 +36,7 @@ class ExpenseController(
         @RequestParam(required = false) category: List<Long>?,
         @RequestParam(required = false) payment: List<Long>?,
         @RequestParam(required = false) search: String?,
-    ): ExpensePageResponse {
-        val safeLimit = limit.coerceIn(MIN_LIMIT, MAX_LIMIT)
-        val safeOffset = offset.coerceAtLeast(0)
-        return expenseService.listPaged(month, startDate, endDate, safeOffset, safeLimit, category, payment, search)
-    }
+    ): ExpensePageResponse = expenseService.listPaged(month, startDate, endDate, offset, limit, category, payment, search)
 
     @GetMapping("/summary")
     @Suppress("LongParameterList")
@@ -79,10 +75,5 @@ class ExpenseController(
         @PathVariable id: Long,
     ) {
         expenseService.delete(id)
-    }
-
-    companion object {
-        private const val MIN_LIMIT = 1
-        private const val MAX_LIMIT = 100
     }
 }

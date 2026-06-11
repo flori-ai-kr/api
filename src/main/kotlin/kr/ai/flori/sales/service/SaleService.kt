@@ -3,6 +3,7 @@ package kr.ai.flori.sales.service
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
+import kr.ai.flori.common.util.Paging
 import kr.ai.flori.customers.service.CustomerGradeService
 import kr.ai.flori.photos.repository.PhotoCardRepository
 import kr.ai.flori.reservations.repository.ReservationRepository
@@ -18,7 +19,6 @@ import kr.ai.flori.sales.repository.SaleSummaryQueryRepository
 import kr.ai.flori.settings.entity.LabelDomains
 import kr.ai.flori.settings.entity.LabelKinds
 import kr.ai.flori.settings.service.LabelSettingReader
-import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -57,7 +57,7 @@ class SaleService(
         val userId = TenantContext.currentUserId()
         val spec = SaleSpecifications.filter(userId, month, startDate, endDate, categories, payments, channels, search)
         val sort = Sort.by(Sort.Order.desc("date"), Sort.Order.desc("createdAt"))
-        val pageable = PageRequest.of(offset / limit, limit, sort)
+        val pageable = Paging.offsetLimit(offset, limit, MAX_LIMIT, sort)
         val page = saleRepository.findAll(spec, pageable)
 
         // 목록 썸네일 표시용: 현재 페이지 매출들의 사진을 한 번에 조회해 saleId -> URL 목록으로 매핑
@@ -223,4 +223,8 @@ class SaleService(
             ?: throw AppException(CommonErrorCode.NOT_FOUND, "매출을 찾을 수 없습니다")
 
     private fun requirePaymentId(id: Long?): Long = id ?: throw AppException(CommonErrorCode.VALIDATION, "결제방식은 필수입니다(미수가 아니면 결제수단을 지정하세요)")
+
+    private companion object {
+        const val MAX_LIMIT = 100
+    }
 }

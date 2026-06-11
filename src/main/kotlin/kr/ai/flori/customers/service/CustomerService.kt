@@ -3,6 +3,7 @@ package kr.ai.flori.customers.service
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
+import kr.ai.flori.common.util.Paging
 import kr.ai.flori.customers.dto.CustomerCreateRequest
 import kr.ai.flori.customers.dto.CustomerResponse
 import kr.ai.flori.customers.dto.CustomerSearchResult
@@ -111,7 +112,7 @@ class CustomerService(
     ): SalesPageResponse {
         val userId = TenantContext.currentUserId()
         load(customerId) // 소유권 확인
-        val pageable = PageRequest.of(page.coerceAtLeast(0), size.coerceIn(1, MAX_PAGE_SIZE), Sort.by(Sort.Order.desc("date")))
+        val pageable = Paging.pageSize(page, size, MAX_PAGE_SIZE, Sort.by(Sort.Order.desc("date")))
         val result = saleRepository.findByUserIdAndCustomerId(userId, customerId, pageable)
         val catMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.CATEGORY)
         val payMap = labelReader.labelMap(LabelDomains.SALE, LabelKinds.PAYMENT)

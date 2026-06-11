@@ -3,6 +3,7 @@ package kr.ai.flori.expenses.service
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
+import kr.ai.flori.common.util.Paging
 import kr.ai.flori.common.util.monthRange
 import kr.ai.flori.expenses.dto.ExpenseCategorySlice
 import kr.ai.flori.expenses.dto.ExpenseCreateRequest
@@ -17,7 +18,6 @@ import kr.ai.flori.expenses.repository.ExpenseSpecifications
 import kr.ai.flori.settings.entity.LabelDomains
 import kr.ai.flori.settings.entity.LabelKinds
 import kr.ai.flori.settings.service.LabelSettingReader
-import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
@@ -66,7 +66,7 @@ class ExpenseService(
         val userId = TenantContext.currentUserId()
         val spec = ExpenseSpecifications.filter(userId, month, startDate, endDate, categories, payments, search)
         val sort = Sort.by(Sort.Order.desc("date"), Sort.Order.desc("createdAt"))
-        val pageable = PageRequest.of(offset / limit, limit, sort)
+        val pageable = Paging.offsetLimit(offset, limit, MAX_LIMIT, sort)
         val page = expenseRepository.findAll(spec, pageable)
         val catMap = categoryLabels()
         val payMap = paymentLabels()
@@ -242,6 +242,7 @@ class ExpenseService(
             ?: throw AppException(CommonErrorCode.NOT_FOUND, "지출을 찾을 수 없습니다")
 
     companion object {
+        private const val MAX_LIMIT = 100
         private const val SEARCH_FIELD_COUNT = 3
         private val ALLOWED_SUMMARY_COLUMNS = setOf("e.category_id", "e.payment_method_id")
         private const val TOTAL_SELECT =
