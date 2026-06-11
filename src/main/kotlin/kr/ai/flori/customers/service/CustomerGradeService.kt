@@ -8,15 +8,21 @@ import kr.ai.flori.customers.dto.CustomerGradeResponse
 import kr.ai.flori.customers.dto.CustomerGradeUpdateRequest
 import kr.ai.flori.customers.entity.CustomerGrade
 import kr.ai.flori.customers.repository.CustomerGradeRepository
+import kr.ai.flori.customers.repository.CustomerQueryRepository
 import kr.ai.flori.customers.repository.CustomerRepository
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
+/**
+ * 고객 등급 CRUD + 등급 정책(자동승급 규칙)의 단일 소유자.
+ * "구매횟수 N이면 어떤 등급인가"의 판단(gradeIdFor)과 자동 재계산(recomputeGrade)은 모두 여기서만 한다.
+ */
 @Service
 class CustomerGradeService(
     private val gradeRepository: CustomerGradeRepository,
     private val customerRepository: CustomerRepository,
+    private val queryRepository: CustomerQueryRepository,
 ) {
     // 첫 조회 시 기본 등급을 시드(ensureDefaults)하므로 쓰기 가능 트랜잭션이어야 한다(readOnly 금지).
     @Transactional
@@ -78,6 +84,31 @@ class CustomerGradeService(
         // 실제 등급 재계산은 이후 매출 변경/되돌리기 경로(Task 5/7)에서 수행.
         customerRepository.clearGradeReference(userId, id)
         gradeRepository.delete(grade)
+    }
+
+    /** 구매횟수 기준 적정 등급 id. threshold 있는 등급 중 threshold<=count 최대, 없으면 최저 sort_order. */
+    fun gradeIdFor(
+        userId: Long,
+        purchaseCount: Int,
+    ): Long? {
+        val grades = gradeRepository.findByUserIdOrderBySortOrderAsc(userId)
+        if (grades.isEmpty()) return null
+        val eligible = grades.filter { it.threshold != null && it.threshold!! <= purchaseCount }.maxByOrNull { it.threshold!! }
+        return (eligible ?: grades.minByOrNull { it.sortOrder })?.id
+    }
+
+    /** 자동 등급 재계산(잠금 아니면). 매출 변경/되돌리기 후 호출. */
+    @Transactional
+    fun recomputeGrade(customerId: Long) {
+        val userId = TenantContext.currentUserId()
+        val customer = customerRepository.findByIdAndUserId(customerId, userId) ?: return
+        if (customer.gradeLocked) return
+        val count = queryRepository.statsFor(userId, customerId).count
+        val newGradeId = gradeIdFor(userId, count)
+        if (newGradeId != null && newGradeId != customer.gradeId) {
+            customer.gradeId = newGradeId
+            customerRepository.save(customer)
+        }
     }
 
     /** 등급이 하나도 없는 테넌트에 기본 등급 4종 생성(신규0/단골5/VIP10/블랙리스트 수동). */

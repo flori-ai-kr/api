@@ -28,6 +28,7 @@ class AdminUserService(
         page: Int,
         size: Int,
     ): AdminUserPage {
+        // raw SQL LIMIT/OFFSET 직빌딩이라 Pageable 기반 Paging 헬퍼 적용 대상이 아님 — 보정만 동일 규칙 유지.
         val safePage = page.coerceAtLeast(0)
         val safeSize = size.coerceIn(1, MAX_PAGE_SIZE)
         val like = query?.takeIf { it.isNotBlank() }?.let { "%$it%" }

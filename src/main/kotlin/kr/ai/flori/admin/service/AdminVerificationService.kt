@@ -4,11 +4,11 @@ import kr.ai.flori.admin.dto.AdminVerificationResponse
 import kr.ai.flori.admin.error.AdminErrorCode
 import kr.ai.flori.admin.event.BusinessVerificationReviewedEvent
 import kr.ai.flori.common.error.AppException
+import kr.ai.flori.common.util.Paging
 import kr.ai.flori.verification.domain.BusinessVerificationStatuses
 import kr.ai.flori.verification.entity.BusinessVerification
 import kr.ai.flori.verification.repository.BusinessVerificationRepository
 import org.springframework.context.ApplicationEventPublisher
-import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -30,7 +30,7 @@ class AdminVerificationService(
         repository
             .findByStatusOrderByCreatedAtDesc(
                 status,
-                PageRequest.of(page.coerceAtLeast(0), size.coerceIn(1, MAX_PAGE_SIZE)),
+                Paging.pageSize(page, size, MAX_PAGE_SIZE),
             ).content
             .map { it.toResponse() }
 

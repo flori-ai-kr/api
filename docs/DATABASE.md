@@ -189,7 +189,7 @@ JWT refresh 회전/무효화 추적. **원문이 아닌 SHA-256 해시만 저장
 
 - **제약**: UNIQUE(user_id, name) — 테넌트 내 등급명 중복 방지
 - **인덱스**: `idx_customer_grades_user`(user_id)
-- **자동 재계산 흐름**: 매출 생성·수정·삭제 시 `SaleService`가 `CustomerGradeService.recompute(customerId)` 훅을 호출 → threshold 기준으로 가장 높은 등급 배정(`grade_locked=false` 고객만)
+- **자동 재계산 흐름**: 매출 생성·수정·삭제 시 `SaleService`가 `CustomerGradeService.recomputeGrade(customerId)` 훅을 호출 → threshold 기준으로 가장 높은 등급 배정(`grade_locked=false` 고객만)
 
 ---
 

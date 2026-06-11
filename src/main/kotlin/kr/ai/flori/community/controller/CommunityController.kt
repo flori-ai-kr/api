@@ -40,11 +40,7 @@ class CommunityController(
         @RequestParam(required = false) search: String?,
         @RequestParam(defaultValue = "0") offset: Int,
         @RequestParam(defaultValue = "20") limit: Int,
-    ): PostsPageResponse {
-        val safeLimit = limit.coerceIn(MIN_LIMIT, MAX_LIMIT)
-        val safeOffset = offset.coerceAtLeast(0)
-        return communityService.listPosts(category, search, safeOffset, safeLimit)
-    }
+    ): PostsPageResponse = communityService.listPosts(category, search, offset, limit)
 
     @GetMapping("/posts/{id}")
     fun getPost(
@@ -99,10 +95,5 @@ class CommunityController(
         @PathVariable id: Long,
     ) {
         communityService.deleteComment(id)
-    }
-
-    private companion object {
-        const val MIN_LIMIT = 1
-        const val MAX_LIMIT = 100
     }
 }
