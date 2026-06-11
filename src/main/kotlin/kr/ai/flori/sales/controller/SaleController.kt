@@ -9,6 +9,7 @@ import kr.ai.flori.sales.dto.SaleUpdateRequest
 import kr.ai.flori.sales.dto.SalesPageResponse
 import kr.ai.flori.sales.dto.SalesSummaryResponse
 import kr.ai.flori.sales.service.SaleService
+import kr.ai.flori.sales.service.SaleUnpaidService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/sales")
 class SaleController(
     private val saleService: SaleService,
+    private val unpaidService: SaleUnpaidService,
 ) {
     @Suppress("LongParameterList")
     @GetMapping
@@ -79,12 +81,12 @@ class SaleController(
     fun completeUnpaid(
         @PathVariable id: Long,
         @Valid @RequestBody request: CompleteUnpaidRequest,
-    ): SaleResponse = saleService.completeUnpaid(id, requireNotNull(request.paymentMethodId))
+    ): SaleResponse = unpaidService.complete(id, requireNotNull(request.paymentMethodId))
 
     @PostMapping("/{id}/revert-unpaid")
     fun revertUnpaid(
         @PathVariable id: Long,
-    ): SaleResponse = saleService.revertUnpaid(id)
+    ): SaleResponse = unpaidService.revert(id)
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

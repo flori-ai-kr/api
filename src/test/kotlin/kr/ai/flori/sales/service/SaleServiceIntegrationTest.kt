@@ -34,6 +34,9 @@ class SaleServiceIntegrationTest {
     lateinit var saleService: SaleService
 
     @Autowired
+    lateinit var unpaidService: SaleUnpaidService
+
+    @Autowired
     lateinit var authService: AuthService
 
     @Autowired
@@ -140,11 +143,11 @@ class SaleServiceIntegrationTest {
         assertThat(unpaid.isUnpaid).isTrue()
         assertThat(unpaid.paymentMethodId).isNull()
 
-        val completed = saleService.completeUnpaid(unpaid.id, payId("card"))
+        val completed = unpaidService.complete(unpaid.id, payId("card"))
         assertThat(completed.paymentMethodId).isEqualTo(payId("card"))
         assertThat(completed.isUnpaid).isTrue() // 마커 유지
 
-        val reverted = saleService.revertUnpaid(unpaid.id)
+        val reverted = unpaidService.revert(unpaid.id)
         assertThat(reverted.paymentMethodId).isNull()
         assertThat(reverted.isUnpaid).isTrue()
     }
@@ -177,7 +180,7 @@ class SaleServiceIntegrationTest {
     fun `미수가 아닌 매출의 완료 시도는 거부된다`() {
         newTenant()
         val sale = saleService.create(cardSale())
-        assertThatThrownBy { saleService.completeUnpaid(sale.id, payId("cash")) }
+        assertThatThrownBy { unpaidService.complete(sale.id, payId("cash")) }
             .isInstanceOf(AppException::class.java)
     }
 

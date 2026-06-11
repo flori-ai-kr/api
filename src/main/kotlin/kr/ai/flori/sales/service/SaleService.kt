@@ -3,9 +3,7 @@ package kr.ai.flori.sales.service
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
-import kr.ai.flori.customers.repository.CustomerRepository
 import kr.ai.flori.customers.service.CustomerGradeService
-import kr.ai.flori.customers.service.CustomerService
 import kr.ai.flori.photos.repository.PhotoCardRepository
 import kr.ai.flori.reservations.repository.ReservationRepository
 import kr.ai.flori.sales.dto.SaleCreateRequest
@@ -34,13 +32,14 @@ import org.springframework.transaction.annotation.Transactional
 @Suppress("TooManyFunctions")
 class SaleService(
     private val saleRepository: SaleRepository,
-    private val customerRepository: CustomerRepository,
-    private val customerService: CustomerService,
+    private val customerLinker: SaleCustomerLinker,
     private val gradeService: CustomerGradeService,
     private val reservationRepository: ReservationRepository,
     private val photoCardRepository: PhotoCardRepository,
     private val labelReader: LabelSettingReader,
     private val summaryRepository: SaleSummaryQueryRepository,
+    private val unpaidService: SaleUnpaidService,
+    private val assembler: SaleResponseAssembler,
 ) {
     @Suppress("LongParameterList")
     @Transactional(readOnly = true)
@@ -73,9 +72,9 @@ class SaleService(
                     .associate { card -> card.saleId!! to card.photos.map { it.url } }
             }
 
-        val labels = saleLabels()
+        val labels = assembler.labels()
         return SalesPageResponse(
-            page.content.map { sale -> toResponse(sale, labels, photosBySaleId[sale.id] ?: emptyList()) },
+            page.content.map { sale -> assembler.toResponse(sale, labels, photosBySaleId[sale.id] ?: emptyList()) },
             page.hasNext(),
         )
     }
@@ -137,7 +136,7 @@ class SaleService(
         sale.isUnpaid = request.isUnpaid
         sale.customerName = request.customerName
         sale.customerPhone = request.customerPhone
-        sale.customerId = resolveCustomerId(userId, request.customerId, request.customerName, request.customerPhone)
+        sale.customerId = customerLinker.resolve(userId, request.customerId, request.customerName, request.customerPhone)
         sale.memo = request.memo
         val saved = saleRepository.save(sale)
         // recomputeGrade 는 raw JDBC 로 sales 를 집계하므로, INSERT 를 DB 에 반영(flush)한 뒤 재계산해야 한다.
@@ -163,16 +162,16 @@ class SaleService(
         request.customerName?.let { sale.customerName = it }
         request.customerPhone?.let { sale.customerPhone = it }
         if (request.customerId != null) {
-            verifyCustomerOwnership(userId, request.customerId)
+            customerLinker.verifyOwnership(userId, request.customerId)
             sale.customerId = request.customerId
         } else if (request.customerName != null && request.customerPhone != null) {
             // 이름·전화를 함께 수정할 때만 customerId를 전화번호 기준으로 재해석(생성과 동일 규칙).
             // 한쪽만 수정하면 기존 연결을 그대로 유지한다(묵시적 언링크·고객 교체 방지).
-            sale.customerId = resolveCustomerId(userId, null, sale.customerName, sale.customerPhone)
+            sale.customerId = customerLinker.resolve(userId, null, sale.customerName, sale.customerPhone)
         }
         request.memo?.let { sale.memo = it }
         request.hasReview?.let { sale.hasReview = it }
-        applyUnpaidTransition(sale, request)
+        unpaidService.applyTransition(sale, request)
         val saved = saleRepository.save(sale)
         syncLinkedReservations(saved)
         // recomputeGrade 는 raw JDBC 로 sales 를 집계하므로, UPDATE 를 DB 에 반영(flush)한 뒤 재계산해야 한다.
@@ -201,47 +200,6 @@ class SaleService(
         reservationRepository.saveAll(pickups)
     }
 
-    /**
-     * 수정 시 미수(외상) 상태 전이. is_unpaid 마커 + payment_method_id(정산 여부)를 함께 반영한다.
-     * - isUnpaid=true  : 미수로 되돌림(결제수단 비움 → 매출 합계 제외)
-     * - isUnpaid=false : 결제 완료로 전환(마커 OFF + 결제수단 확정)
-     * - isUnpaid=null  : 미수 상태 불변, 결제수단만(제공 시) 반영
-     */
-    private fun applyUnpaidTransition(
-        sale: Sale,
-        request: SaleUpdateRequest,
-    ) {
-        if (request.isUnpaid == true) {
-            sale.isUnpaid = true
-            sale.paymentMethodId = null
-            return
-        }
-        if (request.isUnpaid == false) sale.isUnpaid = false
-        request.paymentMethodId?.let {
-            sale.paymentMethodId = labelReader.requireOwned(it, LabelDomains.SALE, LabelKinds.PAYMENT)
-        }
-    }
-
-    @Transactional
-    fun completeUnpaid(
-        id: Long,
-        paymentMethodId: Long,
-    ): SaleResponse {
-        val sale = load(id)
-        if (!sale.isUnpaid) throw AppException(CommonErrorCode.VALIDATION, "미수 매출이 아닙니다")
-        // 미수 완료: 실제 결제수단 확정(미수 마커 is_unpaid는 유지 — '미수였던 건' 추적용)
-        sale.paymentMethodId = labelReader.requireOwned(paymentMethodId, LabelDomains.SALE, LabelKinds.PAYMENT)
-        return single(saleRepository.save(sale))
-    }
-
-    @Transactional
-    fun revertUnpaid(id: Long): SaleResponse {
-        val sale = load(id)
-        if (!sale.isUnpaid) throw AppException(CommonErrorCode.VALIDATION, "미수 매출이 아닙니다")
-        sale.paymentMethodId = null
-        return single(saleRepository.save(sale))
-    }
-
     @Transactional
     fun delete(id: Long) {
         val sale = load(id)
@@ -258,70 +216,11 @@ class SaleService(
         }
     }
 
-    /** 단건 응답 — 현재 테넌트의 카테고리/결제수단/채널 라벨을 해석해 채운다. */
-    private fun single(sale: Sale): SaleResponse = toResponse(sale, saleLabels())
-
-    private fun toResponse(
-        sale: Sale,
-        labels: SaleLabels,
-        photos: List<String> = emptyList(),
-    ): SaleResponse =
-        SaleResponse.from(
-            sale,
-            sale.categoryId?.let { labels.categories[it] },
-            sale.paymentMethodId?.let { labels.payments[it] },
-            sale.channelId?.let { labels.channels[it] },
-            photos,
-        )
-
-    /** 현재 테넌트의 매출 라벨(카테고리·결제수단·채널) id→label 맵 묶음. */
-    private fun saleLabels(): SaleLabels =
-        SaleLabels(
-            labelReader.labelMap(LabelDomains.SALE, LabelKinds.CATEGORY),
-            labelReader.labelMap(LabelDomains.SALE, LabelKinds.PAYMENT),
-            labelReader.labelMap(LabelDomains.SALE, LabelKinds.CHANNEL),
-        )
-
-    private data class SaleLabels(
-        val categories: Map<Long, String>,
-        val payments: Map<Long, String>,
-        val channels: Map<Long, String>,
-    )
+    private fun single(sale: Sale): SaleResponse = assembler.single(sale)
 
     private fun load(id: Long): Sale =
         saleRepository.findByIdAndUserId(id, TenantContext.currentUserId())
             ?: throw AppException(CommonErrorCode.NOT_FOUND, "매출을 찾을 수 없습니다")
-
-    // 고객 도메인 리포지토리를 통해 소유권 검증(raw SQL 대신 도메인 경계 준수)
-    private fun verifyCustomerOwnership(
-        userId: Long,
-        customerId: Long,
-    ) {
-        if (customerRepository.findByIdAndUserId(customerId, userId) == null) {
-            throw AppException(CommonErrorCode.VALIDATION, "유효하지 않은 고객입니다")
-        }
-    }
-
-    /**
-     * 매출에 연결할 고객 id를 해석한다.
-     * - customerId가 오면 소유권 검증 후 그대로 사용(드롭다운에서 직접 선택한 경우)
-     * - customerId가 없고 이름·전화가 있으면 전화번호 기준 findOrCreate로 연결(자동 매칭)
-     *   → 예약/매출 등록 시 제안 고객을 클릭하지 않아도 전화번호로 기존 고객과 이어진다.
-     */
-    private fun resolveCustomerId(
-        userId: Long,
-        customerId: Long?,
-        customerName: String?,
-        customerPhone: String?,
-    ): Long? {
-        if (customerId != null) {
-            verifyCustomerOwnership(userId, customerId)
-            return customerId
-        }
-        val phone = customerPhone?.takeIf { it.isNotBlank() }
-        val name = customerName?.takeIf { it.isNotBlank() }
-        return if (phone != null && name != null) customerService.findOrCreate(name, phone).id else null
-    }
 
     private fun requirePaymentId(id: Long?): Long = id ?: throw AppException(CommonErrorCode.VALIDATION, "결제방식은 필수입니다(미수가 아니면 결제수단을 지정하세요)")
 }
