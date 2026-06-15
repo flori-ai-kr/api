@@ -29,6 +29,7 @@ application-local.yml
 .claude/plans/
 .claude/agent-memory/
 .claude/worktrees/
+.claude/.kt-touched
 
 # 스킬별 시크릿
 .claude/skills/*/.env*
