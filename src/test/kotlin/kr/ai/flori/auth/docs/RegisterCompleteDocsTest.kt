@@ -40,6 +40,7 @@ class RegisterCompleteDocsTest : RestDocsSupport() {
                             "ownerAgeRange" to "30대",
                             "interests" to listOf("웨딩", "개업화환"),
                             "specialties" to listOf("꽃다발", "화분"),
+                            "referralSources" to listOf("지인 추천", "인스타그램"),
                         ),
                     )
             }.andExpect { status { isCreated() } }
@@ -63,6 +64,7 @@ class RegisterCompleteDocsTest : RestDocsSupport() {
                                 fieldWithPath("ownerAgeRange").type(JsonFieldType.STRING).optional().description("나이대(선택, 단일)"),
                                 fieldWithPath("interests").type(JsonFieldType.ARRAY).optional().description("관심사(선택, 복수)"),
                                 fieldWithPath("specialties").type(JsonFieldType.ARRAY).optional().description("가게 주력(선택, 복수)"),
+                                fieldWithPath("referralSources").type(JsonFieldType.ARRAY).optional().description("유입경로(선택, 복수)"),
                             ),
                         responseFields =
                             listOf(

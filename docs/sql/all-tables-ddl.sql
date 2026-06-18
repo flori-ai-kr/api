@@ -67,6 +67,7 @@ CREATE TABLE user_profiles (
   owner_age_range TEXT,
   interests TEXT[] NOT NULL DEFAULT '{}',
   specialties TEXT[] NOT NULL DEFAULT '{}',
+  referral_sources TEXT[] NOT NULL DEFAULT '{}',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
