@@ -2,6 +2,7 @@ package kr.ai.flori.insights.service
 
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
+import kr.ai.flori.common.util.KST
 import kr.ai.flori.insights.client.FlowerApiClient
 import kr.ai.flori.insights.config.FlowerApiProperties
 import kr.ai.flori.insights.repository.FlowerAuctionPriceQueryRepository
@@ -94,7 +95,9 @@ class FlowerAuctionIngestServiceTest {
 
     @Test
     fun `f001 응답을 파싱해 적재하고 STRING 금액을 숫자로 변환한다`() {
-        val date = LocalDate.now()
+        // 서비스가 LocalDate.now(KST) 로 baseDate 를 계산하므로 테스트도 KST 로 맞춘다.
+        // (UTC 러너에서 KST 와 날짜가 어긋나면 mock URI 가 매칭되지 않아 실패)
+        val date = LocalDate.now(KST)
         // 절화(1)만 데이터, 나머지 gubn 은 빈 날.
         val service =
             ingestServiceWith(
@@ -125,7 +128,9 @@ class FlowerAuctionIngestServiceTest {
 
     @Test
     fun `재실행 시 같은 키는 멱등 upsert 되고 금액 정정이 반영된다`() {
-        val date = LocalDate.now()
+        // 서비스가 LocalDate.now(KST) 로 baseDate 를 계산하므로 테스트도 KST 로 맞춘다.
+        // (UTC 러너에서 KST 와 날짜가 어긋나면 mock URI 가 매칭되지 않아 실패)
+        val date = LocalDate.now(KST)
         ingestServiceWith(
             date,
             mapOf("1" to sampleJson(date.toString(), "3000"), "2" to emptyJson(), "3" to emptyJson(), "4" to emptyJson()),
