@@ -6,6 +6,7 @@ import kr.ai.flori.community.dto.CommentResponse
 import kr.ai.flori.community.dto.CommunityUploadTargetResponse
 import kr.ai.flori.community.dto.CommunityUploadTargetsRequest
 import kr.ai.flori.community.dto.LikeToggleResponse
+import kr.ai.flori.community.dto.PinRequest
 import kr.ai.flori.community.dto.PostCreateRequest
 import kr.ai.flori.community.dto.PostResponse
 import kr.ai.flori.community.dto.PostUpdateRequest
@@ -71,6 +72,13 @@ class CommunityController(
     fun toggleLike(
         @PathVariable id: Long,
     ): LikeToggleResponse = communityService.toggleLike(id)
+
+    /** 게시글 고정/해제(관리자 전용 — 서비스에서 강제). */
+    @PostMapping("/posts/{id}/pin")
+    fun setPinned(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: PinRequest,
+    ): PostResponse = communityService.setPinned(id, requireNotNull(request.pinned))
 
     @PostMapping("/upload-targets")
     fun uploadTargets(

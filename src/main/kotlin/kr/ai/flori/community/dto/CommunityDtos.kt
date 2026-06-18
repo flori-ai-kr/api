@@ -47,6 +47,12 @@ data class PostUpdateRequest(
     >? = null,
 )
 
+/** 게시글 고정/해제(관리자 전용). */
+data class PinRequest(
+    @field:NotNull(message = "pinned는 필수입니다")
+    val pinned: Boolean?,
+)
+
 data class CommentCreateRequest(
     @field:NotBlank(message = "내용은 필수입니다")
     @field:Size(max = FieldLimits.COMMENT, message = "댓글이 너무 깁니다")
@@ -103,6 +109,8 @@ data class PostResponse(
     val commentCount: Int,
     val liked: Boolean,
     val isMine: Boolean,
+    // 뷰어(JWT)가 관리자인지 — 고정/해제 등 관리자 액션 노출 판단용.
+    val viewerIsAdmin: Boolean,
     val canView: Boolean,
     val createdAt: Instant,
     val updatedAt: Instant,
@@ -115,6 +123,7 @@ data class PostResponse(
             liked: Boolean,
             isMine: Boolean,
             canView: Boolean,
+            viewerIsAdmin: Boolean = false,
         ): PostResponse =
             PostResponse(
                 id = requireNotNull(post.id),
@@ -131,6 +140,7 @@ data class PostResponse(
                 commentCount = post.commentCount,
                 liked = liked,
                 isMine = isMine,
+                viewerIsAdmin = viewerIsAdmin,
                 canView = canView,
                 createdAt = post.createdAt,
                 updatedAt = post.updatedAt,

@@ -83,6 +83,7 @@ class CommunityService(
                     liked = post.id in likedIds,
                     isMine = post.authorUserId == viewer.id,
                     canView = canViewPost(post, viewer),
+                    viewerIsAdmin = viewer.isAdmin,
                 )
             }
         return PostsPageResponse(responses, page.hasNext())
@@ -100,6 +101,7 @@ class CommunityService(
             liked = likeRepository.existsByPostIdAndUserId(id, viewer.id),
             isMine = post.authorUserId == viewer.id,
             canView = canViewPost(post, viewer),
+            viewerIsAdmin = viewer.isAdmin,
         )
     }
 
@@ -118,7 +120,7 @@ class CommunityService(
         post.isSecret = request.isSecret
         post.imageUrls = request.imageUrls.toTypedArray()
         val saved = postRepository.save(post)
-        return PostResponse.of(saved, nicknameOf(viewer.id), authorIsAdmin = viewer.isAdmin, liked = false, isMine = true, canView = true)
+        return PostResponse.of(saved, nicknameOf(viewer.id), authorIsAdmin = viewer.isAdmin, liked = false, isMine = true, canView = true, viewerIsAdmin = viewer.isAdmin)
     }
 
     @Transactional
@@ -144,6 +146,7 @@ class CommunityService(
             liked = likeRepository.existsByPostIdAndUserId(id, viewer.id),
             isMine = true,
             canView = true,
+            viewerIsAdmin = viewer.isAdmin,
         )
     }
 
@@ -154,6 +157,29 @@ class CommunityService(
         if (post.authorUserId != viewer.id && !viewer.isAdmin) throw AppException(CommunityErrorCode.FORBIDDEN)
         post.deletedAt = Instant.now()
         postRepository.save(post)
+    }
+
+    /** 게시글 고정/해제 — 관리자만. 모든 글에 적용 가능(작성자 무관). */
+    @Transactional
+    fun setPinned(
+        id: Long,
+        pinned: Boolean,
+    ): PostResponse {
+        val viewer = viewer()
+        if (!viewer.isAdmin) throw AppException(CommunityErrorCode.PIN_ADMIN_ONLY)
+        val post = loadPost(id)
+        post.isPinned = pinned
+        val saved = postRepository.save(post)
+        val author = authorsOf(listOf(saved.authorUserId))[saved.authorUserId]
+        return PostResponse.of(
+            post = saved,
+            authorNickname = author?.nickname ?: UNKNOWN_NICKNAME,
+            authorIsAdmin = author?.isAdmin ?: false,
+            liked = likeRepository.existsByPostIdAndUserId(id, viewer.id),
+            isMine = saved.authorUserId == viewer.id,
+            canView = canViewPost(saved, viewer),
+            viewerIsAdmin = viewer.isAdmin,
+        )
     }
 
     @Transactional
