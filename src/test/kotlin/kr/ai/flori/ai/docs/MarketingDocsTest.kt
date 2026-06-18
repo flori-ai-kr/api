@@ -220,8 +220,14 @@ class MarketingDocsTest : RestDocsSupport() {
                         pathParameters = listOf(parameterWithName("id").description("콘텐츠 ID")),
                         responseFields =
                             listOf(
-                                fieldWithPath("id").type(JsonFieldType.NUMBER).description("콘텐츠 ID"),
+                                fieldWithPath("id").type(JsonFieldType.STRING).description("콘텐츠 ID"),
                                 fieldWithPath("channel").type(JsonFieldType.STRING).description("채널(blog)"),
+                                fieldWithPath("title").type(JsonFieldType.STRING).description("초안 제목"),
+                                fieldWithPath("keyword").type(JsonFieldType.STRING).description("타깃 키워드"),
+                                fieldWithPath("createdAt").type(JsonFieldType.STRING).description("생성 시각(ISO-8601)"),
+                                fieldWithPath("situation").type(JsonFieldType.STRING).optional().description("상황/시즌"),
+                                fieldWithPath("memo").type(JsonFieldType.STRING).optional().description("사장님 메모"),
+                                fieldWithPath("photoUrls").type(JsonFieldType.ARRAY).description("사진 URL 목록"),
                                 fieldWithPath("draft.title").type(JsonFieldType.STRING).description("제목"),
                                 fieldWithPath("draft.sections").type(JsonFieldType.ARRAY).description("소제목 단락"),
                                 fieldWithPath("draft.sections[].heading").type(JsonFieldType.STRING).description("소제목"),
@@ -230,7 +236,6 @@ class MarketingDocsTest : RestDocsSupport() {
                                 fieldWithPath("draft.faq[].q").type(JsonFieldType.STRING).description("질문"),
                                 fieldWithPath("draft.faq[].a").type(JsonFieldType.STRING).description("답변"),
                                 fieldWithPath("draft.hashtags").type(JsonFieldType.ARRAY).description("해시태그"),
-                                fieldWithPath("createdAt").type(JsonFieldType.STRING).description("생성 시각(ISO-8601)"),
                             ),
                     ),
                 )
