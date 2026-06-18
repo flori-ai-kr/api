@@ -76,6 +76,7 @@ class CommunityDocsTest : RestDocsSupport() {
             fieldWithPath("${prefix}commentCount").type(JsonFieldType.NUMBER).description("댓글 수"),
             fieldWithPath("${prefix}liked").type(JsonFieldType.BOOLEAN).description("현재 사용자 좋아요 여부"),
             fieldWithPath("${prefix}isMine").type(JsonFieldType.BOOLEAN).description("현재 사용자 작성 여부"),
+            fieldWithPath("${prefix}viewerIsAdmin").type(JsonFieldType.BOOLEAN).description("현재 사용자 운영자 여부(고정 등 관리자 액션 노출 판단)"),
             fieldWithPath("${prefix}canView").type(JsonFieldType.BOOLEAN).description("열람 권한(false면 본문 마스킹)"),
             fieldWithPath("${prefix}createdAt").type(JsonFieldType.STRING).description("생성 시각(ISO-8601)"),
             fieldWithPath("${prefix}updatedAt").type(JsonFieldType.STRING).description("수정 시각(ISO-8601)"),

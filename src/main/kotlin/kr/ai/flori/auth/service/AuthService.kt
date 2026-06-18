@@ -200,6 +200,7 @@ class AuthService(
                 ownerAgeRange = request.ownerAgeRange
                 interests = request.interests?.toTypedArray() ?: emptyArray()
                 specialties = request.specialties?.toTypedArray() ?: emptyArray()
+                referralSources = request.referralSources?.toTypedArray() ?: emptyArray()
             },
         )
         seeder.seedForNewUser(userId)

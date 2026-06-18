@@ -17,4 +17,5 @@ enum class CommunityErrorCode(
     NOTICE_ADMIN_ONLY("E-CMNT-004", HttpStatus.FORBIDDEN, "공지는 관리자만 작성할 수 있습니다"),
     FORBIDDEN("E-CMNT-005", HttpStatus.FORBIDDEN, "권한이 없습니다"),
     INVALID_PARENT("E-CMNT-006", HttpStatus.BAD_REQUEST, "올바르지 않은 부모 댓글입니다"),
+    PIN_ADMIN_ONLY("E-CMNT-007", HttpStatus.FORBIDDEN, "게시글 고정은 관리자만 할 수 있습니다"),
 }

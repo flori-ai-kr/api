@@ -164,4 +164,10 @@ data class RegisterCompleteRequest(
         @Size(max = FieldLimits.LABEL, message = "주력 값이 너무 깁니다")
         String,
     >? = null,
+    @field:Size(max = FieldLimits.PROFILE_LIST, message = "참여경로가 너무 많습니다")
+    @field:Schema(description = "flori를 알게 된 경로(선택, 복수)", example = "[\"지인 추천\",\"인스타그램\"]")
+    val referralSources: List<
+        @Size(max = FieldLimits.LABEL, message = "참여경로 값이 너무 깁니다")
+        String,
+    >? = null,
 )

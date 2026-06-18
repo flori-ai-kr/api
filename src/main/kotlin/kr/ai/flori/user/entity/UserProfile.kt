@@ -48,4 +48,9 @@ class UserProfile(
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "specialties", columnDefinition = "text[]")
     var specialties: Array<String> = emptyArray()
+
+    // flori 유입경로(선택, 복수). 마케팅 분석용 — 응답 DTO에 노출하지 않는다.
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "referral_sources", columnDefinition = "text[]")
+    var referralSources: Array<String> = emptyArray()
 }
