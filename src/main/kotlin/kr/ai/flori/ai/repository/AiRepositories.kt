@@ -2,8 +2,12 @@ package kr.ai.flori.ai.repository
 
 import kr.ai.flori.ai.entity.AiChatMessage
 import kr.ai.flori.ai.entity.AiChatSession
+import kr.ai.flori.ai.entity.AiMarketingContent
 import kr.ai.flori.ai.entity.AiProactiveLog
+import kr.ai.flori.ai.entity.AiToneProfile
 import kr.ai.flori.ai.entity.AiWriteProposal
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import java.time.Instant
 
@@ -37,3 +41,23 @@ interface AiWriteProposalRepository : JpaRepository<AiWriteProposal, Long> {
 }
 
 interface AiProactiveLogRepository : JpaRepository<AiProactiveLog, Long>
+
+/** 말투 프로필은 유저당 1행 — user_id로 조회/upsert(테넌트 격리). */
+interface AiToneProfileRepository : JpaRepository<AiToneProfile, Long> {
+    fun findByUserId(userId: Long): AiToneProfile?
+}
+
+interface AiMarketingContentRepository : JpaRepository<AiMarketingContent, Long> {
+    /** 목록: 소프트삭제 제외 + user_id·channel 격리, 최신순(Pageable.sort 적용). */
+    fun findByUserIdAndChannelAndDeletedAtIsNull(
+        userId: Long,
+        channel: String,
+        pageable: Pageable,
+    ): Page<AiMarketingContent>
+
+    /** 상세/삭제: 소프트삭제 제외 + user_id 격리. */
+    fun findByIdAndUserIdAndDeletedAtIsNull(
+        id: Long,
+        userId: Long,
+    ): AiMarketingContent?
+}
