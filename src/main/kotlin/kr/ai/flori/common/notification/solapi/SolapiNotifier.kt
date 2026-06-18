@@ -2,9 +2,11 @@ package kr.ai.flori.common.notification.solapi
 
 import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
+import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import javax.crypto.Mac
@@ -23,7 +25,17 @@ class SolapiNotifier(
     private val properties: SolapiProperties,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
-    private val restClient = RestClient.create()
+
+    // 외부(SOLAPI) 호출 — 연결/읽기 타임아웃 필수(미설정 시 @Async 스레드 무한 블로킹 방지).
+    private val restClient =
+        RestClient
+            .builder()
+            .requestFactory(
+                SimpleClientHttpRequestFactory().apply {
+                    setConnectTimeout(CONNECT_TIMEOUT)
+                    setReadTimeout(READ_TIMEOUT)
+                },
+            ).build()
 
     /** 사업자 인증 승인 → 점주에게 승인 알림톡 발송. */
     @Async
@@ -69,7 +81,7 @@ class SolapiNotifier(
                 .body(body)
                 .retrieve()
                 .toBodilessEntity()
-            log.info("[Solapi] 승인 알림톡 발송 to={}", to)
+            log.info("[Solapi] 승인 알림톡 발송 to={}", maskPhone(to))
         } catch (e: Exception) {
             log.warn("[Solapi] 발송 실패(무시): {}", e.message)
         }
@@ -82,5 +94,19 @@ class SolapiNotifier(
         val mac = Mac.getInstance("HmacSHA256")
         mac.init(SecretKeySpec(secret.toByteArray(Charsets.UTF_8), "HmacSHA256"))
         return mac.doFinal(data.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+    }
+
+    // 로그에 전화번호 평문 노출 방지(PII) — 뒤 N자리만 노출.
+    private fun maskPhone(phone: String): String =
+        if (phone.length >= PHONE_VISIBLE_TAIL) {
+            "*".repeat(phone.length - PHONE_VISIBLE_TAIL) + phone.takeLast(PHONE_VISIBLE_TAIL)
+        } else {
+            "****"
+        }
+
+    private companion object {
+        val CONNECT_TIMEOUT: Duration = Duration.ofSeconds(5)
+        val READ_TIMEOUT: Duration = Duration.ofSeconds(10)
+        const val PHONE_VISIBLE_TAIL = 4
     }
 }
