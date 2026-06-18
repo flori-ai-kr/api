@@ -3,15 +3,12 @@ package kr.ai.flori.community.service
 import com.fasterxml.jackson.databind.JsonNode
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
-import kr.ai.flori.common.storage.S3PresignService
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.common.util.Paging
 import kr.ai.flori.common.validation.FieldLimits
 import kr.ai.flori.community.domain.CommunityCategories
 import kr.ai.flori.community.dto.CommentCreateRequest
 import kr.ai.flori.community.dto.CommentResponse
-import kr.ai.flori.community.dto.CommunityFileMetaRequest
-import kr.ai.flori.community.dto.CommunityUploadTargetResponse
 import kr.ai.flori.community.dto.LikeToggleResponse
 import kr.ai.flori.community.dto.PostCreateRequest
 import kr.ai.flori.community.dto.PostResponse
@@ -29,7 +26,6 @@ import kr.ai.flori.user.repository.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
-import java.util.UUID
 
 /**
  * 커뮤니티 서비스. 단일 커뮤니티(테넌트 간 공유)이므로 user_id 격리 대상이 아니다 —
@@ -45,7 +41,6 @@ class CommunityService(
     private val commentRepository: CommunityCommentRepository,
     private val likeRepository: CommunityLikeRepository,
     private val userRepository: UserRepository,
-    private val s3PresignService: S3PresignService,
 ) {
     private data class Viewer(
         val id: Long,
@@ -120,7 +115,15 @@ class CommunityService(
         post.isSecret = request.isSecret
         post.imageUrls = request.imageUrls.toTypedArray()
         val saved = postRepository.save(post)
-        return PostResponse.of(saved, nicknameOf(viewer.id), authorIsAdmin = viewer.isAdmin, liked = false, isMine = true, canView = true, viewerIsAdmin = viewer.isAdmin)
+        return PostResponse.of(
+            saved,
+            nicknameOf(viewer.id),
+            authorIsAdmin = viewer.isAdmin,
+            liked = false,
+            isMine = true,
+            canView = true,
+            viewerIsAdmin = viewer.isAdmin,
+        )
     }
 
     @Transactional
@@ -200,22 +203,6 @@ class CommunityService(
         // 비정규화 카운트는 DB 원자 증감 후 재조회(동시성 시 정확한 값 반환). adjust 쿼리는 clearAutomatically로 컨텍스트를 비운다.
         val likeCount = postRepository.findByIdAndDeletedAtIsNull(id)?.likeCount ?: 0
         return LikeToggleResponse(liked = liked, likeCount = likeCount)
-    }
-
-    // ── 업로드 타깃(presigned) ───────────────────────────────────────────
-
-    fun createUploadTargets(files: List<CommunityFileMetaRequest>): List<CommunityUploadTargetResponse> {
-        val userId = TenantContext.currentUserId()
-        if (files.size > MAX_FILES_PER_REQUEST) {
-            throw AppException(CommonErrorCode.VALIDATION, "한 번에 최대 ${MAX_FILES_PER_REQUEST}장까지 업로드할 수 있습니다")
-        }
-        return files.map { file ->
-            val contentType = requireNotNull(file.type)
-            validateImageMeta(contentType, file.size)
-            val name = requireNotNull(file.name)
-            val presigned = s3PresignService.presignUpload(buildKey(userId, name), contentType)
-            CommunityUploadTargetResponse(presigned.uploadUrl, presigned.fileUrl, name)
-        }
     }
 
     // ── 댓글 ──────────────────────────────────────────────────────────────
@@ -336,34 +323,10 @@ class CommunityService(
             .associateBy { requireNotNull(it.id) }
     }
 
-    private fun validateImageMeta(
-        contentType: String,
-        size: Long,
-    ) {
-        // SVG 등 스크립트 내장 가능 타입 차단을 위해 prefix가 아닌 명시 허용 목록으로 검증.
-        if (contentType.lowercase() !in ALLOWED_IMAGE_TYPES) {
-            throw AppException(CommonErrorCode.VALIDATION, "지원하지 않는 이미지 형식입니다")
-        }
-        if (size > MAX_FILE_SIZE_BYTES) {
-            throw AppException(CommonErrorCode.VALIDATION, "파일 크기가 너무 큽니다")
-        }
-    }
-
-    private fun buildKey(
-        userId: Long,
-        name: String,
-    ): String {
-        val safeName = name.replace(Regex("[^A-Za-z0-9._-]"), "_")
-        return "community/$userId/${UUID.randomUUID()}-$safeName"
-    }
-
     private companion object {
         const val MAX_LIMIT = 100
         const val UNKNOWN_NICKNAME = "알 수 없음"
         const val MAX_COMMENT_DEPTH = 5
-        const val MAX_FILE_SIZE_BYTES = 10L * 1024 * 1024
-        const val MAX_FILES_PER_REQUEST = 10
-        val ALLOWED_IMAGE_TYPES = setOf("image/jpeg", "image/png", "image/gif", "image/webp", "image/avif", "image/heic")
     }
 }
 
