@@ -65,6 +65,16 @@ vapid:
   private-key: ${VAPID_PRIVATE_KEY:}
   subject: ${VAPID_SUBJECT:mailto:admin@flori.ai.kr}
 
+# aT 화훼유통정보 OpenAPI(f001) — 일별 경락가 적재(단일 시장 = aT 양재).
+# service-key 미설정 시 적재 cron 은 no-op(경고 로그) → 키 없는 dev 부팅 가능.
+flori:
+  flower-api:
+    base-url: ${FLOWER_API_BASE_URL:https://flower.at.or.kr/api/returnData.api}
+    service-key: ${FLOWER_API_SERVICE_KEY:}
+    cron: ${FLOWER_API_CRON:0 30 6 * * *}   # 매일 KST 06:30
+    backfill-days: ${FLOWER_API_BACKFILL_DAYS:3}
+    page-size: ${FLOWER_API_PAGE_SIZE:1000}
+
 # 내부 API(수집/브로드캐스트) Bearer 키. 미설정 시 내부 API 접근 차단.
 internal:
   api-key: ${INTERNAL_API_KEY:}
