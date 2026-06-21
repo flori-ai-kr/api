@@ -82,6 +82,14 @@ flori:
     cron: ${FLOWER_API_CRON:0 30 6 * * *}   # 매일 KST 06:30
     backfill-days: ${FLOWER_API_BACKFILL_DAYS:3}
     page-size: ${FLOWER_API_PAGE_SIZE:1000}
+  # 창업진흥원 K-Startup 사업공고 OpenAPI(data.go.kr) — 지원사업 적재.
+  # service-key 미설정 시 적재 cron 은 no-op(경고 로그) → 키 없는 dev 부팅 가능.
+  kstartup-api:
+    base-url: ${KSTARTUP_API_BASE_URL:https://apis.data.go.kr/B552735/kisedKstartupService01/getAnnouncementInformation01}
+    service-key: ${KSTARTUP_API_SERVICE_KEY:}
+    cron: ${KSTARTUP_API_CRON:0 0 7 * * *}   # 매일 KST 07:00
+    pages: ${KSTARTUP_API_PAGES:5}
+    page-size: ${KSTARTUP_API_PAGE_SIZE:100}
 
 # 내부 API(수집/브로드캐스트) Bearer 키. 미설정 시 내부 API 접근 차단.
 internal:
