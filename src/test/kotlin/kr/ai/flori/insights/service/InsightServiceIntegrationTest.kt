@@ -10,6 +10,7 @@ import kr.ai.flori.common.util.KST
 import kr.ai.flori.insights.domain.GrantCategories
 import kr.ai.flori.insights.domain.ScrapTargetTypes
 import kr.ai.flori.insights.domain.TrendCategories
+import kr.ai.flori.insights.dto.FlowerItemScrapToggleRequest
 import kr.ai.flori.insights.dto.ScrapMemoRequest
 import kr.ai.flori.insights.dto.ScrapToggleRequest
 import kr.ai.flori.insights.entity.FlowerAuctionPrice
@@ -363,5 +364,21 @@ class InsightServiceIntegrationTest {
         assertThat(insightService.scrapCounts().trend).isEqualTo(0)
         assertThat(insightService.scrapMap(ScrapTargetTypes.TREND)).isEmpty()
         assertThat(insightService.trendScraps(100)).isEmpty()
+    }
+
+    @Test
+    fun `경매 품목 스크랩은 멱등 토글되고 목록은 최신순으로 격리된다`() {
+        newTenant()
+        assertThat(insightService.toggleFlowerItemScrap(FlowerItemScrapToggleRequest("장미")).scraped).isTrue()
+        assertThat(insightService.toggleFlowerItemScrap(FlowerItemScrapToggleRequest("국화")).scraped).isTrue()
+        assertThat(insightService.flowerItemScrapNames().pumNames).containsExactlyInAnyOrder("장미", "국화")
+
+        // 같은 품목 재토글 → 해제
+        assertThat(insightService.toggleFlowerItemScrap(FlowerItemScrapToggleRequest("장미")).scraped).isFalse()
+        assertThat(insightService.flowerItemScrapNames().pumNames).containsExactly("국화")
+
+        // 다른 테넌트는 격리
+        newTenant()
+        assertThat(insightService.flowerItemScrapNames().pumNames).isEmpty()
     }
 }

@@ -1,6 +1,7 @@
 package kr.ai.flori.insights.repository
 
 import kr.ai.flori.insights.entity.FlowerAuctionPrice
+import kr.ai.flori.insights.entity.FlowerItemScrap
 import kr.ai.flori.insights.entity.InsightScrap
 import kr.ai.flori.insights.entity.SupportProgram
 import kr.ai.flori.insights.entity.TrendArticle
@@ -83,4 +84,17 @@ interface InsightScrapRepository : JpaRepository<InsightScrap, Long> {
         userId: Long,
         targetType: String,
     ): Long
+}
+
+/**
+ * 경매 품목 스크랩(개인). 모든 메서드는 user_id 로 격리한다(멀티테넌시 HARD).
+ */
+interface FlowerItemScrapRepository : JpaRepository<FlowerItemScrap, Long> {
+    fun findByUserIdAndPumName(
+        userId: Long,
+        pumName: String,
+    ): FlowerItemScrap?
+
+    /** 내 스크랩 품목 목록(최신순). */
+    fun findByUserIdOrderByCreatedAtDesc(userId: Long): List<FlowerItemScrap>
 }

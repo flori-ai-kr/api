@@ -4,6 +4,8 @@ import jakarta.validation.Valid
 import kr.ai.flori.insights.dto.AuctionPricesResponse
 import kr.ai.flori.insights.dto.AuctionSummaryResponse
 import kr.ai.flori.insights.dto.FlowerCategoryResponse
+import kr.ai.flori.insights.dto.FlowerItemScrapListResponse
+import kr.ai.flori.insights.dto.FlowerItemScrapToggleRequest
 import kr.ai.flori.insights.dto.GrantScrapResponse
 import kr.ai.flori.insights.dto.ScrapCountsResponse
 import kr.ai.flori.insights.dto.ScrapInfoResponse
@@ -75,6 +77,16 @@ class InsightController(
         @RequestParam(required = false) gubn: String?,
         @RequestParam(required = false) item: String?,
     ): AuctionPricesResponse = insightService.auctionPrices(date, gubn, item)
+
+    // ── 경매 품목 스크랩(개인) ──────────────────────────────────────────────
+
+    @PostMapping("/auction/scraps/toggle")
+    fun toggleFlowerItemScrap(
+        @Valid @RequestBody request: FlowerItemScrapToggleRequest,
+    ): ScrapToggleResponse = insightService.toggleFlowerItemScrap(request)
+
+    @GetMapping("/auction/scraps")
+    fun flowerItemScraps(): FlowerItemScrapListResponse = insightService.flowerItemScrapNames()
 
     // ── 지원사업 ───────────────────────────────────────────────────────────
 

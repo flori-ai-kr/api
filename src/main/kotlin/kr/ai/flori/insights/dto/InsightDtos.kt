@@ -204,6 +204,18 @@ data class ScrapToggleResponse(
     val scraped: Boolean,
 )
 
+/** 경매 품목 스크랩 토글 요청(품목명 단위). */
+data class FlowerItemScrapToggleRequest(
+    @field:NotBlank(message = "품목명(pumName)은 필수입니다")
+    @field:Size(max = FieldLimits.NAME, message = "품목명이 너무 깁니다")
+    val pumName: String?,
+)
+
+/** 경매 품목 스크랩 목록(내가 스크랩한 품목명). */
+data class FlowerItemScrapListResponse(
+    val pumNames: List<String>,
+)
+
 /** 스크랩 단건(camelCase). web KotlinScrap 미러. */
 data class ScrapResponse(
     val id: Long,

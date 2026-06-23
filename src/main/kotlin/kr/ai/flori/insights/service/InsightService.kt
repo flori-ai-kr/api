@@ -12,6 +12,8 @@ import kr.ai.flori.insights.dto.AuctionPricesResponse
 import kr.ai.flori.insights.dto.AuctionSummaryItem
 import kr.ai.flori.insights.dto.AuctionSummaryResponse
 import kr.ai.flori.insights.dto.FlowerCategoryResponse
+import kr.ai.flori.insights.dto.FlowerItemScrapListResponse
+import kr.ai.flori.insights.dto.FlowerItemScrapToggleRequest
 import kr.ai.flori.insights.dto.GrantScrapResponse
 import kr.ai.flori.insights.dto.ScrapCountsResponse
 import kr.ai.flori.insights.dto.ScrapInfoResponse
@@ -22,9 +24,11 @@ import kr.ai.flori.insights.dto.ScrapToggleResponse
 import kr.ai.flori.insights.dto.SupportProgramResponse
 import kr.ai.flori.insights.dto.TrendArticleResponse
 import kr.ai.flori.insights.dto.TrendScrapResponse
+import kr.ai.flori.insights.entity.FlowerItemScrap
 import kr.ai.flori.insights.entity.InsightScrap
 import kr.ai.flori.insights.error.InsightErrorCode
 import kr.ai.flori.insights.repository.FlowerAuctionPriceQueryRepository
+import kr.ai.flori.insights.repository.FlowerItemScrapRepository
 import kr.ai.flori.insights.repository.InsightScrapRepository
 import kr.ai.flori.insights.repository.SupportProgramRepository
 import kr.ai.flori.insights.repository.TrendArticleRepository
@@ -45,6 +49,7 @@ class InsightService(
     private val auctionPriceQueryRepository: FlowerAuctionPriceQueryRepository,
     private val supportProgramRepository: SupportProgramRepository,
     private val scrapRepository: InsightScrapRepository,
+    private val flowerItemScrapRepository: FlowerItemScrapRepository,
 ) {
     // ── 트렌드·뉴스 ────────────────────────────────────────────────────────
 
@@ -172,6 +177,35 @@ class InsightService(
             // 동시 토글 경쟁: UNIQUE(user_id,target_type,target_id) 위반 → 이미 스크랩된 것으로 간주(멱등).
         }
         return ScrapToggleResponse(scraped = true)
+    }
+
+    // ── 경매 품목 스크랩(개인) ──────────────────────────────────────────────
+
+    /** 경매 품목 스크랩 토글(멱등). 없으면 추가(true), 있으면 제거(false). */
+    @Transactional
+    fun toggleFlowerItemScrap(request: FlowerItemScrapToggleRequest): ScrapToggleResponse {
+        val userId = TenantContext.currentUserId()
+        val pumName = requireNotNull(request.pumName).trim()
+        val existing = flowerItemScrapRepository.findByUserIdAndPumName(userId, pumName)
+        if (existing != null) {
+            flowerItemScrapRepository.delete(existing)
+            return ScrapToggleResponse(scraped = false)
+        }
+        try {
+            flowerItemScrapRepository.save(FlowerItemScrap(userId = userId, pumName = pumName))
+        } catch (_: DataIntegrityViolationException) {
+            // 동시 토글 경쟁: UNIQUE(user_id,pum_name) 위반 → 이미 스크랩된 것으로 간주(멱등).
+        }
+        return ScrapToggleResponse(scraped = true)
+    }
+
+    /** 내가 스크랩한 경매 품목명 목록(최신순). 경매 요약 '스크랩만' 필터·표시용. */
+    @Transactional(readOnly = true)
+    fun flowerItemScrapNames(): FlowerItemScrapListResponse {
+        val userId = TenantContext.currentUserId()
+        return FlowerItemScrapListResponse(
+            flowerItemScrapRepository.findByUserIdOrderByCreatedAtDesc(userId).map { it.pumName },
+        )
     }
 
     /** 스크랩 메모 수정. 아직 스크랩 안 했으면 메모와 함께 생성(upsert). */
