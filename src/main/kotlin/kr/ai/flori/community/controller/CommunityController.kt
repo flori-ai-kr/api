@@ -11,6 +11,7 @@ import kr.ai.flori.community.dto.PostCreateRequest
 import kr.ai.flori.community.dto.PostResponse
 import kr.ai.flori.community.dto.PostUpdateRequest
 import kr.ai.flori.community.dto.PostsPageResponse
+import kr.ai.flori.community.dto.ReportCreateRequest
 import kr.ai.flori.community.service.CommunityService
 import kr.ai.flori.community.service.CommunityUploadService
 import kr.ai.flori.verification.gating.RequiresBusinessVerified
@@ -105,5 +106,23 @@ class CommunityController(
         @PathVariable id: Long,
     ) {
         communityService.deleteComment(id)
+    }
+
+    @PostMapping("/posts/{id}/report")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun reportPost(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: ReportCreateRequest,
+    ) {
+        communityService.reportPost(id, request)
+    }
+
+    @PostMapping("/comments/{id}/report")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun reportComment(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: ReportCreateRequest,
+    ) {
+        communityService.reportComment(id, request)
     }
 }

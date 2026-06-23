@@ -1,6 +1,9 @@
 package kr.ai.flori.admin.controller
 
 import kr.ai.flori.admin.dto.AdminOverviewResponse
+import kr.ai.flori.admin.dto.ChurnReasonSlice
+import kr.ai.flori.admin.dto.FunnelStage
+import kr.ai.flori.admin.dto.RetentionCohortRow
 import kr.ai.flori.admin.dto.TimeseriesPoint
 import kr.ai.flori.admin.gating.RequiresAdmin
 import kr.ai.flori.admin.service.AdminStatsService
@@ -25,4 +28,15 @@ class AdminStatsController(
         @RequestParam metric: String,
         @RequestParam(defaultValue = "30d") range: String,
     ): List<TimeseriesPoint> = statsService.timeseries(metric, range)
+
+    @GetMapping("/funnel")
+    fun funnel(): List<FunnelStage> = statsService.funnel()
+
+    @GetMapping("/churn-reasons")
+    fun churnReasons(
+        @RequestParam(defaultValue = "30") days: Int,
+    ): List<ChurnReasonSlice> = statsService.churnReasons(days)
+
+    @GetMapping("/retention")
+    fun retention(): List<RetentionCohortRow> = statsService.retentionCohort()
 }

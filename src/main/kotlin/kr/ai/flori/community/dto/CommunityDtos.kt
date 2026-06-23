@@ -61,6 +61,14 @@ data class CommentCreateRequest(
     val isSecret: Boolean = false,
 )
 
+/** 신고 생성. reason은 화이트리스트 검증(서비스), detail은 선택 상세 설명. */
+data class ReportCreateRequest(
+    @field:NotBlank(message = "신고 사유는 필수입니다")
+    val reason: String?,
+    @field:Size(max = FieldLimits.CONTENT_TEXT, message = "상세 설명이 너무 깁니다")
+    val detail: String? = null,
+)
+
 data class CommunityFileMetaRequest(
     @field:NotBlank val name: String?,
     @field:NotBlank val type: String?,
