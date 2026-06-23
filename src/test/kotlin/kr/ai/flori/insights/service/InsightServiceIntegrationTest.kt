@@ -262,14 +262,15 @@ class InsightServiceIntegrationTest {
     // ── 지원사업 ──────────────────────────────────────────────────────────
 
     @Test
-    fun `지원사업은 마감 임박순(nulls last)과 dDay 를 계산한다`() {
+    fun `지원사업은 마감 임박순(nulls last)과 dDay 를 계산하고 만료 공고는 제외한다`() {
         val today = LocalDate.now(KST)
         programRepository.save(program(title = "마감없음", applyEnd = null))
         programRepository.save(program(title = "10일후", applyEnd = today.plusDays(10)))
         programRepository.save(program(title = "3일후", applyEnd = today.plusDays(3)))
+        programRepository.save(program(title = "이미마감", applyEnd = today.minusDays(1))) // 만료 → 제외돼야 함
 
         val grants = insightService.listGrants(null, 0, 50)
-        assertThat(grants.map { it.title }).containsExactly("3일후", "10일후", "마감없음")
+        assertThat(grants.map { it.title }).containsExactly("3일후", "10일후", "마감없음") // "이미마감" 제외
         assertThat(grants[0].dDay).isEqualTo(3)
         assertThat(grants[1].dDay).isEqualTo(10)
         assertThat(grants[2].dDay).isNull()

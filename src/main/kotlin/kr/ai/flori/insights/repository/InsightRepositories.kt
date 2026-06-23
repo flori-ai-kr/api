@@ -39,10 +39,14 @@ interface FlowerAuctionPriceRepository : JpaRepository<FlowerAuctionPrice, Long>
  * 지원사업(공유 읽기). 테넌트 격리 없음 — 의도적 전역.
  */
 interface SupportProgramRepository : JpaRepository<SupportProgram, Long> {
-    /** 목록: 카테고리 필터(없으면 전체) + 마감(apply_end) 임박순(nulls last). */
+    /**
+     * 목록: 카테고리 필터(없으면 전체) + 모집중(마감 미경과 또는 상시[null])만 + 마감 임박순(nulls last).
+     * 마감 지난 공고는 노출에서 제외한다(만료 공고가 임박순 앞에 깔리는 문제 방지).
+     */
     @Query(
         "SELECT p FROM SupportProgram p " +
             "WHERE (:category IS NULL OR p.category = :category) " +
+            "AND (p.applyEnd IS NULL OR p.applyEnd >= CURRENT_DATE) " +
             "ORDER BY p.applyEnd ASC NULLS LAST, p.id DESC",
     )
     fun findFeed(
