@@ -7,6 +7,7 @@ import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.common.util.Paging
 import kr.ai.flori.common.validation.FieldLimits
 import kr.ai.flori.community.domain.CommunityCategories
+import kr.ai.flori.community.domain.CommunityReportReasons
 import kr.ai.flori.community.dto.CommentCreateRequest
 import kr.ai.flori.community.dto.CommentResponse
 import kr.ai.flori.community.dto.LikeToggleResponse
@@ -14,13 +15,17 @@ import kr.ai.flori.community.dto.PostCreateRequest
 import kr.ai.flori.community.dto.PostResponse
 import kr.ai.flori.community.dto.PostUpdateRequest
 import kr.ai.flori.community.dto.PostsPageResponse
+import kr.ai.flori.community.dto.ReportCreateRequest
 import kr.ai.flori.community.entity.CommunityComment
 import kr.ai.flori.community.entity.CommunityLike
 import kr.ai.flori.community.entity.CommunityPost
+import kr.ai.flori.community.entity.CommunityReport
 import kr.ai.flori.community.error.CommunityErrorCode
+import kr.ai.flori.community.repository.CommunityBanRepository
 import kr.ai.flori.community.repository.CommunityCommentRepository
 import kr.ai.flori.community.repository.CommunityLikeRepository
 import kr.ai.flori.community.repository.CommunityPostRepository
+import kr.ai.flori.community.repository.CommunityReportRepository
 import kr.ai.flori.user.entity.User
 import kr.ai.flori.user.repository.UserRepository
 import org.springframework.stereotype.Service
@@ -36,10 +41,13 @@ import java.time.Instant
  * - like_count/comment_count는 비정규화(원자적 증감).
  */
 @Service
+@Suppress("TooManyFunctions")
 class CommunityService(
     private val postRepository: CommunityPostRepository,
     private val commentRepository: CommunityCommentRepository,
     private val likeRepository: CommunityLikeRepository,
+    private val reportRepository: CommunityReportRepository,
+    private val banRepository: CommunityBanRepository,
     private val userRepository: UserRepository,
 ) {
     private data class Viewer(
@@ -103,6 +111,7 @@ class CommunityService(
     @Transactional
     fun createPost(request: PostCreateRequest): PostResponse {
         val viewer = viewer()
+        requireNotBanned(viewer.id)
         val category = requireCategory(requireNotNull(request.category), viewer)
         val post =
             CommunityPost(
@@ -211,7 +220,7 @@ class CommunityService(
     fun listComments(postId: Long): List<CommentResponse> {
         val viewer = viewer()
         val post = loadPost(postId)
-        val comments = commentRepository.findByPostIdOrderByCreatedAtAsc(postId)
+        val comments = commentRepository.findByPostIdAndHiddenAtIsNullOrderByCreatedAtAsc(postId)
         val authors = authorsOf(comments.map { it.authorUserId })
         val authorById = comments.mapNotNull { c -> c.id?.let { it to c.authorUserId } }.toMap()
         return comments.map { comment ->
@@ -233,6 +242,7 @@ class CommunityService(
         request: CommentCreateRequest,
     ): CommentResponse {
         val viewer = viewer()
+        requireNotBanned(viewer.id)
         loadPost(postId)
         var secret = request.isSecret
         request.parentId?.let { parentId ->
@@ -273,7 +283,59 @@ class CommunityService(
         postRepository.adjustCommentCount(comment.postId, -1)
     }
 
+    // ── 신고 ──────────────────────────────────────────────────────────────
+
+    @Transactional
+    fun reportPost(
+        postId: Long,
+        request: ReportCreateRequest,
+    ) = report(CommunityReport.TARGET_POST, postId, request) { loadPost(postId) }
+
+    @Transactional
+    fun reportComment(
+        commentId: Long,
+        request: ReportCreateRequest,
+    ) = report(CommunityReport.TARGET_COMMENT, commentId, request) {
+        commentRepository.findByIdAndDeletedAtIsNull(commentId)
+            ?: throw AppException(CommunityErrorCode.COMMENT_NOT_FOUND)
+    }
+
+    // 신고 공통: 대상 존재 확인 → 사유 검증 → 중복이면 멱등 no-op → 저장.
+    private fun report(
+        targetType: String,
+        targetId: Long,
+        request: ReportCreateRequest,
+        loadTarget: () -> Unit,
+    ) {
+        val reporterId = TenantContext.currentUserId()
+        loadTarget()
+        val reason = requireReason(requireNotNull(request.reason))
+        if (reportRepository.existsByTargetTypeAndTargetIdAndReporterUserId(targetType, targetId, reporterId)) {
+            return
+        }
+        val entity =
+            CommunityReport(
+                targetType = targetType,
+                targetId = targetId,
+                reporterUserId = reporterId,
+                reason = reason,
+            )
+        entity.detail = request.detail
+        reportRepository.save(entity)
+    }
+
     // ── 내부 헬퍼 ────────────────────────────────────────────────────────
+
+    private fun requireReason(reason: String): String {
+        if (reason !in CommunityReportReasons.ALL) throw AppException(CommunityErrorCode.INVALID_REASON)
+        return reason
+    }
+
+    // 활성 차단(미해제 + 미만료) 사용자는 글/댓글 작성 금지.
+    private fun requireNotBanned(userId: Long) {
+        val ban = banRepository.findByUserIdAndLiftedAtIsNull(userId) ?: return
+        if (ban.isActive()) throw AppException(CommunityErrorCode.BANNED)
+    }
 
     private fun viewer(): Viewer {
         val id = TenantContext.currentUserId()
@@ -281,8 +343,9 @@ class CommunityService(
         return Viewer(id, user.isAdmin)
     }
 
+    // 일반 사용자 경로는 삭제뿐 아니라 운영자 숨김 글도 404 처리(노출 제외와 동일한 의미).
     private fun loadPost(id: Long): CommunityPost =
-        postRepository.findByIdAndDeletedAtIsNull(id)
+        postRepository.findByIdAndDeletedAtIsNullAndHiddenAtIsNull(id)
             ?: throw AppException(CommunityErrorCode.POST_NOT_FOUND)
 
     private fun canViewPost(

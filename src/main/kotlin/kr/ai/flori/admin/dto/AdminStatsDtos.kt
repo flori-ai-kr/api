@@ -37,3 +37,23 @@ data class TimeseriesPoint(
     val date: java.time.LocalDate,
     val count: Long,
 )
+
+/** 활성화 퍼널 1단계. */
+data class FunnelStage(
+    val key: String,
+    val label: String,
+    val count: Long,
+)
+
+/** 탈퇴 사유 집계 1건(최근 N일). */
+data class ChurnReasonSlice(
+    val reason: String,
+    val count: Long,
+)
+
+/** 주간 리텐션 코호트 1행. cohortWeek 가입 주, retention[i] = W{i} 잔존율(0~1). */
+data class RetentionCohortRow(
+    val cohortWeek: java.time.LocalDate,
+    val cohortSize: Long,
+    val retention: List<Double?>,
+)

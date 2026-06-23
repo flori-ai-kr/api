@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional
 class AdminVerificationService(
     private val repository: BusinessVerificationRepository,
     private val eventPublisher: ApplicationEventPublisher,
+    private val audit: AdminAuditService,
 ) {
     @Transactional(readOnly = true)
     fun list(
@@ -45,6 +46,13 @@ class AdminVerificationService(
         eventPublisher.publishEvent(
             BusinessVerificationReviewedEvent(verification.userId, verification.businessName, true, null),
         )
+        audit.record(
+            action = "VERIFICATION_APPROVE",
+            targetType = "verification",
+            targetId = id.toString(),
+            summary = "${verification.businessName} 인증 승인",
+            metadata = mapOf("userId" to verification.userId, "after" to mapOf("status" to "APPROVED")),
+        )
         return verification.toResponse()
     }
 
@@ -61,6 +69,13 @@ class AdminVerificationService(
         repository.save(verification)
         eventPublisher.publishEvent(
             BusinessVerificationReviewedEvent(verification.userId, verification.businessName, false, reason),
+        )
+        audit.record(
+            action = "VERIFICATION_REJECT",
+            targetType = "verification",
+            targetId = id.toString(),
+            summary = "${verification.businessName} 인증 거절",
+            metadata = mapOf("userId" to verification.userId, "reason" to reason),
         )
         return verification.toResponse()
     }
