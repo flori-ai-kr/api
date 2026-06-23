@@ -19,5 +19,6 @@ data class AiGatewayProperties(
     /** OCR 쓰기 제안 TTL(초). 이 시간이 지나면 확인 불가(만료). */
     val proposalTtlSeconds: Long = 86400,
     val connectTimeoutMs: Int = 3000,
-    val readTimeoutMs: Int = 60000,
+    // 마케팅 블로그 생성은 멀티모달(사진≤4) + 장문(1500~2500자)이라 LLM 응답이 길다 — 여유 90초.
+    val readTimeoutMs: Int = 90000,
 )
