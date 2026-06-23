@@ -81,9 +81,10 @@ class InsightController(
     @GetMapping("/grants")
     fun listGrants(
         @RequestParam(required = false) category: String?,
+        @RequestParam(required = false) keyword: String?,
         @RequestParam(defaultValue = "0") offset: Int,
         @RequestParam(defaultValue = "50") limit: Int,
-    ): List<SupportProgramResponse> = insightService.listGrants(category, offset, limit)
+    ): List<SupportProgramResponse> = insightService.listGrants(category, keyword, offset, limit)
 
     // ── 스크랩(개인) ───────────────────────────────────────────────────────
 

@@ -139,13 +139,14 @@ class InsightService(
     @Transactional(readOnly = true)
     fun listGrants(
         category: String?,
+        keyword: String?,
         offset: Int,
         limit: Int,
     ): List<SupportProgramResponse> {
         val today = LocalDate.now(KST)
         val pageable = Paging.offsetLimit(offset, limit, MAX_LIMIT)
         return supportProgramRepository
-            .findFeed(category?.takeIf { it.isNotBlank() }, pageable)
+            .findFeed(category?.takeIf { it.isNotBlank() }, (keyword ?: "").trim(), pageable)
             .content
             .map { SupportProgramResponse.from(it, today) }
     }

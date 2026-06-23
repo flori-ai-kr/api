@@ -269,11 +269,26 @@ class InsightServiceIntegrationTest {
         programRepository.save(program(title = "3일후", applyEnd = today.plusDays(3)))
         programRepository.save(program(title = "이미마감", applyEnd = today.minusDays(1))) // 만료 → 제외돼야 함
 
-        val grants = insightService.listGrants(null, 0, 50)
+        val grants = insightService.listGrants(null, null, 0, 50)
         assertThat(grants.map { it.title }).containsExactly("3일후", "10일후", "마감없음") // "이미마감" 제외
         assertThat(grants[0].dDay).isEqualTo(3)
         assertThat(grants[1].dDay).isEqualTo(10)
         assertThat(grants[2].dDay).isNull()
+    }
+
+    @Test
+    fun `지원사업 검색은 제목·기관을 대소문자 무시 부분일치로 거른다`() {
+        val today = LocalDate.now(KST)
+        programRepository.save(program(title = "청년 창업 자금 지원", applyEnd = today.plusDays(5)))
+        programRepository.save(program(title = "수출 판로 마케팅 지원", applyEnd = today.plusDays(5)))
+
+        // 제목 부분일치
+        assertThat(insightService.listGrants(null, "마케팅", 0, 50).map { it.title })
+            .containsExactly("수출 판로 마케팅 지원")
+        // 기관명(헬퍼가 모두 "소진공")으로도 매칭
+        assertThat(insightService.listGrants(null, "소진공", 0, 50)).hasSize(2)
+        // 공백 키워드는 필터 없음(전체)
+        assertThat(insightService.listGrants(null, "   ", 0, 50)).hasSize(2)
     }
 
     // ── 스크랩(개인) ──────────────────────────────────────────────────────

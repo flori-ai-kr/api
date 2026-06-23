@@ -42,15 +42,21 @@ interface SupportProgramRepository : JpaRepository<SupportProgram, Long> {
     /**
      * 목록: 카테고리 필터(없으면 전체) + 모집중(마감 미경과 또는 상시[null])만 + 마감 임박순(nulls last).
      * 마감 지난 공고는 노출에서 제외한다(만료 공고가 임박순 앞에 깔리는 문제 방지).
+     * keyword(빈 문자열이면 전체)로 제목·요약·기관명을 대소문자 무시 부분일치 검색한다.
+     * (null 바인드는 CONCAT 타입추론을 깨므로 호출부에서 빈 문자열로 정규화 — 빈값은 제목 LIKE '%%'로 전체 매칭.)
      */
     @Query(
         "SELECT p FROM SupportProgram p " +
             "WHERE (:category IS NULL OR p.category = :category) " +
             "AND (p.applyEnd IS NULL OR p.applyEnd >= CURRENT_DATE) " +
+            "AND (LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(p.summary) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(p.agency) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
             "ORDER BY p.applyEnd ASC NULLS LAST, p.id DESC",
     )
     fun findFeed(
         @Param("category") category: String?,
+        @Param("keyword") keyword: String,
         pageable: Pageable,
     ): Page<SupportProgram>
 
