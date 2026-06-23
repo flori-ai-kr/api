@@ -176,17 +176,17 @@ class InsightServiceIntegrationTest {
     }
 
     @Test
-    fun `경매 요약은 부분 적재된 최신일을 건너뛰고 완전한 날을 기본으로 쓴다`() {
-        // 6/17: 완전(10행). 6/18: 부분(1행) → 요약 기본 기준일은 6/17.
+    fun `경매 요약은 날짜 미지정 시 데이터가 있는 최신 정산일을 쓴다(부분일이라도)`() {
+        // 6/17: 10행, 6/18: 1행(부분) → 기본 기준일은 최신일 6/18(부분 여부 무관).
         repeat(10) { i ->
             priceRepository.save(summaryRow(LocalDate.of(2026, 6, 17), pum = "품목$i", avg = 1000, qty = 100, amt = 100_000))
         }
         priceRepository.save(summaryRow(LocalDate.of(2026, 6, 18), pum = "장미", avg = 9999, qty = 1, amt = 9999))
 
         val res = insightService.auctionSummary(null, null)
-        assertThat(res.date).isEqualTo(LocalDate.of(2026, 6, 17))
+        assertThat(res.date).isEqualTo(LocalDate.of(2026, 6, 18))
         assertThat(res.source).isEqualTo("화훼유통정보(aT)")
-        assertThat(res.items).hasSize(10)
+        assertThat(res.items).hasSize(1)
     }
 
     @Test

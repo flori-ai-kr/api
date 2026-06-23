@@ -100,7 +100,7 @@ class InsightService(
         auctionPriceQueryRepository.distinctDates(gubn?.takeIf { it.isNotBlank() }, DATE_LIST_CAP)
 
     /**
-     * 경매 요약: 대상일(없으면 완전한 최신 정산일)의 품목(pum_name) 단위 요약 + 출처.
+     * 경매 요약: 대상일(없으면 최신 정산일)의 품목(pum_name) 단위 요약 + 출처.
      * gubn 은 flower_gubn(절화/관엽/난/춘란 텍스트) 필터. repChangeRate 는 등락 방식 A(매칭 품종·등급 중앙값).
      * 데이터가 전혀 없으면 date=null, items=[] 로 응답한다(404 대신 빈 결과 — 표시 전용 UX).
      */
@@ -111,16 +111,16 @@ class InsightService(
     ): AuctionSummaryResponse {
         val gubnFilter = gubn?.takeIf { it.isNotBlank() }
         val targetDate =
-            date ?: auctionPriceQueryRepository.latestCompleteDate(gubnFilter)
+            date ?: auctionPriceQueryRepository.latestDate(gubnFilter, null)
                 ?: return AuctionSummaryResponse(date = null, source = FlowerCategories.SOURCE, items = emptyList())
         val items = auctionPriceQueryRepository.summaryOn(targetDate, gubnFilter).map(AuctionSummaryItem::from)
         return AuctionSummaryResponse(date = targetDate, source = FlowerCategories.SOURCE, items = items)
     }
 
     /**
-     * 경매 시세 드릴다운: 대상일(없으면 완전한 최신 정산일)의 시세 행 + 직전 정산일자 대비 등락률(파생).
+     * 경매 시세 드릴다운: 대상일(없으면 최신 정산일)의 시세 행 + 직전 정산일자 대비 등락률(파생).
      * gubn 은 flower_gubn(절화/관엽/난/춘란 텍스트), item 은 pum_name(품목) 필터.
-     * date 기본값은 요약과 동일하게 "완전한 최신 정산일"을 쓴다(요약↔드릴다운 일관성).
+     * date 기본값은 요약과 동일하게 "최신 정산일"을 쓴다(요약↔드릴다운 일관성).
      * 데이터가 전혀 없으면 date=null, prices=[] 로 응답한다(404 대신 빈 결과 — 표시 전용 UX).
      * source 는 이용허락범위(제작자 표시) 준수용 출처 표기로 항상 채운다.
      */
@@ -133,7 +133,7 @@ class InsightService(
         val gubnFilter = gubn?.takeIf { it.isNotBlank() }
         val itemFilter = item?.takeIf { it.isNotBlank() }
         val targetDate =
-            date ?: auctionPriceQueryRepository.latestCompleteDate(gubnFilter)
+            date ?: auctionPriceQueryRepository.latestDate(gubnFilter, null)
                 ?: return AuctionPricesResponse(date = null, source = FlowerCategories.SOURCE, prices = emptyList())
         val rows = auctionPriceQueryRepository.ratesOn(targetDate, gubnFilter, itemFilter).map(AuctionPriceResponse::from)
         return AuctionPricesResponse(date = targetDate, source = FlowerCategories.SOURCE, prices = rows)

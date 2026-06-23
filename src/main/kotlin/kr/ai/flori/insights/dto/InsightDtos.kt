@@ -129,7 +129,7 @@ data class AuctionSummaryItem(
 }
 
 /**
- * 경매 요약 조회 응답: 기준 정산일자(완전한 최신일) + 출처 + 품목 요약 목록(거래량 많은 순).
+ * 경매 요약 조회 응답: 기준 정산일자(최신일) + 출처 + 품목 요약 목록(거래량 많은 순).
  * date 가 null 이면 데이터가 없는 것. source 는 이용허락범위(제작자 표시) 준수용 출처 표기.
  */
 data class AuctionSummaryResponse(
