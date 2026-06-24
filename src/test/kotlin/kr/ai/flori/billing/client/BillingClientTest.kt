@@ -1,6 +1,7 @@
 package kr.ai.flori.billing.client
 
 import kr.ai.flori.billing.config.TossPaymentsProperties
+import kr.ai.flori.billing.error.BillingErrorCode
 import kr.ai.flori.common.error.AppException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -40,6 +41,8 @@ class BillingClientTest {
         val result = client.issueBillingKey(authKey = "auth_1", customerKey = "cust_1")
         assertThat(result.billingKey).isEqualTo("bk_123")
         assertThat(result.cardCompany).isEqualTo("신한")
+        assertThat(result.cardNumber).isEqualTo("1234****")
+        assertThat(result.cardType).isEqualTo("체크")
         server.verify()
     }
 
@@ -65,6 +68,7 @@ class BillingClientTest {
                 idempotencyKey = "sub1_20260708_a1",
             )
         assertThat(result.paymentKey).isEqualTo("pay_999")
+        assertThat(result.orderId).isEqualTo("sub1_20260708_a1")
         server.verify()
     }
 
@@ -81,6 +85,7 @@ class BillingClientTest {
         assertThatThrownBy {
             client.approveBilling("bk_123", "cust_1", 14900, "o1", "flori 월 구독", "o1")
         }.isInstanceOf(AppException::class.java)
+            .satisfies({ ex -> assertThat((ex as AppException).errorCode).isEqualTo(BillingErrorCode.PAYMENT_REJECTED) })
         server.verify()
     }
 }
