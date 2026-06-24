@@ -111,7 +111,7 @@ class InsightService(
         val today = LocalDate.now(KST)
         val pageable = Paging.offsetLimit(offset, limit, MAX_LIMIT)
         return supportProgramRepository
-            .findFeed(category?.takeIf { it.isNotBlank() }, (keyword ?: "").trim(), pageable)
+            .findFeed(category?.takeIf { it.isNotBlank() }, (keyword ?: "").trim(), today, pageable)
             .content
             .map { SupportProgramResponse.from(it, today) }
     }
