@@ -18,8 +18,8 @@ data class KStartupApiProperties(
     val serviceKey: String = "",
     /** 적재 cron 스케줄(KST cron 식). */
     val cron: String = "0 0 7 * * *",
-    /** 매 실행 시 적재할 페이지 수(최신순 perPage*pages 건 커버). */
-    val pages: Int = 5,
+    /** 매 실행 시 조회할 페이지 수(최신순 perPage*pages 건). 소상공인 관련도 필터로 적재량이 줄어 넉넉히 잡는다. */
+    val pages: Int = 10,
     /** 페이지당 결과 수(perPage). */
     val pageSize: Int = 100,
 )

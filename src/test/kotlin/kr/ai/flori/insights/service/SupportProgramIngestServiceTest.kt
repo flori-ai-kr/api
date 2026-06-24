@@ -87,7 +87,7 @@ class SupportProgramIngestServiceTest {
 
     @Test
     fun `사업공고를 파싱해 적재하고 yyyyMMdd 날짜를 변환한다`() {
-        val service = ingestServiceWith(mapOf(1 to sampleJson(178198, "딥테크 특화 창업중심대학", "20260708")))
+        val service = ingestServiceWith(mapOf(1 to sampleJson(178198, "소상공인 온라인판로 지원사업", "20260708")))
 
         service.scheduledIngest()
 
@@ -96,7 +96,7 @@ class SupportProgramIngestServiceTest {
         val row = rows.first()
         assertThat(row.source).isEqualTo("k-startup")
         assertThat(row.sourceId).isEqualTo("178198")
-        assertThat(row.title).isEqualTo("딥테크 특화 창업중심대학")
+        assertThat(row.title).isEqualTo("소상공인 온라인판로 지원사업")
         assertThat(row.agency).isEqualTo("중소벤처기업부")
         assertThat(row.category).isEqualTo("fund") // 사업화 → fund
         assertThat(row.target).isEqualTo("일반기업")
@@ -107,14 +107,23 @@ class SupportProgramIngestServiceTest {
 
     @Test
     fun `재실행 시 같은 공고는 멱등 upsert 되고 정정이 반영된다`() {
-        ingestServiceWith(mapOf(1 to sampleJson(178198, "옛 제목", "20260708"))).scheduledIngest()
+        ingestServiceWith(mapOf(1 to sampleJson(178198, "소상공인 융자 옛 제목", "20260708"))).scheduledIngest()
         // 같은 pbanc_sn, 제목·마감일만 다른 값으로 재적재.
-        ingestServiceWith(mapOf(1 to sampleJson(178198, "새 제목", "20260709"))).scheduledIngest()
+        ingestServiceWith(mapOf(1 to sampleJson(178198, "소상공인 융자 새 제목", "20260709"))).scheduledIngest()
 
         assertThat(programRepository.count()).isEqualTo(1)
         val row = programRepository.findAll().first()
-        assertThat(row.title).isEqualTo("새 제목")
+        assertThat(row.title).isEqualTo("소상공인 융자 새 제목")
         assertThat(row.applyEnd).isEqualTo(LocalDate.of(2026, 7, 9))
+    }
+
+    @Test
+    fun `소상공인·화훼와 무관한 공고는 적재하지 않는다`() {
+        val service = ingestServiceWith(mapOf(1 to sampleJson(178199, "반도체 소부장 R&D 지원", "20260708")))
+
+        service.scheduledIngest()
+
+        assertThat(programRepository.count()).isZero()
     }
 
     @Test

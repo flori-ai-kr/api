@@ -132,6 +132,23 @@ class BizinfoIngestServiceTest {
     }
 
     @Test
+    fun `소상공인·화훼와 무관한 공고는 적재하지 않는다`() {
+        val irrelevant =
+            """
+            {"jsonArray":[
+              {"pblancId":"PBLN_9","pblancNm":"반도체 소부장 R&D 지원","jrsdInsttNm":"산업통상자원부",
+               "trgetNm":"중소기업","bsnsSumryCn":"기술개발 지원","reqstBeginEndDe":"20260601 ~ 20260630",
+               "pldirSportRealmLclasCodeNm":"기술","pblancUrl":"/x"}
+            ]}
+            """.trimIndent()
+        val service = ingestServiceWith(mapOf(1 to irrelevant))
+
+        service.scheduledIngest()
+
+        assertThat(programRepository.count()).isZero()
+    }
+
+    @Test
     fun `crtfcKey 미설정이면 적재하지 않는다(no-op)`() {
         val service =
             BizinfoIngestService(

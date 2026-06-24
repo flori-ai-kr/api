@@ -3,6 +3,7 @@ package kr.ai.flori.insights.service
 import kr.ai.flori.insights.client.KStartupAnnouncement
 import kr.ai.flori.insights.client.KStartupApiClient
 import kr.ai.flori.insights.config.KStartupApiProperties
+import kr.ai.flori.insights.domain.GrantRelevance
 import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.scheduling.annotation.Scheduled
@@ -56,13 +57,15 @@ class SupportProgramIngestService(
             emptyList()
         }
 
-    /** 단일 공고 upsert. pbanc_sn/공고명 없으면 skip. */
+    /** 단일 공고 upsert. pbanc_sn/공고명 없거나 소상공인(꽃집) 무관이면 skip. */
     private fun upsert(item: KStartupAnnouncement): Int {
-        val sourceId = item.pbancSn?.toString() ?: return 0
+        val sourceId = item.pbancSn?.toString()
         val title =
             item.bizPbancNm?.takeIf { it.isNotBlank() }
                 ?: item.intgPbancBizNm?.takeIf { it.isNotBlank() }
-                ?: return 0
+        if (sourceId == null || title == null || !GrantRelevance.isRelevant(title, item.pbancCtnt, item.aplyTrgtCtnt)) {
+            return 0
+        }
         return jdbcTemplate.update(
             UPSERT_SQL,
             SOURCE,

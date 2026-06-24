@@ -3,6 +3,7 @@ package kr.ai.flori.insights.service
 import kr.ai.flori.insights.client.BizinfoApiClient
 import kr.ai.flori.insights.client.BizinfoItem
 import kr.ai.flori.insights.config.BizinfoApiProperties
+import kr.ai.flori.insights.domain.GrantRelevance
 import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.scheduling.annotation.Scheduled
@@ -65,10 +66,13 @@ class BizinfoIngestService(
             emptyList()
         }
 
-    /** 단일 공고 upsert. pblancId/공고명 없으면 skip. */
+    /** 단일 공고 upsert. pblancId/공고명 없거나 소상공인(꽃집) 무관이면 skip. */
     private fun upsert(item: BizinfoItem): Int {
-        val sourceId = item.pblancId?.takeIf { it.isNotBlank() } ?: return 0
-        val title = item.pblancNm?.takeIf { it.isNotBlank() } ?: return 0
+        val sourceId = item.pblancId?.takeIf { it.isNotBlank() }
+        val title = item.pblancNm?.takeIf { it.isNotBlank() }
+        if (sourceId == null || title == null || !GrantRelevance.isRelevant(title, item.bsnsSumryCn, item.trgetNm)) {
+            return 0
+        }
         val (start, end) = parsePeriod(item.reqstBeginEndDe)
         return jdbcTemplate.update(
             UPSERT_SQL,
