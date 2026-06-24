@@ -32,7 +32,7 @@ class SolapiNotifierTest {
     private fun awaitLog(): NotificationSendLog? {
         val deadline = System.currentTimeMillis() + 4000
         while (System.currentTimeMillis() < deadline) {
-            val row = repository.findAll().firstOrNull { it.source == "alimtalk" }
+            val row = repository.findAll().firstOrNull { it.source == "alimtalk" && it.targetUserId == 7L }
             if (row != null) return row
             Thread.sleep(50)
         }

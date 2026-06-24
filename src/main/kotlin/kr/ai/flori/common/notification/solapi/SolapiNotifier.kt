@@ -80,7 +80,7 @@ class SolapiNotifier(
             return
         }
         if (!properties.hasCredentials() || templateId.isBlank()) {
-            log.info("[Solapi] 미설정 — 콘솔 폴백: {} to={} vars={}", title, to, variables)
+            log.info("[Solapi] 미설정 — 콘솔 폴백: {} to={} keys={}", title, maskPhone(to), variables.keys)
             return
         }
         try {
