@@ -31,6 +31,8 @@ class NotificationSendLogRecorderAdapterTest {
         val failed = all.first { it.targetUserId == 2L }
         assertThat(failed.source).isEqualTo("alimtalk")
         assertThat(failed.status).isEqualTo("failed")
+        assertThat(failed.failedCount).isEqualTo(1)
+        assertThat(failed.sentCount).isEqualTo(0)
         assertThat(failed.errorMessage).isEqualTo("boom")
     }
 }
