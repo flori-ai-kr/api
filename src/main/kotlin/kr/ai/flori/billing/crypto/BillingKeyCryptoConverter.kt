@@ -21,7 +21,20 @@ import javax.crypto.spec.SecretKeySpec
 @Converter
 class BillingKeyCryptoConverter(
     @Value("\${billing.encryption-key}") encryptionKeyBase64: String,
+    @Value("\${spring.profiles.active:local}") activeProfile: String = "local",
 ) : AttributeConverter<String, String> {
+    init {
+        val decoded = Base64.getDecoder().decode(encryptionKeyBase64)
+        require(decoded.size == KEY_BYTES) {
+            "BILLING_ENCRYPTION_KEY는 32바이트(AES-256)여야 합니다"
+        }
+        // 운영 안전장치: 비-로컬 프로필에서 깃에 박힌 기본 암호화 키 사용 시 부팅 실패
+        val activeProfiles = activeProfile.split(",").map { it.trim() }.toSet()
+        require(activeProfiles.any { it in LOCAL_PROFILES } || encryptionKeyBase64 != DEV_DEFAULT_ENCRYPTION_KEY) {
+            "운영 환경(profile=$activeProfile)에서 기본 BILLING_ENCRYPTION_KEY를 사용할 수 없습니다. BILLING_ENCRYPTION_KEY 환경변수를 설정하세요."
+        }
+    }
+
     private val key = SecretKeySpec(Base64.getDecoder().decode(encryptionKeyBase64), "AES")
     private val random = SecureRandom()
 
@@ -48,5 +61,8 @@ class BillingKeyCryptoConverter(
         const val TRANSFORMATION = "AES/GCM/NoPadding"
         const val IV_BYTES = 12
         const val TAG_BITS = 128
+        const val KEY_BYTES = 32
+        const val DEV_DEFAULT_ENCRYPTION_KEY = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+        val LOCAL_PROFILES = setOf("local", "test", "default")
     }
 }
