@@ -14,6 +14,7 @@ import kr.ai.flori.photos.dto.UploadTargetResponse
 import kr.ai.flori.photos.entity.PhotoCard
 import kr.ai.flori.photos.entity.PhotoFile
 import kr.ai.flori.photos.repository.PhotoCardRepository
+import kr.ai.flori.sales.entity.Sale
 import kr.ai.flori.sales.repository.SaleRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -79,8 +80,12 @@ class PhotoCardService(
         card.memo = request.memo
         card.tags = request.tags.toTypedArray()
         card.photos = request.photos
-        card.saleId = request.saleId?.also { verifySaleOwnership(it) }
-        card.customerId = request.customerId?.also { verifyCustomerOwnership(it) }
+        val sale = request.saleId?.let { requireSale(it) }
+        card.saleId = sale?.id
+        // 고객 연결: 명시한 customerId가 우선, 없으면 연동 매출의 고객을 상속한다.
+        // (사진첩 고객 필터·고객 상세 집계가 photo_cards.customer_id 만 보므로, 매출/캘린더 플로우처럼
+        //  saleId 만 오는 경우에도 고객 연결이 누락되지 않게 한다.)
+        card.customerId = request.customerId?.also { verifyCustomerOwnership(it) } ?: sale?.customerId
         return toResponse(photoCardRepository.save(card))
     }
 
@@ -100,18 +105,20 @@ class PhotoCardService(
             requirePhotoLimit(it.size)
             card.photos = it
         }
-        request.saleId?.let {
-            verifySaleOwnership(it)
-            card.saleId = it
-        }
+        val requestSale = request.saleId?.let { requireSale(it) }
+        requestSale?.let { card.saleId = it.id }
         // saleId 와 동일하게 null=미변경. 연결 해제는 clearCustomer 플래그로만 처리.
         if (request.clearCustomer) {
             card.customerId = null
-        } else {
-            request.customerId?.let {
-                verifyCustomerOwnership(it)
-                card.customerId = it
-            }
+        } else if (request.customerId != null) {
+            verifyCustomerOwnership(request.customerId)
+            card.customerId = request.customerId
+        } else if (card.customerId == null) {
+            // 고객 지정/해제 신호가 없고 아직 미연결이면, 연동 매출의 고객을 상속(과거 데이터·매출 플로우 백필).
+            // 이미 고객이 연결된 카드는 건드리지 않는다 — 사진첩에서 수동 연결한 고객을 매출 고객으로 덮어쓰지 않기 위함.
+            // 이번 요청으로 검증·조회한 sale을 우선 재사용하고, 없으면 카드의 기존 sale_id로 조회(2차 쿼리 회피).
+            val sale = requestSale ?: card.saleId?.let { findSale(it) }
+            card.customerId = sale?.customerId
         }
         return toResponse(photoCardRepository.save(card))
     }
@@ -240,12 +247,13 @@ class PhotoCardService(
         photoCardRepository.findByIdAndUserId(id, TenantContext.currentUserId())
             ?: throw AppException(CommonErrorCode.NOT_FOUND, "사진 카드를 찾을 수 없습니다")
 
-    /** 매출 연동(sale_id) 소유권 검증 — 타 테넌트 매출 연결 차단. */
-    private fun verifySaleOwnership(saleId: Long) {
-        if (saleRepository.findByIdAndUserId(saleId, TenantContext.currentUserId()) == null) {
-            throw AppException(CommonErrorCode.VALIDATION, "유효하지 않은 매출입니다")
-        }
-    }
+    /** 매출 연동(sale_id) 소유권 검증 후 매출 반환 — 타 테넌트 매출 연결 차단 + 고객 상속에 사용. */
+    private fun requireSale(saleId: Long): Sale =
+        saleRepository.findByIdAndUserId(saleId, TenantContext.currentUserId())
+            ?: throw AppException(CommonErrorCode.VALIDATION, "유효하지 않은 매출입니다")
+
+    /** 매출 조회(테넌트 격리, 없으면 null). 이미 저장된 card.saleId 처럼 throw 없이 고객을 상속받을 때 사용. */
+    private fun findSale(saleId: Long): Sale? = saleRepository.findByIdAndUserId(saleId, TenantContext.currentUserId())
 
     /** 고객 연동(customer_id) 소유권 검증 — 타 테넌트 고객 연결 차단. */
     private fun verifyCustomerOwnership(customerId: Long) {
