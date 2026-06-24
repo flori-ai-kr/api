@@ -33,4 +33,15 @@ enum class AdminErrorCode(
 
     // 문의 인박스
     INQUIRY_NOT_FOUND("E-ADM-014", HttpStatus.NOT_FOUND, "문의를 찾을 수 없습니다"),
+
+    // AI 프롬프트 레지스트리(SPEC-AI-008)
+    PROMPT_NOT_FOUND("E-ADM-015", HttpStatus.NOT_FOUND, "프롬프트를 찾을 수 없습니다"),
+    CANNOT_DELETE_ACTIVE_PROMPT(
+        "E-ADM-016",
+        HttpStatus.UNPROCESSABLE_ENTITY,
+        "활성 프롬프트는 삭제할 수 없습니다. 다른 버전을 먼저 활성화하세요",
+    ),
+    INVALID_PROMPT_MODEL("E-ADM-017", HttpStatus.UNPROCESSABLE_ENTITY, "허용되지 않은 모델입니다"),
+    DUPLICATE_PROMPT_VERSION("E-ADM-018", HttpStatus.CONFLICT, "같은 채널에 이미 존재하는 버전입니다"),
+    INVALID_PROMPT_CHANNEL("E-ADM-019", HttpStatus.UNPROCESSABLE_ENTITY, "지원하지 않는 채널입니다"),
 }
