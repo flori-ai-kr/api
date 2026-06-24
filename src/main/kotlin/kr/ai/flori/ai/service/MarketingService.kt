@@ -3,6 +3,7 @@ package kr.ai.flori.ai.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import kr.ai.flori.ai.client.AiBlogCall
 import kr.ai.flori.ai.client.AiBlogDraft
+import kr.ai.flori.ai.client.AiPromptOverride
 import kr.ai.flori.ai.client.AiServerClient
 import kr.ai.flori.ai.dto.BlogDraft
 import kr.ai.flori.ai.dto.BlogFaq
@@ -40,6 +41,7 @@ class MarketingService(
     private val contextBuilder: MarketingContextBuilder,
     private val usageGuard: AiUsageGuard,
     private val objectMapper: ObjectMapper,
+    private val promptResolver: PromptResolver,
 ) {
     // @Transactional 미적용: generateBlog(LLM, ~15~40초)가 DB 커넥션을 점유하지 않게 한다(풀 고갈 방지).
     // 마케팅은 ai_chat_message를 기록하지 않아 카운트를 증가시키지 않음 → 캡은 best-effort(사전 차단만, OCR과 동일).
@@ -54,6 +56,17 @@ class MarketingService(
         val photoUrls = request.photoUrls?.filter { it.isNotBlank() }.orEmpty()
         val toneSamples = loadToneSamples(userId)
         val storeContext = contextBuilder.build(userId)
+        // DB active 프롬프트(정적 부분)를 주입. 없으면 null → ai-server geo_rules.py 폴백.
+        val promptOverride =
+            promptResolver.resolve(CHANNEL_BLOG)?.let {
+                AiPromptOverride(
+                    systemMd = it.systemMd,
+                    rulesMd = it.rulesMd,
+                    outputSpecMd = it.outputSpecMd,
+                    model = it.model,
+                    temperature = it.temperature,
+                )
+            }
 
         val call =
             AiBlogCall(
@@ -64,6 +77,7 @@ class MarketingService(
                 photoUrls = photoUrls,
                 toneSamples = toneSamples,
                 storeContext = storeContext,
+                promptOverride = promptOverride,
             )
 
         val start = System.nanoTime()
