@@ -4,6 +4,7 @@ import kr.ai.flori.insights.client.BizinfoApiClient
 import kr.ai.flori.insights.client.BizinfoItem
 import kr.ai.flori.insights.config.BizinfoApiProperties
 import kr.ai.flori.insights.domain.GrantRelevance
+import kr.ai.flori.insights.domain.HtmlText
 import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.scheduling.annotation.Scheduled
@@ -82,7 +83,7 @@ class BizinfoIngestService(
             item.jrsdInsttNm,
             mapCategory(item.pldirSportRealmLclasCodeNm),
             item.trgetNm,
-            item.bsnsSumryCn,
+            HtmlText.clean(item.bsnsSumryCn),
             start?.let(Date::valueOf),
             end?.let(Date::valueOf),
             absolutize(item.pblancUrl),

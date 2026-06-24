@@ -35,4 +35,11 @@ class GrantRelevanceTest {
         assertThat(GrantRelevance.isRelevant(null, null, null)).isFalse()
         assertThat(GrantRelevance.isRelevant("", "", "")).isFalse()
     }
+
+    @Test
+    fun `짧은 단어 부분일치 오탐을 막는다(지원예산·문화원)`() {
+        // "원예"가 "지원예산"에, "화원"이 "문화원"에 부분일치하던 오탐 — 키워드에서 제외했으므로 false.
+        assertThat(GrantRelevance.isRelevant("천안시 AX 실증기업 모집", "지원예산 70백만원 이내 지원", "중소기업")).isFalse()
+        assertThat(GrantRelevance.isRelevant("지역문화원 활성화 사업", null, "문화원")).isFalse()
+    }
 }
