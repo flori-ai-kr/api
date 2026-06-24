@@ -38,10 +38,10 @@ class BusinessVerificationReviewedListener(
             """.trimIndent()
         discordNotifier.notify(DiscordChannel.VERIFICATION, DiscordMessage.of(message))
 
-        // 승인 시에만 점주에게 알림톡 통보(거절은 운영자가 별도 안내). 전화번호는 프로필에서 조회.
+        // 승인 시에만 점주에게 알림톡 통보(거절은 Task 4에서 추가). 전화번호는 프로필에서 조회.
         if (event.approved) {
             val phone = userProfileRepository.findById(event.userId).map { it.phoneNumber }.orElse("")
-            solapiNotifier.sendBusinessApproved(phone, event.businessName)
+            solapiNotifier.sendBusinessApproved(event.userId, phone, event.businessName)
         }
     }
 

@@ -51,6 +51,8 @@ solapi:
   sender-phone: ${SOLAPI_SENDER_PHONE:}                              # 등록된 SMS 발신번호(폴백)
   pf-id: ${SOLAPI_PF_ID:}                                            # 카카오 발신프로필 ID
   approval-template-id: ${SOLAPI_APPROVAL_TEMPLATE_ID:}              # 사업자 인증 승인 알림톡 템플릿
+  submitted-template-id: ${SOLAPI_SUBMITTED_TEMPLATE_ID:}            # 사업자 인증 접수 알림톡 템플릿
+  rejected-template-id: ${SOLAPI_REJECTED_TEMPLATE_ID:}              # 사업자 인증 거절 알림톡 템플릿
 
 # S3 presigned 업로드 (bucket 미설정 시 관련 빈 미생성 — 로컬 부팅 가능)
 aws:

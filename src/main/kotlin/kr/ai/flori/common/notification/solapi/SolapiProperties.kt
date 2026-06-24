@@ -18,13 +18,16 @@ data class SolapiProperties(
     val pfId: String = "",
     /** 사업자 인증 승인 알림톡 템플릿 ID. */
     val approvalTemplateId: String = "",
+    /** 사업자 인증 접수(제출) 알림톡 템플릿 ID. */
+    val submittedTemplateId: String = "",
+    /** 사업자 인증 거절(반려) 알림톡 템플릿 ID. */
+    val rejectedTemplateId: String = "",
     val baseUrl: String = "https://api.solapi.com",
 ) {
-    /** 알림톡 발송에 필요한 값이 모두 설정됐는지. */
-    fun isConfigured(): Boolean =
+    /** 발송 공통 자격(키/시크릿/발신프로필/발신번호)이 모두 설정됐는지. 템플릿ID는 발송별로 따로 검사. */
+    fun hasCredentials(): Boolean =
         apiKey.isNotBlank() &&
             apiSecret.isNotBlank() &&
             pfId.isNotBlank() &&
-            approvalTemplateId.isNotBlank() &&
             senderPhone.isNotBlank()
 }
