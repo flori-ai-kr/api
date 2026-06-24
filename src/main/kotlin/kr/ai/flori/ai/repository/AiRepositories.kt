@@ -4,6 +4,7 @@ import kr.ai.flori.ai.entity.AiChatMessage
 import kr.ai.flori.ai.entity.AiChatSession
 import kr.ai.flori.ai.entity.AiMarketingContent
 import kr.ai.flori.ai.entity.AiProactiveLog
+import kr.ai.flori.ai.entity.AiPrompt
 import kr.ai.flori.ai.entity.AiToneProfile
 import kr.ai.flori.ai.entity.AiWriteProposal
 import org.springframework.data.domain.Page
@@ -60,4 +61,25 @@ interface AiMarketingContentRepository : JpaRepository<AiMarketingContent, Long>
         id: Long,
         userId: Long,
     ): AiMarketingContent?
+}
+
+/**
+ * AI 프롬프트 레지스트리(SPEC-AI-008). user 데이터가 아니라 운영 자산이므로 user_id 격리 없음 —
+ * 접근은 콘솔(@RequiresAdmin)과 게이트웨이 내부 로드로만 제한된다.
+ */
+interface AiPromptRepository : JpaRepository<AiPrompt, Long> {
+    /** 생성 시 주입할 active 프롬프트(채널당 1개). 없으면 null=폴백 신호. */
+    fun findFirstByChannelAndIsActiveTrueAndDeletedAtIsNull(channel: String): AiPrompt?
+
+    /** 콘솔 목록: 채널별, active 먼저 + 최신순(소프트삭제 제외). */
+    fun findByChannelAndDeletedAtIsNullOrderByIsActiveDescCreatedAtDesc(channel: String): List<AiPrompt>
+
+    /** 콘솔 상세/수정/삭제: 소프트삭제 제외. */
+    fun findByIdAndDeletedAtIsNull(id: Long): AiPrompt?
+
+    /** (channel, version) 중복 방지 검증용. */
+    fun findByChannelAndVersionAndDeletedAtIsNull(
+        channel: String,
+        version: String,
+    ): AiPrompt?
 }

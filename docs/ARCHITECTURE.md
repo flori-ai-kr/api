@@ -557,6 +557,7 @@ erDiagram
 | 알림 발송 이력(운영자) | `GET /admin/notification-logs`(?type&source&status) | Auth + **is_admin** |
 | 감사 로그(운영자) | `GET /admin/audit-logs`(?action&actorUserId) | Auth + **is_admin** |
 | 운영자 통계(확장) | `GET /admin/stats/funnel`, `GET /admin/stats/churn-reasons`(?days), `GET /admin/stats/retention` | Auth + **is_admin** |
+| AI 프롬프트 레지스트리(운영자) | `GET/POST /admin/prompts`(?channel), `GET/PATCH/DELETE /admin/prompts/{id}`, `POST /admin/prompts/{id}/activate`, `POST /admin/prompts/preview`(플레이그라운드, 저장X) — 마케팅 프롬프트 버전·활성화·튜닝 (SPEC-AI-008) | Auth + **is_admin** |
 | 사전등록 | `POST /waitlist`(201, 이메일+가게명 등록), `GET /waitlist/count`(카운트 조회) | **Public** (인증 불필요) |
 | 인터뷰 모집 | `POST /interview`(201, 이름+전화번호 신청) | **Public** (인증 불필요) |
 

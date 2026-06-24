@@ -8,6 +8,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
+import java.math.BigDecimal
 
 // ─── 게이트웨이 → ai-server(FastAPI, 내부망) 계약 ───────────────────
 // 인증: X-Internal-Key(게이트웨이 신뢰) + Authorization Bearer(유저 JWT — ai-server가 Spring 도구 호출에 사용)
@@ -71,6 +72,15 @@ data class AiStoreContext(
     @get:JsonProperty("top_products") @param:JsonProperty("top_products") val topProducts: List<String> = emptyList(),
 )
 
+// 게이트웨이가 DB active 프롬프트(SPEC-AI-008)를 ai-server에 주입하는 오버라이드(부분 적용). 어드민 신뢰 입력.
+data class AiPromptOverride(
+    @get:JsonProperty("system_md") @param:JsonProperty("system_md") val systemMd: String? = null,
+    @get:JsonProperty("rules_md") @param:JsonProperty("rules_md") val rulesMd: String? = null,
+    @get:JsonProperty("output_spec_md") @param:JsonProperty("output_spec_md") val outputSpecMd: String? = null,
+    val model: String? = null,
+    val temperature: BigDecimal? = null,
+)
+
 data class AiBlogCall(
     val channel: String,
     val keyword: String,
@@ -80,6 +90,7 @@ data class AiBlogCall(
     @get:JsonProperty("tone_samples") @param:JsonProperty("tone_samples") val toneSamples: List<String> = emptyList(),
     @get:JsonProperty("store_context") @param:JsonProperty("store_context") val storeContext: AiStoreContext? = null,
     val model: String? = null,
+    @get:JsonProperty("prompt_override") @param:JsonProperty("prompt_override") val promptOverride: AiPromptOverride? = null,
 )
 
 data class AiBlogSection(

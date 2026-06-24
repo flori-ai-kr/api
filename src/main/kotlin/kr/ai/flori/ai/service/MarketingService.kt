@@ -3,11 +3,14 @@ package kr.ai.flori.ai.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import kr.ai.flori.ai.client.AiBlogCall
 import kr.ai.flori.ai.client.AiBlogDraft
+import kr.ai.flori.ai.client.AiPromptOverride
 import kr.ai.flori.ai.client.AiServerClient
 import kr.ai.flori.ai.dto.BlogDraft
 import kr.ai.flori.ai.dto.BlogFaq
 import kr.ai.flori.ai.dto.BlogGenerateRequest
 import kr.ai.flori.ai.dto.BlogGenerateResponse
+import kr.ai.flori.ai.dto.BlogPreviewRequest
+import kr.ai.flori.ai.dto.BlogPreviewResponse
 import kr.ai.flori.ai.dto.BlogSection
 import kr.ai.flori.ai.dto.MarketingContentDetail
 import kr.ai.flori.ai.dto.MarketingContentSummary
@@ -40,6 +43,7 @@ class MarketingService(
     private val contextBuilder: MarketingContextBuilder,
     private val usageGuard: AiUsageGuard,
     private val objectMapper: ObjectMapper,
+    private val promptResolver: PromptResolver,
 ) {
     // @Transactional 미적용: generateBlog(LLM, ~15~40초)가 DB 커넥션을 점유하지 않게 한다(풀 고갈 방지).
     // 마케팅은 ai_chat_message를 기록하지 않아 카운트를 증가시키지 않음 → 캡은 best-effort(사전 차단만, OCR과 동일).
@@ -54,6 +58,17 @@ class MarketingService(
         val photoUrls = request.photoUrls?.filter { it.isNotBlank() }.orEmpty()
         val toneSamples = loadToneSamples(userId)
         val storeContext = contextBuilder.build(userId)
+        // DB active 프롬프트(정적 부분)를 주입. 없으면 null → ai-server geo_rules.py 폴백.
+        val promptOverride =
+            promptResolver.resolve(CHANNEL_BLOG)?.let {
+                AiPromptOverride(
+                    systemMd = it.systemMd,
+                    rulesMd = it.rulesMd,
+                    outputSpecMd = it.outputSpecMd,
+                    model = it.model,
+                    temperature = it.temperature,
+                )
+            }
 
         val call =
             AiBlogCall(
@@ -64,6 +79,7 @@ class MarketingService(
                 photoUrls = photoUrls,
                 toneSamples = toneSamples,
                 storeContext = storeContext,
+                promptOverride = promptOverride,
             )
 
         val start = System.nanoTime()
@@ -93,6 +109,41 @@ class MarketingService(
             )
 
         return BlogGenerateResponse(contentId = content.id!!.toString(), draft = draft)
+    }
+
+    /**
+     * 플레이그라운드 미리보기(SPEC-AI-008). 어드민이 보낸 임시 프롬프트 + 샘플 입력으로 ai-server를 호출해
+     * 초안만 돌려준다 — **저장하지 않는다**(DB·활성본 무영향). @RequiresAdmin은 컨트롤러가 게이팅한다.
+     */
+    fun previewBlog(
+        userJwt: String,
+        request: BlogPreviewRequest,
+    ): BlogPreviewResponse {
+        val userId = TenantContext.currentUserId()
+        val draft = request.promptDraft
+        val sample = request.sampleInput
+        val call =
+            AiBlogCall(
+                channel = CHANNEL_BLOG,
+                keyword = sample.keyword.trim().ifBlank { "장미 꽃다발" },
+                situation = sample.situation?.takeIf { it.isNotBlank() },
+                memo = sample.memo?.takeIf { it.isNotBlank() },
+                toneSamples =
+                    sample.toneSamples
+                        .map { it.trim() }
+                        .filter { it.isNotBlank() }
+                        .take(MAX_TONE_SAMPLES),
+                promptOverride =
+                    AiPromptOverride(
+                        systemMd = draft.systemMd,
+                        rulesMd = draft.rulesMd,
+                        outputSpecMd = draft.outputSpecMd,
+                        model = draft.model,
+                        temperature = draft.temperature,
+                    ),
+            )
+        val result = aiClient.generateBlog(userJwt, userId, call)
+        return BlogPreviewResponse(draft = toDraft(result.draft), model = result.model ?: "")
     }
 
     @Transactional(readOnly = true)

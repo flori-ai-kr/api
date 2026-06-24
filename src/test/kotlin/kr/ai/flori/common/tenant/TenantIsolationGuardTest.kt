@@ -80,6 +80,12 @@ class TenantIsolationGuardTest {
             "AnnouncementRepository#findByIdAndDeletedAtIsNull",
             "AnnouncementRepository#findActive",
             "AnnouncementRepository#findAllForAdmin",
+            // AI 프롬프트 레지스트리(SPEC-AI-008): user 데이터가 아니라 운영 자산(전역 단일 테이블).
+            // 접근은 콘솔(@RequiresAdmin)과 게이트웨이 내부 active 로드로만 제한된다.
+            "AiPromptRepository#findFirstByChannelAndIsActiveTrueAndDeletedAtIsNull",
+            "AiPromptRepository#findByChannelAndDeletedAtIsNullOrderByIsActiveDescCreatedAtDesc",
+            "AiPromptRepository#findByIdAndDeletedAtIsNull",
+            "AiPromptRepository#findByChannelAndVersionAndDeletedAtIsNull",
             // 대기자 명단(공개 모집): 인증/테넌시 없는 단일 전역 테이블 — email 중복 검사는 전역 unique 제약 대응
             "WaitlistRegistrationRepository#existsByEmail",
             // 유저 인터뷰 모집(공개): 인증/테넌시 없는 단일 전역 테이블 — phone 중복 검사는 전역 unique 제약 대응
