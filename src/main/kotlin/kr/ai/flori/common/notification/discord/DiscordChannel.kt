@@ -11,4 +11,5 @@ enum class DiscordChannel(
     VERIFICATION({ it.verificationWebhookUrl }),
     WAITLIST({ it.waitlistWebhookUrl }),
     INTERVIEW({ it.interviewWebhookUrl }),
+    BILLING({ it.billingWebhookUrl }),
 }
