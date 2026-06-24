@@ -12,6 +12,7 @@ import kr.ai.flori.support.dto.toResponse
 import kr.ai.flori.support.dto.validateInquiryCategory
 import kr.ai.flori.support.dto.validateInquiryStatus
 import kr.ai.flori.support.entity.SupportInquiry
+import kr.ai.flori.support.event.InquiryAnsweredEvent
 import kr.ai.flori.support.event.InquiryCreatedEvent
 import kr.ai.flori.support.repository.SupportInquiryRepository
 import org.springframework.context.ApplicationEventPublisher
@@ -101,6 +102,13 @@ class SupportInquiryService(
             targetId = id.toString(),
             summary = "문의 답변: ${inquiry.title}",
             metadata = mapOf("userId" to inquiry.userId, "after" to mapOf("status" to inquiry.status)),
+        )
+        eventPublisher.publishEvent(
+            InquiryAnsweredEvent(
+                inquiryId = id,
+                userId = inquiry.userId,
+                title = inquiry.title,
+            ),
         )
         return inquiry.toResponse()
     }
