@@ -16,7 +16,7 @@ import java.time.format.DateTimeFormatter
 /**
  * 창업진흥원 K-Startup 사업공고 적재.
  *
- * 매일 KST(기본 07:00) 실행 시 최신순(pbanc_sn desc)으로 pages 페이지를 수집해 support_programs 에 upsert 한다.
+ * 매일 KST(기본 06:31) 실행 시 최신순(pbanc_sn desc)으로 pages 페이지를 수집해 support_programs 에 upsert 한다.
  *
  * - upsert: ON CONFLICT (source, source_id) DO UPDATE. 같은 공고가 사후 수정될 수 있어 최신값으로 갱신(멱등 + 정정).
  * - 빈 페이지(data=[])면 더 없는 것으로 보고 중단.
@@ -31,7 +31,7 @@ class SupportProgramIngestService(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    @Scheduled(cron = "\${flori.kstartup-api.cron:0 0 7 * * *}", zone = "Asia/Seoul")
+    @Scheduled(cron = "\${flori.kstartup-api.cron:0 31 6 * * *}", zone = "Asia/Seoul")
     fun scheduledIngest() {
         if (properties.baseUrl.isBlank() || properties.serviceKey.isBlank()) {
             log.warn("지원사업 적재 건너뜀: flori.kstartup-api base-url/service-key 미설정 (no-op)")

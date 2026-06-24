@@ -17,7 +17,7 @@ import java.time.format.DateTimeFormatter
 /**
  * 기업마당(bizinfo) 지원사업 공고 적재 — 소진공·지자체·중기부 통합 집계.
  *
- * 매일 KST(기본 08:00) 실행 시 최신순으로 pages 페이지를 수집해 support_programs 에 source='bizinfo' 로 upsert 한다.
+ * 매일 KST(기본 06:32) 실행 시 최신순으로 pages 페이지를 수집해 support_programs 에 source='bizinfo' 로 upsert 한다.
  * K-Startup(SupportProgramIngestService)과 같은 테이블·UPSERT 문을 쓰며 source 값과 필드 매핑만 다르다.
  *
  * - upsert: ON CONFLICT (source, source_id) DO UPDATE. 같은 공고가 사후 수정될 수 있어 최신값으로 갱신(멱등 + 정정).
@@ -40,7 +40,7 @@ class BizinfoIngestService(
             ?.let { runCatching { URI(it).let { u -> "${u.scheme}://${u.authority}" } }.getOrNull() }
             .orEmpty()
 
-    @Scheduled(cron = "\${flori.bizinfo-api.cron:0 0 8 * * *}", zone = "Asia/Seoul")
+    @Scheduled(cron = "\${flori.bizinfo-api.cron:0 32 6 * * *}", zone = "Asia/Seoul")
     fun scheduledIngest() {
         if (properties.baseUrl.isBlank() || properties.crtfcKey.isBlank()) {
             log.warn("기업마당 적재 건너뜀: flori.bizinfo-api base-url/crtfc-key 미설정 (no-op)")
