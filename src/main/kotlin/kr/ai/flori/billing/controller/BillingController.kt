@@ -1,6 +1,8 @@
 package kr.ai.flori.billing.controller
 
 import jakarta.validation.Valid
+import kr.ai.flori.billing.dto.CardChangeRequest
+import kr.ai.flori.billing.dto.MeResponse
 import kr.ai.flori.billing.dto.PrepareResponse
 import kr.ai.flori.billing.dto.SubscribeRequest
 import kr.ai.flori.billing.dto.SubscriptionResponse
@@ -23,4 +25,18 @@ class BillingController(
     fun subscribe(
         @Valid @RequestBody request: SubscribeRequest,
     ): SubscriptionResponse = subscriptionService.subscribe(request)
+
+    @GetMapping("/me")
+    fun me(): MeResponse = subscriptionService.me()
+
+    @PostMapping("/cancel")
+    fun cancel(): SubscriptionResponse = subscriptionService.cancel()
+
+    @PostMapping("/resume")
+    fun resume(): SubscriptionResponse = subscriptionService.resume()
+
+    @PostMapping("/card")
+    fun changeCard(
+        @Valid @RequestBody request: CardChangeRequest,
+    ): SubscriptionResponse = subscriptionService.changeCard(request)
 }

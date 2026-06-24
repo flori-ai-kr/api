@@ -3,6 +3,7 @@ package kr.ai.flori.billing.dto
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import kr.ai.flori.billing.entity.BillingKey
+import kr.ai.flori.billing.entity.PaymentHistory
 import kr.ai.flori.billing.entity.Subscription
 import java.time.Instant
 
@@ -52,3 +53,24 @@ data class SubscriptionResponse(
             )
     }
 }
+
+data class CardChangeRequest(
+    @field:NotBlank val authKey: String,
+    @field:NotBlank val customerKey: String,
+)
+
+data class PaymentSummary(
+    val amount: Int,
+    val status: String,
+    val approvedAt: Instant?,
+    val createdAt: Instant,
+) {
+    companion object {
+        fun from(p: PaymentHistory): PaymentSummary = PaymentSummary(p.amount, p.status, p.approvedAt, p.createdAt)
+    }
+}
+
+data class MeResponse(
+    val subscription: SubscriptionResponse?,
+    val recentPayments: List<PaymentSummary>,
+)

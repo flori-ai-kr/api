@@ -1,6 +1,9 @@
 package kr.ai.flori.billing.service
 
 import kr.ai.flori.billing.client.BillingClient
+import kr.ai.flori.billing.dto.CardChangeRequest
+import kr.ai.flori.billing.dto.MeResponse
+import kr.ai.flori.billing.dto.PaymentSummary
 import kr.ai.flori.billing.dto.PrepareResponse
 import kr.ai.flori.billing.dto.SubscribeRequest
 import kr.ai.flori.billing.dto.SubscriptionResponse
@@ -11,6 +14,7 @@ import kr.ai.flori.billing.error.BillingErrorCode
 import kr.ai.flori.billing.event.SubscriptionStartedEvent
 import kr.ai.flori.billing.repository.BillingKeyRepository
 import kr.ai.flori.billing.repository.CouponRedemptionRepository
+import kr.ai.flori.billing.repository.PaymentHistoryRepository
 import kr.ai.flori.billing.repository.SubscriptionEligibilityRepository
 import kr.ai.flori.billing.repository.SubscriptionRepository
 import kr.ai.flori.billing.support.IdentityHasher
@@ -36,6 +40,7 @@ class SubscriptionService(
     private val billingClient: BillingClient,
     private val identityHasher: IdentityHasher,
     private val eventPublisher: ApplicationEventPublisher,
+    private val paymentHistoryRepository: PaymentHistoryRepository,
 ) {
     @Transactional(readOnly = true)
     fun prepare(): PrepareResponse {
@@ -134,6 +139,56 @@ class SubscriptionService(
         sub.nextBillingAt = next.toInstant()
         sub.currentPeriodEnd = next.toInstant()
         subscriptionRepository.save(sub)
+    }
+
+    @Transactional(readOnly = true)
+    fun me(): MeResponse {
+        val userId = TenantContext.currentUserId()
+        val sub = subscriptionRepository.findByUserId(userId)
+        val card = billingKeyRepository.findByUserId(userId)
+        val payments =
+            sub?.id?.let {
+                paymentHistoryRepository.findTop10BySubscriptionIdOrderByCreatedAtDesc(it).map(PaymentSummary::from)
+            } ?: emptyList()
+        return MeResponse(sub?.let { SubscriptionResponse.of(it, card) }, payments)
+    }
+
+    @Transactional
+    fun cancel(): SubscriptionResponse = setCancel(true)
+
+    @Transactional
+    fun resume(): SubscriptionResponse = setCancel(false)
+
+    private fun setCancel(flag: Boolean): SubscriptionResponse {
+        val userId = TenantContext.currentUserId()
+        val sub =
+            subscriptionRepository.findByUserId(userId)
+                ?: throw AppException(BillingErrorCode.SUBSCRIPTION_STATE, "구독이 없습니다")
+        if (sub.status !in ACTIVE_STATES) throw AppException(BillingErrorCode.SUBSCRIPTION_STATE, "해지/재개할 수 없는 상태입니다")
+        sub.cancelAtPeriodEnd = flag
+        return SubscriptionResponse.of(subscriptionRepository.save(sub), billingKeyRepository.findByUserId(userId))
+    }
+
+    @Transactional
+    fun changeCard(req: CardChangeRequest): SubscriptionResponse {
+        val userId = TenantContext.currentUserId()
+        val issued = billingClient.issueBillingKey(req.authKey, req.customerKey)
+        val card =
+            (
+                billingKeyRepository.findByUserId(userId)
+                    ?: throw AppException(BillingErrorCode.SUBSCRIPTION_STATE, "등록된 카드가 없습니다")
+            ).apply {
+                customerKey = req.customerKey
+                billingKey = issued.billingKey
+                issued.cardCompany?.let { cardCompany = it }
+                cardNumberMasked = issued.cardNumber
+                cardType = issued.cardType
+            }
+        val savedCard = billingKeyRepository.save(card)
+        val sub =
+            subscriptionRepository.findByUserId(userId)
+                ?: throw AppException(BillingErrorCode.SUBSCRIPTION_STATE, "구독이 없습니다")
+        return SubscriptionResponse.of(sub, savedCard)
     }
 
     private fun guardNotAlreadyActive(userId: Long) {
