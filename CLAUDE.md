@@ -63,7 +63,7 @@ src/main/kotlin/kr/ai/flori/
 ├── photos/                # 갤러리 (presigned 업로드) · 태그 · 고객 연결(customer_id 직접 필터)
 ├── settings/              # 카드사 · 매출/지출 설정 · 하단바 · 푸시 구독
 ├── community/             # 커뮤니티 게시판(단일 공유) · 비밀글/댓글·대댓글·좋아요·soft delete
-├── verification/          # 사업자 인증 (신청·상태조회·presigned 업로드·게이팅)
+├── verification/          # 사업자 인증 (신청·상태조회·presigned 업로드·게이팅) + 결과 알림톡(접수/승인/거절, SOLAPI) — 발송 결과는 notification_send_logs(source=alimtalk, type=business_verification)
 ├── waitlist/              # 사전등록 공개 모집 (인증 불필요 — POST /waitlist, GET /waitlist/count). 식별자: 이메일(정규화 UNIQUE)
 ├── interview/             # 유저 인터뷰 모집 (공개 — POST /interview, 이름+전화번호). 신청 시 Discord INTERVIEW 채널 비동기 알림
 ├── dashboard/             # 오늘/월 집계 · 네이티브 SQL 통계

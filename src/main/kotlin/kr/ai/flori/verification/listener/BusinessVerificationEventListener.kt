@@ -3,7 +3,9 @@ package kr.ai.flori.verification.listener
 import kr.ai.flori.common.notification.discord.DiscordChannel
 import kr.ai.flori.common.notification.discord.DiscordMessage
 import kr.ai.flori.common.notification.discord.DiscordNotifier
+import kr.ai.flori.common.notification.solapi.SolapiNotifier
 import kr.ai.flori.common.util.KST
+import kr.ai.flori.user.repository.UserProfileRepository
 import kr.ai.flori.verification.event.BusinessVerificationSubmittedEvent
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
@@ -12,14 +14,15 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 /**
- * 사업자 인증 신청 → Discord 알림. DB 커밋 후(AFTER_COMMIT) 비동기 발송.
- * 관리자는 링크로 등록증을 확인한 뒤 수동으로 승인/거절(SQL)한다.
+ * 사업자 인증 신청 → ① 운영자 Discord 알림 ② 점주에게 접수 알림톡(SOLAPI).
+ * DB 커밋 후(AFTER_COMMIT) 비동기 발송(각 Notifier @Async).
  */
 @Component
 class BusinessVerificationEventListener(
     private val discordNotifier: DiscordNotifier,
+    private val solapiNotifier: SolapiNotifier,
+    private val userProfileRepository: UserProfileRepository,
 ) {
-    // 발송 비동기화는 DiscordNotifier.notify(@Async)가 담당 — 여기 @Async를 두면 이중 디스패치.
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun handle(event: BusinessVerificationSubmittedEvent) {
         val now = ZonedDateTime.now(KST).format(TIMESTAMP_FORMAT)
@@ -34,6 +37,9 @@ class BusinessVerificationEventListener(
             - 등록증: ${event.businessLicenseUrl}
             """.trimIndent()
         discordNotifier.notify(DiscordChannel.VERIFICATION, DiscordMessage.of(message))
+
+        val phone = userProfileRepository.findById(event.userId).map { it.phoneNumber }.orElse("")
+        solapiNotifier.sendBusinessSubmitted(event.userId, phone, event.businessName)
     }
 
     private companion object {

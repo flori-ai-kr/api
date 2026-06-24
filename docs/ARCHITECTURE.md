@@ -1,6 +1,6 @@
 # Flori API — 아키텍처 & 기술 선정 이유
 
-> 최종 업데이트: 2026-06-21 (운영 콘솔 고도화 — 감사로그·브로드캐스트·커뮤니티 모더레이션·공지배너·1:1문의·퍼널/리텐션 통계 + `announcement`·`support` 패키지 신설)
+> 최종 업데이트: 2026-06-25 (사업자 인증 알림톡 — 접수·승인·거절 3종 SOLAPI 카카오 알림톡 + 발송 결과 기록(notification_send_logs))
 
 이 문서는 Flori(꽃집 어드민) **모바일 앱 백엔드 API**의 기술 스택과 아키텍처를 설명한다. 단순히 "무엇을 쓰는가"가 아니라 **"왜 이것을 골랐는가"**에 초점을 맞춘다. 모든 선택에는 *기존 Next.js+Supabase 웹앱의 비즈니스 로직을 네이티브 앱이 호출 가능한 REST API로 재구현하고, 자체 AWS 인프라 위에 올린다*는 도메인 맥락이 반영되어 있다.
 
@@ -37,6 +37,7 @@ flowchart TB
         KakaoAuth[kauth.kakao.com<br/>카카오 토큰교환]
         KakaoApi[kapi.kakao.com<br/>카카오 프로필조회]
         AtFlower[flower.at.or.kr<br/>aT 화훼유통정보 f001<br/>경매 시세]
+        Solapi[api.solapi.com<br/>카카오 알림톡 중계<br/>사업자 인증 접수·승인·거절]
     end
 
     App -->|"REST + Bearer JWT"| Sec
@@ -46,6 +47,7 @@ flowchart TB
     App -.->|"직접 업로드"| S3
     Sched --> Svc
     Sched -.->|"f001 경매시세 적재"| AtFlower
+    Svc -.->|"인증 접수·승인·거절<br/>알림톡(AFTER_COMMIT @Async)"| Solapi
     Svc -->|"PushDispatcher<br/>(FCM or VAPID)"| FCM
     Svc -->|"PushDispatcher<br/>(p256dh/auth 있으면)"| VAPID
     Adv -.->|"예기치 못한 오류"| Discord
@@ -61,7 +63,7 @@ flowchart TB
     class App,Collector client
     class Sec,Ctrl,Svc,Repo,Sched,Adv server
     class RDS,S3 store
-    class FCM,VAPID,Discord,KakaoAuth,KakaoApi ext
+    class FCM,VAPID,Discord,KakaoAuth,KakaoApi,AtFlower,Solapi ext
 ```
 
 핵심 원칙: **앱은 표시만 하고, 계산·검증·격리는 서버가 책임진다.** 지출총액 등은 서버가 SSOT로 계산해 응답하고, 멀티테넌시(사용자별 데이터 격리)는 RLS 없이 애플리케이션이 유일한 방어선으로 강제한다. 기존 웹앱은 당분간 Supabase 위에서 그대로 동작하며, 이 백엔드는 독립 인프라로 분리 운영한다.
@@ -683,6 +685,12 @@ flowchart LR
 | `KAKAO_REST_API_KEY` / `KAKAO_CLIENT_SECRET` | 카카오 OAuth (시크릿 '사용 안 함'이면 빈 값) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | 구글 OAuth |
 | `NAVER_CLIENT_ID` / `NAVER_CLIENT_SECRET` | 네이버 OAuth |
+| `SOLAPI_API_KEY` / `SOLAPI_API_SECRET` | SOLAPI 알림톡 API 자격증명 |
+| `SOLAPI_SENDER_PHONE` | 등록된 SMS 발신번호(알림톡 실패 시 폴백) |
+| `SOLAPI_PF_ID` | 카카오 발신프로필 ID (비즈채널 인증 후 발급) |
+| `SOLAPI_APPROVAL_TEMPLATE_ID` | 사업자 인증 승인 알림톡 템플릿 ID |
+| `SOLAPI_SUBMITTED_TEMPLATE_ID` | 사업자 인증 접수 알림톡 템플릿 ID |
+| `SOLAPI_REJECTED_TEMPLATE_ID` | 사업자 인증 거절 알림톡 템플릿 ID |
 
 ---
 
