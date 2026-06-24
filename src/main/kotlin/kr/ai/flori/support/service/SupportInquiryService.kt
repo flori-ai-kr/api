@@ -12,7 +12,9 @@ import kr.ai.flori.support.dto.toResponse
 import kr.ai.flori.support.dto.validateInquiryCategory
 import kr.ai.flori.support.dto.validateInquiryStatus
 import kr.ai.flori.support.entity.SupportInquiry
+import kr.ai.flori.support.event.InquiryCreatedEvent
 import kr.ai.flori.support.repository.SupportInquiryRepository
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -26,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional
 class SupportInquiryService(
     private val repository: SupportInquiryRepository,
     private val audit: AdminAuditService,
+    private val eventPublisher: ApplicationEventPublisher,
 ) {
     // ── 점주 ──────────────────────────────────────────────────────────────
 
@@ -41,7 +44,16 @@ class SupportInquiryService(
                 imageUrls = request.imageUrls.toTypedArray()
                 status = "open"
             }
-        return repository.save(inquiry).toResponse()
+        val saved = repository.save(inquiry)
+        eventPublisher.publishEvent(
+            InquiryCreatedEvent(
+                inquiryId = saved.id!!,
+                userId = saved.userId,
+                category = saved.category,
+                title = saved.title,
+            ),
+        )
+        return saved.toResponse()
     }
 
     @Transactional(readOnly = true)
