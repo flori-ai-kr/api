@@ -1,5 +1,6 @@
 package kr.ai.flori.admin.service
 
+import kr.ai.flori.admin.domain.PromptModels
 import kr.ai.flori.admin.dto.PromptCreateRequest
 import kr.ai.flori.admin.dto.PromptDetail
 import kr.ai.flori.admin.dto.PromptSummary
@@ -171,9 +172,7 @@ class AdminPromptService(
         if (channel !in ALLOWED_CHANNELS) throw AppException(AdminErrorCode.INVALID_PROMPT_CHANNEL)
     }
 
-    private fun validateModel(model: String) {
-        if (model.isNotBlank() && model !in ALLOWED_MODELS) throw AppException(AdminErrorCode.INVALID_PROMPT_MODEL)
-    }
+    private fun validateModel(model: String) = PromptModels.validate(model)
 
     private fun currentAdminId(): String = TenantContext.currentUserId().toString()
 
@@ -212,6 +211,5 @@ class AdminPromptService(
 
     private companion object {
         val ALLOWED_CHANNELS = setOf("blog")
-        val ALLOWED_MODELS = setOf("claude-haiku-4-5", "claude-sonnet-4-6")
     }
 }

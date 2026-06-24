@@ -9,6 +9,8 @@ import kr.ai.flori.ai.dto.BlogDraft
 import kr.ai.flori.ai.dto.BlogFaq
 import kr.ai.flori.ai.dto.BlogGenerateRequest
 import kr.ai.flori.ai.dto.BlogGenerateResponse
+import kr.ai.flori.ai.dto.BlogPreviewRequest
+import kr.ai.flori.ai.dto.BlogPreviewResponse
 import kr.ai.flori.ai.dto.BlogSection
 import kr.ai.flori.ai.dto.MarketingContentDetail
 import kr.ai.flori.ai.dto.MarketingContentSummary
@@ -107,6 +109,41 @@ class MarketingService(
             )
 
         return BlogGenerateResponse(contentId = content.id!!.toString(), draft = draft)
+    }
+
+    /**
+     * 플레이그라운드 미리보기(SPEC-AI-008). 어드민이 보낸 임시 프롬프트 + 샘플 입력으로 ai-server를 호출해
+     * 초안만 돌려준다 — **저장하지 않는다**(DB·활성본 무영향). @RequiresAdmin은 컨트롤러가 게이팅한다.
+     */
+    fun previewBlog(
+        userJwt: String,
+        request: BlogPreviewRequest,
+    ): BlogPreviewResponse {
+        val userId = TenantContext.currentUserId()
+        val draft = request.promptDraft
+        val sample = request.sampleInput
+        val call =
+            AiBlogCall(
+                channel = CHANNEL_BLOG,
+                keyword = sample.keyword.trim().ifBlank { "장미 꽃다발" },
+                situation = sample.situation?.takeIf { it.isNotBlank() },
+                memo = sample.memo?.takeIf { it.isNotBlank() },
+                toneSamples =
+                    sample.toneSamples
+                        .map { it.trim() }
+                        .filter { it.isNotBlank() }
+                        .take(MAX_TONE_SAMPLES),
+                promptOverride =
+                    AiPromptOverride(
+                        systemMd = draft.systemMd,
+                        rulesMd = draft.rulesMd,
+                        outputSpecMd = draft.outputSpecMd,
+                        model = draft.model,
+                        temperature = draft.temperature,
+                    ),
+            )
+        val result = aiClient.generateBlog(userJwt, userId, call)
+        return BlogPreviewResponse(draft = toDraft(result.draft), model = result.model ?: "")
     }
 
     @Transactional(readOnly = true)
