@@ -14,6 +14,30 @@ object TrendCategories {
     val ALL = setOf(FLOWER, INSPIRATION, BUSINESS, INDUSTRY)
 }
 
+/**
+ * 트렌드·뉴스 적재(TrendIngestService)가 순회할 (카테고리, 네이버 검색어) 목록.
+ * category 는 TrendCategories(=trend_articles.category CHECK)와 1:1. 검색어는 큐레이션 기본값(튜닝 대상).
+ */
+object TrendQueries {
+    data class Query(
+        val category: String,
+        val keyword: String,
+    )
+
+    val ALL =
+        listOf(
+            Query(TrendCategories.FLOWER, "화훼"),
+            Query(TrendCategories.FLOWER, "꽃 시장"),
+            Query(TrendCategories.FLOWER, "절화"),
+            Query(TrendCategories.INSPIRATION, "플로리스트"),
+            Query(TrendCategories.INSPIRATION, "플라워 디자인"),
+            Query(TrendCategories.BUSINESS, "소상공인 지원"),
+            Query(TrendCategories.BUSINESS, "자영업 창업"),
+            Query(TrendCategories.INDUSTRY, "꽃집"),
+            Query(TrendCategories.INDUSTRY, "화훼산업"),
+        )
+}
+
 object GrantCategories {
     const val FUND = "fund"
     const val MARKETING = "marketing"

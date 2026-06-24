@@ -70,7 +70,7 @@ src/main/kotlin/kr/ai/flori/
 ├── statistics/            # 기간별 통계 API (/statistics/**) — 매출·지출·예약·고객 KPI + 일별 시계열 + 분포. JdbcTemplate 네이티브 SQL. 도메인별 서비스(Sales/Expenses/Reservation/CustomerStatisticsService) + StatisticsSupport(공용 증감·비율·기간 계산) + 파사드(StatisticsService) + StatisticsController
 ├── admin/                 # 운영자 콘솔 API (/admin/**, @RequiresAdmin · cross-tenant) — 통계·인증심사·유저·AI헬스 프록시
 ├── ai/                    # AI 게이트웨이 (/ai/**) — web↔ai-server(FastAPI) 중개 + 모든 AI 호출 DB 로깅. 채팅/proactive/OCR예약/confirm. ai-server는 내부망 stateless
-├── insights/              # 정보 피드 (/insights/**) — 경매시세(aT f001 적재 @Scheduled, 단일시장 양재)·지원사업·트렌드 읽기 + 스크랩(개인). 공유 읽기 3테이블 + insight_scraps(user_id). FK 없음 간접참조
+├── insights/              # 정보 피드 (/insights/**) — 경매시세(aT f001 적재, 단일시장 양재)·지원사업(K-Startup·기업마당 적재)·트렌드(네이버 뉴스검색 적재) 읽기 + 스크랩(개인). 적재는 모두 @Scheduled, 키 미설정 시 no-op. 공유 읽기 3테이블 + insight_scraps(user_id). FK 없음 간접참조
 └── common/                # 횡단 관심사
     ├── config/            # CORS, OpenAPI, Async, Schedule, Web
     ├── domain/            # 공통 enum (PaymentMethods, ReservationStatuses)
