@@ -88,7 +88,14 @@ class SolapiNotifier(
             recorder.record(SOURCE, TYPE, success = true, targetUserId = userId, title = title, errorMessage = null)
             log.info("[Solapi] {} 발송 to={}", title, maskPhone(to))
         } catch (e: Exception) {
-            recorder.record(SOURCE, TYPE, success = false, targetUserId = userId, title = title, errorMessage = e.message)
+            recorder.record(
+                SOURCE,
+                TYPE,
+                success = false,
+                targetUserId = userId,
+                title = title,
+                errorMessage = e.message?.take(ERROR_MESSAGE_MAX),
+            )
             log.warn("[Solapi] 발송 실패(무시): {} {}", title, e.message)
         }
     }
@@ -147,6 +154,7 @@ class SolapiNotifier(
         val CONNECT_TIMEOUT: Duration = Duration.ofSeconds(5)
         val READ_TIMEOUT: Duration = Duration.ofSeconds(10)
         const val PHONE_VISIBLE_TAIL = 4
+        const val ERROR_MESSAGE_MAX = 500
         const val SOURCE = "alimtalk"
         const val TYPE = "business_verification"
         const val TITLE_SUBMITTED = "사업자 인증 접수"
