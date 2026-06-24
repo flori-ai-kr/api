@@ -4,14 +4,11 @@ import kr.ai.flori.common.docs.RestDocsSupport
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.insights.domain.GrantCategories
 import kr.ai.flori.insights.domain.ScrapTargetTypes
-import kr.ai.flori.insights.domain.TrendCategories
 import kr.ai.flori.insights.entity.FlowerAuctionPrice
 import kr.ai.flori.insights.entity.SupportProgram
-import kr.ai.flori.insights.entity.TrendArticle
 import kr.ai.flori.insights.repository.FlowerAuctionPriceRepository
 import kr.ai.flori.insights.repository.InsightScrapRepository
 import kr.ai.flori.insights.repository.SupportProgramRepository
-import kr.ai.flori.insights.repository.TrendArticleRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -24,7 +21,6 @@ import org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithP
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
-import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
@@ -33,9 +29,6 @@ import java.util.UUID
  * 공유 읽기 + 개인 스크랩 모두 빈 배열/빈 맵 매칭 실패를 막기 위해 데이터를 시드한 뒤 호출한다.
  */
 class InsightDocsTest : RestDocsSupport() {
-    @Autowired
-    lateinit var trendRepository: TrendArticleRepository
-
     @Autowired
     lateinit var priceRepository: FlowerAuctionPriceRepository
 
@@ -49,28 +42,11 @@ class InsightDocsTest : RestDocsSupport() {
     fun tearDown() {
         TenantContext.clear()
         scrapRepository.deleteAll()
-        trendRepository.deleteAll()
         priceRepository.deleteAll()
         programRepository.deleteAll()
     }
 
     // ── 시드 헬퍼 ─────────────────────────────────────────────────────────
-
-    private fun seedTrend(): Long {
-        val a =
-            TrendArticle(
-                category = TrendCategories.FLOWER,
-                title = "2026 여름 웨딩 꽃 트렌드",
-                summary = "파스텔 톤 라넌큘러스가 인기",
-                sourceUrl = "https://example.com/${UUID.randomUUID()}",
-                collectedAt = LocalDate.of(2026, 6, 17),
-            ).apply {
-                keyPoints = listOf("라넌큘러스", "파스텔")
-                sourceName = "플로리스트 매거진"
-                publishedAt = Instant.parse("2026-06-17T00:00:00Z")
-            }
-        return requireNotNull(trendRepository.save(a).id)
-    }
 
     private fun seedGrant(): Long {
         val p =
@@ -107,20 +83,6 @@ class InsightDocsTest : RestDocsSupport() {
 
     // ── 응답 필드 ─────────────────────────────────────────────────────────
 
-    private fun trendItemFields(prefix: String): List<FieldDescriptor> =
-        listOf(
-            fieldWithPath("${prefix}id").type(JsonFieldType.NUMBER).description("기사 ID"),
-            fieldWithPath("${prefix}category").type(JsonFieldType.STRING).description("flower|inspiration|business|industry"),
-            fieldWithPath("${prefix}title").type(JsonFieldType.STRING).description("제목"),
-            fieldWithPath("${prefix}summary").type(JsonFieldType.STRING).description("요약"),
-            fieldWithPath("${prefix}keyPoints").type(JsonFieldType.ARRAY).description("핵심 요점(문자열 배열)"),
-            fieldWithPath("${prefix}sourceUrl").type(JsonFieldType.STRING).description("원문 URL"),
-            fieldWithPath("${prefix}sourceName").type(JsonFieldType.STRING).optional().description("출처명(없으면 null)"),
-            fieldWithPath("${prefix}publishedAt").type(JsonFieldType.STRING).optional().description("원문 발행 시각(ISO-8601, 없으면 null)"),
-            fieldWithPath("${prefix}collectedAt").type(JsonFieldType.STRING).description("수집일(yyyy-MM-dd)"),
-            fieldWithPath("${prefix}createdAt").type(JsonFieldType.STRING).description("적재 시각(ISO-8601)"),
-        )
-
     private fun grantItemFields(prefix: String): List<FieldDescriptor> =
         listOf(
             fieldWithPath("${prefix}id").type(JsonFieldType.NUMBER).description("지원사업 ID"),
@@ -140,103 +102,14 @@ class InsightDocsTest : RestDocsSupport() {
     private fun scrapFields(prefix: String): List<FieldDescriptor> =
         listOf(
             fieldWithPath("${prefix}id").type(JsonFieldType.NUMBER).description("스크랩 ID"),
-            fieldWithPath("${prefix}targetType").type(JsonFieldType.STRING).description("trend|grant"),
+            fieldWithPath("${prefix}targetType").type(JsonFieldType.STRING).description("grant"),
             fieldWithPath("${prefix}targetId").type(JsonFieldType.NUMBER).description("대상 ID(간접참조)"),
             fieldWithPath("${prefix}memo").type(JsonFieldType.STRING).optional().description("메모(없으면 null)"),
             fieldWithPath("${prefix}createdAt").type(JsonFieldType.STRING).description("스크랩 시각(ISO-8601)"),
             fieldWithPath("${prefix}updatedAt").type(JsonFieldType.STRING).description("수정 시각(ISO-8601)"),
         )
 
-    // ── 1. 트렌드 목록 ────────────────────────────────────────────────────
-
-    @Test
-    fun `트렌드 목록 문서화`() {
-        val token = signupAndToken()
-        seedTrend()
-
-        mockMvc
-            .get("/insights/trends") {
-                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-                param("offset", "0")
-                param("limit", "50")
-            }.andExpect { status { isOk() } }
-            .andDo {
-                handle(
-                    docs(
-                        identifier = "insights-trends-list",
-                        responseSchema = "TrendArticleListResponse",
-                        tag = "Insights",
-                        summary = "트렌드·뉴스 목록 (category|offset|limit, 수집일 최신순)",
-                        responseFields =
-                            listOf(fieldWithPath("[]").type(JsonFieldType.ARRAY).description("트렌드 기사 목록")) +
-                                trendItemFields("[]."),
-                    ),
-                )
-            }
-    }
-
-    // ── 2. 트렌드 최신(카테고리별) ─────────────────────────────────────────
-
-    @Test
-    fun `트렌드 카테고리별 최신 문서화`() {
-        val token = signupAndToken()
-        seedTrend()
-
-        mockMvc
-            .get("/insights/trends/recent") {
-                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-                param("perCategory", "3")
-            }.andExpect { status { isOk() } }
-            .andDo {
-                handle(
-                    docs(
-                        identifier = "insights-trends-recent",
-                        responseSchema = "TrendsByCategoryResponse",
-                        tag = "Insights",
-                        summary = "카테고리별 최신 N개 묶음 (키: flower/inspiration/business/industry → 기사 배열)",
-                        responseFields =
-                            listOf(
-                                subsectionWithPath("flower").type(JsonFieldType.ARRAY).description("꽃 트렌드 기사 배열"),
-                                subsectionWithPath("inspiration").type(JsonFieldType.ARRAY).description("영감 기사 배열"),
-                                subsectionWithPath("business").type(JsonFieldType.ARRAY).description("사업 트렌드 기사 배열"),
-                                subsectionWithPath("industry").type(JsonFieldType.ARRAY).description("업계 뉴스 기사 배열"),
-                            ),
-                    ),
-                )
-            }
-    }
-
-    // ── 3. 트렌드 카운트 ──────────────────────────────────────────────────
-
-    @Test
-    fun `트렌드 카테고리별 카운트 문서화`() {
-        val token = signupAndToken()
-        seedTrend()
-
-        mockMvc
-            .get("/insights/trends/counts") {
-                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-            }.andExpect { status { isOk() } }
-            .andDo {
-                handle(
-                    docs(
-                        identifier = "insights-trends-counts",
-                        responseSchema = "TrendCountsResponse",
-                        tag = "Insights",
-                        summary = "카테고리별 기사 수 (키: 카테고리 → 건수). since(yyyy-MM-dd) 옵션",
-                        responseFields =
-                            listOf(
-                                fieldWithPath("flower").type(JsonFieldType.NUMBER).description("꽃 트렌드 건수"),
-                                fieldWithPath("inspiration").type(JsonFieldType.NUMBER).description("영감 건수"),
-                                fieldWithPath("business").type(JsonFieldType.NUMBER).description("사업 트렌드 건수"),
-                                fieldWithPath("industry").type(JsonFieldType.NUMBER).description("업계 뉴스 건수"),
-                            ),
-                    ),
-                )
-            }
-    }
-
-    // ── 4. 화훼 카테고리 목록 ─────────────────────────────────────────────
+    // ── 1. 화훼 카테고리 목록 ─────────────────────────────────────────────
 
     @Test
     fun `화훼 카테고리 목록 문서화`() {
@@ -264,7 +137,7 @@ class InsightDocsTest : RestDocsSupport() {
             }
     }
 
-    // ── 5a. 경매 정산일 목록 ──────────────────────────────────────────────
+    // ── 2a. 경매 정산일 목록 ──────────────────────────────────────────────
 
     @Test
     fun `경매 정산일 목록 문서화`() {
@@ -292,7 +165,7 @@ class InsightDocsTest : RestDocsSupport() {
             }
     }
 
-    // ── 5b. 경매 요약(품목 단위) ──────────────────────────────────────────
+    // ── 2b. 경매 요약(품목 단위) ──────────────────────────────────────────
 
     @Test
     fun `경매 요약 문서화`() {
@@ -337,7 +210,7 @@ class InsightDocsTest : RestDocsSupport() {
             }
     }
 
-    // ── 5. 경매 시세(드릴다운) ────────────────────────────────────────────
+    // ── 2c. 경매 시세(드릴다운) ───────────────────────────────────────────
 
     @Test
     fun `경매 시세 문서화`() {
@@ -387,7 +260,7 @@ class InsightDocsTest : RestDocsSupport() {
             }
     }
 
-    // ── 6. 지원사업 목록 ──────────────────────────────────────────────────
+    // ── 3. 지원사업 목록 ──────────────────────────────────────────────────
 
     @Test
     fun `지원사업 목록 문서화`() {
@@ -415,18 +288,18 @@ class InsightDocsTest : RestDocsSupport() {
             }
     }
 
-    // ── 7. 스크랩 토글 ────────────────────────────────────────────────────
+    // ── 4. 스크랩 토글 ────────────────────────────────────────────────────
 
     @Test
     fun `스크랩 토글 문서화`() {
         val token = signupAndToken()
-        val articleId = seedTrend()
+        val grantId = seedGrant()
 
         mockMvc
             .post("/insights/scraps/toggle") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
-                content = json(mapOf("targetType" to ScrapTargetTypes.TREND, "targetId" to articleId))
+                content = json(mapOf("targetType" to ScrapTargetTypes.GRANT, "targetId" to grantId))
             }.andExpect { status { isOk() } }
             .andDo {
                 handle(
@@ -438,7 +311,7 @@ class InsightDocsTest : RestDocsSupport() {
                         summary = "스크랩 토글 (멱등: 없으면 추가 true, 있으면 해제 false)",
                         requestFields =
                             listOf(
-                                fieldWithPath("targetType").type(JsonFieldType.STRING).description("trend|grant (필수)"),
+                                fieldWithPath("targetType").type(JsonFieldType.STRING).description("grant (필수)"),
                                 fieldWithPath("targetId").type(JsonFieldType.NUMBER).description("대상 ID (필수)"),
                             ),
                         responseFields =
@@ -448,19 +321,19 @@ class InsightDocsTest : RestDocsSupport() {
             }
     }
 
-    // ── 8. 스크랩 메모 ────────────────────────────────────────────────────
+    // ── 5. 스크랩 메모 ────────────────────────────────────────────────────
 
     @Test
     fun `스크랩 메모 수정 문서화`() {
         val token = signupAndToken()
-        val articleId = seedTrend()
+        val grantId = seedGrant()
 
         mockMvc
             .put("/insights/scraps/memo") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content =
-                    json(mapOf("targetType" to ScrapTargetTypes.TREND, "targetId" to articleId, "memo" to "다음 시즌 참고"))
+                    json(mapOf("targetType" to ScrapTargetTypes.GRANT, "targetId" to grantId, "memo" to "다음 시즌 참고"))
             }.andExpect { status { isOk() } }
             .andDo {
                 handle(
@@ -472,7 +345,7 @@ class InsightDocsTest : RestDocsSupport() {
                         summary = "스크랩 메모 수정 (아직 스크랩 안 했으면 메모와 함께 생성, upsert)",
                         requestFields =
                             listOf(
-                                fieldWithPath("targetType").type(JsonFieldType.STRING).description("trend|grant (필수)"),
+                                fieldWithPath("targetType").type(JsonFieldType.STRING).description("grant (필수)"),
                                 fieldWithPath("targetId").type(JsonFieldType.NUMBER).description("대상 ID (필수)"),
                                 fieldWithPath("memo").type(JsonFieldType.STRING).optional().description("메모(null/공백이면 메모 비움)"),
                             ),
@@ -482,18 +355,18 @@ class InsightDocsTest : RestDocsSupport() {
             }
     }
 
-    // ── 9. 스크랩 맵 ──────────────────────────────────────────────────────
+    // ── 6. 스크랩 맵 ──────────────────────────────────────────────────────
 
     @Test
     fun `스크랩 맵 문서화`() {
         val token = signupAndToken()
-        val articleId = seedTrend()
-        toggle(token, ScrapTargetTypes.TREND, articleId)
+        val grantId = seedGrant()
+        toggle(token, ScrapTargetTypes.GRANT, grantId)
 
         mockMvc
             .get("/insights/scraps/map") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-                param("targetType", ScrapTargetTypes.TREND)
+                param("targetType", ScrapTargetTypes.GRANT)
             }.andExpect { status { isOk() } }
             .andDo {
                 handle(
@@ -511,36 +384,7 @@ class InsightDocsTest : RestDocsSupport() {
             }
     }
 
-    // ── 10. 트렌드 스크랩 목록 ────────────────────────────────────────────
-
-    @Test
-    fun `트렌드 스크랩 목록 문서화`() {
-        val token = signupAndToken()
-        val articleId = seedTrend()
-        toggle(token, ScrapTargetTypes.TREND, articleId)
-
-        mockMvc
-            .get("/insights/scraps/trends") {
-                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-                param("limit", "100")
-            }.andExpect { status { isOk() } }
-            .andDo {
-                handle(
-                    docs(
-                        identifier = "insights-scrap-trends",
-                        responseSchema = "TrendScrapListResponse",
-                        tag = "Insights",
-                        summary = "내 트렌드 스크랩 목록 (스크랩 + 대상 기사 조인, 최신순)",
-                        responseFields =
-                            listOf(fieldWithPath("[]").type(JsonFieldType.ARRAY).description("트렌드 스크랩 목록")) +
-                                scrapFields("[].scrap.") +
-                                trendItemFields("[].article."),
-                    ),
-                )
-            }
-    }
-
-    // ── 11. 지원사업 스크랩 목록 ──────────────────────────────────────────
+    // ── 7. 지원사업 스크랩 목록 ──────────────────────────────────────────
 
     @Test
     fun `지원사업 스크랩 목록 문서화`() {
@@ -569,13 +413,13 @@ class InsightDocsTest : RestDocsSupport() {
             }
     }
 
-    // ── 12. 스크랩 카운트 ─────────────────────────────────────────────────
+    // ── 8. 스크랩 카운트 ─────────────────────────────────────────────────
 
     @Test
     fun `스크랩 카운트 문서화`() {
         val token = signupAndToken()
-        val articleId = seedTrend()
-        toggle(token, ScrapTargetTypes.TREND, articleId)
+        val grantId = seedGrant()
+        toggle(token, ScrapTargetTypes.GRANT, grantId)
 
         mockMvc
             .get("/insights/scraps/counts") {
@@ -590,7 +434,6 @@ class InsightDocsTest : RestDocsSupport() {
                         summary = "대상 유형별 스크랩 수",
                         responseFields =
                             listOf(
-                                fieldWithPath("trend").type(JsonFieldType.NUMBER).description("트렌드 스크랩 수"),
                                 fieldWithPath("grant").type(JsonFieldType.NUMBER).description("지원사업 스크랩 수"),
                             ),
                     ),

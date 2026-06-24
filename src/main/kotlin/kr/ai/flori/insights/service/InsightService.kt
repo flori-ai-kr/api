@@ -6,7 +6,6 @@ import kr.ai.flori.common.util.KST
 import kr.ai.flori.common.util.Paging
 import kr.ai.flori.insights.domain.FlowerCategories
 import kr.ai.flori.insights.domain.ScrapTargetTypes
-import kr.ai.flori.insights.domain.TrendCategories
 import kr.ai.flori.insights.dto.AuctionPriceResponse
 import kr.ai.flori.insights.dto.AuctionPricesResponse
 import kr.ai.flori.insights.dto.AuctionSummaryItem
@@ -22,8 +21,6 @@ import kr.ai.flori.insights.dto.ScrapResponse
 import kr.ai.flori.insights.dto.ScrapToggleRequest
 import kr.ai.flori.insights.dto.ScrapToggleResponse
 import kr.ai.flori.insights.dto.SupportProgramResponse
-import kr.ai.flori.insights.dto.TrendArticleResponse
-import kr.ai.flori.insights.dto.TrendScrapResponse
 import kr.ai.flori.insights.entity.FlowerItemScrap
 import kr.ai.flori.insights.entity.InsightScrap
 import kr.ai.flori.insights.error.InsightErrorCode
@@ -31,7 +28,6 @@ import kr.ai.flori.insights.repository.FlowerAuctionPriceQueryRepository
 import kr.ai.flori.insights.repository.FlowerItemScrapRepository
 import kr.ai.flori.insights.repository.InsightScrapRepository
 import kr.ai.flori.insights.repository.SupportProgramRepository
-import kr.ai.flori.insights.repository.TrendArticleRepository
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -40,52 +36,16 @@ import java.time.LocalDate
 /**
  * 인사이트(정보 피드) 서비스.
  *
- * - 트렌드/공판장/경매 시세/지원사업은 공유 읽기(테넌트 무관). 등락률·dDay 는 서버 파생.
+ * - 공판장/경매 시세/지원사업은 공유 읽기(테넌트 무관). 등락률·dDay 는 서버 파생.
  * - 스크랩은 개인(user_id) — 모든 쿼리를 TenantContext.currentUserId() 로 격리한다(멀티테넌시 HARD).
  */
 @Service
 class InsightService(
-    private val trendArticleRepository: TrendArticleRepository,
     private val auctionPriceQueryRepository: FlowerAuctionPriceQueryRepository,
     private val supportProgramRepository: SupportProgramRepository,
     private val scrapRepository: InsightScrapRepository,
     private val flowerItemScrapRepository: FlowerItemScrapRepository,
 ) {
-    // ── 트렌드·뉴스 ────────────────────────────────────────────────────────
-
-    @Transactional(readOnly = true)
-    fun listTrends(
-        category: String?,
-        offset: Int,
-        limit: Int,
-    ): List<TrendArticleResponse> {
-        val pageable = Paging.offsetLimit(offset, limit, MAX_LIMIT)
-        return trendArticleRepository
-            .findFeed(category?.takeIf { it.isNotBlank() }, pageable)
-            .content
-            .map(TrendArticleResponse::from)
-    }
-
-    /** 대시보드용: 카테고리별 최신 N개씩. 키는 카테고리 4종 고정. */
-    @Transactional(readOnly = true)
-    fun recentTrendsByCategory(perCategory: Int): Map<String, List<TrendArticleResponse>> {
-        val safePer = perCategory.coerceIn(1, MAX_PER_CATEGORY)
-        val pageable = Paging.offsetLimit(0, safePer, MAX_PER_CATEGORY)
-        return TrendCategories.ALL.associateWith { category ->
-            trendArticleRepository.findFeed(category, pageable).content.map(TrendArticleResponse::from)
-        }
-    }
-
-    /** 카테고리별 기사 수. since(수집일 이후) 옵션. 키는 카테고리 4종 고정. */
-    @Transactional(readOnly = true)
-    fun trendCountsByCategory(since: LocalDate?): Map<String, Long> {
-        // 카테고리당 1쿼리지만 카테고리는 4개로 고정이라 비용이 작다(목록 페이지 진입 시 1회).
-        val all = trendArticleRepository.findFeed(null, Paging.offsetLimit(0, COUNT_SCAN_LIMIT, COUNT_SCAN_LIMIT)).content
-        return TrendCategories.ALL.associateWith { category ->
-            all.count { it.category == category && (since == null || !it.collectedAt.isBefore(since)) }.toLong()
-        }
-    }
-
     // ── 경매 시세 ──────────────────────────────────────────────────────────
 
     /** 화훼 경매 카테고리(절화/관엽/난/춘란) 정적 목록. 단일 시장(aT 양재). */
@@ -233,22 +193,6 @@ class InsightService(
             .associate { it.targetId.toString() to ScrapInfoResponse(requireNotNull(it.id), it.memo) }
     }
 
-    /** 트렌드 스크랩 목록(스크랩 + 대상 기사 조인, 최신순). 삭제된 대상은 제외. */
-    @Transactional(readOnly = true)
-    fun trendScraps(limit: Int): List<TrendScrapResponse> {
-        val userId = TenantContext.currentUserId()
-        val scraps =
-            scrapRepository
-                .findByUserIdAndTargetTypeOrderByCreatedAtDesc(userId, ScrapTargetTypes.TREND)
-                .take(limit.coerceIn(1, MAX_LIMIT))
-        if (scraps.isEmpty()) return emptyList()
-        val articles = trendArticleRepository.findByIdIn(scraps.map { it.targetId }).associateBy { requireNotNull(it.id) }
-        return scraps.mapNotNull { scrap ->
-            val article = articles[scrap.targetId] ?: return@mapNotNull null
-            TrendScrapResponse(ScrapResponse.from(scrap), TrendArticleResponse.from(article))
-        }
-    }
-
     /** 지원사업 스크랩 목록(스크랩 + 대상 사업 조인, 최신순). 삭제된 대상은 제외. */
     @Transactional(readOnly = true)
     fun grantScraps(limit: Int): List<GrantScrapResponse> {
@@ -271,7 +215,6 @@ class InsightService(
     fun scrapCounts(): ScrapCountsResponse {
         val userId = TenantContext.currentUserId()
         return ScrapCountsResponse(
-            trend = scrapRepository.countByUserIdAndTargetType(userId, ScrapTargetTypes.TREND),
             grant = scrapRepository.countByUserIdAndTargetType(userId, ScrapTargetTypes.GRANT),
         )
     }
@@ -290,7 +233,6 @@ class InsightService(
     ) {
         val exists =
             when (targetType) {
-                ScrapTargetTypes.TREND -> trendArticleRepository.existsById(targetId)
                 ScrapTargetTypes.GRANT -> supportProgramRepository.existsById(targetId)
                 else -> false
             }
@@ -299,8 +241,6 @@ class InsightService(
 
     private companion object {
         const val MAX_LIMIT = 100
-        const val MAX_PER_CATEGORY = 20
-        const val COUNT_SCAN_LIMIT = 1000
 
         /** 날짜 선택기 목록 상한(약 2개월). */
         const val DATE_LIST_CAP = 60

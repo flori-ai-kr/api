@@ -99,14 +99,6 @@ flori:
     pages: ${BIZINFO_API_PAGES:5}
     page-unit: ${BIZINFO_API_PAGE_UNIT:100}
     hashtags: ${BIZINFO_API_HASHTAGS:}
-  # 네이버 검색 OpenAPI(뉴스) — 트렌드·뉴스 적재(trend_articles). 네이버 뉴스 RSS 폐지(2020) 대체.
-  # client-id/client-secret 미설정 시 적재 cron 은 no-op(경고 로그) → 키 없는 dev 부팅 가능. (소셜로그인 NAVER_CLIENT_ID 와 별개 키)
-  naver-search-api:
-    base-url: ${NAVER_SEARCH_BASE_URL:https://openapi.naver.com/v1/search}
-    client-id: ${NAVER_SEARCH_CLIENT_ID:}
-    client-secret: ${NAVER_SEARCH_CLIENT_SECRET:}
-    cron: ${NAVER_SEARCH_CRON:0 30 7 * * *}   # 매일 KST 07:30
-    display: ${NAVER_SEARCH_DISPLAY:20}
 
 # 내부 API(수집/브로드캐스트) Bearer 키. 미설정 시 내부 API 접근 차단.
 internal:

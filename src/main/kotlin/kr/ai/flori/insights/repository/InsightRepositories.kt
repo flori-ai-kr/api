@@ -4,31 +4,11 @@ import kr.ai.flori.insights.entity.FlowerAuctionPrice
 import kr.ai.flori.insights.entity.FlowerItemScrap
 import kr.ai.flori.insights.entity.InsightScrap
 import kr.ai.flori.insights.entity.SupportProgram
-import kr.ai.flori.insights.entity.TrendArticle
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
-
-/**
- * 트렌드 기사(공유 읽기). 테넌트 격리 없음 — 의도적 전역(TenantIsolationGuardTest 화이트리스트 등록).
- */
-interface TrendArticleRepository : JpaRepository<TrendArticle, Long> {
-    /** 목록: 카테고리 필터(없으면 전체) + 수집일/생성순 최신. */
-    @Query(
-        "SELECT a FROM TrendArticle a " +
-            "WHERE (:category IS NULL OR a.category = :category) " +
-            "ORDER BY a.collectedAt DESC, a.id DESC",
-    )
-    fun findFeed(
-        @Param("category") category: String?,
-        pageable: Pageable,
-    ): Page<TrendArticle>
-
-    /** 단건(스크랩 대상 검증·목록 enrichment 용). 공유 데이터라 id 만으로 조회. */
-    fun findByIdIn(ids: Collection<Long>): List<TrendArticle>
-}
 
 /**
  * 화훼 경매 시세(공유 읽기). 단순 CRUD/적재용 — 파생(등락률) 조회는 FlowerAuctionPriceQueryRepository.

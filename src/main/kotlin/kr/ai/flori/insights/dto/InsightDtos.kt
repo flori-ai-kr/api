@@ -8,44 +8,11 @@ import kr.ai.flori.common.validation.FieldLimits
 import kr.ai.flori.insights.domain.FlowerCategories
 import kr.ai.flori.insights.entity.InsightScrap
 import kr.ai.flori.insights.entity.SupportProgram
-import kr.ai.flori.insights.entity.TrendArticle
 import kr.ai.flori.insights.repository.AuctionPriceRow
 import kr.ai.flori.insights.repository.AuctionSummaryRow
 import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
-
-// ── 트렌드·뉴스 ─────────────────────────────────────────────────────────────
-
-/** 트렌드 기사 응답(camelCase). web KotlinTrendArticle 미러. */
-data class TrendArticleResponse(
-    val id: Long,
-    val category: String,
-    val title: String,
-    val summary: String,
-    val keyPoints: List<String>,
-    val sourceUrl: String,
-    val sourceName: String?,
-    val publishedAt: Instant?,
-    val collectedAt: LocalDate,
-    val createdAt: Instant,
-) {
-    companion object {
-        fun from(a: TrendArticle): TrendArticleResponse =
-            TrendArticleResponse(
-                id = requireNotNull(a.id),
-                category = a.category,
-                title = a.title,
-                summary = a.summary,
-                keyPoints = a.keyPoints,
-                sourceUrl = a.sourceUrl,
-                sourceName = a.sourceName,
-                publishedAt = a.publishedAt,
-                collectedAt = a.collectedAt,
-                createdAt = a.createdAt,
-            )
-    }
-}
 
 // ── 경매 시세 ───────────────────────────────────────────────────────────────
 
@@ -244,12 +211,6 @@ data class ScrapInfoResponse(
     val memo: String?,
 )
 
-/** 트렌드 스크랩(스크랩 + 대상 기사 조인). web KotlinTrendScrap 미러. */
-data class TrendScrapResponse(
-    val scrap: ScrapResponse,
-    val article: TrendArticleResponse,
-)
-
 /** 지원사업 스크랩(스크랩 + 대상 사업 조인). */
 data class GrantScrapResponse(
     val scrap: ScrapResponse,
@@ -258,6 +219,5 @@ data class GrantScrapResponse(
 
 /** 스크랩 카운트(대상 유형별). */
 data class ScrapCountsResponse(
-    val trend: Long,
     val grant: Long,
 )
