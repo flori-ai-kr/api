@@ -87,6 +87,10 @@ flori:
 internal:
   api-key: ${INTERNAL_API_KEY:}
 
+# 토스 빌링키 암호화(AES-256-GCM). 운영에서는 반드시 32바이트 Base64 강한 키로 교체(환경변수 주입).
+billing:
+  encryption-key: ${BILLING_ENCRYPTION_KEY:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+
 # RevenueCat 구독 웹훅 Bearer 시크릿. 미설정 시 웹훅 접근 차단(실제 키는 운영에서 env 주입).
 revenuecat:
   webhook-secret: ${REVENUECAT_WEBHOOK_SECRET:}
