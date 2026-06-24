@@ -65,7 +65,7 @@
       └─ !approved → SolapiNotifier.sendBusinessRejected(phone, 상호, 사유) ★신규
 
 [가시화]  각 SolapiNotifier.sendXxx 내부에서 발송 직후
-  → NotificationSendRecorder.record(source="business_verification", type="alimtalk", ...)  ★신규
+  → NotificationSendRecorder.record(source="alimtalk", type="business_verification", ...)  ★신규
   → notification_send_logs append → /console/notification-logs 자동 노출
 ```
 
@@ -91,10 +91,10 @@
 ### D. 발송 결과 가시화 (기록)
 - 기존 `admin/entity/NotificationSendLog.kt` + `NotificationSendLogService.record(...)` 재사용.
 - **의존성 방향 보호**: `SolapiNotifier`는 `common`에 있고 `NotificationSendLog`/`Service`는 `admin`에 있어 `common → admin` 역방향이 된다. 이를 피하기 위해 **`common`에 포트 인터페이스 `NotificationSendRecorder`** 를 정의하고, `SolapiNotifier`는 이 인터페이스에만 의존한다. 구현체(어댑터)는 `admin` 패키지에 두고 `NotificationSendLogService`로 위임한다(Spring DI). 인터페이스가 비어 있어도(빈 미등록) 동작하도록 nullable/옵셔널 주입 또는 no-op 기본 구현을 둔다.
-- 기록 규약: `source="business_verification"`, `type="alimtalk"`, 성공 시 `sentCount=1/failedCount=0`, 실패 시 `sentCount=0/failedCount=1` + `errorMessage`, `targetUserId=userId`, `title`=템플릿 종류(접수/승인/거절). 기록 실패는 비차단(best-effort).
+- 기록 규약: `source="alimtalk"`(채널), `type="business_verification"`(도메인), 성공 시 `sentCount=1/failedCount=0`, 실패 시 `sentCount=0/failedCount=1` + `errorMessage`, `targetUserId=userId`, `title`=템플릿 종류(접수/승인/거절). 기록 실패는 비차단(best-effort). source CHECK에 'alimtalk' 추가 마이그레이션 필요(기존 web/cron/system).
 
 ### web (거의 없음)
-- 기존 `/console/notification-logs`(발송 로그) 화면이 `type/source/status` 필터로 조회하므로 **자동 노출**. (선택) 필터 드롭다운에 `source=business_verification` / `type=alimtalk` 라벨 추가 — 우선순위 낮음, 시간 남으면.
+- 기존 `/console/notification-logs`(발송 로그) 화면이 `type/source/status` 필터로 조회하므로 **자동 노출**. 추가로 가독성 작업(요청): 타입/소스/상태 필터·표 셀을 전부 한글 칩으로(`source=alimtalk→"알림톡"`, `type=business_verification→"사업자 인증"`) + 콘솔 데스크탑 사이드바 접기 토글. (plan Task 6·7)
 
 ## 6. 보안
 
