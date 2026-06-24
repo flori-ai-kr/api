@@ -5,7 +5,13 @@ import org.springframework.data.jpa.repository.JpaRepository
 import java.time.LocalDate
 
 interface PaymentHistoryRepository : JpaRepository<PaymentHistory, Long> {
-    fun existsBySubscriptionIdAndBillingCycleAndStatus(subscriptionId: Long, billingCycle: LocalDate, status: String): Boolean
+    fun existsBySubscriptionIdAndBillingCycleAndStatus(
+        subscriptionId: Long,
+        billingCycle: LocalDate,
+        status: String,
+    ): Boolean
+
     fun findTop10BySubscriptionIdOrderByCreatedAtDesc(subscriptionId: Long): List<PaymentHistory>
+
     fun findByOrderId(orderId: String): PaymentHistory?
 }

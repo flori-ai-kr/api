@@ -8,8 +8,15 @@ interface SubscriptionRepository : JpaRepository<Subscription, Long> {
     fun findByUserId(userId: Long): Subscription?
 
     // 결제일 도래분(스케줄러). status 목록은 호출부가 지정.
-    fun findByStatusInAndNextBillingAtLessThanEqual(statuses: Collection<String>, at: Instant): List<Subscription>
+    fun findByStatusInAndNextBillingAtLessThanEqual(
+        statuses: Collection<String>,
+        at: Instant,
+    ): List<Subscription>
 
     // D-3 사전알림 대상.
-    fun findByStatusInAndNextBillingAtBetween(statuses: Collection<String>, from: Instant, to: Instant): List<Subscription>
+    fun findByStatusInAndNextBillingAtBetween(
+        statuses: Collection<String>,
+        from: Instant,
+        to: Instant,
+    ): List<Subscription>
 }

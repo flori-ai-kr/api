@@ -20,15 +20,19 @@ import java.time.Instant
 @SpringBootTest
 class BillingPersistenceTest {
     @Autowired lateinit var billingKeyRepository: BillingKeyRepository
+
     @Autowired lateinit var subscriptionRepository: SubscriptionRepository
 
     @Test
     fun `billingKey 저장-조회 + 암호문 컬럼 라운드트립`() {
-        val saved = billingKeyRepository.save(
-            BillingKey(userId = 1L, customerKey = "cust-1", billingKey = "bk_secret_123").apply {
-                cardCompany = "신한"; cardNumberMasked = "1234"; cardType = "체크"
-            },
-        )
+        val saved =
+            billingKeyRepository.save(
+                BillingKey(userId = 1L, customerKey = "cust-1", billingKey = "bk_secret_123").apply {
+                    cardCompany = "신한"
+                    cardNumberMasked = "1234"
+                    cardType = "체크"
+                },
+            )
         val found = billingKeyRepository.findByUserId(1L)
         assertThat(found).isNotNull
         assertThat(found!!.billingKey).isEqualTo("bk_secret_123") // 복호화되어 원문
@@ -41,8 +45,11 @@ class BillingPersistenceTest {
         val now = Instant.now()
         subscriptionRepository.save(
             Subscription(
-                userId = 2L, plan = "MONTHLY", status = "TRIALING",
-                amount = 14900, nextBillingAt = now,
+                userId = 2L,
+                plan = "MONTHLY",
+                status = "TRIALING",
+                amount = 14900,
+                nextBillingAt = now,
             ),
         )
         val found = subscriptionRepository.findByUserId(2L)
