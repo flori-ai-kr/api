@@ -82,3 +82,21 @@ fun SupportInquiry.toResponse() =
         createdAt = createdAt,
         updatedAt = updatedAt,
     )
+
+// ── 업로드 ────────────────────────────────────────────────────────────────
+
+data class InquiryUploadRequest(
+    val files: List<InquiryFileInfo>,
+) {
+    data class InquiryFileInfo(
+        val name: String,
+        val type: String,
+        val size: Long,
+    )
+}
+
+data class InquiryUploadTargetResponse(
+    val uploadUrl: String,
+    val publicUrl: String,
+    val originalName: String,
+)

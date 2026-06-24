@@ -3,6 +3,8 @@ package kr.ai.flori.support.controller
 import jakarta.validation.Valid
 import kr.ai.flori.support.dto.InquiryCreateRequest
 import kr.ai.flori.support.dto.InquiryResponse
+import kr.ai.flori.support.dto.InquiryUploadRequest
+import kr.ai.flori.support.dto.InquiryUploadTargetResponse
 import kr.ai.flori.support.service.SupportInquiryService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
@@ -33,4 +35,9 @@ class InquiryController(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int,
     ): List<InquiryResponse> = service.listMine(page, size)
+
+    @PostMapping("/upload-targets")
+    fun uploadTargets(
+        @RequestBody request: InquiryUploadRequest,
+    ): List<InquiryUploadTargetResponse> = service.createUploadTargets(request.files)
 }

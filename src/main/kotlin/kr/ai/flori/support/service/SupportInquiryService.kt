@@ -3,11 +3,14 @@ package kr.ai.flori.support.service
 import kr.ai.flori.admin.error.AdminErrorCode
 import kr.ai.flori.admin.service.AdminAuditService
 import kr.ai.flori.common.error.AppException
+import kr.ai.flori.common.storage.S3PresignService
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.common.util.Paging
 import kr.ai.flori.support.dto.InquiryAnswerRequest
 import kr.ai.flori.support.dto.InquiryCreateRequest
 import kr.ai.flori.support.dto.InquiryResponse
+import kr.ai.flori.support.dto.InquiryUploadRequest
+import kr.ai.flori.support.dto.InquiryUploadTargetResponse
 import kr.ai.flori.support.dto.toResponse
 import kr.ai.flori.support.dto.validateInquiryCategory
 import kr.ai.flori.support.dto.validateInquiryStatus
@@ -30,6 +33,7 @@ class SupportInquiryService(
     private val repository: SupportInquiryRepository,
     private val audit: AdminAuditService,
     private val eventPublisher: ApplicationEventPublisher,
+    private val s3PresignService: S3PresignService,
 ) {
     // ── 점주 ──────────────────────────────────────────────────────────────
 
@@ -68,6 +72,19 @@ class SupportInquiryService(
                 Paging.pageSize(page, size, MAX_PAGE_SIZE),
             ).content
             .map { it.toResponse() }
+
+    fun createUploadTargets(files: List<InquiryUploadRequest.InquiryFileInfo>): List<InquiryUploadTargetResponse> {
+        val userId = TenantContext.currentUserId()
+        return files.map { file ->
+            val key = "support/$userId/${System.currentTimeMillis()}-${file.name}"
+            val presigned = s3PresignService.presignUpload(key, file.type)
+            InquiryUploadTargetResponse(
+                uploadUrl = presigned.uploadUrl,
+                publicUrl = presigned.fileUrl,
+                originalName = file.name,
+            )
+        }
+    }
 
     // ── 운영자 ────────────────────────────────────────────────────────────
 
