@@ -17,8 +17,8 @@ data class BizinfoApiProperties(
     val baseUrl: String = "",
     /** 기업마당 발급 인증키(crtfcKey). 빈 값이면 적재 cron no-op. */
     val crtfcKey: String = "",
-    /** 적재 cron 스케줄(KST cron 식). */
-    val cron: String = "0 0 8 * * *",
+    /** 적재 cron 스케줄(KST cron 식). K-Startup(06:31) 직후 06:32. */
+    val cron: String = "0 32 6 * * *",
     /** 매 실행 시 조회할 페이지 수(최신순 pageUnit*pages 건). 소상공인 관련도 필터로 적재량이 줄어 넉넉히 잡는다. */
     val pages: Int = 10,
     /** 페이지당 결과 수(pageUnit). */

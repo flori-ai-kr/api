@@ -111,7 +111,7 @@ class InsightService(
         val today = LocalDate.now(KST)
         val pageable = Paging.offsetLimit(offset, limit, MAX_LIMIT)
         return supportProgramRepository
-            .findFeed(category?.takeIf { it.isNotBlank() }, (keyword ?: "").trim(), today, pageable)
+            .findFeed(category?.takeIf { it.isNotBlank() }, (keyword ?: "").trim().take(KEYWORD_MAX), today, pageable)
             .content
             .map { SupportProgramResponse.from(it, today) }
     }
@@ -241,6 +241,9 @@ class InsightService(
 
     private companion object {
         const val MAX_LIMIT = 100
+
+        /** 지원사업 검색어 길이 상한(LIKE 풀스캔/과대요청 방어). */
+        const val KEYWORD_MAX = 100
 
         /** 날짜 선택기 목록 상한(약 2개월). */
         const val DATE_LIST_CAP = 60

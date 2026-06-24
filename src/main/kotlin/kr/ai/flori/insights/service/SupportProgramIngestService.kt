@@ -5,6 +5,7 @@ import kr.ai.flori.insights.client.KStartupApiClient
 import kr.ai.flori.insights.config.KStartupApiProperties
 import kr.ai.flori.insights.domain.GrantRelevance
 import kr.ai.flori.insights.domain.HtmlText
+import kr.ai.flori.insights.domain.Urls
 import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.scheduling.annotation.Scheduled
@@ -78,7 +79,7 @@ class SupportProgramIngestService(
             HtmlText.clean(item.pbancCtnt),
             parseYmd(item.pbancRcptBgngDt)?.let(Date::valueOf),
             parseYmd(item.pbancRcptEndDt)?.let(Date::valueOf),
-            item.detlPgUrl,
+            Urls.httpOrNull(item.detlPgUrl),
         )
     }
 

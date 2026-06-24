@@ -16,8 +16,8 @@ data class KStartupApiProperties(
     val baseUrl: String = "",
     /** data.go.kr 발급 일반 인증키(Decoding 원본). 빈 값이면 적재 cron no-op. */
     val serviceKey: String = "",
-    /** 적재 cron 스케줄(KST cron 식). */
-    val cron: String = "0 0 7 * * *",
+    /** 적재 cron 스케줄(KST cron 식). 경매(06:30) 직후 06:31. */
+    val cron: String = "0 31 6 * * *",
     /** 매 실행 시 조회할 페이지 수(최신순 perPage*pages 건). 소상공인 관련도 필터로 적재량이 줄어 넉넉히 잡는다. */
     val pages: Int = 10,
     /** 페이지당 결과 수(perPage). */
