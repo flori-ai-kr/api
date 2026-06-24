@@ -1,6 +1,6 @@
 # Flori API — 아키텍처 & 기술 선정 이유
 
-> 최종 업데이트: 2026-06-19 (정보 피드(인사이트) 부활 — 경매시세(aT f001)·지원사업·트렌드 읽기 + 스크랩 + 시세 적재 @Scheduled)
+> 최종 업데이트: 2026-06-25 (사업자 인증 알림톡 — 접수·승인·거절 3종 SOLAPI 카카오 알림톡 + 발송 결과 기록(notification_send_logs))
 
 이 문서는 Flori(꽃집 어드민) **모바일 앱 백엔드 API**의 기술 스택과 아키텍처를 설명한다. 단순히 "무엇을 쓰는가"가 아니라 **"왜 이것을 골랐는가"**에 초점을 맞춘다. 모든 선택에는 *기존 Next.js+Supabase 웹앱의 비즈니스 로직을 네이티브 앱이 호출 가능한 REST API로 재구현하고, 자체 AWS 인프라 위에 올린다*는 도메인 맥락이 반영되어 있다.
 
@@ -37,6 +37,7 @@ flowchart TB
         KakaoAuth[kauth.kakao.com<br/>카카오 토큰교환]
         KakaoApi[kapi.kakao.com<br/>카카오 프로필조회]
         AtFlower[flower.at.or.kr<br/>aT 화훼유통정보 f001<br/>경매 시세]
+        Solapi[api.solapi.com<br/>카카오 알림톡 중계<br/>사업자 인증 접수·승인·거절]
     end
 
     App -->|"REST + Bearer JWT"| Sec
@@ -46,6 +47,7 @@ flowchart TB
     App -.->|"직접 업로드"| S3
     Sched --> Svc
     Sched -.->|"f001 경매시세 적재"| AtFlower
+    Svc -.->|"인증 접수·승인·거절<br/>알림톡(AFTER_COMMIT @Async)"| Solapi
     Svc -->|"PushDispatcher<br/>(FCM or VAPID)"| FCM
     Svc -->|"PushDispatcher<br/>(p256dh/auth 있으면)"| VAPID
     Adv -.->|"예기치 못한 오류"| Discord
@@ -61,7 +63,7 @@ flowchart TB
     class App,Collector client
     class Sec,Ctrl,Svc,Repo,Sched,Adv server
     class RDS,S3 store
-    class FCM,VAPID,Discord,KakaoAuth,KakaoApi ext
+    class FCM,VAPID,Discord,KakaoAuth,KakaoApi,AtFlower,Solapi ext
 ```
 
 핵심 원칙: **앱은 표시만 하고, 계산·검증·격리는 서버가 책임진다.** 지출총액 등은 서버가 SSOT로 계산해 응답하고, 멀티테넌시(사용자별 데이터 격리)는 RLS 없이 애플리케이션이 유일한 방어선으로 강제한다. 기존 웹앱은 당분간 Supabase 위에서 그대로 동작하며, 이 백엔드는 독립 인프라로 분리 운영한다.
@@ -117,6 +119,8 @@ flowchart LR
 | `dashboard` | 오늘/월 집계·**네이티브 SQL 통계** |
 | `statistics` | 기간별 통계 KPI + 일별 시계열 + 분포 — 매출·지출·예약·고객 4도메인. `StatisticsSupport`(공용 비율·증감·직전 기간 계산), `StatisticsService`(파사드). 미수 제외(`payment_method_id IS NOT NULL`), 최대 731일 범위 |
 | `insights` | 정보 피드 — 경매시세(aT f001 적재 `@Scheduled`·단일시장 양재·요약/드릴다운/등락 중앙값)·지원사업·트렌드 읽기 + 스크랩(개인 `insight_scraps`). 공유 읽기 3테이블은 수집 서비스만 쓰기 |
+| `announcement` | 공지 배너 CMS (`announcements` — modal/bar 2종). 운영자 CRUD+활성토글(`/admin/announcements`, `@RequiresAdmin`). 점주 노출/클릭(`/announcements`). soft-delete. `AdminAuditService`로 변경 감사 기록 |
+| `support` | 1:1 문의·피드백 인박스 (`support_inquiries`). 점주 제출+본인 목록(`/inquiries`). 운영자 인박스+답변+상태관리(`/admin/inquiries`, `@RequiresAdmin`). 감사 기록(INQUIRY_ANSWER/INQUIRY_STATUS) |
 
 ---
 
@@ -519,6 +523,9 @@ erDiagram
     }
 ```
 
+**운영 콘솔 전용 테이블** (26-06-21-console-ops.sql, 테넌트 격리 없음 — `@RequiresAdmin` 보호):
+`admin_audit_logs`(운영자 감사로그, append-only) · `notification_send_logs`(발송이력, append-only) · `broadcasts`(브로드캐스트 캠페인) · `community_reports`(신고큐) · `community_bans`(활동차단) · `announcements`(공지배너 CMS) · `support_inquiries`(1:1문의) · `withdrawal_logs`(탈퇴사유 이탈분석). `community_posts`·`community_comments`에 `hidden_at`/`hidden_by` 컬럼 추가(운영자 가역 숨김 — 삭제 `deleted_at`과 분리).
+
 핵심 설계 결정:
 - **예약 → 매출 논리참조**: `reservations.sale_id`가 `sales`를 논리 참조(예약→매출 전환). DB FK 제약 없음 — 매출 삭제 시 앱이 `sale_id`를 NULL 처리. (`sales.reservation_id`는 보유하지 않음 — 통계는 sales에서 집계.)
 - **고정비 멱등 자동생성**: `expenses(recurring_id, date)` UNIQUE + `recurring_skips`("이것만 삭제" 시 재발 방지).
@@ -542,6 +549,17 @@ erDiagram
 | 설정 | `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}`(CRUD), `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}/order`(순서 변경 `PUT`), `/settings/preferences`, `/push/{subscribe,unsubscribe,status,test}` | Auth |
 | 대시보드 | `GET /dashboard/today`·`/dashboard/month` | Auth |
 | 통계 | `GET /statistics/sales`, `GET /statistics/expenses`, `GET /statistics/reservations`, `GET /statistics/customers` (공통 쿼리파라미터: `from=yyyy-MM-dd&to=yyyy-MM-dd`, 최대 731일) — KPI(직전 동일 기간 증감) + 일별 시계열 + 분포 반환 | Auth |
+| 공지 배너(점주) | `GET /announcements`(?placement=modal|bar), `POST /announcements/{id}/click` | Auth |
+| 공지 배너(운영자) | `GET/POST /admin/announcements`, `PATCH /admin/announcements/{id}`, `POST /admin/announcements/{id}/active`, `DELETE /admin/announcements/{id}` | Auth + **is_admin** |
+| 1:1 문의(점주) | `POST /inquiries`(201), `GET /inquiries`(본인 목록) | Auth |
+| 1:1 문의(운영자) | `GET /admin/inquiries`, `GET /admin/inquiries/{id}`, `POST /admin/inquiries/{id}/answer`, `POST /admin/inquiries/{id}/status` | Auth + **is_admin** |
+| 커뮤니티 신고(점주) | `POST /community/posts/{id}/report`, `POST /community/comments/{id}/report` | Auth + **사업자 인증** |
+| 커뮤니티 모더레이션(운영자) | `GET /admin/community/reports`(?status), `POST /admin/community/reports/{id}/resolve`, `POST /admin/community/posts/{id}/hide`·`/unhide`, `DELETE /admin/community/posts/{id}`, `POST /admin/community/comments/{id}/hide`·`/unhide`, `DELETE /admin/community/comments/{id}`, `GET/POST /admin/community/bans`, `DELETE /admin/community/bans/{id}` | Auth + **is_admin** |
+| 브로드캐스트(운영자) | `GET/POST /admin/broadcasts`, `GET /admin/broadcasts/segments/preview`, `POST /admin/broadcasts/{id}/send`, `DELETE /admin/broadcasts/{id}` | Auth + **is_admin** |
+| 알림 발송 이력(운영자) | `GET /admin/notification-logs`(?type&source&status) | Auth + **is_admin** |
+| 감사 로그(운영자) | `GET /admin/audit-logs`(?action&actorUserId) | Auth + **is_admin** |
+| 운영자 통계(확장) | `GET /admin/stats/funnel`, `GET /admin/stats/churn-reasons`(?days), `GET /admin/stats/retention` | Auth + **is_admin** |
+| AI 프롬프트 레지스트리(운영자) | `GET/POST /admin/prompts`(?channel), `GET/PATCH/DELETE /admin/prompts/{id}`, `POST /admin/prompts/{id}/activate`, `POST /admin/prompts/preview`(플레이그라운드, 저장X) — 마케팅 프롬프트 버전·활성화·튜닝 (SPEC-AI-008) | Auth + **is_admin** |
 | 사전등록 | `POST /waitlist`(201, 이메일+가게명 등록), `GET /waitlist/count`(카운트 조회) | **Public** (인증 불필요) |
 | 인터뷰 모집 | `POST /interview`(201, 이름+전화번호 신청) | **Public** (인증 불필요) |
 
@@ -594,7 +612,8 @@ AppException(errorCode: ErrorCode, message)
 └── ErrorCode (인터페이스: code·status·defaultMessage)
     ├── CommonErrorCode       (common/error)         — 횡단 코드  E-CMN-*
     ├── AuthErrorCode         (auth/error)            — 도메인 코드 E-AUTH-*
-    ├── CommunityErrorCode    (community/error)       — 도메인 코드 E-CMNT-*
+    ├── AdminErrorCode        (admin/error)           — 도메인 코드 E-ADM-* (001~014)
+    ├── CommunityErrorCode    (community/error)       — 도메인 코드 E-CMNT-* (001~009)
     ├── VerificationErrorCode (verification/error)   — 도메인 코드 E-VRF-*
     ├── WaitlistErrorCode     (waitlist/error)       — 도메인 코드 E-WL-*
     └── InterviewErrorCode    (interview/error)      — 도메인 코드 E-IV-*
@@ -666,6 +685,12 @@ flowchart LR
 | `KAKAO_REST_API_KEY` / `KAKAO_CLIENT_SECRET` | 카카오 OAuth (시크릿 '사용 안 함'이면 빈 값) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | 구글 OAuth |
 | `NAVER_CLIENT_ID` / `NAVER_CLIENT_SECRET` | 네이버 OAuth |
+| `SOLAPI_API_KEY` / `SOLAPI_API_SECRET` | SOLAPI 알림톡 API 자격증명 |
+| `SOLAPI_SENDER_PHONE` | 등록된 SMS 발신번호(알림톡 실패 시 폴백) |
+| `SOLAPI_PF_ID` | 카카오 발신프로필 ID (비즈채널 인증 후 발급) |
+| `SOLAPI_APPROVAL_TEMPLATE_ID` | 사업자 인증 승인 알림톡 템플릿 ID |
+| `SOLAPI_SUBMITTED_TEMPLATE_ID` | 사업자 인증 접수 알림톡 템플릿 ID |
+| `SOLAPI_REJECTED_TEMPLATE_ID` | 사업자 인증 거절 알림톡 템플릿 ID |
 
 ---
 

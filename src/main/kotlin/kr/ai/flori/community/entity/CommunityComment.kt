@@ -36,4 +36,24 @@ class CommunityComment(
 
     @Column(name = "deleted_at")
     var deletedAt: Instant? = null
+
+    @Column(name = "hidden_at")
+    var hiddenAt: Instant? = null
+        protected set
+
+    @Column(name = "hidden_by")
+    var hiddenBy: Long? = null
+        protected set
+
+    /** 운영자에 의한 숨김 처리(노출 제외). 댓글은 보존하되 일반 사용자에게 보이지 않는다. */
+    fun hide(byUserId: Long) {
+        hiddenAt = Instant.now()
+        hiddenBy = byUserId
+    }
+
+    /** 숨김 해제(다시 노출). */
+    fun unhide() {
+        hiddenAt = null
+        hiddenBy = null
+    }
 }

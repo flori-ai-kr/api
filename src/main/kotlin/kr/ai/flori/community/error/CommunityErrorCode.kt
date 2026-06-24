@@ -18,4 +18,6 @@ enum class CommunityErrorCode(
     FORBIDDEN("E-CMNT-005", HttpStatus.FORBIDDEN, "권한이 없습니다"),
     INVALID_PARENT("E-CMNT-006", HttpStatus.BAD_REQUEST, "올바르지 않은 부모 댓글입니다"),
     PIN_ADMIN_ONLY("E-CMNT-007", HttpStatus.FORBIDDEN, "게시글 고정은 관리자만 할 수 있습니다"),
+    INVALID_REASON("E-CMNT-008", HttpStatus.BAD_REQUEST, "올바르지 않은 신고 사유입니다"),
+    BANNED("E-CMNT-009", HttpStatus.FORBIDDEN, "커뮤니티 활동이 제한된 사용자입니다"),
 }

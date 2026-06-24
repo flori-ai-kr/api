@@ -55,16 +55,37 @@ class TenantIsolationGuardTest {
             // 커뮤니티: 단일 커뮤니티(테넌트 간 공유) — 엔티티에 user_id 격리가 없고,
             // 비밀글/소유권/마스킹은 서비스가 뷰어(JWT)+author_user_id로 계산한다(설계상 전역 읽기/쓰기).
             "CommunityPostRepository#findByIdAndDeletedAtIsNull",
+            "CommunityPostRepository#findByIdAndDeletedAtIsNullAndHiddenAtIsNull",
             "CommunityPostRepository#findFeed",
             "CommunityPostRepository#adjustLikeCount",
             "CommunityPostRepository#adjustCommentCount",
             "CommunityCommentRepository#findByIdAndDeletedAtIsNull",
-            "CommunityCommentRepository#findByPostIdOrderByCreatedAtAsc",
+            "CommunityCommentRepository#findByPostIdAndHiddenAtIsNullOrderByCreatedAtAsc",
             // 댓글 깊이 검증용 조상 체인 깊이(재귀 CTE) — 단일 커뮤니티(전역), 깊이만 계산하고 데이터 노출 없음
             "CommunityCommentRepository#ancestorDepth",
+            // 커뮤니티 모더레이션(신고/차단): 단일 커뮤니티(전역) — 동일 대상 신고 집계/큐 조회.
+            // 권한은 @RequiresBusinessVerified(신고) / @RequiresAdmin(처리·차단)로 보호된다.
+            // (existsBy...ReporterUserId / findByUserIdAndLiftedAtIsNull 은 user_id 격리 메서드라 화이트리스트 불필요)
+            "CommunityReportRepository#search",
+            "CommunityReportRepository#countByTargetTypeAndTargetIdAndStatus",
+            "CommunityBanRepository#findActive",
             // 운영 콘솔(admin): 사업자 인증 심사 — 의도적 cross-tenant 조회.
             // @RequiresAdmin 인터셉터(User.isAdmin 재검증)로만 보호되며 일반 점주는 접근 불가.
             "BusinessVerificationRepository#findByStatusOrderByCreatedAtDesc",
+            // 운영 콘솔(admin): 감사로그·발송이력·브로드캐스트·문의 전역 조회 — @RequiresAdmin 으로만 보호.
+            "NotificationSendLogRepository#search",
+            "BroadcastRepository#search",
+            "SupportInquiryRepository#search",
+            // 공지 배너: 단일 전역 테이블(테넌트 격리 없음) — 활성 공지는 모든 점주에게 동일 노출.
+            "AnnouncementRepository#findByIdAndDeletedAtIsNull",
+            "AnnouncementRepository#findActive",
+            "AnnouncementRepository#findAllForAdmin",
+            // AI 프롬프트 레지스트리(SPEC-AI-008): user 데이터가 아니라 운영 자산(전역 단일 테이블).
+            // 접근은 콘솔(@RequiresAdmin)과 게이트웨이 내부 active 로드로만 제한된다.
+            "AiPromptRepository#findFirstByChannelAndIsActiveTrueAndDeletedAtIsNull",
+            "AiPromptRepository#findByChannelAndDeletedAtIsNullOrderByIsActiveDescCreatedAtDesc",
+            "AiPromptRepository#findByIdAndDeletedAtIsNull",
+            "AiPromptRepository#findByChannelAndVersionAndDeletedAtIsNull",
             // 대기자 명단(공개 모집): 인증/테넌시 없는 단일 전역 테이블 — email 중복 검사는 전역 unique 제약 대응
             "WaitlistRegistrationRepository#existsByEmail",
             // 유저 인터뷰 모집(공개): 인증/테넌시 없는 단일 전역 테이블 — phone 중복 검사는 전역 unique 제약 대응

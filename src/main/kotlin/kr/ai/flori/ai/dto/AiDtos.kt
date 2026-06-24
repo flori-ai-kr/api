@@ -2,6 +2,7 @@ package kr.ai.flori.ai.dto
 
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
+import java.math.BigDecimal
 import java.time.Instant
 
 // ─── web ↔ 게이트웨이(Spring) 계약 ──────────────────────────────
@@ -56,4 +57,123 @@ data class ConfirmRequest(
 data class ConfirmResponse(
     val action: String,
     val reservationId: Long?,
+)
+
+// ─── 마케팅(블로그 초안) — web ↔ 게이트웨이 계약(camelCase) ───────────────────
+
+/** 블로그 초안 생성 요청. 키워드만 필수. 사진은 0~4장(SSRF는 ai-server가, 개수/길이는 게이트웨이가 방어). */
+data class BlogGenerateRequest(
+    @field:NotBlank(message = "키워드를 입력해 주세요")
+    @field:Size(max = 200, message = "키워드가 너무 깁니다")
+    val keyword: String?,
+    @field:Size(max = 100, message = "상황이 너무 깁니다")
+    val situation: String? = null,
+    @field:Size(max = 500, message = "메모가 너무 깁니다")
+    val memo: String? = null,
+    @field:Size(max = 4, message = "사진은 최대 4장까지 첨부할 수 있어요")
+    val photoUrls: List<
+        @Size(max = 2000, message = "사진 URL이 너무 깁니다")
+        String,
+    >? = null,
+)
+
+data class BlogSection(
+    val heading: String,
+    val body: String,
+)
+
+data class BlogFaq(
+    val q: String,
+    val a: String,
+)
+
+/** 생성된 블로그 초안. ai-server BlogDraft를 그대로 미러링한 게이트웨이 공개 계약. */
+data class BlogDraft(
+    val title: String,
+    val sections: List<BlogSection>,
+    val faq: List<BlogFaq>,
+    val hashtags: List<String>,
+)
+
+/** 블로그 생성 응답. contentId로 상세/복사/소프트삭제(공개 계약은 문자열 ID — AI 계약 관행). */
+data class BlogGenerateResponse(
+    val contentId: String,
+    val draft: BlogDraft,
+)
+
+// ─── 프롬프트 플레이그라운드(SPEC-AI-008) — 어드민 콘솔 즉석 미리보기(저장 안 함) ───
+
+/** 편집 중인 프롬프트 초안(정적 부분). 저장 전 미리보기 생성에만 쓴다. */
+data class BlogPromptDraft(
+    val systemMd: String? = null,
+    val rulesMd: String? = null,
+    val outputSpecMd: String? = null,
+    val model: String? = null,
+    val temperature: BigDecimal? = null,
+)
+
+/** 미리보기용 샘플 입력(동적 데이터). 어드민이 콘솔에서 입력. */
+data class BlogPreviewSample(
+    @field:Size(max = 200)
+    val keyword: String = "장미 꽃다발",
+    @field:Size(max = 100)
+    val situation: String? = null,
+    @field:Size(max = 500)
+    val memo: String? = null,
+    @field:Size(max = 3)
+    val toneSamples: List<
+        @Size(max = 4000)
+        String,
+    > = emptyList(),
+)
+
+data class BlogPreviewRequest(
+    val promptDraft: BlogPromptDraft = BlogPromptDraft(),
+    val sampleInput: BlogPreviewSample = BlogPreviewSample(),
+)
+
+/** 미리보기 결과. 저장하지 않으므로 contentId가 없다(활성본·DB 영향 없음). */
+data class BlogPreviewResponse(
+    val draft: BlogDraft,
+    val model: String,
+)
+
+/** 말투 프로필 조회/수정. 샘플은 0~3개. */
+data class ToneProfileResponse(
+    val samples: List<String>,
+)
+
+data class ToneProfileUpdateRequest(
+    @field:Size(max = 3, message = "샘플은 최대 3개까지 등록할 수 있어요")
+    val samples: List<
+        @Size(max = 4000, message = "샘플이 너무 깁니다")
+        String,
+    >? = null,
+)
+
+/** 마케팅 콘텐츠 목록 항목(요약). 공개 계약은 문자열 ID. 본문(섹션/FAQ)은 상세에서. */
+data class MarketingContentSummary(
+    val id: String,
+    val channel: String,
+    val title: String,
+    val keyword: String,
+    val createdAt: Instant,
+)
+
+data class MarketingContentsResponse(
+    val contents: List<MarketingContentSummary>,
+    val hasMore: Boolean,
+)
+
+/** 마케팅 콘텐츠 상세. 요약 필드 전부 + 입력 복원(situation/memo/photoUrls) + 초안. */
+data class MarketingContentDetail(
+    val id: String,
+    val channel: String,
+    val title: String,
+    val keyword: String,
+    val createdAt: Instant,
+    val situation: String?,
+    val memo: String?,
+    val photoUrls: List<String>,
+    val draft: BlogDraft,
 )

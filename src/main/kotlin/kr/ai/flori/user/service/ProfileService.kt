@@ -7,6 +7,7 @@ import kr.ai.flori.user.dto.FullProfileResponse
 import kr.ai.flori.user.dto.ProfileUploadTargetResponse
 import kr.ai.flori.user.repository.UserProfileRepository
 import kr.ai.flori.user.repository.UserRepository
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -16,6 +17,7 @@ class ProfileService(
     private val userRepository: UserRepository,
     private val userProfileRepository: UserProfileRepository,
     private val s3PresignService: S3PresignService,
+    private val jdbcTemplate: JdbcTemplate,
 ) {
     fun getFullProfile(userId: Long): FullProfileResponse {
         val user =
@@ -58,7 +60,6 @@ class ProfileService(
     }
 
     @Transactional
-    @Suppress("UnusedParameter")
     fun deleteAccount(
         userId: Long,
         reason: String?,
@@ -68,6 +69,14 @@ class ProfileService(
             userRepository
                 .findById(userId)
                 .orElseThrow { AppException(CommonErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다") }
+
+        // 탈퇴 사유 영속(이탈 분석) — 계정 스크럽 전에 기록.
+        jdbcTemplate.update(
+            "INSERT INTO withdrawal_logs (user_id, reason, detail) VALUES (?, ?, ?)",
+            userId,
+            reason?.take(WITHDRAWAL_REASON_MAX),
+            detail,
+        )
 
         // soft delete — 계정 비활성화
         user.isActive = false
@@ -86,6 +95,7 @@ class ProfileService(
 
     private companion object {
         const val SUFFIX_LENGTH = 8
+        const val WITHDRAWAL_REASON_MAX = 100
         val CONTENT_TYPE_EXT =
             mapOf(
                 "image/jpeg" to "jpg",

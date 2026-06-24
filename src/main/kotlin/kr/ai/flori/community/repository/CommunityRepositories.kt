@@ -13,10 +13,14 @@ import org.springframework.data.repository.query.Param
 interface CommunityPostRepository : JpaRepository<CommunityPost, Long> {
     fun findByIdAndDeletedAtIsNull(id: Long): CommunityPost?
 
-    /** 목록: 미삭제만, 고정글 우선 + 최신순. 카테고리/검색(content_text·title) 필터. */
+    /** 일반 사용자용 조회: 미삭제 + 미숨김만. 운영자 숨김 글은 일반 사용자에게 404. */
+    fun findByIdAndDeletedAtIsNullAndHiddenAtIsNull(id: Long): CommunityPost?
+
+    /** 목록: 미삭제·미숨김만, 고정글 우선 + 최신순. 카테고리/검색(content_text·title) 필터. */
     @Query(
         "SELECT p FROM CommunityPost p " +
             "WHERE p.deletedAt IS NULL " +
+            "AND p.hiddenAt IS NULL " +
             "AND (:category IS NULL OR p.category = :category) " +
             "AND (:search IS NULL OR LOWER(p.title) LIKE :search OR LOWER(p.contentText) LIKE :search) " +
             "ORDER BY p.isPinned DESC, p.createdAt DESC",
@@ -48,8 +52,8 @@ interface CommunityPostRepository : JpaRepository<CommunityPost, Long> {
 interface CommunityCommentRepository : JpaRepository<CommunityComment, Long> {
     fun findByIdAndDeletedAtIsNull(id: Long): CommunityComment?
 
-    /** 글의 댓글 전체(삭제 포함 — 톰스톤으로 스레드 유지). 작성순. */
-    fun findByPostIdOrderByCreatedAtAsc(postId: Long): List<CommunityComment>
+    /** 글의 댓글 전체(삭제 포함 — 톰스톤으로 스레드 유지, 운영자 숨김은 제외). 작성순. */
+    fun findByPostIdAndHiddenAtIsNullOrderByCreatedAtAsc(postId: Long): List<CommunityComment>
 
     /**
      * 댓글의 조상 깊이(자신=1, 부모마다 +1)를 단일 재귀 CTE로 계산. 대댓글 깊이 검증에서 단건 반복조회(N+1)를 대체.

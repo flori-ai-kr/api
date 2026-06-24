@@ -63,12 +63,14 @@ src/main/kotlin/kr/ai/flori/
 ├── photos/                # 갤러리 (presigned 업로드) · 태그 · 고객 연결(customer_id 직접 필터)
 ├── settings/              # 카드사 · 매출/지출 설정 · 하단바 · 푸시 구독
 ├── community/             # 커뮤니티 게시판(단일 공유) · 비밀글/댓글·대댓글·좋아요·soft delete
-├── verification/          # 사업자 인증 (신청·상태조회·presigned 업로드·게이팅)
+├── verification/          # 사업자 인증 (신청·상태조회·presigned 업로드·게이팅) + 결과 알림톡(접수/승인/거절, SOLAPI) — 발송 결과는 notification_send_logs(source=alimtalk, type=business_verification)
 ├── waitlist/              # 사전등록 공개 모집 (인증 불필요 — POST /waitlist, GET /waitlist/count). 식별자: 이메일(정규화 UNIQUE)
 ├── interview/             # 유저 인터뷰 모집 (공개 — POST /interview, 이름+전화번호). 신청 시 Discord INTERVIEW 채널 비동기 알림
 ├── dashboard/             # 오늘/월 집계 · 네이티브 SQL 통계
 ├── statistics/            # 기간별 통계 API (/statistics/**) — 매출·지출·예약·고객 KPI + 일별 시계열 + 분포. JdbcTemplate 네이티브 SQL. 도메인별 서비스(Sales/Expenses/Reservation/CustomerStatisticsService) + StatisticsSupport(공용 증감·비율·기간 계산) + 파사드(StatisticsService) + StatisticsController
-├── admin/                 # 운영자 콘솔 API (/admin/**, @RequiresAdmin · cross-tenant) — 통계·인증심사·유저·AI헬스 프록시
+├── announcement/          # 공지 배너 CMS (announcements) — 운영자 CRUD(/admin/announcements) + 점주 노출/클릭(/announcements). 활성토글+기간+클릭집계. soft-delete
+├── support/               # 1:1 문의·피드백 인박스 (support_inquiries) — 점주 제출(/inquiries) + 운영자 답변/상태관리(/admin/inquiries). @RequiresAdmin 격리
+├── admin/                 # 운영자 콘솔 API (/admin/**, @RequiresAdmin · cross-tenant) — 통계(funnel/churn-reasons/retention 추가)·인증심사·유저(감사로그)·브로드캐스트·커뮤니티 모더레이션·알림발송이력·AI헬스 프록시
 ├── ai/                    # AI 게이트웨이 (/ai/**) — web↔ai-server(FastAPI) 중개 + 모든 AI 호출 DB 로깅. 채팅/proactive/OCR예약/confirm. ai-server는 내부망 stateless
 ├── insights/              # 정보 피드 (/insights/**) — 경매시세(aT f001 적재, 단일시장 양재)·지원사업(K-Startup·기업마당 적재) 읽기 + 스크랩(개인). 적재는 모두 @Scheduled, 키 미설정 시 no-op. 공유 읽기 2테이블(flower_auction_prices·support_programs) + insight_scraps(user_id). FK 없음 간접참조
 └── common/                # 횡단 관심사
