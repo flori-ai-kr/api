@@ -53,6 +53,7 @@ class SubscriptionService(
     fun subscribe(req: SubscribeRequest): SubscriptionResponse {
         val userId = TenantContext.currentUserId()
         guardNotAlreadyActive(userId)
+        val amount = amountFor(req.plan)
 
         // 외부 호출: 실패 시 트랜잭션 전체 롤백 (DB 변경 없으므로 안전)
         val issued = billingClient.issueBillingKey(req.authKey, req.customerKey)
@@ -91,8 +92,6 @@ class SubscriptionService(
             periodEnd = periodEndFor(req.plan, nowKst)
             nextBilling = now // 스케줄러가 ≤1일 내 첫 과금
         }
-
-        val amount = amountFor(req.plan)
 
         // 구독 upsert — user_id UNIQUE
         val sub =
