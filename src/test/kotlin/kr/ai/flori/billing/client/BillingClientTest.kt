@@ -5,6 +5,7 @@ import kr.ai.flori.common.error.AppException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.web.client.MockRestServiceServer
@@ -13,8 +14,6 @@ import org.springframework.test.web.client.match.MockRestRequestMatchers.request
 import org.springframework.test.web.client.response.MockRestResponseCreators.withStatus
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
 import org.springframework.web.client.RestClient
-import org.springframework.http.HttpMethod
-import org.springframework.http.client.ClientHttpRequestFactory
 
 class BillingClientTest {
     private val props = TossPaymentsProperties(secretKey = "test_sk_abc", baseUrl = "https://api.tosspayments.com")
@@ -29,7 +28,8 @@ class BillingClientTest {
     @Test
     fun `빌링키 발급 성공`() {
         val (client, server) = clientWith()
-        server.expect(requestTo("https://api.tosspayments.com/v1/billing/authorizations/issue"))
+        server
+            .expect(requestTo("https://api.tosspayments.com/v1/billing/authorizations/issue"))
             .andExpect(method(HttpMethod.POST))
             .andRespond(
                 withSuccess(
@@ -46,7 +46,8 @@ class BillingClientTest {
     @Test
     fun `자동결제 승인 성공`() {
         val (client, server) = clientWith()
-        server.expect(requestTo("https://api.tosspayments.com/v1/billing/bk_123"))
+        server
+            .expect(requestTo("https://api.tosspayments.com/v1/billing/bk_123"))
             .andExpect(method(HttpMethod.POST))
             .andRespond(
                 withSuccess(
@@ -54,10 +55,15 @@ class BillingClientTest {
                     MediaType.APPLICATION_JSON,
                 ),
             )
-        val result = client.approveBilling(
-            billingKey = "bk_123", customerKey = "cust_1", amount = 14900,
-            orderId = "sub1_20260708_a1", orderName = "flori 월 구독", idempotencyKey = "sub1_20260708_a1",
-        )
+        val result =
+            client.approveBilling(
+                billingKey = "bk_123",
+                customerKey = "cust_1",
+                amount = 14900,
+                orderId = "sub1_20260708_a1",
+                orderName = "flori 월 구독",
+                idempotencyKey = "sub1_20260708_a1",
+            )
         assertThat(result.paymentKey).isEqualTo("pay_999")
         server.verify()
     }
@@ -65,7 +71,8 @@ class BillingClientTest {
     @Test
     fun `승인 거절(4xx)이면 PAYMENT_REJECTED 예외`() {
         val (client, server) = clientWith()
-        server.expect(requestTo("https://api.tosspayments.com/v1/billing/bk_123"))
+        server
+            .expect(requestTo("https://api.tosspayments.com/v1/billing/bk_123"))
             .andRespond(
                 withStatus(HttpStatus.FORBIDDEN)
                     .body("""{"code":"REJECT_CARD_COMPANY","message":"한도초과"}""")

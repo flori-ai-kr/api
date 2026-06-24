@@ -23,14 +23,18 @@ class BillingClient(
     private val authHeader: String =
         "Basic " + Base64.getEncoder().encodeToString("${properties.secretKey}:".toByteArray())
 
-    fun issueBillingKey(authKey: String, customerKey: String): IssuedBilling {
-        val res = post(
-            "/v1/billing/authorizations/issue",
-            mapOf("authKey" to authKey, "customerKey" to customerKey),
-            null,
-            IssueResponse::class.java,
-            BillingErrorCode.BILLING_KEY_ISSUE_FAILED,
-        )
+    fun issueBillingKey(
+        authKey: String,
+        customerKey: String,
+    ): IssuedBilling {
+        val res =
+            post(
+                "/v1/billing/authorizations/issue",
+                mapOf("authKey" to authKey, "customerKey" to customerKey),
+                null,
+                IssueResponse::class.java,
+                BillingErrorCode.BILLING_KEY_ISSUE_FAILED,
+            )
         return IssuedBilling(res.billingKey, res.card?.company, res.card?.number, res.card?.cardType)
     }
 
@@ -42,13 +46,14 @@ class BillingClient(
         orderName: String,
         idempotencyKey: String,
     ): ApprovedPayment {
-        val res = post(
-            "/v1/billing/$billingKey",
-            mapOf("customerKey" to customerKey, "amount" to amount, "orderId" to orderId, "orderName" to orderName),
-            idempotencyKey,
-            ApproveResponse::class.java,
-            BillingErrorCode.PAYMENT_REJECTED,
-        )
+        val res =
+            post(
+                "/v1/billing/$billingKey",
+                mapOf("customerKey" to customerKey, "amount" to amount, "orderId" to orderId, "orderName" to orderName),
+                idempotencyKey,
+                ApproveResponse::class.java,
+                BillingErrorCode.PAYMENT_REJECTED,
+            )
         return ApprovedPayment(res.paymentKey, res.orderId, res.approvedAt)
     }
 
@@ -60,14 +65,14 @@ class BillingClient(
         onError: BillingErrorCode,
     ): T =
         try {
-            restClient.post()
+            restClient
+                .post()
                 .uri(properties.baseUrl + path)
                 .headers { h ->
                     h.set(HttpHeaders.AUTHORIZATION, authHeader)
                     h.contentType = MediaType.APPLICATION_JSON
                     if (idempotencyKey != null) h.set("Idempotency-Key", idempotencyKey)
-                }
-                .body(body)
+                }.body(body)
                 .retrieve()
                 .body(responseType) ?: throw AppException(onError)
         } catch (e: RestClientResponseException) {
@@ -77,14 +82,35 @@ class BillingClient(
         }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    data class IssueResponse(val billingKey: String, val card: Card? = null)
+    data class IssueResponse(
+        val billingKey: String,
+        val card: Card? = null,
+    )
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    data class Card(val company: String? = null, val number: String? = null, val cardType: String? = null)
+    data class Card(
+        val company: String? = null,
+        val number: String? = null,
+        val cardType: String? = null,
+    )
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    data class ApproveResponse(val paymentKey: String, val orderId: String, val approvedAt: String? = null)
+    data class ApproveResponse(
+        val paymentKey: String,
+        val orderId: String,
+        val approvedAt: String? = null,
+    )
 }
 
-data class IssuedBilling(val billingKey: String, val cardCompany: String?, val cardNumber: String?, val cardType: String?)
-data class ApprovedPayment(val paymentKey: String, val orderId: String, val approvedAt: String?)
+data class IssuedBilling(
+    val billingKey: String,
+    val cardCompany: String?,
+    val cardNumber: String?,
+    val cardType: String?,
+)
+
+data class ApprovedPayment(
+    val paymentKey: String,
+    val orderId: String,
+    val approvedAt: String?,
+)
