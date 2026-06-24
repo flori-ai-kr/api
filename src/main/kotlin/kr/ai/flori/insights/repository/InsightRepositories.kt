@@ -1,33 +1,15 @@
 package kr.ai.flori.insights.repository
 
 import kr.ai.flori.insights.entity.FlowerAuctionPrice
+import kr.ai.flori.insights.entity.FlowerItemScrap
 import kr.ai.flori.insights.entity.InsightScrap
 import kr.ai.flori.insights.entity.SupportProgram
-import kr.ai.flori.insights.entity.TrendArticle
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
-
-/**
- * 트렌드 기사(공유 읽기). 테넌트 격리 없음 — 의도적 전역(TenantIsolationGuardTest 화이트리스트 등록).
- */
-interface TrendArticleRepository : JpaRepository<TrendArticle, Long> {
-    /** 목록: 카테고리 필터(없으면 전체) + 수집일/생성순 최신. */
-    @Query(
-        "SELECT a FROM TrendArticle a " +
-            "WHERE (:category IS NULL OR a.category = :category) " +
-            "ORDER BY a.collectedAt DESC, a.id DESC",
-    )
-    fun findFeed(
-        @Param("category") category: String?,
-        pageable: Pageable,
-    ): Page<TrendArticle>
-
-    /** 단건(스크랩 대상 검증·목록 enrichment 용). 공유 데이터라 id 만으로 조회. */
-    fun findByIdIn(ids: Collection<Long>): List<TrendArticle>
-}
+import java.time.LocalDate
 
 /**
  * 화훼 경매 시세(공유 읽기). 단순 CRUD/적재용 — 파생(등락률) 조회는 FlowerAuctionPriceQueryRepository.
@@ -39,14 +21,27 @@ interface FlowerAuctionPriceRepository : JpaRepository<FlowerAuctionPrice, Long>
  * 지원사업(공유 읽기). 테넌트 격리 없음 — 의도적 전역.
  */
 interface SupportProgramRepository : JpaRepository<SupportProgram, Long> {
-    /** 목록: 카테고리 필터(없으면 전체) + 마감(apply_end) 임박순(nulls last). */
+    /**
+     * 목록: 카테고리 필터(없으면 전체) + 모집중(마감 미경과 또는 상시[null])만 + 마감 임박순(nulls last).
+     * 마감 지난 공고는 노출에서 제외한다(만료 공고가 임박순 앞에 깔리는 문제 방지).
+     * 기준일(today)은 호출부에서 KST 로 계산해 넘긴다 — Postgres CURRENT_DATE(UTC)를 쓰면 KST 새벽(00~09시)에
+     * 어제 마감 공고가 안 걸러지는 TZ 버그가 생기므로, dDay 계산과 동일한 KST 기준일을 파라미터로 받는다.
+     * keyword(빈 문자열이면 전체)로 제목·요약·기관명을 대소문자 무시 부분일치 검색한다.
+     * (null 바인드는 CONCAT 타입추론을 깨므로 호출부에서 빈 문자열로 정규화 — 빈값은 제목 LIKE '%%'로 전체 매칭.)
+     */
     @Query(
         "SELECT p FROM SupportProgram p " +
             "WHERE (:category IS NULL OR p.category = :category) " +
+            "AND (p.applyEnd IS NULL OR p.applyEnd >= :today) " +
+            "AND (LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(p.summary) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(p.agency) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
             "ORDER BY p.applyEnd ASC NULLS LAST, p.id DESC",
     )
     fun findFeed(
         @Param("category") category: String?,
+        @Param("keyword") keyword: String,
+        @Param("today") today: LocalDate,
         pageable: Pageable,
     ): Page<SupportProgram>
 
@@ -73,4 +68,17 @@ interface InsightScrapRepository : JpaRepository<InsightScrap, Long> {
         userId: Long,
         targetType: String,
     ): Long
+}
+
+/**
+ * 경매 품목 스크랩(개인). 모든 메서드는 user_id 로 격리한다(멀티테넌시 HARD).
+ */
+interface FlowerItemScrapRepository : JpaRepository<FlowerItemScrap, Long> {
+    fun findByUserIdAndPumName(
+        userId: Long,
+        pumName: String,
+    ): FlowerItemScrap?
+
+    /** 내 스크랩 품목 목록(최신순). */
+    fun findByUserIdOrderByCreatedAtDesc(userId: Long): List<FlowerItemScrap>
 }

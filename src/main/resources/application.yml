@@ -81,9 +81,26 @@ flori:
   flower-api:
     base-url: ${FLOWER_API_BASE_URL:https://flower.at.or.kr/api/returnData.api}
     service-key: ${FLOWER_API_SERVICE_KEY:}
-    cron: ${FLOWER_API_CRON:0 30 6 * * *}   # 매일 KST 06:30
+    cron: ${FLOWER_API_CRON:0 30 6 * * *}   # 매일 KST 06:30 (적재 순서 ①경매 → ②K-Startup → ③기업마당, 단일 스레드라 순차)
     backfill-days: ${FLOWER_API_BACKFILL_DAYS:3}
     page-size: ${FLOWER_API_PAGE_SIZE:1000}
+  # 창업진흥원 K-Startup 사업공고 OpenAPI(data.go.kr) — 지원사업 적재.
+  # service-key 미설정 시 적재 cron 은 no-op(경고 로그) → 키 없는 dev 부팅 가능.
+  kstartup-api:
+    base-url: ${KSTARTUP_API_BASE_URL:https://apis.data.go.kr/B552735/kisedKstartupService01/getAnnouncementInformation01}
+    service-key: ${KSTARTUP_API_SERVICE_KEY:}
+    cron: ${KSTARTUP_API_CRON:0 31 6 * * *}  # 매일 KST 06:31 (②, 경매 직후)
+    pages: ${KSTARTUP_API_PAGES:10}          # 소상공인 관련도 필터로 적재량 감소 → 넉넉히 조회
+    page-size: ${KSTARTUP_API_PAGE_SIZE:100}
+  # 기업마당(bizinfo) 지원사업 OpenAPI — 지원사업 적재(source='bizinfo', 소진공·지자체·중기부 통합 집계).
+  # crtfc-key 미설정 시 적재 cron 은 no-op(경고 로그) → 키 없는 dev 부팅 가능. 키는 기업마당 "정책정보 개방"에서 발급.
+  bizinfo-api:
+    base-url: ${BIZINFO_API_BASE_URL:https://www.bizinfo.go.kr/uss/rss/bizinfoApi.do}
+    crtfc-key: ${BIZINFO_API_CRTFC_KEY:}
+    cron: ${BIZINFO_API_CRON:0 32 6 * * *}  # 매일 KST 06:32 (③, K-Startup 직후)
+    pages: ${BIZINFO_API_PAGES:10}          # 소상공인 관련도 필터로 적재량 감소 → 넉넉히 조회
+    page-unit: ${BIZINFO_API_PAGE_UNIT:100}
+    hashtags: ${BIZINFO_API_HASHTAGS:}
 
 # 내부 API(수집/브로드캐스트) Bearer 키. 미설정 시 내부 API 접근 차단.
 internal:

@@ -72,7 +72,7 @@ src/main/kotlin/kr/ai/flori/
 ├── support/               # 1:1 문의·피드백 인박스 (support_inquiries) — 점주 제출(/inquiries) + 운영자 답변/상태관리(/admin/inquiries). @RequiresAdmin 격리
 ├── admin/                 # 운영자 콘솔 API (/admin/**, @RequiresAdmin · cross-tenant) — 통계(funnel/churn-reasons/retention 추가)·인증심사·유저(감사로그)·브로드캐스트·커뮤니티 모더레이션·알림발송이력·AI헬스 프록시
 ├── ai/                    # AI 게이트웨이 (/ai/**) — web↔ai-server(FastAPI) 중개 + 모든 AI 호출 DB 로깅. 채팅/proactive/OCR예약/confirm. ai-server는 내부망 stateless
-├── insights/              # 정보 피드 (/insights/**) — 경매시세(aT f001 적재 @Scheduled, 단일시장 양재)·지원사업·트렌드 읽기 + 스크랩(개인). 공유 읽기 3테이블 + insight_scraps(user_id). FK 없음 간접참조
+├── insights/              # 정보 피드 (/insights/**) — 경매시세(aT f001 적재, 단일시장 양재)·지원사업(K-Startup·기업마당 적재) 읽기 + 스크랩(개인). 적재는 모두 @Scheduled, 키 미설정 시 no-op. 공유 읽기 2테이블(flower_auction_prices·support_programs) + insight_scraps(user_id). FK 없음 간접참조
 └── common/                # 횡단 관심사
     ├── config/            # CORS, OpenAPI, Async, Schedule, Web
     ├── domain/            # 공통 enum (PaymentMethods, ReservationStatuses)
