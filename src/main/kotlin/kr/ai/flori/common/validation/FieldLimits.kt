@@ -7,7 +7,7 @@ package kr.ai.flori.common.validation
  * 값 기준: VARCHAR(n) 컬럼은 n에 맞추고, TEXT 컬럼은 합리적 애플리케이션 상한으로 정한다.
  */
 object FieldLimits {
-    const val NAME = 100 // users.nickname·customers.name VARCHAR(100)
+    const val NAME = 100 // users.nickname·customers.name VARCHAR(100); users.name TEXT (앱 레벨 상한 공유)
     const val STORE_NAME = 100 // user_profiles.store_name TEXT
     const val EMAIL = 255 // users.email VARCHAR(255)
     const val PHONE = 20 // *.customer_phone·customers.phone VARCHAR(20)

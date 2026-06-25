@@ -1,6 +1,8 @@
 package kr.ai.flori.support.dto
 
+import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Size
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
@@ -38,7 +40,11 @@ data class InquiryCreateRequest(
     @field:NotBlank(message = "내용은 필수입니다")
     @field:Size(max = FieldLimits.INQUIRY_BODY, message = "내용이 너무 깁니다")
     val body: String?,
-    val imageUrls: List<String> = emptyList(),
+    @field:Size(max = FieldLimits.IMAGE_COUNT, message = "이미지가 너무 많습니다")
+    val imageUrls: List<
+        @Size(max = FieldLimits.IMAGE_URL, message = "이미지 URL이 너무 깁니다")
+        String,
+    > = emptyList(),
 )
 
 data class InquiryAnswerRequest(
@@ -132,10 +138,15 @@ fun SupportInquiry.toAdminResponse(
 // ── 업로드 ────────────────────────────────────────────────────────────────
 
 data class InquiryUploadRequest(
-    val files: List<InquiryFileInfo>,
+    @field:NotEmpty(message = "업로드할 파일이 없습니다")
+    @field:Size(max = FieldLimits.IMAGE_COUNT, message = "한 번에 업로드할 수 있는 파일 수를 초과했습니다")
+    val files: List<@Valid InquiryFileInfo>,
 ) {
     data class InquiryFileInfo(
+        @field:NotBlank
+        @field:Size(max = 255)
         val name: String,
+        @field:NotBlank
         val type: String,
         val size: Long,
     )

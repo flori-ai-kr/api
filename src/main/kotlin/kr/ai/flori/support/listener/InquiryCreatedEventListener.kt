@@ -22,7 +22,7 @@ class InquiryCreatedEventListener(
             """
             **[📬 새 문의 접수]**
             - 카테고리: ${event.category}
-            - 제목: ${event.title}
+            - 제목: `${event.title.take(TITLE_MAX_DISPLAY)}`
             - 작성자: user_${event.userId}
             - 접수 시각: $now
             """.trimIndent()
@@ -31,5 +31,6 @@ class InquiryCreatedEventListener(
 
     private companion object {
         val TIMESTAMP_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+        const val TITLE_MAX_DISPLAY = 200
     }
 }

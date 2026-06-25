@@ -3,6 +3,7 @@ package kr.ai.flori.support.service
 import kr.ai.flori.admin.error.AdminErrorCode
 import kr.ai.flori.admin.service.AdminAuditService
 import kr.ai.flori.common.error.AppException
+import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.storage.S3PresignService
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.common.util.Paging
@@ -82,7 +83,14 @@ class SupportInquiryService(
     fun createUploadTargets(files: List<InquiryUploadRequest.InquiryFileInfo>): List<InquiryUploadTargetResponse> {
         val userId = TenantContext.currentUserId()
         return files.map { file ->
-            val key = "support/$userId/${System.currentTimeMillis()}-${file.name}"
+            if (!file.type.startsWith("image/")) throw AppException(CommonErrorCode.VALIDATION, "이미지만 업로드할 수 있습니다")
+            val safeName =
+                file.name
+                    .substringAfterLast('/')
+                    .substringAfterLast('\\')
+                    .replace("..", "")
+                    .ifBlank { "image" }
+            val key = "support/$userId/${System.currentTimeMillis()}-$safeName"
             val presigned = s3PresignService.presignUpload(key, file.type)
             InquiryUploadTargetResponse(
                 uploadUrl = presigned.uploadUrl,

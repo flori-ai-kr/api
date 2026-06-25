@@ -38,6 +38,6 @@ class InquiryController(
 
     @PostMapping("/upload-targets")
     fun uploadTargets(
-        @RequestBody request: InquiryUploadRequest,
+        @Valid @RequestBody request: InquiryUploadRequest,
     ): List<InquiryUploadTargetResponse> = service.createUploadTargets(request.files)
 }
