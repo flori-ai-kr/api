@@ -44,6 +44,7 @@ class ProfileServiceWithdrawalTest {
                 User(
                     email = "rejoin-$unique@flori.dev",
                     nickname = "재가입테스트-$unique",
+                    name = "홍길동",
                     provider = "KAKAO",
                     providerId = providerId,
                 ),

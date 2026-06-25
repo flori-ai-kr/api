@@ -1,6 +1,6 @@
 # Flori API — 아키텍처 & 기술 선정 이유
 
-> 최종 업데이트: 2026-06-25 (인사이트 트렌드 기능 제거 + 기업마당(bizinfo) collector 추가 + GrantRelevance·HtmlText·flower_item_scraps 신설 + 지원사업 만료필터 KST화)
+> 최종 업데이트: 2026-06-25 (인사이트 트렌드 기능 제거 + 기업마당(bizinfo) collector 추가 + GrantRelevance·HtmlText·flower_item_scraps 신설 + 지원사업 만료필터 KST화 / support 모듈: Discord SUPPORT 채널 알림 + 이미지 업로드 + AdminInquiryResponse / 온보딩: users.name 필드 + ownerAgeRange·referralSources 필수화 + /me/profile ownerName·phoneNumber 노출)
 
 이 문서는 Flori(꽃집 어드민) **모바일 앱 백엔드 API**의 기술 스택과 아키텍처를 설명한다. 단순히 "무엇을 쓰는가"가 아니라 **"왜 이것을 골랐는가"**에 초점을 맞춘다. 모든 선택에는 *기존 Next.js+Supabase 웹앱의 비즈니스 로직을 네이티브 앱이 호출 가능한 REST API로 재구현하고, 자체 AWS 인프라 위에 올린다*는 도메인 맥락이 반영되어 있다.
 
@@ -33,7 +33,7 @@ flowchart TB
     subgraph External["외부 서비스"]
         FCM[FCM<br/>모바일 푸시]
         VAPID[Web Push/VAPID<br/>브라우저(PWA) 푸시]
-        Discord[Discord<br/>에러·가입·인증 웹훅]
+        Discord[Discord<br/>에러·가입·인증·문의 웹훅]
         KakaoAuth[kauth.kakao.com<br/>카카오 토큰교환]
         KakaoApi[kapi.kakao.com<br/>카카오 프로필조회]
         AtFlower[flower.at.or.kr<br/>aT 화훼유통정보 f001<br/>경매 시세]
@@ -104,7 +104,7 @@ flowchart LR
 
 | 도메인 패키지 | 책임 |
 |---|---|
-| `auth` | 회원가입(기본 설정 시드)·로그인·**카카오 소셜 로그인**·refresh 회전·로그아웃·`/me`. 가입 완료(`/auth/register/complete`) 시 `phoneNumber` 필수 수집(PII — 응답 DTO 비노출) |
+| `auth` | 회원가입(기본 설정 시드)·로그인·**카카오 소셜 로그인**·refresh 회전·로그아웃·`/me`. 가입 완료(`/auth/register/complete`) 시 `ownerName`(→`users.name`)·`ownerAgeRange`·`referralSources` 필수 수집 + `phoneNumber` 필수 수집(PII) |
 | `user` | 프로필 수정·아바타 업로드·탈퇴(`DELETE /me`). 탈퇴 시 email·nickname·**provider_id** 스크럽(재가입 허용) |
 | `sales` | 매출 CRUD·무한스크롤·필터·**요약(GET /sales/summary)**·미수·**서버 입금계산**·**이름+전화번호로 고객 자동연결(findOrCreate)** |
 | `expenses` | 지출 + 고정비(this/all 분기·**@Scheduled 자동생성**)·**목록 페이지네이션(무한스크롤)**·**요약 집계(GET /expenses/summary)** |
@@ -120,7 +120,7 @@ flowchart LR
 | `statistics` | 기간별 통계 KPI + 일별 시계열 + 분포 — 매출·지출·예약·고객 4도메인. `StatisticsSupport`(공용 비율·증감·직전 기간 계산), `StatisticsService`(파사드). 미수 제외(`payment_method_id IS NOT NULL`), 최대 731일 범위 |
 | `insights` | 정보 피드 — 경매시세(aT f001 적재 `@Scheduled`·단일시장 양재·요약/드릴다운/등락 중앙값)·지원사업(K-Startup·기업마당 적재) 읽기 + 스크랩(개인 `insight_scraps`·`flower_item_scraps`). 공유 읽기 2테이블(`flower_auction_prices`·`support_programs`) + 개인 2테이블. 수집기는 적재만, 읽기는 InsightService |
 | `announcement` | 공지 배너 CMS (`announcements` — modal/bar 2종). 운영자 CRUD+활성토글(`/admin/announcements`, `@RequiresAdmin`). 점주 노출/클릭(`/announcements`). soft-delete. `AdminAuditService`로 변경 감사 기록 |
-| `support` | 1:1 문의·피드백 인박스 (`support_inquiries`). 점주 제출+본인 목록(`/inquiries`). 운영자 인박스+답변+상태관리(`/admin/inquiries`, `@RequiresAdmin`). 감사 기록(INQUIRY_ANSWER/INQUIRY_STATUS) |
+| `support` | 1:1 문의·피드백 인박스 (`support_inquiries`). 점주 제출+본인 목록(`/inquiries`) + 이미지 presigned 업로드(`POST /inquiries/upload-targets`, S3 prefix `support/`). 새 문의 접수 시 `InquiryCreatedEvent` → Discord SUPPORT 채널 비동기 알림. 운영자 인박스+답변+상태관리(`/admin/inquiries`, `@RequiresAdmin`, 응답 `AdminInquiryResponse` — 작성자 닉네임·가게명 포함). 운영자 답변 시 `InquiryAnsweredEvent` → 점주 푸시. 감사 기록(INQUIRY_ANSWER/INQUIRY_STATUS) |
 
 ---
 
@@ -437,6 +437,7 @@ erDiagram
         bigint id PK
         string email UK "NOT NULL (소셜에서 채움)"
         string nickname "표시명/소셜 닉네임, NOT NULL UNIQUE"
+        string name "사장님 실명, NOT NULL (register/complete ownerName)"
         string provider "KAKAO|GOOGLE|NAVER, NOT NULL"
         string provider_id "소셜 고유 ID, nullable"
         boolean is_active
@@ -551,7 +552,7 @@ erDiagram
 | 통계 | `GET /statistics/sales`, `GET /statistics/expenses`, `GET /statistics/reservations`, `GET /statistics/customers` (공통 쿼리파라미터: `from=yyyy-MM-dd&to=yyyy-MM-dd`, 최대 731일) — KPI(직전 동일 기간 증감) + 일별 시계열 + 분포 반환 | Auth |
 | 공지 배너(점주) | `GET /announcements`(?placement=modal|bar), `POST /announcements/{id}/click` | Auth |
 | 공지 배너(운영자) | `GET/POST /admin/announcements`, `PATCH /admin/announcements/{id}`, `POST /admin/announcements/{id}/active`, `DELETE /admin/announcements/{id}` | Auth + **is_admin** |
-| 1:1 문의(점주) | `POST /inquiries`(201), `GET /inquiries`(본인 목록) | Auth |
+| 1:1 문의(점주) | `POST /inquiries`(201), `GET /inquiries`(본인 목록), `POST /inquiries/upload-targets`(이미지 presigned URL 발급, S3 prefix `support/`) | Auth |
 | 1:1 문의(운영자) | `GET /admin/inquiries`, `GET /admin/inquiries/{id}`, `POST /admin/inquiries/{id}/answer`, `POST /admin/inquiries/{id}/status` | Auth + **is_admin** |
 | 커뮤니티 신고(점주) | `POST /community/posts/{id}/report`, `POST /community/comments/{id}/report` | Auth + **사업자 인증** |
 | 커뮤니티 모더레이션(운영자) | `GET /admin/community/reports`(?status), `POST /admin/community/reports/{id}/resolve`, `POST /admin/community/posts/{id}/hide`·`/unhide`, `DELETE /admin/community/posts/{id}`, `POST /admin/community/comments/{id}/hide`·`/unhide`, `DELETE /admin/community/comments/{id}`, `GET/POST /admin/community/bans`, `DELETE /admin/community/bans/{id}` | Auth + **is_admin** |
@@ -682,6 +683,7 @@ flowchart LR
 | `DISCORD_VERIFICATION_WEBHOOK_URL` | 사업자 인증 신청 알림 (`DiscordChannel.VERIFICATION`) |
 | `DISCORD_WAITLIST_WEBHOOK_URL` | 사전등록 알림 (`DiscordChannel.WAITLIST`) |
 | `DISCORD_INTERVIEW_WEBHOOK_URL` | 인터뷰 신청 알림 (`DiscordChannel.INTERVIEW`) |
+| `DISCORD_SUPPORT_WEBHOOK_URL` | 1:1 문의 접수 알림 (`DiscordChannel.SUPPORT`) |
 | `INTERNAL_API_KEY` | 내부 수집 API |
 | `CORS_ALLOWED_ORIGINS` | 앱/웹 origin 화이트리스트 |
 | `KAKAO_REST_API_KEY` / `KAKAO_CLIENT_SECRET` | 카카오 OAuth (시크릿 '사용 안 함'이면 빈 값) |
