@@ -178,6 +178,7 @@ class AuthService(
                     User(
                         email = request.email,
                         nickname = request.nickname,
+                        name = request.ownerName,
                         provider = principal.provider,
                         providerId = principal.providerId,
                     ),
@@ -196,7 +197,6 @@ class AuthService(
                 phoneNumber = request.phoneNumber,
                 regionSido = request.regionSido,
             ).apply {
-                ownerName = request.ownerName
                 regionSigungu = request.regionSigungu
                 ownerAgeRange = request.ownerAgeRange
                 interests = request.interests?.toTypedArray() ?: emptyArray()

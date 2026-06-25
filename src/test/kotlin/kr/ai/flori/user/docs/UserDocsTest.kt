@@ -33,7 +33,7 @@ class UserDocsTest : RestDocsSupport() {
                             listOf(
                                 fieldWithPath("id").type(JsonFieldType.NUMBER).description("사용자 ID"),
                                 fieldWithPath("name").type(JsonFieldType.STRING).description("가게명"),
-                                fieldWithPath("ownerName").type(JsonFieldType.STRING).optional().description("점주 실명(미설정 시 null)"),
+                                fieldWithPath("ownerName").type(JsonFieldType.STRING).description("점주 실명"),
                                 fieldWithPath("phoneNumber").type(JsonFieldType.STRING).description("점주 전화번호(조회전용)"),
                                 fieldWithPath("nickname").type(JsonFieldType.STRING).optional().description("닉네임"),
                                 fieldWithPath("email").type(JsonFieldType.STRING).description("로그인 이메일"),

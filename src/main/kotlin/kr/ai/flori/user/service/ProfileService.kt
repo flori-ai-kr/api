@@ -32,7 +32,7 @@ class ProfileService(
         return FullProfileResponse(
             id = userId,
             name = profile.storeName,
-            ownerName = profile.ownerName,
+            ownerName = user.name,
             phoneNumber = profile.phoneNumber,
             nickname = user.nickname,
             email = user.email,
