@@ -15,6 +15,43 @@ import java.util.UUID
  */
 class UserDocsTest : RestDocsSupport() {
     @Test
+    fun `me 전체 프로필 조회 문서화`() {
+        val token = signupAndToken()
+
+        mockMvc
+            .get("/me/profile") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+            }.andExpect { status { isOk() } }
+            .andDo {
+                handle(
+                    docs(
+                        identifier = "me-profile-get",
+                        responseSchema = "FullProfileResponse",
+                        tag = "Me",
+                        summary = "내 전체 프로필 조회(실명·전화번호 포함)",
+                        responseFields =
+                            listOf(
+                                fieldWithPath("id").type(JsonFieldType.NUMBER).description("사용자 ID"),
+                                fieldWithPath("name").type(JsonFieldType.STRING).description("가게명"),
+                                fieldWithPath("ownerName").type(JsonFieldType.STRING).optional().description("점주 실명(미설정 시 null)"),
+                                fieldWithPath("phoneNumber").type(JsonFieldType.STRING).description("점주 전화번호(조회전용)"),
+                                fieldWithPath("nickname").type(JsonFieldType.STRING).optional().description("닉네임"),
+                                fieldWithPath("email").type(JsonFieldType.STRING).description("로그인 이메일"),
+                                fieldWithPath(
+                                    "profileImageUrl",
+                                ).type(JsonFieldType.STRING).optional().description("프로필 이미지 URL(미설정 시 null)"),
+                                fieldWithPath("regionSido").type(JsonFieldType.STRING).description("시/도"),
+                                fieldWithPath("regionSigungu").type(JsonFieldType.STRING).optional().description("시군구(미설정 시 null)"),
+                                fieldWithPath("ownerAgeRange").type(JsonFieldType.STRING).optional().description("나이대(미설정 시 null)"),
+                                fieldWithPath("interests").type(JsonFieldType.ARRAY).description("관심사 목록"),
+                                fieldWithPath("specialties").type(JsonFieldType.ARRAY).description("가게 주력 목록"),
+                            ),
+                    ),
+                )
+            }
+    }
+
+    @Test
     fun `me 조회 문서화`() {
         val token = signupAndToken()
 

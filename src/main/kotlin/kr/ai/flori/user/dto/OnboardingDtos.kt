@@ -76,6 +76,8 @@ data class ProfileResponse(
 data class FullProfileResponse(
     val id: Long,
     val name: String,
+    val ownerName: String?,
+    val phoneNumber: String,
     val nickname: String,
     val email: String,
     val profileImageUrl: String?,
