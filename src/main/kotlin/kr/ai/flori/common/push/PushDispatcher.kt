@@ -19,6 +19,8 @@ class PushDispatcher(
 ) {
     /**
      * 사용자의 모든 활성 구독에 발송한다.
+     * type이 주어지고 해당 타입 수신을 꺼두었으면(notification_preferences) 발송하지 않는다(0 반환).
+     * type=null(테스트 등)이면 수신설정과 무관하게 항상 발송한다.
      * @return 성공한 발송 건수.
      */
     fun sendToUser(
@@ -26,7 +28,9 @@ class PushDispatcher(
         title: String,
         body: String,
         url: String? = null,
+        type: String? = null,
     ): Int {
+        if (type != null && !isTypeEnabled(userId, type)) return 0
         val rows =
             jdbcTemplate.queryForList(
                 "SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = ?::bigint AND is_active = TRUE",
@@ -52,5 +56,21 @@ class PushDispatcher(
             }
         }
         return sent
+    }
+
+    /** 토글 가능 타입만 수신설정을 확인한다(행 없으면 기본 켜짐). 강제 타입은 항상 true. */
+    private fun isTypeEnabled(
+        userId: Long,
+        type: String,
+    ): Boolean {
+        if (type !in PushTypes.TOGGLEABLE) return true
+        val enabled =
+            jdbcTemplate.queryForList(
+                "SELECT enabled FROM notification_preferences WHERE user_id = ?::bigint AND type = ?",
+                Boolean::class.java,
+                userId,
+                type,
+            )
+        return enabled.firstOrNull() ?: true
     }
 }

@@ -66,3 +66,22 @@ data class PushStatusResponse(
 data class PushTestResponse(
     val sent: Int,
 )
+
+/** 푸시 타입별 수신 설정 1건. */
+data class NotificationPreferenceResponse(
+    val type: String,
+    val enabled: Boolean,
+)
+
+/** 푸시 타입별 수신 설정 목록 응답(OpenAPI 별도 이름). */
+data class NotificationPreferenceListResponse(
+    val preferences: List<NotificationPreferenceResponse>,
+)
+
+/** 수신 설정 토글 요청. */
+data class NotificationPreferenceUpdateRequest(
+    @field:NotBlank(message = "type은 필수입니다")
+    val type: String?,
+    @field:NotNull(message = "enabled는 필수입니다")
+    val enabled: Boolean?,
+)
