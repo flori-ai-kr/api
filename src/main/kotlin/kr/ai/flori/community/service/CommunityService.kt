@@ -36,7 +36,7 @@ import java.time.Instant
  * 커뮤니티 서비스. 단일 커뮤니티(테넌트 간 공유)이므로 user_id 격리 대상이 아니다 —
  * 신원/권한/마스킹은 뷰어(JWT) + author_user_id 로 서버가 계산한다.
  *
- * - 비밀글/비밀댓글 열람 권한은 canView로 계산해 응답에 포함하고, 비권한자에겐 본문을 비운다.
+ * - 비밀댓글 열람 권한은 canView로 계산해 응답에 포함하고, 비권한자에겐 본문을 비운다.
  * - 글 수정은 작성자만, 글/댓글 삭제는 작성자+관리자. 삭제는 soft delete.
  * - like_count/comment_count는 비정규화(원자적 증감).
  */
@@ -85,7 +85,6 @@ class CommunityService(
                     authorIsAdmin = author?.isAdmin ?: false,
                     liked = post.id in likedIds,
                     isMine = post.authorUserId == viewer.id,
-                    canView = canViewPost(post, viewer),
                     viewerIsAdmin = viewer.isAdmin,
                 )
             }
@@ -103,7 +102,6 @@ class CommunityService(
             authorIsAdmin = author?.isAdmin ?: false,
             liked = likeRepository.existsByPostIdAndUserId(id, viewer.id),
             isMine = post.authorUserId == viewer.id,
-            canView = canViewPost(post, viewer),
             viewerIsAdmin = viewer.isAdmin,
         )
     }
@@ -121,7 +119,6 @@ class CommunityService(
             )
         post.content = requireValidContent(requireNotNull(request.contentJson))
         post.contentText = request.contentText
-        post.isSecret = request.isSecret
         post.imageUrls = request.imageUrls.toTypedArray()
         val saved = postRepository.save(post)
         return PostResponse.of(
@@ -130,7 +127,6 @@ class CommunityService(
             authorIsAdmin = viewer.isAdmin,
             liked = false,
             isMine = true,
-            canView = true,
             viewerIsAdmin = viewer.isAdmin,
         )
     }
@@ -148,7 +144,6 @@ class CommunityService(
         request.title?.let { post.title = it }
         request.contentJson?.let { post.content = requireValidContent(it) }
         request.contentText?.let { post.contentText = it }
-        request.isSecret?.let { post.isSecret = it }
         request.imageUrls?.let { post.imageUrls = it.toTypedArray() }
         val saved = postRepository.save(post)
         return PostResponse.of(
@@ -157,7 +152,6 @@ class CommunityService(
             authorIsAdmin = viewer.isAdmin,
             liked = likeRepository.existsByPostIdAndUserId(id, viewer.id),
             isMine = true,
-            canView = true,
             viewerIsAdmin = viewer.isAdmin,
         )
     }
@@ -189,7 +183,6 @@ class CommunityService(
             authorIsAdmin = author?.isAdmin ?: false,
             liked = likeRepository.existsByPostIdAndUserId(id, viewer.id),
             isMine = saved.authorUserId == viewer.id,
-            canView = canViewPost(saved, viewer),
             viewerIsAdmin = viewer.isAdmin,
         )
     }
@@ -347,11 +340,6 @@ class CommunityService(
     private fun loadPost(id: Long): CommunityPost =
         postRepository.findByIdAndDeletedAtIsNullAndHiddenAtIsNull(id)
             ?: throw AppException(CommunityErrorCode.POST_NOT_FOUND)
-
-    private fun canViewPost(
-        post: CommunityPost,
-        viewer: Viewer,
-    ): Boolean = !post.isSecret || post.authorUserId == viewer.id || viewer.isAdmin
 
     private fun canViewComment(
         comment: CommunityComment,

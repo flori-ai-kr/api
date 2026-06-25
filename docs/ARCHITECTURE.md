@@ -111,7 +111,7 @@ flowchart LR
 | `customers` | 고객 CRUD·findOrCreate·**실시간 구매통계**·**커스텀 등급 CRUD + 구매횟수 자동승급/수동잠금** |
 | `reservations` / `schedules` | 예약(매출 전환·픽업)·일정·**리마인더/요약 푸시** |
 | `photos` | 사진카드(presigned 업로드·삭제·**다운로드**)·**#해시태그(색상 없음·카드당 최대 3)**·**고객 직접 연결(customer_id 필터·소유권 검증)**·**총계 집계(totalCards/totalPhotos)·기간필터(created_at)** |
-| `community` | 단일 커뮤니티 게시판(게시글·댓글·대댓글·좋아요·비밀글·soft delete)·이미지 업로드. **`@RequiresBusinessVerified` 게이팅 적용**. `PostResponse`·`CommentResponse`에 `authorIsAdmin` 노출(작성자 관리자 배지용) |
+| `community` | 단일 커뮤니티 게시판(게시글·댓글·대댓글·좋아요·비밀댓글·soft delete)·이미지 업로드. **`@RequiresBusinessVerified` 게이팅 적용**. `PostResponse`·`CommentResponse`에 `authorIsAdmin` 노출(작성자 관리자 배지용) |
 | `verification` | 사업자 인증 신청·상태 조회(PENDING/APPROVED/REJECTED/NONE)·presigned 업로드·게이팅(`@RequiresBusinessVerified`) |
 | `waitlist` | 출시 전 선착순 100명 사전등록(공개 모집). 인증/테넌시 없음. `POST /waitlist`(이메일+가게명), `GET /waitlist/count`. 등록 시 Discord WAITLIST 채널 비동기 알림 |
 | `interview` | 유저 인터뷰 모집(공개). 인증/테넌시 없음. `POST /interview`(이름+전화번호). 신청 시 Discord INTERVIEW 채널 비동기 알림. `/waitlist`·`/interview`(POST) 공용 레이트리밋 인터셉터 적용 |
@@ -275,7 +275,7 @@ flowchart TB
 3. **교차 참조 검증**: 매출의 `customer_id`, 예약·사진의 `saleId` 등 외부에서 받은 식별자는 **소유권을 재확인**한 뒤에만 사용.
 4. **테스트**: 도메인마다 "다른 user의 데이터 접근 차단" 케이스를 필수로 포함.
 
-> **공유 읽기 예외**: **커뮤니티**(`community_posts`/`community_comments`/`community_likes`)는 공유 데이터 — `user_id` 행 격리 대상이 아니며, 비밀글·소유권·마스킹은 서비스가 뷰어(JWT) + `author_user_id`로 계산한다.
+> **공유 읽기 예외**: **커뮤니티**(`community_posts`/`community_comments`/`community_likes`)는 공유 데이터 — `user_id` 행 격리 대상이 아니며, 비밀댓글·소유권·마스킹은 서비스가 뷰어(JWT) + `author_user_id`로 계산한다.
 
 ---
 
@@ -501,7 +501,6 @@ erDiagram
         string category "notice|daily|question|knowledge|review|etc"
         string title
         jsonb content "Tiptap JSON"
-        boolean is_secret
         boolean is_pinned
         int like_count "비정규화"
         int comment_count "비정규화"
@@ -598,7 +597,7 @@ erDiagram
 | **입력 검증** | Jakarta Validation `@Valid`, 결제수단/등급/상태 화이트리스트 | 잘못된 입력 |
 | **SQL 인젝션** | JPA 파라미터 바인딩, 네이티브도 `?`/`:param` 바인딩 전용 | 인젝션 |
 | **S3** | presigned PUT/GET 짧은 만료, 소유권/이미지 메타·최대 장수 검증 후 발급; 삭제는 best-effort(DB 정리 우선) | 무단 업로드·비인가 다운로드 |
-| **커뮤니티 권한** | `users.is_admin`으로 공지(notice) 작성·비밀글/댓글 열람·타인 글 삭제 판정. 수정은 작성자만 | 권한 없는 콘텐츠 수정·열람 |
+| **커뮤니티 권한** | `users.is_admin`으로 공지(notice) 작성·비밀댓글 열람·타인 글 삭제 판정. 수정은 작성자만 | 권한 없는 콘텐츠 수정·열람 |
 | **사업자 인증 게이팅** | `@RequiresBusinessVerified` 어노테이션 → `BusinessVerifiedInterceptor`가 APPROVED 행 보유 여부 검증. 미인증 시 E-VRF-001(403). `/verification/business/**`(인증 입구)는 게이팅 제외 | 미인증 사용자의 커뮤니티 접근 |
 | **사전등록·인터뷰 공개 라우트** | `SecurityConfig`에서 `/waitlist`, `/waitlist/count`, `/interview` `permitAll`. 이메일 UNIQUE(waitlist) / 전화번호 UNIQUE(interview) + 정원(100, waitlist) 서비스 레이어 강제. `/waitlist`·`/interview`(POST) 공용 레이트리밋 인터셉터(`WebConfig`) | 공개 모집 중복 등록·도배 방지 |
 | **CORS / 헤더** | origin 화이트리스트, `X-Frame-Options: DENY`·`nosniff`·`Referrer-Policy` | XSS/클릭재킹/크로스사이트 |

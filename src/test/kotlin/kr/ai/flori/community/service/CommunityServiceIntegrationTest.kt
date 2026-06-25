@@ -77,13 +77,11 @@ class CommunityServiceIntegrationTest {
     private fun post(
         category: String = "daily",
         title: String = "제목",
-        secret: Boolean = false,
     ) = PostCreateRequest(
         category = category,
         title = title,
         contentJson = content("본문"),
         contentText = "본문",
-        isSecret = secret,
         imageUrls = emptyList(),
     )
 
@@ -99,14 +97,13 @@ class CommunityServiceIntegrationTest {
     }
 
     @Test
-    fun `게시글 생성·조회는 작성자에게 isMine·canView true`() {
+    fun `게시글 생성·조회는 작성자에게 isMine true`() {
         val me = newUser()
         switchTo(me)
         val created = communityService.createPost(post())
         val fetched = communityService.getPost(created.id)
 
         assertThat(fetched.isMine).isTrue()
-        assertThat(fetched.canView).isTrue()
         assertThat(fetched.contentText).isEqualTo("본문")
         assertThat(fetched.authorNickname).isNotBlank()
     }
@@ -167,27 +164,6 @@ class CommunityServiceIntegrationTest {
     }
 
     @Test
-    fun `비밀글은 비권한자에게 마스킹되고 작성자·관리자는 열람 가능`() {
-        val author = newUser()
-        switchTo(author)
-        val secret = communityService.createPost(post(secret = true, title = "비밀"))
-
-        // 타 사용자: canView=false, 본문 마스킹
-        val other = newUser()
-        switchTo(other)
-        val masked = communityService.getPost(secret.id)
-        assertThat(masked.canView).isFalse()
-        assertThat(masked.contentText).isEmpty()
-        assertThat(masked.title).isEqualTo("비밀") // 제목은 노출
-
-        // 관리자: 열람 가능
-        val admin = newUser()
-        makeAdmin(admin)
-        switchTo(admin)
-        assertThat(communityService.getPost(secret.id).canView).isTrue()
-    }
-
-    @Test
     fun `수정은 작성자만, 삭제는 작성자+관리자`() {
         val author = newUser()
         switchTo(author)
@@ -219,9 +195,8 @@ class CommunityServiceIntegrationTest {
         val me = newUser()
         switchTo(me)
         val p = communityService.createPost(post())
-        val updated = communityService.updatePost(p.id, PostUpdateRequest(title = "수정됨", isSecret = true))
+        val updated = communityService.updatePost(p.id, PostUpdateRequest(title = "수정됨"))
         assertThat(updated.title).isEqualTo("수정됨")
-        assertThat(updated.isSecret).isTrue()
     }
 
     @Test

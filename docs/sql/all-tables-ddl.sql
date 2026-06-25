@@ -428,7 +428,6 @@ CREATE TABLE community_posts (
   content JSONB NOT NULL DEFAULT '{}'::jsonb,
   content_text TEXT NOT NULL DEFAULT '',
   image_urls TEXT[] NOT NULL DEFAULT '{}',
-  is_secret BOOLEAN NOT NULL DEFAULT FALSE,
   is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
   like_count INTEGER NOT NULL DEFAULT 0,
   comment_count INTEGER NOT NULL DEFAULT 0,
