@@ -80,4 +80,27 @@ class AdminCouponTest {
             )
         assertThat(res.code).isEqualTo("OPEN2026")
     }
+
+    @Test
+    fun `상세는 쿠폰 + 사용현황(redemptions) 반환`() {
+        admin()
+        val issued =
+            adminCouponService.issue(
+                CouponIssueRequest("CODEX", 10, null, null, null, 1, "PROMO", null),
+            )
+        val detail = adminCouponService.detail(issued.id)
+        assertThat(detail.coupon.code).isEqualTo("CODEX")
+        assertThat(detail.redemptions).isEmpty()
+    }
+
+    @Test
+    fun `폐기시 DISABLED + 감사로그`() {
+        admin()
+        val issued =
+            adminCouponService.issue(
+                CouponIssueRequest("KILLME", 10, null, null, null, 1, "PROMO", null),
+            )
+        val disabled = adminCouponService.disable(issued.id)
+        assertThat(disabled.effectiveStatus).isEqualTo("DISABLED")
+    }
 }

@@ -1,9 +1,12 @@
 package kr.ai.flori.billing.service
 
 import kr.ai.flori.admin.service.AdminAuditService
+import kr.ai.flori.billing.dto.CouponDetailResponse
 import kr.ai.flori.billing.dto.CouponIssueRequest
 import kr.ai.flori.billing.dto.CouponResponse
+import kr.ai.flori.billing.dto.RedemptionRow
 import kr.ai.flori.billing.entity.Coupon
+import kr.ai.flori.billing.repository.CouponRedemptionRepository
 import kr.ai.flori.billing.repository.CouponRepository
 import kr.ai.flori.billing.support.CouponCodeGenerator
 import kr.ai.flori.common.error.AppException
@@ -16,6 +19,7 @@ import java.time.Instant
 @Service
 class AdminCouponService(
     private val couponRepository: CouponRepository,
+    private val redemptionRepository: CouponRedemptionRepository,
     private val codeGenerator: CouponCodeGenerator,
     private val auditService: AdminAuditService,
 ) {
@@ -48,5 +52,29 @@ class AdminCouponService(
     fun list(): List<CouponResponse> {
         val now = Instant.now()
         return couponRepository.findAll().sortedByDescending { it.id }.map { CouponResponse.of(it, now) }
+    }
+
+    @Transactional(readOnly = true)
+    fun detail(id: Long): CouponDetailResponse {
+        val coupon = couponRepository.findById(id).orElseThrow { AppException(CommonErrorCode.NOT_FOUND, "쿠폰을 찾을 수 없습니다") }
+        val rows =
+            redemptionRepository.findByCouponIdOrderByCreatedAtDesc(id).map {
+                RedemptionRow(it.userId, it.grantedDays, it.createdAt)
+            }
+        return CouponDetailResponse(CouponResponse.of(coupon, Instant.now()), rows)
+    }
+
+    @Transactional
+    fun disable(id: Long): CouponResponse {
+        val coupon = couponRepository.findById(id).orElseThrow { AppException(CommonErrorCode.NOT_FOUND, "쿠폰을 찾을 수 없습니다") }
+        coupon.status = "DISABLED"
+        val saved = couponRepository.save(coupon)
+        auditService.record(
+            action = "COUPON_DISABLE",
+            targetType = "coupon",
+            targetId = id.toString(),
+            summary = "쿠폰 폐기 ${coupon.code}",
+        )
+        return CouponResponse.of(saved, Instant.now())
     }
 }

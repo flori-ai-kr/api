@@ -26,6 +26,17 @@ data class CouponIssueRequest(
     val memo: String? = null,
 )
 
+data class RedemptionRow(
+    val userId: Long,
+    val grantedDays: Int,
+    val redeemedAt: java.time.Instant,
+)
+
+data class CouponDetailResponse(
+    val coupon: CouponResponse,
+    val redemptions: List<RedemptionRow>,
+)
+
 data class CouponResponse(
     val id: Long,
     val code: String,
