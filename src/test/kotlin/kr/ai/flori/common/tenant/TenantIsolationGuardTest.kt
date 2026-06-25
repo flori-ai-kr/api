@@ -76,6 +76,8 @@ class TenantIsolationGuardTest {
             "NotificationSendLogRepository#search",
             "BroadcastRepository#search",
             "SupportInquiryRepository#search",
+            // 백그라운드 작업(cron) 실행 로그: 시스템 전역 운영 로그(user 데이터 아님) — @RequiresAdmin 으로만 조회.
+            "JobRunLogRepository#search",
             // 공지 배너: 단일 전역 테이블(테넌트 격리 없음) — 활성 공지는 모든 점주에게 동일 노출.
             "AnnouncementRepository#findByIdAndDeletedAtIsNull",
             "AnnouncementRepository#findActive",

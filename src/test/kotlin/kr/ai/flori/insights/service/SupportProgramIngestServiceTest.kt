@@ -2,6 +2,7 @@ package kr.ai.flori.insights.service
 
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
+import kr.ai.flori.common.job.JobRunRecorder
 import kr.ai.flori.insights.client.KStartupApiClient
 import kr.ai.flori.insights.config.KStartupApiProperties
 import kr.ai.flori.insights.repository.SupportProgramRepository
@@ -32,6 +33,9 @@ class SupportProgramIngestServiceTest {
 
     @Autowired
     lateinit var programRepository: SupportProgramRepository
+
+    @Autowired
+    lateinit var jobRunRecorder: JobRunRecorder
 
     @AfterEach
     fun tearDown() {
@@ -82,14 +86,14 @@ class SupportProgramIngestServiceTest {
                 .andRespond(withSuccess(responses.getValue(page), MediaType.APPLICATION_JSON))
         }
         val client = KStartupApiClient(builder, properties)
-        return SupportProgramIngestService(client, properties, jdbcTemplate)
+        return SupportProgramIngestService(client, properties, jdbcTemplate, jobRunRecorder)
     }
 
     @Test
     fun `사업공고를 파싱해 적재하고 yyyyMMdd 날짜를 변환한다`() {
         val service = ingestServiceWith(mapOf(1 to sampleJson(178198, "소상공인 온라인판로 지원사업", "20260708")))
 
-        service.scheduledIngest()
+        service.runIngest()
 
         val rows = programRepository.findAll()
         assertThat(rows).hasSize(1)
@@ -107,9 +111,9 @@ class SupportProgramIngestServiceTest {
 
     @Test
     fun `재실행 시 같은 공고는 멱등 upsert 되고 정정이 반영된다`() {
-        ingestServiceWith(mapOf(1 to sampleJson(178198, "소상공인 융자 옛 제목", "20260708"))).scheduledIngest()
+        ingestServiceWith(mapOf(1 to sampleJson(178198, "소상공인 융자 옛 제목", "20260708"))).runIngest()
         // 같은 pbanc_sn, 제목·마감일만 다른 값으로 재적재.
-        ingestServiceWith(mapOf(1 to sampleJson(178198, "소상공인 융자 새 제목", "20260709"))).scheduledIngest()
+        ingestServiceWith(mapOf(1 to sampleJson(178198, "소상공인 융자 새 제목", "20260709"))).runIngest()
 
         assertThat(programRepository.count()).isEqualTo(1)
         val row = programRepository.findAll().first()
@@ -121,7 +125,7 @@ class SupportProgramIngestServiceTest {
     fun `소상공인·화훼와 무관한 공고는 적재하지 않는다`() {
         val service = ingestServiceWith(mapOf(1 to sampleJson(178199, "반도체 소부장 R&D 지원", "20260708")))
 
-        service.scheduledIngest()
+        service.runIngest()
 
         assertThat(programRepository.count()).isZero()
     }
@@ -133,8 +137,9 @@ class SupportProgramIngestServiceTest {
                 KStartupApiClient(RestClient.builder(), properties.copy(serviceKey = "")),
                 properties.copy(serviceKey = ""),
                 jdbcTemplate,
+                jobRunRecorder,
             )
-        service.scheduledIngest()
+        service.runIngest()
         assertThat(programRepository.count()).isZero()
     }
 }

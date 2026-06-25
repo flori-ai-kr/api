@@ -44,6 +44,7 @@ discord:
   waitlist-webhook-url: ${DISCORD_WAITLIST_WEBHOOK_URL:}            # 사전등록 알림
   interview-webhook-url: ${DISCORD_INTERVIEW_WEBHOOK_URL:}          # 유저 인터뷰 신청 알림
   billing-webhook-url: ${DISCORD_BILLING_WEBHOOK_URL:}               # 빌링 이벤트 알림
+  support-webhook-url: ${DISCORD_SUPPORT_WEBHOOK_URL:}              # 1:1 문의 접수 알림
 
 # SOLAPI 알림톡/SMS (미설정 시 콘솔 폴백). 알림톡은 카카오 비즈채널 인증 후 pf-id/template-id 발급.
 solapi:

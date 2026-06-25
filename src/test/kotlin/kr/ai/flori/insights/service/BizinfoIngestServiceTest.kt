@@ -2,6 +2,7 @@ package kr.ai.flori.insights.service
 
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
+import kr.ai.flori.common.job.JobRunRecorder
 import kr.ai.flori.insights.client.BizinfoApiClient
 import kr.ai.flori.insights.config.BizinfoApiProperties
 import kr.ai.flori.insights.repository.SupportProgramRepository
@@ -33,6 +34,9 @@ class BizinfoIngestServiceTest {
 
     @Autowired
     lateinit var programRepository: SupportProgramRepository
+
+    @Autowired
+    lateinit var jobRunRecorder: JobRunRecorder
 
     @AfterEach
     fun tearDown() {
@@ -84,14 +88,14 @@ class BizinfoIngestServiceTest {
                 .andRespond(withSuccess(responses.getValue(page), MediaType.APPLICATION_JSON))
         }
         val client = BizinfoApiClient(builder, properties)
-        return BizinfoIngestService(client, properties, jdbcTemplate)
+        return BizinfoIngestService(client, properties, jdbcTemplate, jobRunRecorder)
     }
 
     @Test
     fun `공고를 파싱해 적재하고 신청기간을 분해한다`() {
         val service = ingestServiceWith(mapOf(1 to sampleJson("PBLN_000000000099999", "소상공인 정책자금 융자", "20260601 ~ 20260630")))
 
-        service.scheduledIngest()
+        service.runIngest()
 
         val rows = programRepository.findAll()
         assertThat(rows).hasSize(1)
@@ -111,8 +115,8 @@ class BizinfoIngestServiceTest {
 
     @Test
     fun `재실행 시 같은 공고는 멱등 upsert 되고 정정이 반영된다`() {
-        ingestServiceWith(mapOf(1 to sampleJson("PBLN_1", "옛 제목", "20260601 ~ 20260630"))).scheduledIngest()
-        ingestServiceWith(mapOf(1 to sampleJson("PBLN_1", "새 제목", "20260601 ~ 20260701"))).scheduledIngest()
+        ingestServiceWith(mapOf(1 to sampleJson("PBLN_1", "옛 제목", "20260601 ~ 20260630"))).runIngest()
+        ingestServiceWith(mapOf(1 to sampleJson("PBLN_1", "새 제목", "20260601 ~ 20260701"))).runIngest()
 
         assertThat(programRepository.count()).isEqualTo(1)
         val row = programRepository.findAll().first()
@@ -124,7 +128,7 @@ class BizinfoIngestServiceTest {
     fun `상시(신청기간 비어있음) 공고는 신청기간이 null 이다`() {
         val service = ingestServiceWith(mapOf(1 to sampleJson("PBLN_2", "상시 모집 공고", "")))
 
-        service.scheduledIngest()
+        service.runIngest()
 
         val row = programRepository.findAll().first()
         assertThat(row.applyStart).isNull()
@@ -143,7 +147,7 @@ class BizinfoIngestServiceTest {
             """.trimIndent()
         val service = ingestServiceWith(mapOf(1 to irrelevant))
 
-        service.scheduledIngest()
+        service.runIngest()
 
         assertThat(programRepository.count()).isZero()
     }
@@ -155,8 +159,9 @@ class BizinfoIngestServiceTest {
                 BizinfoApiClient(RestClient.builder(), properties.copy(crtfcKey = "")),
                 properties.copy(crtfcKey = ""),
                 jdbcTemplate,
+                jobRunRecorder,
             )
-        service.scheduledIngest()
+        service.runIngest()
         assertThat(programRepository.count()).isZero()
     }
 }

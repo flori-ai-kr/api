@@ -24,8 +24,8 @@ class UserProfile(
     var userId: Long,
     @Column(name = "store_name", nullable = false)
     var storeName: String,
-    // PII: 점주 본인 연락처. ProfileResponse/FullProfileResponse 등 응답 DTO에 절대 노출하지 말 것
-    // (공유 어드민 콘솔 드릴다운 포함). 운영자 참고용으로만 저장한다.
+    // PII: 점주 본인 연락처. 본인 프로필 조회(FullProfileResponse)에서만 조회전용 노출 허용.
+    // cross-tenant·공유 어드민 콘솔 응답에는 절대 노출하지 말 것.
     @Column(name = "phone_number", nullable = false)
     var phoneNumber: String,
     @Column(name = "region_sido", nullable = false)

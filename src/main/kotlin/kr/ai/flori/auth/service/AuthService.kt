@@ -178,6 +178,7 @@ class AuthService(
                     User(
                         email = request.email,
                         nickname = request.nickname,
+                        name = request.ownerName,
                         provider = principal.provider,
                         providerId = principal.providerId,
                     ),
@@ -200,7 +201,7 @@ class AuthService(
                 ownerAgeRange = request.ownerAgeRange
                 interests = request.interests?.toTypedArray() ?: emptyArray()
                 specialties = request.specialties?.toTypedArray() ?: emptyArray()
-                referralSources = request.referralSources?.toTypedArray() ?: emptyArray()
+                referralSources = request.referralSources.toTypedArray()
             },
         )
         seeder.seedForNewUser(userId)

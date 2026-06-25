@@ -15,6 +15,7 @@ import kr.ai.flori.common.entity.BaseEntity
  * - User 행은 온보딩 완료(register/complete) 시점에만 생성된다 — 온보딩 중도 이탈 시 유령 계정이 남지 않는다.
  * - email은 온보딩에서 항상 채워지며(NOT NULL) 이후 수정 가능하다. nickname은 계정 표시명(닉네임).
  * - nickname은 필수이며 전역 유일하다(`uq_users_nickname`). register/complete에서 항상 채워진다.
+ * - name은 사장님 실명(NOT NULL). register/complete에서 반드시 전달된다.
  * - 신원은 (provider, providerId)로 식별한다.
  */
 @Entity
@@ -24,6 +25,8 @@ class User(
     var email: String,
     @Column(name = "nickname", nullable = false, unique = true)
     var nickname: String,
+    @Column(name = "name", nullable = false)
+    var name: String,
     @Column(name = "provider", nullable = false)
     var provider: String = "LOCAL",
     @Column(name = "provider_id")
