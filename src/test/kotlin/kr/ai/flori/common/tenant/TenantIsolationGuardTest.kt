@@ -80,14 +80,18 @@ class TenantIsolationGuardTest {
             "AnnouncementRepository#findByIdAndDeletedAtIsNull",
             "AnnouncementRepository#findActive",
             "AnnouncementRepository#findAllForAdmin",
+            // AI 프롬프트 레지스트리(SPEC-AI-008): user 데이터가 아니라 운영 자산(전역 단일 테이블).
+            // 접근은 콘솔(@RequiresAdmin)과 게이트웨이 내부 active 로드로만 제한된다.
+            "AiPromptRepository#findFirstByChannelAndIsActiveTrueAndDeletedAtIsNull",
+            "AiPromptRepository#findByChannelAndDeletedAtIsNullOrderByIsActiveDescCreatedAtDesc",
+            "AiPromptRepository#findByIdAndDeletedAtIsNull",
+            "AiPromptRepository#findByChannelAndVersionAndDeletedAtIsNull",
             // 대기자 명단(공개 모집): 인증/테넌시 없는 단일 전역 테이블 — email 중복 검사는 전역 unique 제약 대응
             "WaitlistRegistrationRepository#existsByEmail",
             // 유저 인터뷰 모집(공개): 인증/테넌시 없는 단일 전역 테이블 — phone 중복 검사는 전역 unique 제약 대응
             "InterviewRequestRepository#existsByPhone",
-            // 인사이트(정보 피드): 트렌드/공판장/지원사업은 테넌트 간 공유 읽기 테이블(설계상 전역).
+            // 인사이트(정보 피드): 공판장/지원사업은 테넌트 간 공유 읽기 테이블(설계상 전역).
             // user_id 격리가 없고 누구나 같은 큐레이션을 본다. 개인 데이터는 insight_scraps(전부 ...UserId 격리)뿐.
-            "TrendArticleRepository#findFeed",
-            "TrendArticleRepository#findByIdIn",
             "SupportProgramRepository#findFeed",
             "SupportProgramRepository#findByIdIn",
             // 빌링 — 구독 스케줄러(@Scheduled): 전체 테넌트 대상 시스템 작업.

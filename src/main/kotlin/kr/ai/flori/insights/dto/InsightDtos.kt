@@ -8,44 +8,11 @@ import kr.ai.flori.common.validation.FieldLimits
 import kr.ai.flori.insights.domain.FlowerCategories
 import kr.ai.flori.insights.entity.InsightScrap
 import kr.ai.flori.insights.entity.SupportProgram
-import kr.ai.flori.insights.entity.TrendArticle
 import kr.ai.flori.insights.repository.AuctionPriceRow
 import kr.ai.flori.insights.repository.AuctionSummaryRow
 import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
-
-// ── 트렌드·뉴스 ─────────────────────────────────────────────────────────────
-
-/** 트렌드 기사 응답(camelCase). web KotlinTrendArticle 미러. */
-data class TrendArticleResponse(
-    val id: Long,
-    val category: String,
-    val title: String,
-    val summary: String,
-    val keyPoints: List<String>,
-    val sourceUrl: String,
-    val sourceName: String?,
-    val publishedAt: Instant?,
-    val collectedAt: LocalDate,
-    val createdAt: Instant,
-) {
-    companion object {
-        fun from(a: TrendArticle): TrendArticleResponse =
-            TrendArticleResponse(
-                id = requireNotNull(a.id),
-                category = a.category,
-                title = a.title,
-                summary = a.summary,
-                keyPoints = a.keyPoints,
-                sourceUrl = a.sourceUrl,
-                sourceName = a.sourceName,
-                publishedAt = a.publishedAt,
-                collectedAt = a.collectedAt,
-                createdAt = a.createdAt,
-            )
-    }
-}
 
 // ── 경매 시세 ───────────────────────────────────────────────────────────────
 
@@ -129,7 +96,7 @@ data class AuctionSummaryItem(
 }
 
 /**
- * 경매 요약 조회 응답: 기준 정산일자(완전한 최신일) + 출처 + 품목 요약 목록(거래량 많은 순).
+ * 경매 요약 조회 응답: 기준 정산일자(최신일) + 출처 + 품목 요약 목록(거래량 많은 순).
  * date 가 null 이면 데이터가 없는 것. source 는 이용허락범위(제작자 표시) 준수용 출처 표기.
  */
 data class AuctionSummaryResponse(
@@ -204,6 +171,18 @@ data class ScrapToggleResponse(
     val scraped: Boolean,
 )
 
+/** 경매 품목 스크랩 토글 요청(품목명 단위). */
+data class FlowerItemScrapToggleRequest(
+    @field:NotBlank(message = "품목명(pumName)은 필수입니다")
+    @field:Size(max = FieldLimits.NAME, message = "품목명이 너무 깁니다")
+    val pumName: String?,
+)
+
+/** 경매 품목 스크랩 목록(내가 스크랩한 품목명). */
+data class FlowerItemScrapListResponse(
+    val pumNames: List<String>,
+)
+
 /** 스크랩 단건(camelCase). web KotlinScrap 미러. */
 data class ScrapResponse(
     val id: Long,
@@ -232,12 +211,6 @@ data class ScrapInfoResponse(
     val memo: String?,
 )
 
-/** 트렌드 스크랩(스크랩 + 대상 기사 조인). web KotlinTrendScrap 미러. */
-data class TrendScrapResponse(
-    val scrap: ScrapResponse,
-    val article: TrendArticleResponse,
-)
-
 /** 지원사업 스크랩(스크랩 + 대상 사업 조인). */
 data class GrantScrapResponse(
     val scrap: ScrapResponse,
@@ -246,6 +219,5 @@ data class GrantScrapResponse(
 
 /** 스크랩 카운트(대상 유형별). */
 data class ScrapCountsResponse(
-    val trend: Long,
     val grant: Long,
 )

@@ -1,6 +1,6 @@
 # Flori API — 아키텍처 & 기술 선정 이유
 
-> 최종 업데이트: 2026-06-21 (운영 콘솔 고도화 — 감사로그·브로드캐스트·커뮤니티 모더레이션·공지배너·1:1문의·퍼널/리텐션 통계 + `announcement`·`support` 패키지 신설)
+> 최종 업데이트: 2026-06-25 (인사이트 트렌드 기능 제거 + 기업마당(bizinfo) collector 추가 + GrantRelevance·HtmlText·flower_item_scraps 신설 + 지원사업 만료필터 KST화)
 
 이 문서는 Flori(꽃집 어드민) **모바일 앱 백엔드 API**의 기술 스택과 아키텍처를 설명한다. 단순히 "무엇을 쓰는가"가 아니라 **"왜 이것을 골랐는가"**에 초점을 맞춘다. 모든 선택에는 *기존 Next.js+Supabase 웹앱의 비즈니스 로직을 네이티브 앱이 호출 가능한 REST API로 재구현하고, 자체 AWS 인프라 위에 올린다*는 도메인 맥락이 반영되어 있다.
 
@@ -14,7 +14,7 @@
 flowchart TB
     subgraph Clients["클라이언트"]
         App([React Native 앱<br/>flori-ai/mobile])
-        Collector([수집 워커<br/>트렌드/지원사업])
+        Collector([수집 워커<br/>지원사업])
     end
 
     subgraph AWS["AWS Cloud (ap-northeast-2)"]
@@ -37,6 +37,7 @@ flowchart TB
         KakaoAuth[kauth.kakao.com<br/>카카오 토큰교환]
         KakaoApi[kapi.kakao.com<br/>카카오 프로필조회]
         AtFlower[flower.at.or.kr<br/>aT 화훼유통정보 f001<br/>경매 시세]
+        Solapi[api.solapi.com<br/>카카오 알림톡 중계<br/>사업자 인증 접수·승인·거절]
     end
 
     App -->|"REST + Bearer JWT"| Sec
@@ -46,6 +47,7 @@ flowchart TB
     App -.->|"직접 업로드"| S3
     Sched --> Svc
     Sched -.->|"f001 경매시세 적재"| AtFlower
+    Svc -.->|"인증 접수·승인·거절<br/>알림톡(AFTER_COMMIT @Async)"| Solapi
     Svc -->|"PushDispatcher<br/>(FCM or VAPID)"| FCM
     Svc -->|"PushDispatcher<br/>(p256dh/auth 있으면)"| VAPID
     Adv -.->|"예기치 못한 오류"| Discord
@@ -61,7 +63,7 @@ flowchart TB
     class App,Collector client
     class Sec,Ctrl,Svc,Repo,Sched,Adv server
     class RDS,S3 store
-    class FCM,VAPID,Discord,KakaoAuth,KakaoApi ext
+    class FCM,VAPID,Discord,KakaoAuth,KakaoApi,AtFlower,Solapi ext
 ```
 
 핵심 원칙: **앱은 표시만 하고, 계산·검증·격리는 서버가 책임진다.** 지출총액 등은 서버가 SSOT로 계산해 응답하고, 멀티테넌시(사용자별 데이터 격리)는 RLS 없이 애플리케이션이 유일한 방어선으로 강제한다. 기존 웹앱은 당분간 Supabase 위에서 그대로 동작하며, 이 백엔드는 독립 인프라로 분리 운영한다.
@@ -116,7 +118,7 @@ flowchart LR
 | `settings` | 매출/지출 설정·하단바·사용자 설정·푸시 구독·**테스트 발송** |
 | `dashboard` | 오늘/월 집계·**네이티브 SQL 통계** |
 | `statistics` | 기간별 통계 KPI + 일별 시계열 + 분포 — 매출·지출·예약·고객 4도메인. `StatisticsSupport`(공용 비율·증감·직전 기간 계산), `StatisticsService`(파사드). 미수 제외(`payment_method_id IS NOT NULL`), 최대 731일 범위 |
-| `insights` | 정보 피드 — 경매시세(aT f001 적재 `@Scheduled`·단일시장 양재·요약/드릴다운/등락 중앙값)·지원사업·트렌드 읽기 + 스크랩(개인 `insight_scraps`). 공유 읽기 3테이블은 수집 서비스만 쓰기 |
+| `insights` | 정보 피드 — 경매시세(aT f001 적재 `@Scheduled`·단일시장 양재·요약/드릴다운/등락 중앙값)·지원사업(K-Startup·기업마당 적재) 읽기 + 스크랩(개인 `insight_scraps`·`flower_item_scraps`). 공유 읽기 2테이블(`flower_auction_prices`·`support_programs`) + 개인 2테이블. 수집기는 적재만, 읽기는 InsightService |
 | `announcement` | 공지 배너 CMS (`announcements` — modal/bar 2종). 운영자 CRUD+활성토글(`/admin/announcements`, `@RequiresAdmin`). 점주 노출/클릭(`/announcements`). soft-delete. `AdminAuditService`로 변경 감사 기록 |
 | `support` | 1:1 문의·피드백 인박스 (`support_inquiries`). 점주 제출+본인 목록(`/inquiries`). 운영자 인박스+답변+상태관리(`/admin/inquiries`, `@RequiresAdmin`). 감사 기록(INQUIRY_ANSWER/INQUIRY_STATUS) |
 
@@ -527,7 +529,7 @@ erDiagram
 핵심 설계 결정:
 - **예약 → 매출 논리참조**: `reservations.sale_id`가 `sales`를 논리 참조(예약→매출 전환). DB FK 제약 없음 — 매출 삭제 시 앱이 `sale_id`를 NULL 처리. (`sales.reservation_id`는 보유하지 않음 — 통계는 sales에서 집계.)
 - **고정비 멱등 자동생성**: `expenses(recurring_id, date)` UNIQUE + `recurring_skips`("이것만 삭제" 시 재발 방지).
-- **polymorphic 스크랩**: `(user_id, target_type, target_id)` 복합 unique. FK 없이 트렌드/포스트 공용.
+- **polymorphic 스크랩**: `insight_scraps(user_id, target_type, target_id)` 복합 unique — target_type='grant'만 허용. 경매 품목 스크랩은 별도 `flower_item_scraps(user_id, pum_name)` UNIQUE. FK 없음.
 - **드리프트 반영**: 원본 `schema.sql`이 누락했던 `sales.is_unpaid`, `reservations.reminder_sent/pickup_completed`, `schedules`까지 실제 운영 스키마 기준으로 이식.
 
 ---
@@ -557,6 +559,7 @@ erDiagram
 | 알림 발송 이력(운영자) | `GET /admin/notification-logs`(?type&source&status) | Auth + **is_admin** |
 | 감사 로그(운영자) | `GET /admin/audit-logs`(?action&actorUserId) | Auth + **is_admin** |
 | 운영자 통계(확장) | `GET /admin/stats/funnel`, `GET /admin/stats/churn-reasons`(?days), `GET /admin/stats/retention` | Auth + **is_admin** |
+| AI 프롬프트 레지스트리(운영자) | `GET/POST /admin/prompts`(?channel), `GET/PATCH/DELETE /admin/prompts/{id}`, `POST /admin/prompts/{id}/activate`, `POST /admin/prompts/preview`(플레이그라운드, 저장X) — 마케팅 프롬프트 버전·활성화·튜닝 (SPEC-AI-008) | Auth + **is_admin** |
 | 사전등록 | `POST /waitlist`(201, 이메일+가게명 등록), `GET /waitlist/count`(카운트 조회) | **Public** (인증 불필요) |
 | 인터뷰 모집 | `POST /interview`(201, 이름+전화번호 신청) | **Public** (인증 불필요) |
 
@@ -572,6 +575,8 @@ erDiagram
 | 예약 리마인더 발송 | `0 */5 * * * *` | `ReservationNotificationService` | `reminder_sent` 플래그 |
 | 당일 픽업 요약 | `0 0 8 * * *` | `ReservationNotificationService` | 사용자별 1회 발송 |
 | 화훼 경매시세 적재 | `0 30 6 * * *` | `FlowerAuctionIngestService` (aT f001, 최근 3일 × 4구분) | `(sale_date,flower_gubn,pum_name,good_name,lv_nm)` UNIQUE + ON CONFLICT DO UPDATE. key/baseUrl 미설정 시 no-op |
+| 지원사업 K-Startup 적재 | `0 31 6 * * *` | `SupportProgramIngestService` (data.go.kr, 최대 10페이지 × 100, 소상공인 관련도 필터) | `(source, source_id)` UNIQUE + ON CONFLICT DO UPDATE. serviceKey 미설정 시 no-op |
+| 지원사업 기업마당 적재 | `0 32 6 * * *` | `BizinfoIngestService` (bizinfo.go.kr, 최대 10페이지 × 100, 소상공인 관련도 필터) | `(source, source_id)` UNIQUE + ON CONFLICT DO UPDATE. crtfcKey/baseUrl 미설정 시 no-op |
 
 스케줄 트리거와 실제 로직(`generateForDate(date)`, `markAndNotifyDueReminders(now)`)을 분리해 테스트에서 직접 호출·검증한다.
 
@@ -682,6 +687,15 @@ flowchart LR
 | `KAKAO_REST_API_KEY` / `KAKAO_CLIENT_SECRET` | 카카오 OAuth (시크릿 '사용 안 함'이면 빈 값) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | 구글 OAuth |
 | `NAVER_CLIENT_ID` / `NAVER_CLIENT_SECRET` | 네이버 OAuth |
+| `SOLAPI_API_KEY` / `SOLAPI_API_SECRET` | SOLAPI 알림톡 API 자격증명 |
+| `SOLAPI_SENDER_PHONE` | 등록된 SMS 발신번호(알림톡 실패 시 폴백) |
+| `SOLAPI_PF_ID` | 카카오 발신프로필 ID (비즈채널 인증 후 발급) |
+| `SOLAPI_APPROVAL_TEMPLATE_ID` | 사업자 인증 승인 알림톡 템플릿 ID |
+| `SOLAPI_SUBMITTED_TEMPLATE_ID` | 사업자 인증 접수 알림톡 템플릿 ID |
+| `SOLAPI_REJECTED_TEMPLATE_ID` | 사업자 인증 거절 알림톡 템플릿 ID |
+| `FLOWER_API_SERVICE_KEY` | aT 화훼유통정보 경매시세 적재 인증키. 미설정 시 `FlowerAuctionIngestService` no-op |
+| `KSTARTUP_API_SERVICE_KEY` | data.go.kr K-Startup 사업공고 인증키(일반 인증키, IP 등록 불필요). 미설정 시 `SupportProgramIngestService` no-op |
+| `BIZINFO_API_CRTFC_KEY` | 기업마당 정책정보 개방 인증키(data.go.kr 아님, **IP 바인딩**). 미설정 시 `BizinfoIngestService` no-op |
 
 ---
 

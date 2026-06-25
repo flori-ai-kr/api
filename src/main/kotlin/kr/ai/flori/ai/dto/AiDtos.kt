@@ -2,6 +2,7 @@ package kr.ai.flori.ai.dto
 
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
+import java.math.BigDecimal
 import java.time.Instant
 
 // ─── web ↔ 게이트웨이(Spring) 계약 ──────────────────────────────
@@ -98,6 +99,43 @@ data class BlogDraft(
 data class BlogGenerateResponse(
     val contentId: String,
     val draft: BlogDraft,
+)
+
+// ─── 프롬프트 플레이그라운드(SPEC-AI-008) — 어드민 콘솔 즉석 미리보기(저장 안 함) ───
+
+/** 편집 중인 프롬프트 초안(정적 부분). 저장 전 미리보기 생성에만 쓴다. */
+data class BlogPromptDraft(
+    val systemMd: String? = null,
+    val rulesMd: String? = null,
+    val outputSpecMd: String? = null,
+    val model: String? = null,
+    val temperature: BigDecimal? = null,
+)
+
+/** 미리보기용 샘플 입력(동적 데이터). 어드민이 콘솔에서 입력. */
+data class BlogPreviewSample(
+    @field:Size(max = 200)
+    val keyword: String = "장미 꽃다발",
+    @field:Size(max = 100)
+    val situation: String? = null,
+    @field:Size(max = 500)
+    val memo: String? = null,
+    @field:Size(max = 3)
+    val toneSamples: List<
+        @Size(max = 4000)
+        String,
+    > = emptyList(),
+)
+
+data class BlogPreviewRequest(
+    val promptDraft: BlogPromptDraft = BlogPromptDraft(),
+    val sampleInput: BlogPreviewSample = BlogPreviewSample(),
+)
+
+/** 미리보기 결과. 저장하지 않으므로 contentId가 없다(활성본·DB 영향 없음). */
+data class BlogPreviewResponse(
+    val draft: BlogDraft,
+    val model: String,
 )
 
 /** 말투 프로필 조회/수정. 샘플은 0~3개. */

@@ -4,16 +4,6 @@ package kr.ai.flori.insights.domain
  * 인사이트 도메인 공통 상수.
  * 스키마 CHECK 제약과 1:1로 맞춘다(DDL: docs/sql/migration/26-06-18-revive-info-feeds.sql).
  */
-object TrendCategories {
-    const val FLOWER = "flower"
-    const val INSPIRATION = "inspiration"
-    const val BUSINESS = "business"
-    const val INDUSTRY = "industry"
-
-    /** trend_articles.category CHECK 허용값. */
-    val ALL = setOf(FLOWER, INSPIRATION, BUSINESS, INDUSTRY)
-}
-
 object GrantCategories {
     const val FUND = "fund"
     const val MARKETING = "marketing"
@@ -24,11 +14,10 @@ object GrantCategories {
 }
 
 object ScrapTargetTypes {
-    const val TREND = "trend"
     const val GRANT = "grant"
 
     /** insight_scraps.target_type CHECK 허용값. */
-    val ALL = setOf(TREND, GRANT)
+    val ALL = setOf(GRANT)
 }
 
 /**

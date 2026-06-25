@@ -16,6 +16,8 @@ import kr.ai.flori.ai.repository.AiChatMessageRepository
 import kr.ai.flori.ai.repository.AiChatSessionRepository
 import kr.ai.flori.ai.repository.AiMarketingContentRepository
 import kr.ai.flori.ai.service.MarketingService
+import kr.ai.flori.ai.service.PromptResolver
+import kr.ai.flori.ai.service.ResolvedPrompt
 import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
@@ -35,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import java.math.BigDecimal
 import java.util.UUID
 
 /**
@@ -51,6 +54,9 @@ class MarketingServiceTest {
 
     @MockitoBean
     lateinit var aiClient: AiServerClient
+
+    @MockitoBean
+    lateinit var promptResolver: PromptResolver
 
     @Autowired
     lateinit var authService: AuthService
@@ -153,6 +159,48 @@ class MarketingServiceTest {
         // store_context: register가 만든 가게 프로필(storeName="테스트 가게")이 shop_name으로 조립된다
         assertThat(call.storeContext).isNotNull
         assertThat(call.storeContext!!.shopName).isEqualTo("테스트 가게")
+    }
+
+    @Test
+    fun `blog 생성 - active 프롬프트가 있으면 promptOverride를 ai-server에 주입한다`() {
+        newTenant()
+        stubBlog()
+        Mockito
+            .`when`(promptResolver.resolve("blog"))
+            .thenReturn(
+                ResolvedPrompt(
+                    systemMd = "커스텀 시스템",
+                    rulesMd = "커스텀 규칙",
+                    outputSpecMd = "커스텀 스펙",
+                    model = "claude-sonnet-4-6",
+                    temperature = BigDecimal("0.70"),
+                ),
+            )
+
+        marketingService.generateBlog("jwt", BlogGenerateRequest(keyword = "장미"))
+
+        val captor = ArgumentCaptor.forClass(AiBlogCall::class.java)
+        Mockito.verify(aiClient).generateBlog(anyString(), anyLong(), captureBlog(captor))
+        val ov = captor.value.promptOverride
+        assertThat(ov).isNotNull
+        assertThat(ov!!.systemMd).isEqualTo("커스텀 시스템")
+        assertThat(ov.rulesMd).isEqualTo("커스텀 규칙")
+        assertThat(ov.outputSpecMd).isEqualTo("커스텀 스펙")
+        assertThat(ov.model).isEqualTo("claude-sonnet-4-6")
+        assertThat(ov.temperature!!).isEqualByComparingTo("0.70")
+    }
+
+    @Test
+    fun `blog 생성 - active 프롬프트가 없으면 promptOverride 없이 호출한다(폴백)`() {
+        newTenant()
+        stubBlog()
+        // promptResolver는 기본 mock — resolve("blog")가 null(폴백 신호)
+
+        marketingService.generateBlog("jwt", BlogGenerateRequest(keyword = "장미"))
+
+        val captor = ArgumentCaptor.forClass(AiBlogCall::class.java)
+        Mockito.verify(aiClient).generateBlog(anyString(), anyLong(), captureBlog(captor))
+        assertThat(captor.value.promptOverride).isNull()
     }
 
     @Test

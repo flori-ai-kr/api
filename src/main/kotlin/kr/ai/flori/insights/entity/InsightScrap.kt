@@ -11,7 +11,7 @@ import kr.ai.flori.common.entity.BaseEntity
 /**
  * 인사이트 스크랩(사장님별 개인 북마크). 개인(user_id) 테이블 — 모든 쿼리는 user_id 로 격리한다.
  *
- * target_type: 'trend'(trend_articles) | 'grant'(support_programs). target_id 는 FK 없는 간접참조.
+ * target_type: 'grant'(support_programs). target_id 는 FK 없는 간접참조.
  * (user_id, target_type, target_id) UNIQUE — 같은 대상은 한 번만 스크랩(멱등).
  */
 @Entity

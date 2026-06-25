@@ -44,6 +44,6 @@ class UserPreferenceService(
         const val BOTTOM_NAV_KEY = "bottom_nav"
 
         /** 가입 시 시드/기본 하단바 항목(SSOT). DefaultDataSeeder도 동일 값을 시드한다. */
-        val DEFAULT_BOTTOM_NAV = listOf("dashboard", "sales", "expenses", "calendar", "customers", "gallery")
+        val DEFAULT_BOTTOM_NAV = listOf("dashboard", "sales", "customers", "calendar", "statistics", "insights")
     }
 }
