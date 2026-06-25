@@ -20,10 +20,9 @@ class BillingClientTest {
     private val props = TossPaymentsProperties(secretKey = "test_sk_abc", baseUrl = "https://api.tosspayments.com")
 
     private fun clientWith(): Pair<BillingClient, MockRestServiceServer> {
-        // RestClient가 쓰는 RestTemplate 인프라에 MockRestServiceServer를 바인딩
         val builder = RestClient.builder()
         val server = MockRestServiceServer.bindTo(builder).build()
-        return BillingClient(props, builder) to server
+        return BillingClient(props, builder.build()) to server
     }
 
     @Test

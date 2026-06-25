@@ -16,10 +16,9 @@ import java.util.Base64
 @Component
 class BillingClient(
     private val properties: TossPaymentsProperties,
-    builder: RestClient.Builder,
+    private val restClient: RestClient,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
-    private val restClient: RestClient = builder.build()
     private val authHeader: String =
         "Basic " + Base64.getEncoder().encodeToString("${properties.secretKey}:".toByteArray())
 
