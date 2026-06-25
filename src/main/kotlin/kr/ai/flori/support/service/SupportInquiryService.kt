@@ -63,6 +63,8 @@ class SupportInquiryService(
                 userId = saved.userId,
                 category = saved.category,
                 title = saved.title,
+                nickname = userRepository.findById(saved.userId).orElse(null)?.nickname,
+                storeName = userProfileRepository.findById(saved.userId).orElse(null)?.storeName,
             ),
         )
         return saved.toResponse()

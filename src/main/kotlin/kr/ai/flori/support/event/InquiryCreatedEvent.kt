@@ -5,4 +5,6 @@ data class InquiryCreatedEvent(
     val userId: Long,
     val category: String,
     val title: String,
+    val nickname: String?,
+    val storeName: String?,
 )
