@@ -82,7 +82,7 @@ src/main/kotlin/kr/ai/flori/
     ├── job/               # 백그라운드 작업 실행 로깅 SSOT — JobRunRecorder(cron 래퍼), JobNames(식별자 상수), JobOutcome(결과), JobRunLog(엔티티), JobRunLogRepository
     ├── log/               # TraceIdFilter, LoggingInterceptor
     ├── notification/      # Discord 알림 채널 (DiscordNotifier, DiscordChannel, DiscordProperties)
-    ├── push/              # PushDispatcher(FCM/VAPID 라우팅 + 수신설정 게이팅), PushTypes(타입 SSOT + TOGGLEABLE 목록), PushTemplates(메시지 SSOT), PushService(FCM / 로깅 fallback)
+    ├── push/              # PushDispatcher(FCM/VAPID 라우팅 + 수신설정 게이팅 + 발송마다 notification_send_logs 기록·브로드캐스트 제외), PushTypes(타입 SSOT + TOGGLEABLE), PushTemplates(메시지 SSOT), PushLink/PushLinks(딥링크 SSOT — web /admin 경로 + 모바일 type/id), PushService(FCM / 로깅 fallback)
     ├── request/           # ClientContext(ThreadLocal) + ClientContextFilter (요청 컨텍스트 캡처)
     ├── security/          # JWT, SecurityConfig, 내부 인증
     ├── storage/           # S3 presign
@@ -153,9 +153,10 @@ src/main/kotlin/kr/ai/flori/
 | Discord 에러 리포팅 | `common/error/DiscordErrorReporter.kt` |
 | Auditing 베이스 엔티티 | `common/entity/BaseEntity.kt` |
 | S3 presign | `common/storage/S3PresignService.kt` |
-| 푸시 라우팅 + 수신설정 게이팅 | `common/push/PushDispatcher.kt` |
+| 푸시 라우팅 + 수신설정 게이팅 + 발송 로깅 | `common/push/PushDispatcher.kt` (발송마다 `notification_send_logs` 기록 — 브로드캐스트 제외) |
 | 푸시 타입 SSOT (TOGGLEABLE 포함) | `common/push/PushTypes.kt` |
 | 푸시 메시지 템플릿 SSOT | `common/push/PushTemplates.kt` |
+| 푸시 딥링크 SSOT | `common/push/PushLink.kt` (`PushLink`·`PushLinks` — web `/admin/*` + 모바일 `type`/`id`) |
 | 푸시 구독 서비스 (FCM / 로깅 fallback) | `common/push/PushService.kt`, `FirebasePushService.kt` |
 | 수신 설정 엔티티/서비스/레포 | `settings/entity/NotificationPreference.kt`, `settings/service/NotificationPreferenceService.kt`, `settings/repository/NotificationPreferenceRepository.kt` |
 | 백그라운드 작업 실행 래퍼 | `common/job/JobRunRecorder.kt` |
