@@ -2,6 +2,7 @@ package kr.ai.flori.insights.service
 
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
+import kr.ai.flori.common.job.JobRunRecorder
 import kr.ai.flori.common.util.KST
 import kr.ai.flori.insights.client.FlowerApiClient
 import kr.ai.flori.insights.config.FlowerApiProperties
@@ -31,6 +32,9 @@ import java.time.LocalDate
 class FlowerAuctionIngestServiceTest {
     @Autowired
     lateinit var jdbcTemplate: JdbcTemplate
+
+    @Autowired
+    lateinit var jobRunRecorder: JobRunRecorder
 
     @Autowired
     lateinit var priceRepository: FlowerAuctionPriceRepository
@@ -90,7 +94,7 @@ class FlowerAuctionIngestServiceTest {
                 .andRespond(withSuccess(responses.getValue(gubn), MediaType.APPLICATION_JSON))
         }
         val client = FlowerApiClient(builder, properties)
-        return FlowerAuctionIngestService(client, properties, jdbcTemplate)
+        return FlowerAuctionIngestService(client, properties, jdbcTemplate, jobRunRecorder)
     }
 
     @Test
@@ -110,7 +114,7 @@ class FlowerAuctionIngestServiceTest {
                 ),
             )
 
-        service.scheduledIngest()
+        service.runIngest()
 
         val rows = queryRepository.ratesOn(date, null, null)
         assertThat(rows).hasSize(1)
@@ -134,12 +138,12 @@ class FlowerAuctionIngestServiceTest {
         ingestServiceWith(
             date,
             mapOf("1" to sampleJson(date.toString(), "3000"), "2" to emptyJson(), "3" to emptyJson(), "4" to emptyJson()),
-        ).scheduledIngest()
+        ).runIngest()
         // 정산 정정: 같은 키, avg 만 다른 값으로 재적재.
         ingestServiceWith(
             date,
             mapOf("1" to sampleJson(date.toString(), "3500"), "2" to emptyJson(), "3" to emptyJson(), "4" to emptyJson()),
-        ).scheduledIngest()
+        ).runIngest()
 
         assertThat(priceRepository.count()).isEqualTo(1)
         assertThat(queryRepository.ratesOn(date, null, null).first().avgAmt).isEqualTo(3500)
@@ -152,8 +156,9 @@ class FlowerAuctionIngestServiceTest {
                 FlowerApiClient(RestClient.builder(), properties.copy(serviceKey = "")),
                 properties.copy(serviceKey = ""),
                 jdbcTemplate,
+                jobRunRecorder,
             )
-        service.scheduledIngest()
+        service.runIngest()
         assertThat(priceRepository.count()).isZero()
     }
 }

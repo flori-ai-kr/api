@@ -1,5 +1,8 @@
 package kr.ai.flori.reservations.service
 
+import kr.ai.flori.common.job.JobNames
+import kr.ai.flori.common.job.JobOutcome
+import kr.ai.flori.common.job.JobRunRecorder
 import kr.ai.flori.common.push.DailySummaryItem
 import kr.ai.flori.common.push.PushDispatcher
 import kr.ai.flori.common.push.PushTemplates
@@ -30,19 +33,32 @@ class ReservationNotificationService(
     private val reservationRepository: ReservationRepository,
     private val pushDispatcher: PushDispatcher,
     private val jdbcTemplate: JdbcTemplate,
+    private val jobRunRecorder: JobRunRecorder,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Scheduled(cron = "0 */5 * * * *")
     fun scheduledReminderCheck() {
-        val count = markAndNotifyDueReminders(Instant.now())
-        if (count > 0) log.info("리마인더 발송: {}건", count)
+        jobRunRecorder.record(JobNames.RESERVATION_REMINDER) { runReminderCheck(Instant.now()) }
     }
 
     @Scheduled(cron = "0 0 8 * * *", zone = "Asia/Seoul")
     fun scheduledDailySummary() {
-        val count = sendDailySummary(LocalDate.now(KST))
+        jobRunRecorder.record(JobNames.DAILY_PICKUP_SUMMARY) { runDailySummary(LocalDate.now(KST)) }
+    }
+
+    /** 리마인더 발송 본문(스케줄/수동 공유). */
+    fun runReminderCheck(now: Instant): JobOutcome {
+        val count = markAndNotifyDueReminders(now)
+        if (count > 0) log.info("리마인더 발송: {}건", count)
+        return JobOutcome.success(count)
+    }
+
+    /** 일일 요약 발송 본문(스케줄/수동 공유). */
+    fun runDailySummary(today: LocalDate): JobOutcome {
+        val count = sendDailySummary(today)
         log.info("일일 픽업 요약 발송 사용자: {}", count)
+        return JobOutcome.success(count)
     }
 
     /**

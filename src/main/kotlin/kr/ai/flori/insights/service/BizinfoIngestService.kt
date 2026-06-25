@@ -1,5 +1,8 @@
 package kr.ai.flori.insights.service
 
+import kr.ai.flori.common.job.JobNames
+import kr.ai.flori.common.job.JobOutcome
+import kr.ai.flori.common.job.JobRunRecorder
 import kr.ai.flori.insights.client.BizinfoApiClient
 import kr.ai.flori.insights.client.BizinfoItem
 import kr.ai.flori.insights.config.BizinfoApiProperties
@@ -31,6 +34,7 @@ class BizinfoIngestService(
     private val client: BizinfoApiClient,
     private val properties: BizinfoApiProperties,
     private val jdbcTemplate: JdbcTemplate,
+    private val jobRunRecorder: JobRunRecorder,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -43,9 +47,14 @@ class BizinfoIngestService(
 
     @Scheduled(cron = "\${flori.bizinfo-api.cron:0 32 6 * * *}", zone = "Asia/Seoul")
     fun scheduledIngest() {
+        jobRunRecorder.record(JobNames.BIZINFO_INGEST) { runIngest() }
+    }
+
+    /** 기업마당 적재 본문(스케줄/수동 공유). */
+    fun runIngest(): JobOutcome {
         if (properties.baseUrl.isBlank() || properties.crtfcKey.isBlank()) {
             log.warn("기업마당 적재 건너뜀: flori.bizinfo-api base-url/crtfc-key 미설정 (no-op)")
-            return
+            return JobOutcome.skipped()
         }
         var total = 0
         var pages = 0
@@ -56,6 +65,7 @@ class BizinfoIngestService(
             pages++
         }
         log.info("기업마당 적재 완료: pages={} upserted={}", pages, total)
+        return JobOutcome.success(total, mapOf("pages" to pages))
     }
 
     /** 단일 페이지 조회 — 실패해도 예외를 삼키고 빈 목록 반환(격리, 루프 중단). */
