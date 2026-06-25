@@ -84,7 +84,7 @@ users (1) ── (N) community_posts / community_comments / community_likes  [au
 | `provider` | VARCHAR(20) | NOT NULL, DEFAULT 'LOCAL' | 소셜 제공자 (KAKAO/GOOGLE/NAVER 등) |
 | `provider_id` | VARCHAR(255) | | 소셜 측 사용자 식별자. **탈퇴 시 `withdrawn_{id}_{rand}` 로 스크럽** — `(provider, provider_id)` UNIQUE 해제로 같은 소셜 계정 재가입 허용 |
 | `is_active` | BOOLEAN | NOT NULL, DEFAULT TRUE | |
-| `is_admin` | BOOLEAN | NOT NULL, DEFAULT FALSE | 운영 관리자 여부. 커뮤니티 공지(notice) 작성·비밀글/댓글 열람·타인 글 삭제 권한 판정 |
+| `is_admin` | BOOLEAN | NOT NULL, DEFAULT FALSE | 운영 관리자 여부. 커뮤니티 공지(notice) 작성·비밀댓글 열람·타인 글 삭제 권한 판정 |
 | `created_at` / `updated_at` | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | 트리거로 updated_at 자동 갱신 |
 
 > 과거 `onboarded` 컬럼은 제거됐다. User 행은 `register/complete`(온보딩 완료) 시점에만 `user_profiles`와 함께 원자적으로 생성되므로 **User 존재 = 온보딩 완료**이고, 별도 플래그가 불필요하다.
@@ -428,7 +428,7 @@ FCM(모바일)과 Web Push/VAPID(브라우저 PWA) 구독을 함께 관리. `Pus
 
 ## 10. 커뮤니티 (단일 커뮤니티 — 테넌트 간 공유)
 
-꽃집 사장들이 함께 쓰는 단일 게시판. **user_id 행 격리 대상이 아니다** — 신원/권한/마스킹은 서비스가 뷰어(JWT)와 `author_user_id`로 계산한다. 비밀글/비밀댓글, 대댓글(1단계), 좋아요, 고정글, soft delete 지원. 작성자 표시는 `users.nickname`.
+꽃집 사장들이 함께 쓰는 단일 게시판. **user_id 행 격리 대상이 아니다** — 신원/권한/마스킹은 서비스가 뷰어(JWT)와 `author_user_id`로 계산한다. 비밀댓글, 대댓글(1단계), 좋아요, 고정글, soft delete 지원. 작성자 표시는 `users.nickname`.
 
 ### `community_posts` — 게시글
 
@@ -441,7 +441,6 @@ FCM(모바일)과 Web Push/VAPID(브라우저 PWA) 구독을 함께 관리. `Pus
 | `content` | JSONB | NOT NULL, DEFAULT '{}' | Tiptap JSON |
 | `content_text` | TEXT | NOT NULL, DEFAULT '' | 검색/미리보기 plain text |
 | `image_urls` | TEXT[] | NOT NULL, DEFAULT '{}' | 이미지 URL 목록 |
-| `is_secret` | BOOLEAN | NOT NULL, DEFAULT FALSE | 비밀글(작성자+관리자만 열람) |
 | `is_pinned` | BOOLEAN | NOT NULL, DEFAULT FALSE | 고정글(목록 우선) |
 | `like_count` | INTEGER | NOT NULL, DEFAULT 0 | 비정규화(좋아요 토글 시 갱신) |
 | `comment_count` | INTEGER | NOT NULL, DEFAULT 0 | 비정규화(댓글 작성/삭제 시 갱신) |
