@@ -161,7 +161,7 @@ private fun load(id: Long): Sale =
 
 > 소유권 검증의 실제 예: `SaleService.create`는 `request.customerId?.let { verifyCustomerOwnership(userId, it) }`로 **내 고객인지** 확인한 뒤에야 연결한다. 예약·사진의 `saleId`도 동일하게 `SaleService.get(id)`로 소유권을 통과시킨 뒤 연결한다.
 
-> **공유 데이터 예외(user_id 격리 없음)**: 인사이트 트렌드/인스타·**커뮤니티**(`community_posts`/`community_comments`/`community_likes`)는 테넌트 무관 단일 공유 데이터다. 이들 리포지토리 메서드에는 `AndUserId`가 없고, 비밀글·소유권·마스킹은 서비스가 뷰어(JWT) + `author_user_id`로 계산한다(`TenantIsolationGuardTest` 예외 목록에 명시). 새 공유 도메인을 추가할 때는 **의도적 예외**임을 명확히 주석으로 남기고 격리 가드 테스트에 등록한다.
+> **공유 데이터 예외(user_id 격리 없음)**: 인사이트 트렌드/인스타·**커뮤니티**(`community_posts`/`community_comments`/`community_likes`)는 테넌트 무관 단일 공유 데이터다. 이들 리포지토리 메서드에는 `AndUserId`가 없고, 비밀댓글·소유권·마스킹은 서비스가 뷰어(JWT) + `author_user_id`로 계산한다(`TenantIsolationGuardTest` 예외 목록에 명시). 새 공유 도메인을 추가할 때는 **의도적 예외**임을 명확히 주석으로 남기고 격리 가드 테스트에 등록한다.
 
 ---
 

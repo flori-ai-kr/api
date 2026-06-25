@@ -47,9 +47,6 @@ class CommunityPost(
     @Column(name = "image_urls", columnDefinition = "text[]")
     var imageUrls: Array<String> = emptyArray()
 
-    @Column(name = "is_secret", nullable = false)
-    var isSecret: Boolean = false
-
     @Column(name = "is_pinned", nullable = false)
     var isPinned: Boolean = false
 
