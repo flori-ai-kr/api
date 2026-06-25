@@ -15,7 +15,7 @@ Flori 백엔드의 PostgreSQL 스키마 전체 명세. 각 테이블의 역할·
 
 Flyway 같은 런타임 마이그레이션 도구를 쓰지 않고 **DDL을 직접 관리**한다. 스키마 정본은 `docs/sql/all-tables-ddl.sql`(전체 스냅샷) + `docs/sql/seed.sql`(공유 시드)이며, 운영(RDS)·로컬(`flori-pg`)에는 이 DDL을 수동 적용한다. 애플리케이션은 부팅 시 `ddl-auto: validate`로 엔티티↔DB 정합성만 검증한다(스키마 생성/변경 안 함). 테스트는 임베디드 PostgreSQL에 `spring.sql.init`로 이 DDL을 적용한다. 자세한 운영 절차는 `docs/sql/README.md` 참조.
 
-**현재 스키마 상태**: `users`는 **소셜 전용 인증**(비밀번호 컬럼 없음, `email` NOT NULL)이며 **User 행 존재 자체가 온보딩 완료를 의미**한다. 닉네임 컬럼 `nickname`은 NOT NULL + 전역 UNIQUE(`uq_users_nickname`)다. 가게/사장 프로필은 `user_profiles`(1:1)에 분리 저장한다.
+**현재 스키마 상태**: `users`는 **소셜 전용 인증**(비밀번호 컬럼 없음, `email` NOT NULL)이며 **User 행 존재 자체가 온보딩 완료를 의미**한다. 닉네임 컬럼 `nickname`은 NOT NULL + 전역 UNIQUE(`uq_users_nickname`)다. `name`은 사장님 실명(TEXT, NOT NULL) — 2026-06-25 신설(`26-06-25-users-name.sql`). 가게/사장 프로필은 `user_profiles`(1:1)에 분리 저장한다.
 
 데이터 현황(로컬): 도메인 테이블은 비어 있음(공유 시드 없음).
 
@@ -80,6 +80,7 @@ users (1) ── (N) community_posts / community_comments / community_likes  [au
 | `id` | BIGINT | PK, IDENTITY | |
 | `email` | VARCHAR(255) | NOT NULL, UNIQUE | 온보딩에서 항상 채워짐 (소셜 전용) |
 | `nickname` | VARCHAR(100) | NOT NULL, UNIQUE | 계정 표시명/닉네임. **전역 유일**(`uq_users_nickname`, 정확 일치) — 향후 커뮤니티 기능 대비. 가게명과 분리(가게명은 `user_profiles.store_name`) |
+| `name` | TEXT | NOT NULL | 사장님 실명. `register/complete`의 `ownerName` 필드에서 수집. 앱 레벨 상한 `FieldLimits.NAME(100)`. 마이그레이션: `26-06-25-users-name.sql` (기존 행은 nickname으로 백필 후 NOT NULL) |
 | `provider` | VARCHAR(20) | NOT NULL, DEFAULT 'LOCAL' | 소셜 제공자 (KAKAO/GOOGLE/NAVER 등) |
 | `provider_id` | VARCHAR(255) | | 소셜 측 사용자 식별자. **탈퇴 시 `withdrawn_{id}_{rand}` 로 스크럽** — `(provider, provider_id)` UNIQUE 해제로 같은 소셜 계정 재가입 허용 |
 | `is_active` | BOOLEAN | NOT NULL, DEFAULT TRUE | |
@@ -126,7 +127,7 @@ JWT refresh 회전/무효화 추적. **원문이 아닌 SHA-256 해시만 저장
 |------|------|------|------|
 | `user_id` | BIGINT | **PK**→users 논리참조 | |
 | `store_name` | TEXT | NOT NULL | 가게명 (`users.nickname`과 분리) |
-| `phone_number` | TEXT | NOT NULL | 휴대폰 번호 (숫자만, 하이픈 없음). 온보딩 시 필수 수집 — **PII, 응답 DTO에 노출하지 않음** |
+| `phone_number` | TEXT | NOT NULL | 휴대폰 번호 (숫자만, 하이픈 없음). 온보딩 시 필수 수집 — **PII. 본인 프로필 조회(`FullProfileResponse`)에서만 조회전용 노출 허용. cross-tenant·공유 어드민 콘솔 응답에는 절대 포함하지 말 것** |
 | `profile_image_url` | TEXT | | 프로필 이미지 URL (S3/CloudFront) |
 | `region_sido` | TEXT | NOT NULL | 시/도 |
 | `region_sigungu` | TEXT | | 시/군/구 |

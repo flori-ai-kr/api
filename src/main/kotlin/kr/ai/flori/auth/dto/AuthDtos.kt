@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 import kr.ai.flori.common.validation.FieldLimits
@@ -125,6 +126,10 @@ data class RegisterCompleteRequest(
     @field:NotBlank(message = "registerToken은 필수입니다")
     @field:Schema(description = "소셜 로그인이 반환한 registerToken(5분 TTL)")
     val registerToken: String,
+    @field:NotBlank(message = "이름은 필수입니다")
+    @field:Size(max = FieldLimits.NAME, message = "이름이 너무 깁니다")
+    @field:Schema(description = "사장님 실명(소셜 이름 프리필)", example = "홍길동")
+    val ownerName: String,
     @field:NotBlank(message = "가게명은 필수입니다")
     @field:Size(max = FieldLimits.STORE_NAME, message = "가게명이 너무 깁니다")
     @field:Schema(description = "가게명", example = "헤이즐 플라워")
@@ -149,9 +154,10 @@ data class RegisterCompleteRequest(
     @field:Size(max = FieldLimits.REGION, message = "시군구가 너무 깁니다")
     @field:Schema(description = "시군구(선택)", example = "강남구")
     val regionSigungu: String? = null,
+    @field:NotBlank(message = "나이대는 필수입니다")
     @field:Size(max = FieldLimits.AGE_RANGE, message = "나이대 값이 너무 깁니다")
-    @field:Schema(description = "사장님 나이대(선택, 단일)", example = "30대")
-    val ownerAgeRange: String? = null,
+    @field:Schema(description = "사장님 나이대(필수, 단일)", example = "30대")
+    val ownerAgeRange: String,
     @field:Size(max = FieldLimits.PROFILE_LIST, message = "관심사가 너무 많습니다")
     @field:Schema(description = "관심사(선택, 복수)", example = "[\"웨딩\",\"개업화환\"]")
     val interests: List<
@@ -164,10 +170,11 @@ data class RegisterCompleteRequest(
         @Size(max = FieldLimits.LABEL, message = "주력 값이 너무 깁니다")
         String,
     >? = null,
+    @field:NotEmpty(message = "알게 된 경로는 1개 이상 선택해야 합니다")
     @field:Size(max = FieldLimits.PROFILE_LIST, message = "참여경로가 너무 많습니다")
-    @field:Schema(description = "flori를 알게 된 경로(선택, 복수)", example = "[\"지인 추천\",\"인스타그램\"]")
+    @field:Schema(description = "flori를 알게 된 경로(필수, 1개 이상)", example = "[\"인스타그램\"]")
     val referralSources: List<
         @Size(max = FieldLimits.LABEL, message = "참여경로 값이 너무 깁니다")
         String,
-    >? = null,
+    >,
 )

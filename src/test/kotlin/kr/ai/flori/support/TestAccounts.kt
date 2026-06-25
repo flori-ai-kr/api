@@ -29,16 +29,22 @@ object TestAccounts {
         storeName: String = "테스트 가게",
         phoneNumber: String = "01012345678",
         regionSido: String = "서울특별시",
+        ownerName: String = "홍길동",
+        ownerAgeRange: String = "30대",
+        referralSources: List<String> = listOf("인스타그램"),
     ): TokenResponse {
         val registerToken = tokenProvider.generateRegisterToken(provider, providerId, email, nickname)
         return authService.registerComplete(
             RegisterCompleteRequest(
                 registerToken = registerToken,
+                ownerName = ownerName,
                 storeName = storeName,
                 phoneNumber = phoneNumber,
                 nickname = nickname,
                 email = email,
                 regionSido = regionSido,
+                ownerAgeRange = ownerAgeRange,
+                referralSources = referralSources,
             ),
         )
     }

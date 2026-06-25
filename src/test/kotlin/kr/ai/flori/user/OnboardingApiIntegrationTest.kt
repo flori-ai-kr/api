@@ -271,4 +271,16 @@ class OnboardingApiIntegrationTest {
                 content = objectMapper.writeValueAsString(mapOf("name" to "가게", "regionSido" to "서울특별시"))
             }.andExpect { status { isUnauthorized() } }
     }
+
+    @Test
+    fun `GET me-profile - 응답에 phoneNumber와 ownerName이 포함된다`() {
+        val token = token()
+        mockMvc
+            .get("/me/profile") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") }
+            .andExpect {
+                status { isOk() }
+                jsonPath("$.phoneNumber") { exists() }
+                jsonPath("$.ownerName") { exists() }
+            }
+    }
 }
