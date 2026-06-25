@@ -13,3 +13,64 @@ data class RedeemResponse(
     val nextBillingAt: Instant?,
     val pending: Boolean,
 )
+
+data class CouponIssueRequest(
+    val code: String? = null,
+    @field:jakarta.validation.constraints.Min(1, message = "무료 일수는 1 이상")
+    val days: Int,
+    val validFrom: Instant? = null,
+    val validUntil: Instant? = null,
+    val maxRedemptions: Int? = null,
+    val perUserLimit: Int = 1,
+    val source: String = "PROMO",
+    val memo: String? = null,
+)
+
+data class CouponResponse(
+    val id: Long,
+    val code: String,
+    val days: Int,
+    val status: String,
+    val effectiveStatus: String,
+    val redeemedCount: Int,
+    val maxRedemptions: Int?,
+    val perUserLimit: Int,
+    val validFrom: Instant?,
+    val validUntil: Instant?,
+    val source: String,
+    val memo: String?,
+    val createdAt: Instant,
+) {
+    companion object {
+        fun of(
+            c: kr.ai.flori.billing.entity.Coupon,
+            now: Instant,
+        ): CouponResponse =
+            CouponResponse(
+                id = requireNotNull(c.id),
+                code = c.code,
+                days = c.days,
+                status = c.status,
+                effectiveStatus = effective(c, now),
+                redeemedCount = c.redeemedCount,
+                maxRedemptions = c.maxRedemptions,
+                perUserLimit = c.perUserLimit,
+                validFrom = c.validFrom,
+                validUntil = c.validUntil,
+                source = c.source,
+                memo = c.memo,
+                createdAt = c.createdAt,
+            )
+
+        private fun effective(
+            c: kr.ai.flori.billing.entity.Coupon,
+            now: Instant,
+        ): String =
+            when {
+                c.status == "DISABLED" -> "DISABLED"
+                c.validUntil != null && now.isAfter(c.validUntil) -> "EXPIRED"
+                c.maxRedemptions != null && c.redeemedCount >= c.maxRedemptions!! -> "EXHAUSTED"
+                else -> "ACTIVE"
+            }
+    }
+}
