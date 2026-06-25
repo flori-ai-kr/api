@@ -4,6 +4,7 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
 import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.job.JobRunRecorder
+import kr.ai.flori.common.notification.NotificationSendRecorder
 import kr.ai.flori.common.push.PushDispatcher
 import kr.ai.flori.common.push.PushMessage
 import kr.ai.flori.common.push.PushResult
@@ -61,6 +62,17 @@ class InsightPushServiceTest {
                             ) = WebPushResult(success = true)
                         },
                     jdbcTemplate = jdbcTemplate,
+                    sendRecorder =
+                        object : NotificationSendRecorder {
+                            override fun record(
+                                source: String,
+                                type: String,
+                                success: Boolean,
+                                targetUserId: Long?,
+                                title: String?,
+                                errorMessage: String?,
+                            ) = Unit
+                        },
                 ),
             jobRunRecorder = jobRunRecorder,
         )

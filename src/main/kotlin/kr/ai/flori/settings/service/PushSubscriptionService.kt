@@ -2,6 +2,7 @@ package kr.ai.flori.settings.service
 
 import kr.ai.flori.common.push.PushDispatcher
 import kr.ai.flori.common.push.PushTemplates
+import kr.ai.flori.common.push.PushTypes
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.settings.dto.PushStatusResponse
 import kr.ai.flori.settings.entity.PushSubscription
@@ -53,7 +54,8 @@ class PushSubscriptionService(
             userId = TenantContext.currentUserId(),
             title = content.title,
             body = content.body,
-            url = content.url,
+            link = content.link,
+            type = PushTypes.TEST,
         )
     }
 }

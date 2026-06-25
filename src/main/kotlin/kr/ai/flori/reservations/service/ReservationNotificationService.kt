@@ -5,6 +5,7 @@ import kr.ai.flori.common.job.JobOutcome
 import kr.ai.flori.common.job.JobRunRecorder
 import kr.ai.flori.common.push.DailySummaryItem
 import kr.ai.flori.common.push.PushDispatcher
+import kr.ai.flori.common.push.PushLink
 import kr.ai.flori.common.push.PushTemplates
 import kr.ai.flori.common.push.PushTypes
 import kr.ai.flori.common.util.KST
@@ -77,7 +78,7 @@ class ReservationNotificationService(
                         title = reservation.title,
                         amount = reservation.amount,
                     )
-                notify(reservation.userId, content.title, content.body, content.url, PushTypes.RESERVATION_REMINDER)
+                notify(reservation.userId, content.title, content.body, content.link, PushTypes.RESERVATION_REMINDER)
                 reservation.reminderSent = true
                 reservationRepository.save(reservation)
                 sent++
@@ -101,7 +102,7 @@ class ReservationNotificationService(
                 if (claimOnce(userId, DAILY_SUMMARY, today.toString())) {
                     val items = reservations.map { DailySummaryItem(it.time, it.customerName, it.title) }
                     val content = PushTemplates.dailySummary(items)
-                    notify(userId, content.title, content.body, content.url, PushTypes.DAILY_PICKUP_SUMMARY)
+                    notify(userId, content.title, content.body, content.link, PushTypes.DAILY_PICKUP_SUMMARY)
                     sent++
                 }
             } catch (e: DataAccessException) {
@@ -129,10 +130,10 @@ class ReservationNotificationService(
         userId: Long,
         title: String,
         body: String,
-        url: String? = null,
+        link: PushLink? = null,
         type: String,
     ) {
-        pushDispatcher.sendToUser(userId, title, body, url, type)
+        pushDispatcher.sendToUser(userId, title, body, link, type)
     }
 
     private companion object {

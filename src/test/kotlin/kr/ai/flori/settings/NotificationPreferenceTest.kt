@@ -4,6 +4,7 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
 import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.error.AppException
+import kr.ai.flori.common.notification.NotificationSendRecorder
 import kr.ai.flori.common.push.PushDispatcher
 import kr.ai.flori.common.push.PushMessage
 import kr.ai.flori.common.push.PushResult
@@ -60,6 +61,17 @@ class NotificationPreferenceTest {
                     ) = WebPushResult(success = true)
                 },
             jdbcTemplate = jdbcTemplate,
+            sendRecorder =
+                object : NotificationSendRecorder {
+                    override fun record(
+                        source: String,
+                        type: String,
+                        success: Boolean,
+                        targetUserId: Long?,
+                        title: String?,
+                        errorMessage: String?,
+                    ) = Unit
+                },
         )
     }
 
@@ -139,12 +151,13 @@ class NotificationPreferenceTest {
     }
 
     @Test
-    fun `type 없이 보내면 설정 무관하게 발송된다(테스트 등)`() {
+    fun `비-토글 타입(테스트 등)은 수신설정 무관하게 발송된다`() {
         val userId = newUser()
         addActiveSubscription(userId)
+        // 무관한 토글 타입을 꺼둬도 비-토글 타입(TEST) 발송엔 영향 없다
         preferenceService.set(PushTypes.RESERVATION_REMINDER, false)
 
-        val sent = pushDispatcher.sendToUser(userId, "제목", "본문", null, null)
+        val sent = pushDispatcher.sendToUser(userId, "제목", "본문", null, PushTypes.TEST)
         assertThat(sent).isEqualTo(1)
     }
 }

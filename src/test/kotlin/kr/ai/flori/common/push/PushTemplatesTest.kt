@@ -17,7 +17,7 @@ class PushTemplatesTest {
 
         assertThat(content.title).isEqualTo("예약 리마인더")
         assertThat(content.body).isEqualTo("14:00 · 박지현님 · 졸업식 꽃다발 · 180,000원")
-        assertThat(content.url).isEqualTo("/calendar")
+        assertThat(content.link).isEqualTo(PushLinks.calendar())
     }
 
     @Test
@@ -58,7 +58,7 @@ class PushTemplatesTest {
 
         assertThat(content.title).isEqualTo("오늘 예약 2건")
         assertThat(content.body).isEqualTo("09:30 홍길동님 · 프로포즈 부케\n14:00 박지현님 · 졸업식 꽃다발")
-        assertThat(content.url).isEqualTo("/calendar")
+        assertThat(content.link).isEqualTo(PushLinks.calendar())
     }
 
     @Test
@@ -100,6 +100,7 @@ class PushTemplatesTest {
 
         assertThat(content.title).isEqualTo("테스트 알림")
         assertThat(content.body).isEqualTo("푸시 알림이 정상적으로 동작합니다")
+        assertThat(content.link).isEqualTo(PushLinks.home())
     }
 
     // ── 신규 5종 ──────────────────────────────────────────────────────────────
@@ -110,7 +111,7 @@ class PushTemplatesTest {
 
         assertThat(content.title).isEqualTo("새 공지사항")
         assertThat(content.body).isEqualTo("6월 정기 점검 안내")
-        assertThat(content.url).isEqualTo("/community/posts/42")
+        assertThat(content.link).isEqualTo(PushLinks.community(42))
     }
 
     @Test
@@ -119,6 +120,7 @@ class PushTemplatesTest {
 
         assertThat(content.title).isEqualTo("새 댓글이 달렸습니다")
         assertThat(content.body).isEqualTo("좋은 정보 감사합니다")
+        assertThat(content.link).isEqualTo(PushLinks.community(7))
     }
 
     @Test
@@ -151,6 +153,7 @@ class PushTemplatesTest {
         assertThat(content.title).isEqualTo("스크랩한 경매 시세 업데이트")
         // 가나다: 거베라, 국화, 장미, 프리지아 → 앞 2개 + 외 2건
         assertThat(content.body).isEqualTo("스크랩한 거베라·국화 외 2건의 경매 시세가 업데이트되었습니다")
+        assertThat(content.link).isEqualTo(PushLinks.insights())
     }
 
     @Test
