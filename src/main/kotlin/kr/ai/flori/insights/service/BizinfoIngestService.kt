@@ -50,10 +50,10 @@ class BizinfoIngestService(
         jobRunRecorder.record(JobNames.BIZINFO_INGEST) { runIngest() }
     }
 
-    /** 기업마당 적재 본문(스케줄/수동 공유). */
+    /** 비즈인포 적재 본문(스케줄/수동 공유). */
     fun runIngest(): JobOutcome {
         if (properties.baseUrl.isBlank() || properties.crtfcKey.isBlank()) {
-            log.warn("기업마당 적재 건너뜀: flori.bizinfo-api base-url/crtfc-key 미설정 (no-op)")
+            log.warn("비즈인포 적재 건너뜀: flori.bizinfo-api base-url/crtfc-key 미설정 (no-op)")
             return JobOutcome.skipped()
         }
         var total = 0
@@ -64,7 +64,7 @@ class BizinfoIngestService(
             items.forEach { total += upsert(it) }
             pages++
         }
-        log.info("기업마당 적재 완료: pages={} upserted={}", pages, total)
+        log.info("비즈인포 적재 완료: pages={} upserted={}", pages, total)
         return JobOutcome.success(total, mapOf("pages" to pages))
     }
 
@@ -74,7 +74,7 @@ class BizinfoIngestService(
         try {
             client.fetch(page, properties.pageUnit).jsonArray
         } catch (e: Exception) {
-            log.error("기업마당 적재 실패: page={}", page, e)
+            log.error("비즈인포 적재 실패: page={}", page, e)
             emptyList()
         }
 
