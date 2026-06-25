@@ -1,5 +1,8 @@
 package kr.ai.flori.insights.service
 
+import kr.ai.flori.common.job.JobNames
+import kr.ai.flori.common.job.JobOutcome
+import kr.ai.flori.common.job.JobRunRecorder
 import kr.ai.flori.common.util.KST
 import kr.ai.flori.insights.client.F001Item
 import kr.ai.flori.insights.client.FlowerApiClient
@@ -30,14 +33,20 @@ class FlowerAuctionIngestService(
     private val client: FlowerApiClient,
     private val properties: FlowerApiProperties,
     private val jdbcTemplate: JdbcTemplate,
+    private val jobRunRecorder: JobRunRecorder,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Scheduled(cron = "\${flori.flower-api.cron:0 30 6 * * *}", zone = "Asia/Seoul")
     fun scheduledIngest() {
+        jobRunRecorder.record(JobNames.FLOWER_AUCTION_INGEST) { runIngest() }
+    }
+
+    /** 화훼 경매 적재 본문(스케줄/수동 공유). */
+    fun runIngest(): JobOutcome {
         if (properties.baseUrl.isBlank() || properties.serviceKey.isBlank()) {
             log.warn("화훼 경매 적재 건너뜀: flori.flower-api base-url/service-key 미설정 (no-op)")
-            return
+            return JobOutcome.skipped()
         }
         val today = LocalDate.now(KST)
         val days = (0 until properties.backfillDays.coerceAtLeast(1)).map { today.minusDays(it.toLong()) }
@@ -48,6 +57,7 @@ class FlowerAuctionIngestService(
             }
         }
         log.info("화훼 경매 적재 완료: days={} upserted={}", days, total)
+        return JobOutcome.success(total, mapOf("days" to days.size))
     }
 
     /** (날짜, flowerGubn) 단건 적재 — 실패해도 예외를 삼키고 0을 반환(격리). */

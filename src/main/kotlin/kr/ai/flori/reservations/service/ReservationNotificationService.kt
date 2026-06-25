@@ -1,6 +1,12 @@
 package kr.ai.flori.reservations.service
 
+import kr.ai.flori.common.job.JobNames
+import kr.ai.flori.common.job.JobOutcome
+import kr.ai.flori.common.job.JobRunRecorder
+import kr.ai.flori.common.push.DailySummaryItem
 import kr.ai.flori.common.push.PushDispatcher
+import kr.ai.flori.common.push.PushTemplates
+import kr.ai.flori.common.push.PushTypes
 import kr.ai.flori.common.util.KST
 import kr.ai.flori.reservations.repository.ReservationRepository
 import org.slf4j.LoggerFactory
@@ -28,19 +34,32 @@ class ReservationNotificationService(
     private val reservationRepository: ReservationRepository,
     private val pushDispatcher: PushDispatcher,
     private val jdbcTemplate: JdbcTemplate,
+    private val jobRunRecorder: JobRunRecorder,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Scheduled(cron = "0 */5 * * * *")
     fun scheduledReminderCheck() {
-        val count = markAndNotifyDueReminders(Instant.now())
-        if (count > 0) log.info("리마인더 발송: {}건", count)
+        jobRunRecorder.record(JobNames.RESERVATION_REMINDER) { runReminderCheck(Instant.now()) }
     }
 
     @Scheduled(cron = "0 0 8 * * *", zone = "Asia/Seoul")
     fun scheduledDailySummary() {
-        val count = sendDailySummary(LocalDate.now(KST))
+        jobRunRecorder.record(JobNames.DAILY_PICKUP_SUMMARY) { runDailySummary(LocalDate.now(KST)) }
+    }
+
+    /** 리마인더 발송 본문(스케줄/수동 공유). */
+    fun runReminderCheck(now: Instant): JobOutcome {
+        val count = markAndNotifyDueReminders(now)
+        if (count > 0) log.info("리마인더 발송: {}건", count)
+        return JobOutcome.success(count)
+    }
+
+    /** 일일 요약 발송 본문(스케줄/수동 공유). */
+    fun runDailySummary(today: LocalDate): JobOutcome {
+        val count = sendDailySummary(today)
         log.info("일일 픽업 요약 발송 사용자: {}", count)
+        return JobOutcome.success(count)
     }
 
     /**
@@ -51,7 +70,14 @@ class ReservationNotificationService(
         var sent = 0
         reservationRepository.findDueReminders(now).forEach { reservation ->
             try {
-                notify(reservation.userId, "픽업 리마인더", "${reservation.title} · ${reservation.customerName}")
+                val content =
+                    PushTemplates.pickupReminder(
+                        time = reservation.time,
+                        customerName = reservation.customerName,
+                        title = reservation.title,
+                        amount = reservation.amount,
+                    )
+                notify(reservation.userId, content.title, content.body, content.url, PushTypes.RESERVATION_REMINDER)
                 reservation.reminderSent = true
                 reservationRepository.save(reservation)
                 sent++
@@ -73,7 +99,9 @@ class ReservationNotificationService(
         byUser.forEach { (userId, reservations) ->
             try {
                 if (claimOnce(userId, DAILY_SUMMARY, today.toString())) {
-                    notify(userId, "오늘의 픽업 ${reservations.size}건", reservations.joinToString(", ") { it.title })
+                    val items = reservations.map { DailySummaryItem(it.time, it.customerName, it.title) }
+                    val content = PushTemplates.dailySummary(items)
+                    notify(userId, content.title, content.body, content.url, PushTypes.DAILY_PICKUP_SUMMARY)
                     sent++
                 }
             } catch (e: DataAccessException) {
@@ -97,13 +125,14 @@ class ReservationNotificationService(
             dedupKey,
         ) == 1
 
-    /** FCM(모바일)·Web Push(브라우저) 양쪽 활성 구독에 발송한다(PushDispatcher가 경로 분기). */
     private fun notify(
         userId: Long,
         title: String,
         body: String,
+        url: String? = null,
+        type: String,
     ) {
-        pushDispatcher.sendToUser(userId, title, body)
+        pushDispatcher.sendToUser(userId, title, body, url, type)
     }
 
     private companion object {

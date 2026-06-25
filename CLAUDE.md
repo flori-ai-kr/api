@@ -61,8 +61,8 @@ src/main/kotlin/kr/ai/flori/
 ├── reservations/          # 예약 (판매 전환, 픽업)
 ├── schedules/             # 일정 (리마인더 푸시)
 ├── photos/                # 갤러리 (presigned 업로드) · 태그 · 고객 연결(customer_id 직접 필터)
-├── settings/              # 카드사 · 매출/지출 설정 · 하단바 · 푸시 구독
-├── community/             # 커뮤니티 게시판(단일 공유) · 비밀글/댓글·대댓글·좋아요·soft delete
+├── settings/              # 카드사 · 매출/지출 설정 · 하단바 · 푸시 구독 · 타입별 수신 설정(GET·PUT /push/preferences)
+├── community/             # 커뮤니티 게시판(단일 공유) · 비밀글/댓글·대댓글·좋아요·soft delete · 공지/댓글 이벤트 발행 → CommunityPushListener(AFTER_COMMIT 비동기 푸시)
 ├── verification/          # 사업자 인증 (신청·상태조회·presigned 업로드·게이팅) + 결과 알림톡(접수/승인/거절, SOLAPI) — 발송 결과는 notification_send_logs(source=alimtalk, type=business_verification)
 ├── waitlist/              # 사전등록 공개 모집 (인증 불필요 — POST /waitlist, GET /waitlist/count). 식별자: 이메일(정규화 UNIQUE)
 ├── interview/             # 유저 인터뷰 모집 (공개 — POST /interview, 이름+전화번호). 신청 시 Discord INTERVIEW 채널 비동기 알림
@@ -72,16 +72,17 @@ src/main/kotlin/kr/ai/flori/
 ├── support/               # 1:1 문의·피드백 인박스 (support_inquiries) — 점주 제출(/inquiries) + 이미지 presigned 업로드(POST /inquiries/upload-targets, S3 prefix `support/`) + 운영자 답변/상태관리(/admin/inquiries, AdminInquiryResponse=작성자 닉네임·가게명 포함). 새 문의 접수 시 Discord SUPPORT 채널 알림, 운영자 답변 시 점주 푸시. @RequiresAdmin 격리
 ├── admin/                 # 운영자 콘솔 API (/admin/**, @RequiresAdmin · cross-tenant) — 통계(funnel/churn-reasons/retention 추가)·인증심사·유저(감사로그)·브로드캐스트·커뮤니티 모더레이션·알림발송이력·AI헬스 프록시
 ├── ai/                    # AI 게이트웨이 (/ai/**) — web↔ai-server(FastAPI) 중개 + 모든 AI 호출 DB 로깅. 채팅/proactive/OCR예약/confirm. ai-server는 내부망 stateless
-├── insights/              # 정보 피드 (/insights/**) — 경매시세(aT f001 적재, 단일시장 양재)·지원사업(K-Startup·기업마당 적재) 읽기 + 스크랩(개인). 적재는 모두 @Scheduled, 키 미설정 시 no-op. 공유 읽기 2테이블(flower_auction_prices·support_programs) + insight_scraps(user_id). FK 없음 간접참조
+├── insights/              # 정보 피드 (/insights/**) — 경매시세(aT f001 적재, 단일시장 양재)·지원사업(K-Startup·기업마당 적재) 읽기 + 스크랩(개인). 적재는 모두 @Scheduled + JobRunRecorder 래핑, 키 미설정 시 no-op. 공유 읽기 2테이블(flower_auction_prices·support_programs) + insight_scraps(user_id). InsightPushService: 경매 스크랩 시세 업데이트·지원사업 신규·마감 임박 3 cron 푸시. FK 없음 간접참조
 └── common/                # 횡단 관심사
     ├── config/            # CORS, OpenAPI, Async, Schedule, Web
     ├── domain/            # 공통 enum (PaymentMethods, ReservationStatuses)
     ├── entity/            # BaseEntity (Auditing)
     ├── error/             # GlobalExceptionHandler, AppException, ErrorCode, Discord 리포팅
     ├── health/            # 헬스체크
+    ├── job/               # 백그라운드 작업 실행 로깅 SSOT — JobRunRecorder(cron 래퍼), JobNames(식별자 상수), JobOutcome(결과), JobRunLog(엔티티), JobRunLogRepository
     ├── log/               # TraceIdFilter, LoggingInterceptor
     ├── notification/      # Discord 알림 채널 (DiscordNotifier, DiscordChannel, DiscordProperties)
-    ├── push/              # PushService (FCM / 로깅 fallback)
+    ├── push/              # PushDispatcher(FCM/VAPID 라우팅 + 수신설정 게이팅), PushTypes(타입 SSOT + TOGGLEABLE 목록), PushTemplates(메시지 SSOT), PushService(FCM / 로깅 fallback)
     ├── request/           # ClientContext(ThreadLocal) + ClientContextFilter (요청 컨텍스트 캡처)
     ├── security/          # JWT, SecurityConfig, 내부 인증
     ├── storage/           # S3 presign
@@ -152,7 +153,20 @@ src/main/kotlin/kr/ai/flori/
 | Discord 에러 리포팅 | `common/error/DiscordErrorReporter.kt` |
 | Auditing 베이스 엔티티 | `common/entity/BaseEntity.kt` |
 | S3 presign | `common/storage/S3PresignService.kt` |
-| 푸시 | `common/push/PushService.kt`, `FirebasePushService.kt` |
+| 푸시 라우팅 + 수신설정 게이팅 | `common/push/PushDispatcher.kt` |
+| 푸시 타입 SSOT (TOGGLEABLE 포함) | `common/push/PushTypes.kt` |
+| 푸시 메시지 템플릿 SSOT | `common/push/PushTemplates.kt` |
+| 푸시 구독 서비스 (FCM / 로깅 fallback) | `common/push/PushService.kt`, `FirebasePushService.kt` |
+| 수신 설정 엔티티/서비스/레포 | `settings/entity/NotificationPreference.kt`, `settings/service/NotificationPreferenceService.kt`, `settings/repository/NotificationPreferenceRepository.kt` |
+| 백그라운드 작업 실행 래퍼 | `common/job/JobRunRecorder.kt` |
+| 작업 식별자 상수 SSOT | `common/job/JobNames.kt` |
+| 작업 결과 타입 | `common/job/JobOutcome.kt` |
+| 작업 실행 이력 엔티티/레포 | `common/job/JobRunLog.kt`, `common/job/JobRunLogRepository.kt` |
+| 수동 트리거 레지스트리 | `admin/service/JobRegistry.kt` |
+| 작업 로그 조회·수동 트리거 서비스/컨트롤러 | `admin/service/AdminJobRunService.kt`, `admin/controller/AdminJobRunController.kt` |
+| 커뮤니티 푸시 이벤트 | `community/event/CommunityPushEvents.kt` |
+| 커뮤니티 푸시 리스너 (AFTER_COMMIT 비동기) | `community/listener/CommunityPushListener.kt` |
+| 인사이트 푸시 서비스 (경매/지원사업 cron 3종) | `insights/service/InsightPushService.kt` |
 | 사업자 인증 게이팅 | `verification/gating/RequiresBusinessVerified.kt`, `BusinessVerifiedInterceptor.kt` |
 | 운영자 콘솔 게이팅 | `admin/gating/RequiresAdmin.kt`, `AdminInterceptor.kt` (User.isAdmin 재검증, `/admin/**`) |
 | Discord 알림 | `common/notification/discord/DiscordNotifier.kt`, `DiscordChannel.kt`, `DiscordProperties.kt` — 채널: SIGNUP·VERIFICATION·WAITLIST·INTERVIEW·SUPPORT |
