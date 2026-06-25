@@ -9,7 +9,8 @@ object BillingPeriods {
         from: ZonedDateTime,
     ): ZonedDateTime =
         when (plan) {
+            "MONTHLY" -> from.plusMonths(1)
             "YEARLY" -> from.plusYears(1)
-            else -> from.plusMonths(1)
+            else -> error("Unknown plan: $plan")
         }
 }

@@ -32,10 +32,13 @@ class BillingChargeProcessor(
             return
         }
         when (paymentService.chargeOnce(subscription)) {
-            ChargeOutcome.SUCCESS, ChargeOutcome.ALREADY_PAID -> {
+            ChargeOutcome.SUCCESS -> {
                 eventPublisher.publishEvent(
                     PaymentChargedEvent(subscription.userId, subId, subscription.amount, success = true),
                 )
+            }
+            ChargeOutcome.ALREADY_PAID -> {
+                // 멱등 재시도 — 이미 결제·알림 완료, 중복 알림 방지
             }
             ChargeOutcome.FAILED -> applyDunning(subscription, now)
         }
@@ -56,6 +59,7 @@ class BillingChargeProcessor(
                     .atStartOfDay(KST)
                     .toInstant()
         }
+        // 만료를 유발한 마지막 실패도 누적(실패 시도 카운트)
         fresh.retryCount += 1
         val graceUntil = fresh.graceUntil
         if (graceUntil != null && !now.isBefore(graceUntil)) {
