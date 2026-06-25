@@ -9,6 +9,7 @@ import kr.ai.flori.admin.dto.SalesCounts
 import kr.ai.flori.admin.dto.TimeseriesPoint
 import kr.ai.flori.admin.dto.UserCounts
 import kr.ai.flori.admin.dto.VerificationCounts
+import kr.ai.flori.billing.service.AdminSubscriptionService
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import org.springframework.jdbc.core.JdbcTemplate
@@ -27,6 +28,7 @@ import java.time.temporal.TemporalAdjusters
 @Service
 class AdminStatsService(
     private val jdbc: JdbcTemplate,
+    private val adminSubscriptionService: AdminSubscriptionService,
 ) {
     /** range: 7d|30d|90d|all. 기본 카운트는 전체, comparison은 선택 기간 대비 직전 동기간 증감. */
     @Transactional(readOnly = true)
@@ -35,6 +37,7 @@ class AdminStatsService(
             users = userCounts(),
             sales = salesCounts(),
             verifications = verificationCounts(),
+            subscriptions = adminSubscriptionService.counts(),
             comparison = comparison(range),
         )
 

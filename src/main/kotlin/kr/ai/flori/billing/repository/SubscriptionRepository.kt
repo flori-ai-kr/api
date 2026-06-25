@@ -19,4 +19,16 @@ interface SubscriptionRepository : JpaRepository<Subscription, Long> {
         from: Instant,
         to: Instant,
     ): List<Subscription>
+
+    // 어드민 구독 집계.
+    fun countByStatus(status: String): Long
+
+    // 어드민 구독 목록 (상태 필터).
+    fun findByStatusOrderByCreatedAtDesc(
+        status: String,
+        pageable: org.springframework.data.domain.Pageable,
+    ): List<Subscription>
+
+    // 어드민 구독 목록 (전체).
+    fun findAllByOrderByCreatedAtDesc(pageable: org.springframework.data.domain.Pageable): List<Subscription>
 }

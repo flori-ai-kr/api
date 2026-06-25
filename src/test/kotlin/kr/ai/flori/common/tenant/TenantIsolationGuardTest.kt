@@ -98,6 +98,10 @@ class TenantIsolationGuardTest {
             // 결제일 도래 배치 / D-3 사전알림 배치는 cross-tenant 시스템 작업이므로 의도적 전역.
             "SubscriptionRepository#findByStatusInAndNextBillingAtLessThanEqual",
             "SubscriptionRepository#findByStatusInAndNextBillingAtBetween",
+            // 빌링 — 어드민 구독 집계/목록(@RequiresAdmin): cross-tenant 운영 콘솔 조회.
+            "SubscriptionRepository#countByStatus",
+            "SubscriptionRepository#findByStatusOrderByCreatedAtDesc",
+            "SubscriptionRepository#findAllByOrderByCreatedAtDesc",
             // 빌링 — 결제 이력: subscriptionId는 이미 테넌트 검증된 부모로 접근.
             // orderId는 토스 페이먼츠 웹훅 수신 시 콜백 매칭 — 전역 유일 식별자로 서비스가 소유권 검증 후 처리.
             "PaymentHistoryRepository#existsBySubscriptionIdAndBillingCycleAndStatus",
