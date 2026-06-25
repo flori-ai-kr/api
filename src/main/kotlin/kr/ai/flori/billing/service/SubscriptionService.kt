@@ -191,18 +191,18 @@ class SubscriptionService(
         return SubscriptionResponse.of(sub, savedCard)
     }
 
-    /** 무료 일수 적용: 활성 구독이면 nextBillingAt/period_end를 days만큼 밀고 새 nextBillingAt 반환. 없으면 null(pending). */
+    /** 무료 일수 적용: 활성 구독이면 nextBillingAt/period_end를 days만큼 밀고 갱신된 Subscription 반환. 없거나 비활성이면 null(pending). */
     @Transactional
     fun applyFreeDays(
         userId: Long,
         days: Int,
-    ): Instant? {
+    ): Subscription? {
         val sub = subscriptionRepository.findByUserId(userId) ?: return null
         if (sub.status !in ACTIVE_STATES) return null
         val next = ZonedDateTime.ofInstant(sub.nextBillingAt, KST).plusDays(days.toLong())
         sub.nextBillingAt = next.toInstant()
         sub.currentPeriodEnd = next.toInstant()
-        return subscriptionRepository.save(sub).nextBillingAt
+        return subscriptionRepository.save(sub)
     }
 
     private fun guardNotAlreadyActive(userId: Long) {

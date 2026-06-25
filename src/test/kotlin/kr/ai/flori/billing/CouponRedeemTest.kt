@@ -5,6 +5,7 @@ import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
 import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.billing.entity.Coupon
 import kr.ai.flori.billing.entity.Subscription
+import kr.ai.flori.billing.repository.CouponRedemptionRepository
 import kr.ai.flori.billing.repository.CouponRepository
 import kr.ai.flori.billing.repository.SubscriptionRepository
 import kr.ai.flori.billing.service.CouponService
@@ -29,6 +30,8 @@ class CouponRedeemTest {
     @Autowired lateinit var couponService: CouponService
 
     @Autowired lateinit var couponRepository: CouponRepository
+
+    @Autowired lateinit var redemptionRepository: CouponRedemptionRepository
 
     @Autowired lateinit var subscriptionRepository: SubscriptionRepository
 
@@ -68,6 +71,7 @@ class CouponRedeemTest {
         val sub = subscriptionRepository.findByUserId(userId)!!
         assertThat(sub.nextBillingAt).isBetween(base.plus(29, ChronoUnit.DAYS), base.plus(31, ChronoUnit.DAYS))
         assertThat(couponRepository.findByCode("FLORI30")!!.redeemedCount).isEqualTo(1)
+        assertThat(redemptionRepository.findByUserIdAndSubscriptionIdIsNull(userId)).isEmpty()
     }
 
     @Test

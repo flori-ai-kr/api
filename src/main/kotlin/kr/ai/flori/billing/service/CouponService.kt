@@ -27,15 +27,19 @@ class CouponService(
         validatePeriod(coupon)
         validateExhausted(coupon, userId)
 
-        redemptionRepository.save(CouponRedemption(requireNotNull(coupon.id), userId, coupon.days))
+        val applied = subscriptionService.applyFreeDays(userId, coupon.days)
+        redemptionRepository.save(
+            CouponRedemption(requireNotNull(coupon.id), userId, coupon.days).apply {
+                subscriptionId = applied?.id
+            },
+        )
         coupon.redeemedCount += 1
         couponRepository.save(coupon)
 
-        val nextBillingAt = subscriptionService.applyFreeDays(userId, coupon.days)
         return RedeemResponse(
             grantedDays = coupon.days,
-            nextBillingAt = nextBillingAt,
-            pending = nextBillingAt == null,
+            nextBillingAt = applied?.nextBillingAt,
+            pending = applied == null,
         )
     }
 
