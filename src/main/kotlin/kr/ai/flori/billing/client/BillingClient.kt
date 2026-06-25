@@ -56,6 +56,22 @@ class BillingClient(
         return ApprovedPayment(res.paymentKey, res.orderId, res.approvedAt)
     }
 
+    fun getPayment(paymentKey: String): TossPayment {
+        val res =
+            try {
+                restClient
+                    .get()
+                    .uri(properties.baseUrl + "/v1/payments/$paymentKey")
+                    .headers { it.set(HttpHeaders.AUTHORIZATION, authHeader) }
+                    .retrieve()
+                    .body(PaymentResponse::class.java) ?: throw AppException(BillingErrorCode.PAYMENT_REJECTED)
+            } catch (e: RestClientResponseException) {
+                log.warn("토스 결제조회 실패 paymentKey={} status={}", paymentKey, e.statusCode)
+                throw AppException(BillingErrorCode.PAYMENT_REJECTED, cause = e)
+            }
+        return TossPayment(res.status, res.orderId)
+    }
+
     private fun <T> post(
         path: String,
         body: Map<String, Any>,
@@ -81,6 +97,12 @@ class BillingClient(
         }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
+    data class PaymentResponse(
+        val status: String,
+        val orderId: String,
+    )
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
     data class IssueResponse(
         val billingKey: String,
         val card: Card? = null,
@@ -100,6 +122,11 @@ class BillingClient(
         val approvedAt: String? = null,
     )
 }
+
+data class TossPayment(
+    val status: String,
+    val orderId: String,
+)
 
 data class IssuedBilling(
     val billingKey: String,

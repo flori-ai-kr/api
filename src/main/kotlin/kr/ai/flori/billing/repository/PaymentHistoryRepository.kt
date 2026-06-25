@@ -19,4 +19,6 @@ interface PaymentHistoryRepository : JpaRepository<PaymentHistory, Long> {
     fun findTop10BySubscriptionIdOrderByCreatedAtDesc(subscriptionId: Long): List<PaymentHistory>
 
     fun findByOrderId(orderId: String): PaymentHistory?
+
+    fun findByTossPaymentKey(tossPaymentKey: String): PaymentHistory?
 }

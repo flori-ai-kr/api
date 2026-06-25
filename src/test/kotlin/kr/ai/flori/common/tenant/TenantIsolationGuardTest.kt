@@ -108,6 +108,7 @@ class TenantIsolationGuardTest {
             "PaymentHistoryRepository#countBySubscriptionIdAndBillingCycle",
             "PaymentHistoryRepository#findTop10BySubscriptionIdOrderByCreatedAtDesc",
             "PaymentHistoryRepository#findByOrderId",
+            "PaymentHistoryRepository#findByTossPaymentKey", // 웹훅 콜백 매칭(전역 paymentKey)
             // 빌링 — 쿠폰: 코드는 전역 유일(운영자가 발행) — 유저가 입력한 코드로 조회 후 서비스가 사용 권한 검증.
             "CouponRepository#findByCode",
             "CouponRepository#existsByCode",
