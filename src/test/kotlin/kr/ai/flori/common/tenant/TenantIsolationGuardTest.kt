@@ -97,6 +97,7 @@ class TenantIsolationGuardTest {
             // 빌링 — 결제 이력: subscriptionId는 이미 테넌트 검증된 부모로 접근.
             // orderId는 토스 페이먼츠 웹훅 수신 시 콜백 매칭 — 전역 유일 식별자로 서비스가 소유권 검증 후 처리.
             "PaymentHistoryRepository#existsBySubscriptionIdAndBillingCycleAndStatus",
+            "PaymentHistoryRepository#countBySubscriptionIdAndBillingCycle",
             "PaymentHistoryRepository#findTop10BySubscriptionIdOrderByCreatedAtDesc",
             "PaymentHistoryRepository#findByOrderId",
             // 빌링 — 쿠폰: 코드는 전역 유일(운영자가 발행) — 유저가 입력한 코드로 조회 후 서비스가 사용 권한 검증.

@@ -11,6 +11,11 @@ interface PaymentHistoryRepository : JpaRepository<PaymentHistory, Long> {
         status: String,
     ): Boolean
 
+    fun countBySubscriptionIdAndBillingCycle(
+        subscriptionId: Long,
+        billingCycle: LocalDate,
+    ): Long
+
     fun findTop10BySubscriptionIdOrderByCreatedAtDesc(subscriptionId: Long): List<PaymentHistory>
 
     fun findByOrderId(orderId: String): PaymentHistory?
