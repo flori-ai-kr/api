@@ -1,8 +1,10 @@
 package kr.ai.flori.support.dto
 
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Size
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
+import kr.ai.flori.common.validation.FieldLimits
 import kr.ai.flori.support.entity.SupportInquiry
 import java.time.Instant
 
@@ -31,8 +33,10 @@ fun validateInquiryStatus(status: String): String {
 data class InquiryCreateRequest(
     val category: String = "etc",
     @field:NotBlank(message = "제목은 필수입니다")
+    @field:Size(max = FieldLimits.TITLE, message = "제목이 너무 깁니다")
     val title: String?,
     @field:NotBlank(message = "내용은 필수입니다")
+    @field:Size(max = FieldLimits.INQUIRY_BODY, message = "내용이 너무 깁니다")
     val body: String?,
     val imageUrls: List<String> = emptyList(),
 )
@@ -65,6 +69,28 @@ data class InquiryResponse(
     val updatedAt: Instant,
 )
 
+/**
+ * 운영 콘솔 전용 응답. 점주 본인 응답(InquiryResponse)과 달리 작성자 식별 정보를 포함한다.
+ * authorNickname=users.nickname, authorStoreName=user_profiles.store_name(없으면 null).
+ * PII(전화번호)는 정책상 노출하지 않는다.
+ */
+data class AdminInquiryResponse(
+    val id: Long,
+    val userId: Long,
+    val authorNickname: String?,
+    val authorStoreName: String?,
+    val category: String,
+    val title: String,
+    val body: String,
+    val imageUrls: List<String>,
+    val status: String,
+    val answer: String?,
+    val answeredBy: Long?,
+    val answeredAt: Instant?,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+)
+
 // ── 매핑 ──────────────────────────────────────────────────────────────────
 
 fun SupportInquiry.toResponse() =
@@ -82,6 +108,26 @@ fun SupportInquiry.toResponse() =
         createdAt = createdAt,
         updatedAt = updatedAt,
     )
+
+fun SupportInquiry.toAdminResponse(
+    nickname: String?,
+    storeName: String?,
+) = AdminInquiryResponse(
+    id = id!!,
+    userId = userId,
+    authorNickname = nickname,
+    authorStoreName = storeName,
+    category = category,
+    title = title,
+    body = body,
+    imageUrls = imageUrls.toList(),
+    status = status,
+    answer = answer,
+    answeredBy = answeredBy,
+    answeredAt = answeredAt,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+)
 
 // ── 업로드 ────────────────────────────────────────────────────────────────
 
