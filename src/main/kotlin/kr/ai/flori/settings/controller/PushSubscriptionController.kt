@@ -44,5 +44,7 @@ class PushSubscriptionController(
     fun status(): PushStatusResponse = pushSubscriptionService.status()
 
     @PostMapping("/test")
-    fun test(): PushTestResponse = PushTestResponse(pushSubscriptionService.testPush())
+    fun test(
+        @RequestParam(required = false) type: String?,
+    ): PushTestResponse = PushTestResponse(pushSubscriptionService.testPush(type))
 }

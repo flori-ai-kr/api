@@ -1,6 +1,8 @@
 package kr.ai.flori.reservations.service
 
+import kr.ai.flori.common.push.DailySummaryItem
 import kr.ai.flori.common.push.PushDispatcher
+import kr.ai.flori.common.push.PushTemplates
 import kr.ai.flori.common.util.KST
 import kr.ai.flori.reservations.repository.ReservationRepository
 import org.slf4j.LoggerFactory
@@ -51,7 +53,14 @@ class ReservationNotificationService(
         var sent = 0
         reservationRepository.findDueReminders(now).forEach { reservation ->
             try {
-                notify(reservation.userId, "픽업 리마인더", "${reservation.title} · ${reservation.customerName}")
+                val content =
+                    PushTemplates.pickupReminder(
+                        time = reservation.time,
+                        customerName = reservation.customerName,
+                        title = reservation.title,
+                        amount = reservation.amount,
+                    )
+                notify(reservation.userId, content.title, content.body, content.url)
                 reservation.reminderSent = true
                 reservationRepository.save(reservation)
                 sent++
@@ -73,7 +82,9 @@ class ReservationNotificationService(
         byUser.forEach { (userId, reservations) ->
             try {
                 if (claimOnce(userId, DAILY_SUMMARY, today.toString())) {
-                    notify(userId, "오늘의 픽업 ${reservations.size}건", reservations.joinToString(", ") { it.title })
+                    val items = reservations.map { DailySummaryItem(it.time, it.customerName, it.title) }
+                    val content = PushTemplates.dailySummary(items)
+                    notify(userId, content.title, content.body, content.url)
                     sent++
                 }
             } catch (e: DataAccessException) {
@@ -97,13 +108,13 @@ class ReservationNotificationService(
             dedupKey,
         ) == 1
 
-    /** FCM(모바일)·Web Push(브라우저) 양쪽 활성 구독에 발송한다(PushDispatcher가 경로 분기). */
     private fun notify(
         userId: Long,
         title: String,
         body: String,
+        url: String? = null,
     ) {
-        pushDispatcher.sendToUser(userId, title, body)
+        pushDispatcher.sendToUser(userId, title, body, url)
     }
 
     private companion object {
