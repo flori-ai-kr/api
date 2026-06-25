@@ -21,6 +21,8 @@ import kr.ai.flori.community.entity.CommunityLike
 import kr.ai.flori.community.entity.CommunityPost
 import kr.ai.flori.community.entity.CommunityReport
 import kr.ai.flori.community.error.CommunityErrorCode
+import kr.ai.flori.community.event.CommunityCommentNotifyEvent
+import kr.ai.flori.community.event.CommunityNoticePublishedEvent
 import kr.ai.flori.community.repository.CommunityBanRepository
 import kr.ai.flori.community.repository.CommunityCommentRepository
 import kr.ai.flori.community.repository.CommunityLikeRepository
@@ -28,6 +30,7 @@ import kr.ai.flori.community.repository.CommunityPostRepository
 import kr.ai.flori.community.repository.CommunityReportRepository
 import kr.ai.flori.user.entity.User
 import kr.ai.flori.user.repository.UserRepository
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -49,6 +52,7 @@ class CommunityService(
     private val reportRepository: CommunityReportRepository,
     private val banRepository: CommunityBanRepository,
     private val userRepository: UserRepository,
+    private val eventPublisher: ApplicationEventPublisher,
 ) {
     private data class Viewer(
         val id: Long,
@@ -121,6 +125,11 @@ class CommunityService(
         post.contentText = request.contentText
         post.imageUrls = request.imageUrls.toTypedArray()
         val saved = postRepository.save(post)
+        if (category == CommunityCategories.NOTICE) {
+            eventPublisher.publishEvent(
+                CommunityNoticePublishedEvent(requireNotNull(saved.id), saved.title, viewer.id),
+            )
+        }
         return PostResponse.of(
             saved,
             nicknameOf(viewer.id),
@@ -236,8 +245,9 @@ class CommunityService(
     ): CommentResponse {
         val viewer = viewer()
         requireNotBanned(viewer.id)
-        loadPost(postId)
+        val post = loadPost(postId)
         var secret = request.isSecret
+        var parentAuthorId: Long? = null
         request.parentId?.let { parentId ->
             // 대댓글 부모 검증: 같은 글의 미삭제 댓글 + 깊이 +1이 MAX_COMMENT_DEPTH 이내(루트=1). 위반 시 INVALID_PARENT.
             // 깊이는 단일 재귀 CTE(ancestorDepth)로 계산 — 조상 단건 반복조회(N+1) 제거.
@@ -250,6 +260,7 @@ class CommunityService(
             }
             // 부모가 비밀이면 자식도 비밀 강제.
             if (parent.isSecret) secret = true
+            parentAuthorId = parent.authorUserId
         }
         val comment =
             CommunityComment(
@@ -261,7 +272,26 @@ class CommunityService(
         comment.isSecret = secret
         val saved = commentRepository.save(comment)
         postRepository.adjustCommentCount(postId, 1)
+        notifyComment(postId, saved.content, viewer.id, post.authorUserId, parentAuthorId, request.parentId != null, secret)
         return CommentResponse.of(saved, nicknameOf(viewer.id), authorIsAdmin = viewer.isAdmin, isMine = true, canView = true)
+    }
+
+    /** 댓글→글쓴이, 대댓글→부모댓글 작성자에게 알림(본인 제외). 비밀이면 본문은 리스너/템플릿이 마스킹. */
+    @Suppress("LongParameterList")
+    private fun notifyComment(
+        postId: Long,
+        content: String,
+        commenterId: Long,
+        postAuthorId: Long,
+        parentAuthorId: Long?,
+        isReply: Boolean,
+        isSecret: Boolean,
+    ) {
+        val recipientId = parentAuthorId ?: postAuthorId
+        if (recipientId == commenterId) return
+        eventPublisher.publishEvent(
+            CommunityCommentNotifyEvent(postId, recipientId, content, isReply, isSecret),
+        )
     }
 
     @Transactional

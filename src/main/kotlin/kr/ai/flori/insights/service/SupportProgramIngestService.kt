@@ -1,5 +1,8 @@
 package kr.ai.flori.insights.service
 
+import kr.ai.flori.common.job.JobNames
+import kr.ai.flori.common.job.JobOutcome
+import kr.ai.flori.common.job.JobRunRecorder
 import kr.ai.flori.insights.client.KStartupAnnouncement
 import kr.ai.flori.insights.client.KStartupApiClient
 import kr.ai.flori.insights.config.KStartupApiProperties
@@ -29,14 +32,20 @@ class SupportProgramIngestService(
     private val client: KStartupApiClient,
     private val properties: KStartupApiProperties,
     private val jdbcTemplate: JdbcTemplate,
+    private val jobRunRecorder: JobRunRecorder,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Scheduled(cron = "\${flori.kstartup-api.cron:0 31 6 * * *}", zone = "Asia/Seoul")
     fun scheduledIngest() {
+        jobRunRecorder.record(JobNames.SUPPORT_PROGRAM_INGEST) { runIngest() }
+    }
+
+    /** K-Startup 적재 본문(스케줄/수동 공유). */
+    fun runIngest(): JobOutcome {
         if (properties.baseUrl.isBlank() || properties.serviceKey.isBlank()) {
-            log.warn("지원사업 적재 건너뜀: flori.kstartup-api base-url/service-key 미설정 (no-op)")
-            return
+            log.warn("K-Startup 적재 건너뜀: flori.kstartup-api base-url/service-key 미설정 (no-op)")
+            return JobOutcome.skipped()
         }
         var total = 0
         var pages = 0
@@ -46,7 +55,8 @@ class SupportProgramIngestService(
             announcements.forEach { total += upsert(it) }
             pages++
         }
-        log.info("지원사업 적재 완료: pages={} upserted={}", pages, total)
+        log.info("K-Startup 적재 완료: pages={} upserted={}", pages, total)
+        return JobOutcome.success(total, mapOf("pages" to pages))
     }
 
     /** 단일 페이지 조회 — 실패해도 예외를 삼키고 빈 목록 반환(격리, 루프 중단). */
@@ -55,7 +65,7 @@ class SupportProgramIngestService(
         try {
             client.fetch(page, properties.pageSize).data
         } catch (e: Exception) {
-            log.error("지원사업 적재 실패: page={}", page, e)
+            log.error("K-Startup 적재 실패: page={}", page, e)
             emptyList()
         }
 

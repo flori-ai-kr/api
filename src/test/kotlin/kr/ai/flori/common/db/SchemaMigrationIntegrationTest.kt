@@ -62,8 +62,8 @@ class SchemaMigrationIntegrationTest {
     fun `user_id로 자식 행을 삽입하고 조회할 수 있다`() {
         val userId =
             jdbcTemplate.queryForObject(
-                "INSERT INTO users(email, nickname, provider, provider_id) " +
-                    "VALUES ('tenant@flori.dev', 'tenant-fk-user', 'GOOGLE', 'tenant-fk-1') RETURNING id",
+                "INSERT INTO users(email, nickname, name, provider, provider_id) " +
+                    "VALUES ('tenant@flori.dev', 'tenant-fk-user', '홍길동', 'GOOGLE', 'tenant-fk-1') RETURNING id",
                 Long::class.java,
             )
 

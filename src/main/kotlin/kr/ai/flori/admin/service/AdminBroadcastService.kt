@@ -9,6 +9,7 @@ import kr.ai.flori.admin.repository.BroadcastRepository
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.push.PushDispatcher
+import kr.ai.flori.common.push.PushTypes
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.common.util.Paging
 import org.springframework.data.domain.Sort
@@ -85,7 +86,8 @@ class AdminBroadcastService(
         var sentCount = 0
         var failedCount = 0
         userIds.forEach { uid ->
-            val delivered = pushDispatcher.sendToUser(uid, broadcast.title, broadcast.body, broadcast.deepLink)
+            val delivered =
+                pushDispatcher.sendToUser(uid, broadcast.title, broadcast.body, broadcast.deepLink, PushTypes.BROADCAST)
             if (delivered > 0) sentCount++ else failedCount++
         }
         broadcast.status = STATUS_SENT

@@ -1,5 +1,8 @@
 package kr.ai.flori.expenses.service
 
+import kr.ai.flori.common.job.JobNames
+import kr.ai.flori.common.job.JobOutcome
+import kr.ai.flori.common.job.JobRunRecorder
 import kr.ai.flori.common.util.KST
 import kr.ai.flori.expenses.entity.RecurringExpense
 import kr.ai.flori.expenses.repository.RecurringExpenseRepository
@@ -23,14 +26,20 @@ class RecurringExpenseGenerator(
     private val recurringRepository: RecurringExpenseRepository,
     private val skipRepository: RecurringSkipRepository,
     private val jdbcTemplate: JdbcTemplate,
+    private val jobRunRecorder: JobRunRecorder,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Scheduled(cron = "0 30 0 * * *", zone = "Asia/Seoul")
     fun scheduledGenerate() {
-        val today = LocalDate.now(KST)
+        jobRunRecorder.record(JobNames.RECURRING_EXPENSE_GENERATE) { runGenerate(LocalDate.now(KST)) }
+    }
+
+    /** 고정비 자동생성 본문(스케줄/수동 공유). */
+    fun runGenerate(today: LocalDate): JobOutcome {
         val count = generateForDate(today)
         log.info("고정비 자동생성 완료: date={} inserted={}", today, count)
+        return JobOutcome.success(count)
     }
 
     fun generateForDate(date: LocalDate): Int {
