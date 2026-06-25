@@ -34,4 +34,13 @@ class StorageIncreaseRequestRepositoryTest {
         assertThat(pending.content).allMatch { it.status == "PENDING" }
         assertThat(pending.content).isNotEmpty
     }
+
+    @Test
+    fun `status가 null이면 모든 상태를 반환한다`() {
+        repository.save(StorageIncreaseRequest(userId = 7004L, reason = "c"))
+        repository.save(StorageIncreaseRequest(userId = 7005L, reason = "d").apply { resolve(1) })
+        val all = repository.search(null, PageRequest.of(0, 50))
+        assertThat(all.content).anyMatch { it.status == "PENDING" }
+        assertThat(all.content).anyMatch { it.status == "RESOLVED" }
+    }
 }
