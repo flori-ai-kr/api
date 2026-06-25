@@ -86,14 +86,18 @@ object PushTemplates {
             ),
         )
 
+    @Suppress("MagicNumber") // 콘솔 테스트용 고정 샘플
     fun forTestType(type: String): PushContent =
         when (type) {
-            "pickup_reminder" -> samplePickupReminder()
-            "daily_summary" -> sampleDailySummary()
+            PushTypes.RESERVATION_REMINDER, "pickup_reminder" -> samplePickupReminder()
+            PushTypes.DAILY_PICKUP_SUMMARY, "daily_summary" -> sampleDailySummary()
+            PushTypes.COMMUNITY_NOTICE -> communityNotice(0, "테스트 공지입니다")
+            PushTypes.COMMUNITY_COMMENT -> communityComment(0, "테스트 댓글입니다", isReply = false, isSecret = false)
+            PushTypes.AUCTION_SCRAP_UPDATE -> auctionScrapUpdate(listOf("국화", "장미", "거베라"))
+            PushTypes.GRANT_NEW -> grantNew(3, "테스트 지원사업")
+            PushTypes.GRANT_DEADLINE -> grantDeadline("테스트 지원사업", 1)
             else -> testNotification()
         }
-
-    val testTypes: List<String> = listOf("pickup_reminder", "daily_summary", "test")
 
     // ── 신규 5종 ──────────────────────────────────────────────────────────────
 
