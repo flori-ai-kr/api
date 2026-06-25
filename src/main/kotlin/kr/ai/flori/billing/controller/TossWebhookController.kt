@@ -2,6 +2,7 @@ package kr.ai.flori.billing.controller
 
 import kr.ai.flori.billing.dto.TossWebhookEvent
 import kr.ai.flori.billing.service.TossWebhookService
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -15,11 +16,18 @@ import org.springframework.web.bind.annotation.RestController
 class TossWebhookController(
     private val tossWebhookService: TossWebhookService,
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @PostMapping
     @ResponseStatus(HttpStatus.OK)
+    @Suppress("TooGenericExceptionCaught")
     fun receive(
         @RequestBody event: TossWebhookEvent,
     ) {
-        tossWebhookService.handle(event)
+        try {
+            tossWebhookService.handle(event)
+        } catch (e: Exception) {
+            log.error("토스 웹훅 처리 실패(200 응답 유지): {}", e.message, e)
+        }
     }
 }
