@@ -1,6 +1,6 @@
 # Flori API — 아키텍처 & 기술 선정 이유
 
-> 최종 업데이트: 2026-06-25 (인사이트 트렌드 기능 제거 + 기업마당(bizinfo) collector 추가 + GrantRelevance·HtmlText·flower_item_scraps 신설 + 지원사업 만료필터 KST화)
+> 최종 업데이트: 2026-06-25 (푸시 타입별 수신 설정 + 작업 실행 로깅 + 커뮤니티·인사이트 푸시 확장)
 
 이 문서는 Flori(꽃집 어드민) **모바일 앱 백엔드 API**의 기술 스택과 아키텍처를 설명한다. 단순히 "무엇을 쓰는가"가 아니라 **"왜 이것을 골랐는가"**에 초점을 맞춘다. 모든 선택에는 *기존 Next.js+Supabase 웹앱의 비즈니스 로직을 네이티브 앱이 호출 가능한 REST API로 재구현하고, 자체 AWS 인프라 위에 올린다*는 도메인 맥락이 반영되어 있다.
 
@@ -80,7 +80,8 @@ flowchart LR
         CTen[tenant<br/>TenantContext]
         CErr[error<br/>AppException·Discord]
         CSto[storage<br/>S3 presign/delete]
-        CPush[push<br/>FCM + Web Push/VAPID<br/>PushDispatcher 라우팅]
+        CPush[push<br/>PushDispatcher(라우팅·수신설정 게이팅)<br/>PushTypes·PushTemplates SSOT]
+        CJob[job<br/>JobRunRecorder·JobNames<br/>JobOutcome·JobRunLog]
         CCfg[config<br/>CORS·Async·Schedule·WebConfig]
         CLog[log<br/>LoggingInterceptor·TraceIdFilter·logback]
         CReq[request<br/>ClientContext·ClientContextFilter]
@@ -96,7 +97,7 @@ flowchart LR
 
     classDef common fill:#0277bd,color:#fff,stroke:#01579b
     classDef dom fill:#ef6c00,color:#fff,stroke:#e65100
-    class CSec,CTen,CErr,CSto,CPush,CCfg,CLog,CReq,CNoti common
+    class CSec,CTen,CErr,CSto,CPush,CJob,CCfg,CLog,CReq,CNoti common
     class D dom
 ```
 
@@ -111,15 +112,16 @@ flowchart LR
 | `customers` | 고객 CRUD·findOrCreate·**실시간 구매통계**·**커스텀 등급 CRUD + 구매횟수 자동승급/수동잠금** |
 | `reservations` / `schedules` | 예약(매출 전환·픽업)·일정·**리마인더/요약 푸시** |
 | `photos` | 사진카드(presigned 업로드·삭제·**다운로드**)·**#해시태그(색상 없음·카드당 최대 3)**·**고객 직접 연결(customer_id 필터·소유권 검증)**·**총계 집계(totalCards/totalPhotos)·기간필터(created_at)** |
-| `community` | 단일 커뮤니티 게시판(게시글·댓글·대댓글·좋아요·비밀글·soft delete)·이미지 업로드. **`@RequiresBusinessVerified` 게이팅 적용**. `PostResponse`·`CommentResponse`에 `authorIsAdmin` 노출(작성자 관리자 배지용) |
+| `community` | 단일 커뮤니티 게시판(게시글·댓글·대댓글·좋아요·비밀글·soft delete)·이미지 업로드. **`@RequiresBusinessVerified` 게이팅 적용**. `PostResponse`·`CommentResponse`에 `authorIsAdmin` 노출(작성자 관리자 배지용). **공지글 작성·댓글/답글 생성 시 `ApplicationEventPublisher`로 이벤트 발행** → `CommunityPushListener`(AFTER_COMMIT 비동기)가 발송. 공지는 강제 발송, 댓글은 수신설정 존중(`community_comment`) |
 | `verification` | 사업자 인증 신청·상태 조회(PENDING/APPROVED/REJECTED/NONE)·presigned 업로드·게이팅(`@RequiresBusinessVerified`) |
 | `waitlist` | 출시 전 선착순 100명 사전등록(공개 모집). 인증/테넌시 없음. `POST /waitlist`(이메일+가게명), `GET /waitlist/count`. 등록 시 Discord WAITLIST 채널 비동기 알림 |
 | `interview` | 유저 인터뷰 모집(공개). 인증/테넌시 없음. `POST /interview`(이름+전화번호). 신청 시 Discord INTERVIEW 채널 비동기 알림. `/waitlist`·`/interview`(POST) 공용 레이트리밋 인터셉터 적용 |
-| `settings` | 매출/지출 설정·하단바·사용자 설정·푸시 구독·**테스트 발송** |
+| `settings` | 매출/지출 설정·하단바·사용자 설정·푸시 구독·**테스트 발송**·**타입별 수신 설정(`GET/PUT /push/preferences`)** — `NotificationPreferenceService`가 `PushTypes.TOGGLEABLE` 목록 기준으로 on/off 관리. 행 없으면 기본 켜짐 |
 | `dashboard` | 오늘/월 집계·**네이티브 SQL 통계** |
 | `statistics` | 기간별 통계 KPI + 일별 시계열 + 분포 — 매출·지출·예약·고객 4도메인. `StatisticsSupport`(공용 비율·증감·직전 기간 계산), `StatisticsService`(파사드). 미수 제외(`payment_method_id IS NOT NULL`), 최대 731일 범위 |
-| `insights` | 정보 피드 — 경매시세(aT f001 적재 `@Scheduled`·단일시장 양재·요약/드릴다운/등락 중앙값)·지원사업(K-Startup·기업마당 적재) 읽기 + 스크랩(개인 `insight_scraps`·`flower_item_scraps`). 공유 읽기 2테이블(`flower_auction_prices`·`support_programs`) + 개인 2테이블. 수집기는 적재만, 읽기는 InsightService |
+| `insights` | 정보 피드 — 경매시세(aT f001 적재 `@Scheduled`·단일시장 양재·요약/드릴다운/등락 중앙값)·지원사업(K-Startup·기업마당 적재) 읽기 + 스크랩(개인 `insight_scraps`·`flower_item_scraps`). 공유 읽기 2테이블(`flower_auction_prices`·`support_programs`) + 개인 2테이블. 수집기는 적재만, 읽기는 InsightService. **InsightPushService**: 경매 스크랩 시세 업데이트·지원사업 신규(전체 활성유저)·마감 임박(D-day·D-1) 3 cron — 멱등 claim(`notification_log`) + `JobRunRecorder` 래핑 |
 | `announcement` | 공지 배너 CMS (`announcements` — modal/bar 2종). 운영자 CRUD+활성토글(`/admin/announcements`, `@RequiresAdmin`). 점주 노출/클릭(`/announcements`). soft-delete. `AdminAuditService`로 변경 감사 기록 |
+| `admin` (job-runs) | **백그라운드 작업 로그 조회 + 수동 트리거**(`/admin/job-runs`, `@RequiresAdmin`). `AdminJobRunService`가 `job_run_status`(작업당 최신 1행) 요약과 `job_run_logs`(이력) 목록을 반환하고, `JobRegistry`가 등록된 작업 본문을 수동으로 실행(`POST /admin/job-runs/{jobName}/trigger`). 실행 결과는 `JobRunRecorder`가 manual 트리거로 기록 |
 | `support` | 1:1 문의·피드백 인박스 (`support_inquiries`). 점주 제출+본인 목록(`/inquiries`). 운영자 인박스+답변+상태관리(`/admin/inquiries`, `@RequiresAdmin`). 감사 기록(INQUIRY_ANSWER/INQUIRY_STATUS) |
 
 ---
@@ -526,6 +528,14 @@ erDiagram
 **운영 콘솔 전용 테이블** (26-06-21-console-ops.sql, 테넌트 격리 없음 — `@RequiresAdmin` 보호):
 `admin_audit_logs`(운영자 감사로그, append-only) · `notification_send_logs`(발송이력, append-only) · `broadcasts`(브로드캐스트 캠페인) · `community_reports`(신고큐) · `community_bans`(활동차단) · `announcements`(공지배너 CMS) · `support_inquiries`(1:1문의) · `withdrawal_logs`(탈퇴사유 이탈분석). `community_posts`·`community_comments`에 `hidden_at`/`hidden_by` 컬럼 추가(운영자 가역 숨김 — 삭제 `deleted_at`과 분리).
 
+**푸시·작업 로깅 신규 테이블** (26-06-25, 3종):
+
+| 테이블 | 설명 |
+|---|---|
+| `notification_preferences` | 점주별 푸시 타입 수신 on/off. `(user_id, type)` UNIQUE. 행 없으면 기본 켜짐(true). `PushDispatcher`가 `PushTypes.TOGGLEABLE` 타입 발송 전 조회해 off면 0 반환 |
+| `job_run_status` | 작업(`job_name` PK)당 최신 실행 상태 1행. 매 실행 upsert — "마지막으로 언제 돌았나" 추적용 |
+| `job_run_logs` | 의미있는 실행만 append-only(처리>0 OR 실패 OR 수동실행). 0건 정상 실행은 기록 생략(노이즈 방지). `trigger` 컬럼으로 schedule/manual 구분 |
+
 핵심 설계 결정:
 - **예약 → 매출 논리참조**: `reservations.sale_id`가 `sales`를 논리 참조(예약→매출 전환). DB FK 제약 없음 — 매출 삭제 시 앱이 `sale_id`를 NULL 처리. (`sales.reservation_id`는 보유하지 않음 — 통계는 sales에서 집계.)
 - **고정비 멱등 자동생성**: `expenses(recurring_id, date)` UNIQUE + `recurring_skips`("이것만 삭제" 시 재발 방지).
@@ -546,7 +556,7 @@ erDiagram
 | 사진첩 | `GET/POST/PATCH/DELETE /photo-cards`, `POST /photo-cards/upload-targets`(신규 카드용), `POST /photo-cards/{id}/upload-targets`, `GET /photo-cards/{id}/photos/download`, `/photos/reorder`, `/photo-tags` | Auth |
 | 커뮤니티 | `GET/POST /community/posts`, `GET/PATCH/DELETE /community/posts/{id}`, `POST /community/posts/{id}/like`, `GET/POST /community/posts/{id}/comments`, `DELETE /community/comments/{id}`, `POST /community/upload-targets` | Auth + **사업자 인증** |
 | 사업자 인증 | `POST /verification/business/upload-target`, `POST /verification/business`, `GET /verification/business/me` | Auth |
-| 설정 | `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}`(CRUD), `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}/order`(순서 변경 `PUT`), `/settings/preferences`, `/push/{subscribe,unsubscribe,status,test}` | Auth |
+| 설정 | `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}`(CRUD), `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}/order`(순서 변경 `PUT`), `/settings/preferences`, `/push/{subscribe,unsubscribe,status,test}`, `GET /push/preferences`(수신설정 목록), `PUT /push/preferences`(타입별 on/off 토글) | Auth |
 | 대시보드 | `GET /dashboard/today`·`/dashboard/month` | Auth |
 | 통계 | `GET /statistics/sales`, `GET /statistics/expenses`, `GET /statistics/reservations`, `GET /statistics/customers` (공통 쿼리파라미터: `from=yyyy-MM-dd&to=yyyy-MM-dd`, 최대 731일) — KPI(직전 동일 기간 증감) + 일별 시계열 + 분포 반환 | Auth |
 | 공지 배너(점주) | `GET /announcements`(?placement=modal|bar), `POST /announcements/{id}/click` | Auth |
@@ -560,6 +570,7 @@ erDiagram
 | 감사 로그(운영자) | `GET /admin/audit-logs`(?action&actorUserId) | Auth + **is_admin** |
 | 운영자 통계(확장) | `GET /admin/stats/funnel`, `GET /admin/stats/churn-reasons`(?days), `GET /admin/stats/retention` | Auth + **is_admin** |
 | AI 프롬프트 레지스트리(운영자) | `GET/POST /admin/prompts`(?channel), `GET/PATCH/DELETE /admin/prompts/{id}`, `POST /admin/prompts/{id}/activate`, `POST /admin/prompts/preview`(플레이그라운드, 저장X) — 마케팅 프롬프트 버전·활성화·튜닝 (SPEC-AI-008) | Auth + **is_admin** |
+| 작업 실행 로그(운영자) | `GET /admin/job-runs/summary`(작업별 최신 상태 카드), `GET /admin/job-runs`(?jobName&status&page&size, 실행 이력), `POST /admin/job-runs/{jobName}/trigger`(즉시 실행·감사 기록) | Auth + **is_admin** |
 | 사전등록 | `POST /waitlist`(201, 이메일+가게명 등록), `GET /waitlist/count`(카운트 조회) | **Public** (인증 불필요) |
 | 인터뷰 모집 | `POST /interview`(201, 이름+전화번호 신청) | **Public** (인증 불필요) |
 
@@ -569,16 +580,19 @@ erDiagram
 
 ## 스케줄러 (@Scheduled · Vercel Cron 대체)
 
-| 작업 | cron (KST) | 구현 | 멱등성 |
-|---|---|---|---|
-| 고정비 자동생성 | `0 30 0 * * *` | `RecurringExpenseGenerator` | `(recurring_id,date)` UNIQUE + ON CONFLICT |
-| 예약 리마인더 발송 | `0 */5 * * * *` | `ReservationNotificationService` | `reminder_sent` 플래그 |
-| 당일 픽업 요약 | `0 0 8 * * *` | `ReservationNotificationService` | 사용자별 1회 발송 |
-| 화훼 경매시세 적재 | `0 30 6 * * *` | `FlowerAuctionIngestService` (aT f001, 최근 3일 × 4구분) | `(sale_date,flower_gubn,pum_name,good_name,lv_nm)` UNIQUE + ON CONFLICT DO UPDATE. key/baseUrl 미설정 시 no-op |
-| 지원사업 K-Startup 적재 | `0 31 6 * * *` | `SupportProgramIngestService` (data.go.kr, 최대 10페이지 × 100, 소상공인 관련도 필터) | `(source, source_id)` UNIQUE + ON CONFLICT DO UPDATE. serviceKey 미설정 시 no-op |
-| 지원사업 기업마당 적재 | `0 32 6 * * *` | `BizinfoIngestService` (bizinfo.go.kr, 최대 10페이지 × 100, 소상공인 관련도 필터) | `(source, source_id)` UNIQUE + ON CONFLICT DO UPDATE. crtfcKey/baseUrl 미설정 시 no-op |
+모든 스케줄 작업은 `JobRunRecorder.record(JobNames.XXX) { runXxx(...) }` 패턴으로 래핑되어 `job_run_status`(upsert) + `job_run_logs`(의미있는 실행만 append)에 기록된다. 스케줄 트리거와 실제 본문(`runXxx`)을 분리해 수동 트리거(`/admin/job-runs/{jobName}/trigger`)와 테스트에서 동일 본문을 재사용한다.
 
-스케줄 트리거와 실제 로직(`generateForDate(date)`, `markAndNotifyDueReminders(now)`)을 분리해 테스트에서 직접 호출·검증한다.
+| 작업 (JobNames 상수) | cron (KST) | 구현 | 멱등성 |
+|---|---|---|---|
+| `recurring_expense_generate` | `0 30 0 * * *` | `RecurringExpenseGenerator` | `(recurring_id,date)` UNIQUE + ON CONFLICT |
+| `reservation_reminder` | `0 */5 * * * *` | `ReservationNotificationService` | `reminder_sent` 플래그 |
+| `daily_pickup_summary` | `0 0 8 * * *` | `ReservationNotificationService` | 사용자별 1회 발송(`notification_log` claim) |
+| `flower_auction_ingest` | `0 30 6 * * *` | `FlowerAuctionIngestService` (aT f001, 최근 3일 × 4구분) | `(sale_date,flower_gubn,pum_name,good_name,lv_nm)` UNIQUE + ON CONFLICT DO UPDATE. key/baseUrl 미설정 시 skipped |
+| `support_program_ingest` | `0 31 6 * * *` | `SupportProgramIngestService` (data.go.kr, 소상공인 관련도 필터) | `(source, source_id)` UNIQUE + ON CONFLICT DO UPDATE. serviceKey 미설정 시 skipped |
+| `bizinfo_ingest` | `0 32 6 * * *` | `BizinfoIngestService` (bizinfo.go.kr, 소상공인 관련도 필터) | `(source, source_id)` UNIQUE + ON CONFLICT DO UPDATE. crtfcKey/baseUrl 미설정 시 skipped |
+| `auction_scrap_push` | `0 35 6 * * *` | `InsightPushService` — 오늘 적재된 경매 품목 스크랩 유저에게 시세 업데이트 푸시 | `notification_log(user_id, type, dedup_key)` 원자적 claim. 수신설정(`auction_scrap_update`) 존중 |
+| `grant_new_push` | `0 40 6 * * *` | `InsightPushService` — 오늘 신규 지원사업 N건 → 전체 활성 유저 발송 | `notification_log` claim. 수신설정(`grant_new`) 존중 |
+| `grant_deadline_push` | `0 45 6 * * *` | `InsightPushService` — 스크랩한 지원사업 D-day·D-1 마감 임박 발송 | `notification_log` claim. 수신설정(`grant_deadline`) 존중 |
 
 ---
 
