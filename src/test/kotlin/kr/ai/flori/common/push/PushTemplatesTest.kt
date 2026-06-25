@@ -101,4 +101,94 @@ class PushTemplatesTest {
         assertThat(content.title).isEqualTo("테스트 알림")
         assertThat(content.body).isEqualTo("푸시 알림이 정상적으로 동작합니다")
     }
+
+    // ── 신규 5종 ──────────────────────────────────────────────────────────────
+
+    @Test
+    fun `communityNotice`() {
+        val content = PushTemplates.communityNotice(42, "6월 정기 점검 안내")
+
+        assertThat(content.title).isEqualTo("새 공지사항")
+        assertThat(content.body).isEqualTo("6월 정기 점검 안내")
+        assertThat(content.url).isEqualTo("/community/posts/42")
+    }
+
+    @Test
+    fun `communityComment - 댓글`() {
+        val content = PushTemplates.communityComment(7, "좋은 정보 감사합니다", isReply = false, isSecret = false)
+
+        assertThat(content.title).isEqualTo("새 댓글이 달렸습니다")
+        assertThat(content.body).isEqualTo("좋은 정보 감사합니다")
+    }
+
+    @Test
+    fun `communityComment - 답글`() {
+        val content = PushTemplates.communityComment(7, "저도요", isReply = true, isSecret = false)
+
+        assertThat(content.title).isEqualTo("새 답글이 달렸습니다")
+    }
+
+    @Test
+    fun `communityComment - 비밀이면 본문 마스킹`() {
+        val content = PushTemplates.communityComment(7, "민감한 내용", isReply = false, isSecret = true)
+
+        assertThat(content.body).isEqualTo("비밀 댓글이 달렸습니다")
+    }
+
+    @Test
+    fun `communityComment - 50자 초과 시 말줄임`() {
+        val long = "가".repeat(60)
+        val content = PushTemplates.communityComment(7, long, isReply = false, isSecret = false)
+
+        assertThat(content.body).hasSize(51) // 50자 + …
+        assertThat(content.body).endsWith("…")
+    }
+
+    @Test
+    fun `auctionScrapUpdate - 가나다순 앞2개 외 N건`() {
+        val content = PushTemplates.auctionScrapUpdate(listOf("장미", "국화", "프리지아", "거베라"))
+
+        assertThat(content.title).isEqualTo("스크랩한 경매 시세 업데이트")
+        // 가나다: 거베라, 국화, 장미, 프리지아 → 앞 2개 + 외 2건
+        assertThat(content.body).isEqualTo("스크랩한 거베라·국화 외 2건의 경매 시세가 업데이트되었습니다")
+    }
+
+    @Test
+    fun `auctionScrapUpdate - 1개`() {
+        val content = PushTemplates.auctionScrapUpdate(listOf("국화"))
+        assertThat(content.body).isEqualTo("스크랩한 국화의 경매 시세가 업데이트되었습니다")
+    }
+
+    @Test
+    fun `auctionScrapUpdate - 2개`() {
+        val content = PushTemplates.auctionScrapUpdate(listOf("장미", "국화"))
+        assertThat(content.body).isEqualTo("스크랩한 국화·장미의 경매 시세가 업데이트되었습니다")
+    }
+
+    @Test
+    fun `grantNew - 1건은 제목 포함`() {
+        val content = PushTemplates.grantNew(1, "소상공인 온라인판로 지원사업")
+        assertThat(content.title).isEqualTo("새 지원사업")
+        assertThat(content.body).isEqualTo("새로운 지원사업이 추가되었습니다: 소상공인 온라인판로 지원사업")
+    }
+
+    @Test
+    fun `grantNew - N건`() {
+        val content = PushTemplates.grantNew(3, "아무 제목")
+        assertThat(content.body).isEqualTo("새로운 지원사업 3건이 추가되었습니다")
+    }
+
+    @Test
+    fun `grantDeadline - D-1`() {
+        val content = PushTemplates.grantDeadline("소상공인 융자", 1)
+        assertThat(content.title).isEqualTo("지원사업 마감 임박")
+        assertThat(content.body).isEqualTo("소상공인 융자 마감이 1일 남았습니다")
+    }
+
+    @Test
+    fun `grantDeadline - D-day`() {
+        val content = PushTemplates.grantDeadline("소상공인 융자", 0)
+        assertThat(content.title).isEqualTo("지원사업 오늘 마감")
+        assertThat(content.body).isEqualTo("소상공인 융자 마감이 오늘입니다")
+    }
 }

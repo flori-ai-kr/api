@@ -11,6 +11,9 @@ object JobNames {
     const val RESERVATION_REMINDER = "reservation_reminder"
     const val DAILY_PICKUP_SUMMARY = "daily_pickup_summary"
     const val RECURRING_EXPENSE_GENERATE = "recurring_expense_generate"
+    const val AUCTION_SCRAP_PUSH = "auction_scrap_push"
+    const val GRANT_NEW_PUSH = "grant_new_push"
+    const val GRANT_DEADLINE_PUSH = "grant_deadline_push"
 
     /** 수동 트리거 허용 목록(콘솔 노출 순서). */
     val ALL =
@@ -21,5 +24,8 @@ object JobNames {
             RESERVATION_REMINDER,
             DAILY_PICKUP_SUMMARY,
             RECURRING_EXPENSE_GENERATE,
+            AUCTION_SCRAP_PUSH,
+            GRANT_NEW_PUSH,
+            GRANT_DEADLINE_PUSH,
         )
 }

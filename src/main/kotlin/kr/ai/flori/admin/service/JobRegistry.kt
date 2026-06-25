@@ -6,6 +6,7 @@ import kr.ai.flori.common.util.KST
 import kr.ai.flori.expenses.service.RecurringExpenseGenerator
 import kr.ai.flori.insights.service.BizinfoIngestService
 import kr.ai.flori.insights.service.FlowerAuctionIngestService
+import kr.ai.flori.insights.service.InsightPushService
 import kr.ai.flori.insights.service.SupportProgramIngestService
 import kr.ai.flori.reservations.service.ReservationNotificationService
 import org.springframework.stereotype.Component
@@ -23,6 +24,7 @@ class JobRegistry(
     bizinfo: BizinfoIngestService,
     reservationNotification: ReservationNotificationService,
     recurringExpense: RecurringExpenseGenerator,
+    insightPush: InsightPushService,
 ) {
     private val jobs: Map<String, () -> JobOutcome> =
         mapOf(
@@ -32,6 +34,9 @@ class JobRegistry(
             JobNames.RESERVATION_REMINDER to { reservationNotification.runReminderCheck(Instant.now()) },
             JobNames.DAILY_PICKUP_SUMMARY to { reservationNotification.runDailySummary(LocalDate.now(KST)) },
             JobNames.RECURRING_EXPENSE_GENERATE to { recurringExpense.runGenerate(LocalDate.now(KST)) },
+            JobNames.AUCTION_SCRAP_PUSH to insightPush::runAuctionScrapPush,
+            JobNames.GRANT_NEW_PUSH to insightPush::runGrantNewPush,
+            JobNames.GRANT_DEADLINE_PUSH to insightPush::runGrantDeadlinePush,
         )
 
     fun has(jobName: String): Boolean = jobName in jobs
