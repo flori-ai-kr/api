@@ -196,11 +196,12 @@ class AuthService(
                 phoneNumber = request.phoneNumber,
                 regionSido = request.regionSido,
             ).apply {
+                ownerName = request.ownerName
                 regionSigungu = request.regionSigungu
                 ownerAgeRange = request.ownerAgeRange
                 interests = request.interests?.toTypedArray() ?: emptyArray()
                 specialties = request.specialties?.toTypedArray() ?: emptyArray()
-                referralSources = request.referralSources?.toTypedArray() ?: emptyArray()
+                referralSources = request.referralSources.toTypedArray()
             },
         )
         seeder.seedForNewUser(userId)
