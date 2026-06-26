@@ -57,13 +57,13 @@ src/main/kotlin/kr/ai/flori/
 ├── user/                  # 사용자 / 내 정보(/me) · 프로필 수정 · 탈퇴
 ├── sales/                 # 매출 기록 · 미수(unpaid) 처리
 ├── expenses/              # 지출 + 고정비 자동 생성(@Scheduled)
-├── customers/             # 고객 (find-or-create, 실시간 통계, 커스텀 등급·자동승급·수동잠금)
+├── customers/             # 고객 (find-or-create, 실시간 통계, 커스텀 등급·자동승급·수동잠금·임계값 변경 시 잠금 아닌 고객 일괄 재산정(`recomputeAllGrades`)·변경 미리보기(`POST /customer-grades/{id}/preview`))
 ├── reservations/          # 예약 (판매 전환, 픽업)
 ├── schedules/             # 일정 (리마인더 푸시)
 ├── photos/                # 갤러리 (presigned 업로드) · 태그 · 고객 연결(customer_id 직접 필터)
 ├── storage/               # 갤러리 스토리지 쿼터 (user_storage 카운터·기본3GB) — presign 한도검사 + 카드 증감 + @Scheduled 정합 + 증설요청(Discord SUPPORT·관리자 콘솔 quota 상향)
 ├── settings/              # 카드사 · 매출/지출 설정 · 하단바 · 푸시 구독 · 타입별 수신 설정(GET·PUT /push/preferences)
-├── community/             # 커뮤니티 게시판(단일 공유) · 비밀댓글·대댓글·좋아요·soft delete · 공지/댓글 이벤트 발행 → CommunityPushListener(AFTER_COMMIT 비동기 푸시)
+├── community/             # 커뮤니티 게시판(단일 공유) · 비밀댓글·대댓글·좋아요·soft delete · 댓글 수정(`PATCH /community/comments/{id}` — 작성자 전용, 운영자 포함 타인 불가) · 공지/댓글 이벤트 발행 → CommunityPushListener(AFTER_COMMIT 비동기 푸시)
 ├── verification/          # 사업자 인증 (신청·상태조회·presigned 업로드·게이팅) + 결과 알림톡(접수/승인/거절, SOLAPI) — 발송 결과는 notification_send_logs(source=alimtalk, type=business_verification)
 ├── waitlist/              # 사전등록 공개 모집 (인증 불필요 — POST /waitlist, GET /waitlist/count). 식별자: 이메일(정규화 UNIQUE)
 ├── interview/             # 유저 인터뷰 모집 (공개 — POST /interview, 이름+전화번호). 신청 시 Discord INTERVIEW 채널 비동기 알림

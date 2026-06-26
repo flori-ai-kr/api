@@ -1,6 +1,6 @@
 # Flori API — 아키텍처 & 기술 선정 이유
 
-> 최종 업데이트: 2026-06-25 (인사이트 트렌드 기능 제거 + 기업마당(bizinfo) collector 추가 + GrantRelevance·HtmlText·flower_item_scraps 신설 + 지원사업 만료필터 KST화 / support 모듈: Discord SUPPORT 채널 알림 + 이미지 업로드 + AdminInquiryResponse / 온보딩: users.name 필드 + ownerAgeRange·referralSources 필수화 + /me/profile ownerName·phoneNumber 노출 / 푸시: 타입별 수신 설정 + 작업 실행 로깅 + 커뮤니티·인사이트 푸시 확장)
+> 최종 업데이트: 2026-06-26 (인사이트 트렌드 기능 제거 + 기업마당(bizinfo) collector 추가 + GrantRelevance·HtmlText·flower_item_scraps 신설 + 지원사업 만료필터 KST화 / support 모듈: Discord SUPPORT 채널 알림 + 이미지 업로드 + AdminInquiryResponse / 온보딩: users.name 필드 + ownerAgeRange·referralSources 필수화 + /me/profile ownerName·phoneNumber 노출 / 푸시: 타입별 수신 설정 + 작업 실행 로깅 + 커뮤니티·인사이트 푸시 확장 / 커뮤니티: 댓글 수정(PATCH /community/comments/{id}·작성자 전용·운영자 불가) / 등급: 임계값 변경 시 잠금 아닌 고객 일괄 재산정(recomputeAllGrades) + 변경 미리보기(POST /customer-grades/{id}/preview) + gradeIdFor fallback 개선(최저 non-null threshold 등급))
 
 이 문서는 Flori(꽃집 어드민) **모바일 앱 백엔드 API**의 기술 스택과 아키텍처를 설명한다. 단순히 "무엇을 쓰는가"가 아니라 **"왜 이것을 골랐는가"**에 초점을 맞춘다. 모든 선택에는 *기존 Next.js+Supabase 웹앱의 비즈니스 로직을 네이티브 앱이 호출 가능한 REST API로 재구현하고, 자체 AWS 인프라 위에 올린다*는 도메인 맥락이 반영되어 있다.
 
@@ -109,10 +109,10 @@ flowchart LR
 | `user` | 프로필 수정·아바타 업로드·탈퇴(`DELETE /me`). 탈퇴 시 email·nickname·**provider_id** 스크럽(재가입 허용) |
 | `sales` | 매출 CRUD·무한스크롤·필터·**요약(GET /sales/summary)**·미수·**서버 입금계산**·**이름+전화번호로 고객 자동연결(findOrCreate)** |
 | `expenses` | 지출 + 고정비(this/all 분기·**@Scheduled 자동생성**)·**목록 페이지네이션(무한스크롤)**·**요약 집계(GET /expenses/summary)** |
-| `customers` | 고객 CRUD·findOrCreate·**실시간 구매통계**·**커스텀 등급 CRUD + 구매횟수 자동승급/수동잠금** |
+| `customers` | 고객 CRUD·findOrCreate·**실시간 구매통계**·**커스텀 등급 CRUD + 구매횟수 자동승급/수동잠금** · **임계값 변경 시 잠금 아닌 고객 일괄 재산정(`recomputeAllGrades`) + 변경 미리보기(`POST /customer-grades/{id}/preview`)** |
 | `reservations` / `schedules` | 예약(매출 전환·픽업)·일정·**리마인더/요약 푸시** |
 | `photos` | 사진카드(presigned 업로드·삭제·**다운로드**)·**#해시태그(색상 없음·카드당 최대 3)**·**고객 직접 연결(customer_id 필터·소유권 검증)**·**총계 집계(totalCards/totalPhotos)·기간필터(created_at)** |
-| `community` | 단일 커뮤니티 게시판(게시글·댓글·대댓글·좋아요·비밀댓글·soft delete)·이미지 업로드. **`@RequiresBusinessVerified` 게이팅 적용**. `PostResponse`·`CommentResponse`에 `authorIsAdmin` 노출(작성자 관리자 배지용). **공지글 작성·댓글/답글 생성 시 `ApplicationEventPublisher`로 이벤트 발행** → `CommunityPushListener`(AFTER_COMMIT 비동기)가 발송. 공지는 강제 발송, 댓글은 수신설정 존중(`community_comment`) |
+| `community` | 단일 커뮤니티 게시판(게시글·댓글·대댓글·좋아요·비밀댓글·soft delete)·이미지 업로드. **`@RequiresBusinessVerified` 게이팅 적용**. `PostResponse`·`CommentResponse`에 `authorIsAdmin` 노출(작성자 관리자 배지용). **댓글 수정(`PATCH /community/comments/{id}`) — 작성자 전용(운영자 포함 타인 불가), 본문만 변경.** **공지글 작성·댓글/답글 생성 시 `ApplicationEventPublisher`로 이벤트 발행** → `CommunityPushListener`(AFTER_COMMIT 비동기)가 발송. 공지는 강제 발송, 댓글은 수신설정 존중(`community_comment`) |
 | `verification` | 사업자 인증 신청·상태 조회(PENDING/APPROVED/REJECTED/NONE)·presigned 업로드·게이팅(`@RequiresBusinessVerified`) |
 | `waitlist` | 출시 전 선착순 100명 사전등록(공개 모집). 인증/테넌시 없음. `POST /waitlist`(이메일+가게명), `GET /waitlist/count`. 등록 시 Discord WAITLIST 채널 비동기 알림 |
 | `interview` | 유저 인터뷰 모집(공개). 인증/테넌시 없음. `POST /interview`(이름+전화번호). 신청 시 Discord INTERVIEW 채널 비동기 알림. `/waitlist`·`/interview`(POST) 공용 레이트리밋 인터셉터 적용 |
@@ -355,7 +355,7 @@ flowchart LR
     class DB d
 ```
 
-앱은 날짜·금액·결제수단을 보내고, 미수(`unpaid`)는 `is_unpaid` 영구 마커로 표시하고 총매출에서 제외한다. 결제수단 `card`는 지출의 `cardCompany`와 별개 — 매출에 카드사/수수료 필드는 없다. **고객 자동연결**: `customerId`가 없어도 이름·전화번호가 모두 제공되면 `CustomerService.findOrCreate`(전화번호 기준)로 고객을 조회 또는 생성해 `sales.customer_id`에 연결한다. 매출 수정 시 고객명·연락처가 변경되면 재해석하고, 연결된 예약(픽업)의 고객명·연락처도 동기화한다. **등급 재계산 훅**: 매출 생성·수정·삭제 시 연결 고객(`customer_id`)이 있으면 `CustomerGradeService.recomputeGrade`를 호출해 구매횟수 기준 자동 등급을 갱신한다(`grade_locked=false` 고객만).
+앱은 날짜·금액·결제수단을 보내고, 미수(`unpaid`)는 `is_unpaid` 영구 마커로 표시하고 총매출에서 제외한다. 결제수단 `card`는 지출의 `cardCompany`와 별개 — 매출에 카드사/수수료 필드는 없다. **고객 자동연결**: `customerId`가 없어도 이름·전화번호가 모두 제공되면 `CustomerService.findOrCreate`(전화번호 기준)로 고객을 조회 또는 생성해 `sales.customer_id`에 연결한다. 매출 수정 시 고객명·연락처가 변경되면 재해석하고, 연결된 예약(픽업)의 고객명·연락처도 동기화한다. **등급 재계산 훅**: 매출 생성·수정·삭제 시 연결 고객(`customer_id`)이 있으면 `CustomerGradeService.recomputeGrade`를 호출해 구매횟수 기준 자동 등급을 갱신한다(`grade_locked=false` 고객만). **임계값 변경 시**: 등급 임계값이 실제로 바뀌면 `recomputeAllGrades`로 해당 테넌트 잠금 아닌 고객 전원을 일괄 재산정한다(구매횟수 bulk 집계 1쿼리, 등급 목록 1회 로드).
 
 ### 고정비 자동생성 — @Scheduled (KST 00:30)
 
@@ -551,10 +551,10 @@ erDiagram
 | 인증 | `POST /auth/oauth/{kakao,google,naver}`, `POST /auth/register/complete`(+`phoneNumber`), `POST /auth/{refresh,logout}`, `GET /me`, `DELETE /me` | Public / Auth |
 | 매출 | `GET/POST/PATCH/DELETE /sales`, `GET /sales/summary`, `/sales/{id}/complete-unpaid`·`/revert-unpaid`, `/sales/suggestions` | Auth |
 | 지출·고정비 | `/expenses`(+`/expenses/summary`), `/recurring-expenses`(+`/toggle`·`/instances/{id}?scope=this\|all`) | Auth |
-| 고객 | `/customers`(+`/search`·`/check-phone`·`/{id}/sales`·`/find-or-create`·`/{id}/grade`·`/{id}/grade/auto`), `GET/POST/PATCH/DELETE /customer-grades` | Auth |
+| 고객 | `/customers`(+`/search`·`/check-phone`·`/{id}/sales`·`/find-or-create`·`/{id}/grade`·`/{id}/grade/auto`), `GET/POST/PATCH/DELETE /customer-grades`, `POST /customer-grades/{id}/preview` | Auth |
 | 예약·일정 | `/reservations`(+`/upcoming`·`/reminders`·`/convert-to-sale`·`/add-pickup`), `/schedules` | Auth |
 | 사진첩 | `GET/POST/PATCH/DELETE /photo-cards`, `POST /photo-cards/upload-targets`(신규 카드용), `POST /photo-cards/{id}/upload-targets`, `GET /photo-cards/{id}/photos/download`, `/photos/reorder`, `/photo-tags` | Auth |
-| 커뮤니티 | `GET/POST /community/posts`, `GET/PATCH/DELETE /community/posts/{id}`, `POST /community/posts/{id}/like`, `GET/POST /community/posts/{id}/comments`, `DELETE /community/comments/{id}`, `POST /community/upload-targets` | Auth + **사업자 인증** |
+| 커뮤니티 | `GET/POST /community/posts`, `GET/PATCH/DELETE /community/posts/{id}`, `POST /community/posts/{id}/like`, `GET/POST /community/posts/{id}/comments`, `PATCH /community/comments/{id}`, `DELETE /community/comments/{id}`, `POST /community/upload-targets` | Auth + **사업자 인증** |
 | 사업자 인증 | `POST /verification/business/upload-target`, `POST /verification/business`, `GET /verification/business/me` | Auth |
 | 설정 | `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}`(CRUD), `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}/order`(순서 변경 `PUT`), `/settings/preferences`, `/push/{subscribe,unsubscribe,status,test}`, `GET /push/preferences`(수신설정 목록), `PUT /push/preferences`(타입별 on/off 토글) | Auth |
 | 대시보드 | `GET /dashboard/today`·`/dashboard/month` | Auth |
