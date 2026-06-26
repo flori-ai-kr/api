@@ -14,4 +14,5 @@ enum class StorageErrorCode(
     QUOTA_EXCEEDED("E-STG-001", HttpStatus.CONFLICT, "저장 용량이 부족합니다. 관리자에게 증설을 요청해 주세요"),
     DUPLICATE_PENDING("E-STG-002", HttpStatus.CONFLICT, "이미 처리 중인 증설 요청이 있습니다"),
     REQUEST_NOT_FOUND("E-STG-003", HttpStatus.NOT_FOUND, "증설 요청을 찾을 수 없습니다"),
+    ALREADY_PROCESSED("E-STG-004", HttpStatus.CONFLICT, "이미 처리된 요청입니다"),
 }

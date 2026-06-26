@@ -42,6 +42,9 @@ class AdminStorageService(
         quotaBytes: Long,
     ): AdminStorageRequestResponse {
         val req = requestRepository.findById(requestId).orElseThrow { AppException(StorageErrorCode.REQUEST_NOT_FOUND) }
+        if (req.status != StorageIncreaseRequest.STATUS_PENDING) {
+            throw AppException(StorageErrorCode.ALREADY_PROCESSED)
+        }
         req.approve(quotaBytes)
         quotaService.setQuota(req.userId, quotaBytes)
         audit.record(
@@ -62,6 +65,9 @@ class AdminStorageService(
         rejectReason: String,
     ): AdminStorageRequestResponse {
         val req = requestRepository.findById(requestId).orElseThrow { AppException(StorageErrorCode.REQUEST_NOT_FOUND) }
+        if (req.status != StorageIncreaseRequest.STATUS_PENDING) {
+            throw AppException(StorageErrorCode.ALREADY_PROCESSED)
+        }
         req.reject(rejectReason)
         audit.record(
             action = "STORAGE_REJECT",
