@@ -4,6 +4,7 @@ import kr.ai.flori.admin.service.AdminAuditService
 import kr.ai.flori.billing.dto.CouponDetailResponse
 import kr.ai.flori.billing.dto.CouponIssueRequest
 import kr.ai.flori.billing.dto.CouponResponse
+import kr.ai.flori.billing.dto.CouponUpdateRequest
 import kr.ai.flori.billing.dto.RedemptionRow
 import kr.ai.flori.billing.entity.Coupon
 import kr.ai.flori.billing.repository.CouponRedemptionRepository
@@ -12,6 +13,8 @@ import kr.ai.flori.billing.support.CouponCodeGenerator
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
+import kr.ai.flori.user.repository.UserProfileRepository
+import kr.ai.flori.user.repository.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -22,6 +25,8 @@ class AdminCouponService(
     private val redemptionRepository: CouponRedemptionRepository,
     private val codeGenerator: CouponCodeGenerator,
     private val auditService: AdminAuditService,
+    private val userRepository: UserRepository,
+    private val userProfileRepository: UserProfileRepository,
 ) {
     @Transactional
     fun issue(request: CouponIssueRequest): CouponResponse {
@@ -57,11 +62,54 @@ class AdminCouponService(
     @Transactional(readOnly = true)
     fun detail(id: Long): CouponDetailResponse {
         val coupon = couponRepository.findById(id).orElseThrow { AppException(CommonErrorCode.NOT_FOUND, "쿠폰을 찾을 수 없습니다") }
+        val redemptions = redemptionRepository.findByCouponIdOrderByCreatedAtDesc(id)
+        // 사용현황 유저정보(닉네임·가게명) 배치 조회 — N+1 회피. 매핑 없으면 null.
+        val userIds = redemptions.map { it.userId }.distinct()
+        val nicknameById = userRepository.findAllById(userIds).associate { it.id to it.nickname }
+        val storeNameById = userProfileRepository.findAllById(userIds).associate { it.userId to it.storeName }
         val rows =
-            redemptionRepository.findByCouponIdOrderByCreatedAtDesc(id).map {
-                RedemptionRow(it.userId, it.grantedDays, it.createdAt)
+            redemptions.map {
+                RedemptionRow(
+                    userId = it.userId,
+                    grantedDays = it.grantedDays,
+                    redeemedAt = it.createdAt,
+                    nickname = nicknameById[it.userId],
+                    storeName = storeNameById[it.userId],
+                )
             }
         return CouponDetailResponse(CouponResponse.of(coupon, Instant.now()), rows)
+    }
+
+    /**
+     * 쿠폰 수정. code·source는 불변(식별자/용도)이라 요청에 없고 기존 값을 유지한다.
+     * days 변경은 이후 사용분에만 영향 — 기존 CouponRedemption.grantedDays 스냅샷은 불변.
+     */
+    @Transactional
+    fun update(
+        id: Long,
+        request: CouponUpdateRequest,
+    ): CouponResponse {
+        val coupon = couponRepository.findById(id).orElseThrow { AppException(CommonErrorCode.NOT_FOUND, "쿠폰을 찾을 수 없습니다") }
+        coupon.days = request.days
+        coupon.validFrom = request.validFrom
+        coupon.validUntil = request.validUntil
+        coupon.maxRedemptions = request.maxRedemptions
+        coupon.perUserLimit = request.perUserLimit
+        coupon.memo = request.memo
+        val saved = couponRepository.save(coupon)
+        auditService.record(
+            action = "COUPON_UPDATE",
+            targetType = "coupon",
+            targetId = id.toString(),
+            summary = "쿠폰 수정 ${coupon.code} (${request.days}일)",
+            metadata =
+                mapOf(
+                    "days" to request.days,
+                    "maxRedemptions" to request.maxRedemptions,
+                    "perUserLimit" to request.perUserLimit,
+                ),
+        )
+        return CouponResponse.of(saved, Instant.now())
     }
 
     @Transactional

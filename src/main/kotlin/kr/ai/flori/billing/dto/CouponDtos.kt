@@ -30,6 +30,19 @@ data class RedemptionRow(
     val userId: Long,
     val grantedDays: Int,
     val redeemedAt: java.time.Instant,
+    // 콘솔 사용현황 표시용 유저 식별자(닉네임=users.nickname / 가게명=user_profiles.store_name). 매핑 없으면 null.
+    val nickname: String? = null,
+    val storeName: String? = null,
+)
+
+data class CouponUpdateRequest(
+    @field:jakarta.validation.constraints.Min(1, message = "무료 일수는 1 이상")
+    val days: Int,
+    val validFrom: Instant? = null,
+    val validUntil: Instant? = null,
+    val maxRedemptions: Int? = null,
+    val perUserLimit: Int = 1,
+    val memo: String? = null,
 )
 
 data class CouponDetailResponse(

@@ -5,9 +5,11 @@ import kr.ai.flori.admin.gating.RequiresAdmin
 import kr.ai.flori.billing.dto.CouponDetailResponse
 import kr.ai.flori.billing.dto.CouponIssueRequest
 import kr.ai.flori.billing.dto.CouponResponse
+import kr.ai.flori.billing.dto.CouponUpdateRequest
 import kr.ai.flori.billing.service.AdminCouponService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -34,6 +36,12 @@ class AdminCouponController(
     fun detail(
         @PathVariable id: Long,
     ): CouponDetailResponse = adminCouponService.detail(id)
+
+    @PatchMapping("/{id}")
+    fun update(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: CouponUpdateRequest,
+    ): CouponResponse = adminCouponService.update(id, request)
 
     @PostMapping("/{id}/disable")
     fun disable(
