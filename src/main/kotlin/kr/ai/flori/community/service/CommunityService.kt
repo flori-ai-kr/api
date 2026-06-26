@@ -10,6 +10,7 @@ import kr.ai.flori.community.domain.CommunityCategories
 import kr.ai.flori.community.domain.CommunityReportReasons
 import kr.ai.flori.community.dto.CommentCreateRequest
 import kr.ai.flori.community.dto.CommentResponse
+import kr.ai.flori.community.dto.CommentUpdateRequest
 import kr.ai.flori.community.dto.LikeToggleResponse
 import kr.ai.flori.community.dto.PostCreateRequest
 import kr.ai.flori.community.dto.PostResponse
@@ -292,6 +293,24 @@ class CommunityService(
         eventPublisher.publishEvent(
             CommunityCommentNotifyEvent(postId, recipientId, content, isReply, isSecret),
         )
+    }
+
+    @Transactional
+    fun updateComment(
+        id: Long,
+        request: CommentUpdateRequest,
+    ): CommentResponse {
+        val viewer = viewer()
+        requireNotBanned(viewer.id)
+        val comment =
+            commentRepository.findByIdAndDeletedAtIsNull(id)
+                ?: throw AppException(CommunityErrorCode.COMMENT_NOT_FOUND)
+        // 수정은 작성자 본인만(삭제와 달리 운영자도 불가) — 내용 위변조 방지.
+        if (comment.authorUserId != viewer.id) throw AppException(CommunityErrorCode.FORBIDDEN)
+        comment.content = requireNotNull(request.content)
+        val saved = commentRepository.save(comment)
+        // 부모가 비밀이면 본인은 항상 열람 가능(canView=true).
+        return CommentResponse.of(saved, nicknameOf(viewer.id), authorIsAdmin = viewer.isAdmin, isMine = true, canView = true)
     }
 
     @Transactional

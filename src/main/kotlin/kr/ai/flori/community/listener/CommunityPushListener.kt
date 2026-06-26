@@ -37,7 +37,7 @@ class CommunityPushListener(
                     event.authorUserId,
                 )
             userIds.forEach { uid ->
-                pushDispatcher.sendToUser(uid, content.title, content.body, content.url, PushTypes.COMMUNITY_NOTICE)
+                pushDispatcher.sendToUser(uid, content.title, content.body, content.link, PushTypes.COMMUNITY_NOTICE)
             }
         } catch (e: Exception) {
             log.error("공지 푸시 발송 실패 postId={}", event.postId, e)
@@ -54,7 +54,7 @@ class CommunityPushListener(
                 event.recipientUserId,
                 content.title,
                 content.body,
-                content.url,
+                content.link,
                 PushTypes.COMMUNITY_COMMENT,
             )
         } catch (e: Exception) {

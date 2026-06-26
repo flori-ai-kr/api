@@ -58,6 +58,13 @@ data class CommentCreateRequest(
     val isSecret: Boolean = false,
 )
 
+/** 댓글 수정. 본문(content)만 변경한다. 작성자 본인만 수정 가능(서비스 강제). */
+data class CommentUpdateRequest(
+    @field:NotBlank(message = "내용은 필수입니다")
+    @field:Size(max = FieldLimits.COMMENT, message = "댓글이 너무 깁니다")
+    val content: String?,
+)
+
 /** 신고 생성. reason은 화이트리스트 검증(서비스), detail은 선택 상세 설명. */
 data class ReportCreateRequest(
     @field:NotBlank(message = "신고 사유는 필수입니다")

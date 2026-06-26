@@ -57,12 +57,13 @@ src/main/kotlin/kr/ai/flori/
 ├── user/                  # 사용자 / 내 정보(/me) · 프로필 수정 · 탈퇴
 ├── sales/                 # 매출 기록 · 미수(unpaid) 처리
 ├── expenses/              # 지출 + 고정비 자동 생성(@Scheduled)
-├── customers/             # 고객 (find-or-create, 실시간 통계, 커스텀 등급·자동승급·수동잠금)
+├── customers/             # 고객 (find-or-create, 실시간 통계, 커스텀 등급·자동승급·수동잠금·임계값 변경 시 잠금 아닌 고객 일괄 재산정(`recomputeAllGrades`)·변경 미리보기(`POST /customer-grades/{id}/preview`))
 ├── reservations/          # 예약 (판매 전환, 픽업)
 ├── schedules/             # 일정 (리마인더 푸시)
 ├── photos/                # 갤러리 (presigned 업로드) · 태그 · 고객 연결(customer_id 직접 필터)
+├── storage/               # 갤러리 스토리지 쿼터 (user_storage 카운터·기본3GB) — presign 한도검사 + 카드 증감 + @Scheduled 정합 + 증설요청(Discord SUPPORT·관리자 콘솔 quota 상향)
 ├── settings/              # 카드사 · 매출/지출 설정 · 하단바 · 푸시 구독 · 타입별 수신 설정(GET·PUT /push/preferences)
-├── community/             # 커뮤니티 게시판(단일 공유) · 비밀댓글·대댓글·좋아요·soft delete · 공지/댓글 이벤트 발행 → CommunityPushListener(AFTER_COMMIT 비동기 푸시)
+├── community/             # 커뮤니티 게시판(단일 공유) · 비밀댓글·대댓글·좋아요·soft delete · 댓글 수정(`PATCH /community/comments/{id}` — 작성자 전용, 운영자 포함 타인 불가) · 공지/댓글 이벤트 발행 → CommunityPushListener(AFTER_COMMIT 비동기 푸시)
 ├── verification/          # 사업자 인증 (신청·상태조회·presigned 업로드·게이팅) + 결과 알림톡(접수/승인/거절, SOLAPI) — 발송 결과는 notification_send_logs(source=alimtalk, type=business_verification)
 ├── waitlist/              # 사전등록 공개 모집 (인증 불필요 — POST /waitlist, GET /waitlist/count). 식별자: 이메일(정규화 UNIQUE)
 ├── interview/             # 유저 인터뷰 모집 (공개 — POST /interview, 이름+전화번호). 신청 시 Discord INTERVIEW 채널 비동기 알림
@@ -82,7 +83,7 @@ src/main/kotlin/kr/ai/flori/
     ├── job/               # 백그라운드 작업 실행 로깅 SSOT — JobRunRecorder(cron 래퍼), JobNames(식별자 상수), JobOutcome(결과), JobRunLog(엔티티), JobRunLogRepository
     ├── log/               # TraceIdFilter, LoggingInterceptor
     ├── notification/      # Discord 알림 채널 (DiscordNotifier, DiscordChannel, DiscordProperties)
-    ├── push/              # PushDispatcher(FCM/VAPID 라우팅 + 수신설정 게이팅), PushTypes(타입 SSOT + TOGGLEABLE 목록), PushTemplates(메시지 SSOT), PushService(FCM / 로깅 fallback)
+    ├── push/              # PushDispatcher(FCM/VAPID 라우팅 + 수신설정 게이팅 + 발송마다 notification_send_logs 기록·브로드캐스트 제외), PushTypes(타입 SSOT + TOGGLEABLE), PushTemplates(메시지 SSOT), PushLink/PushLinks(딥링크 SSOT — web /admin 경로 + 모바일 type/id), PushService(FCM / 로깅 fallback)
     ├── request/           # ClientContext(ThreadLocal) + ClientContextFilter (요청 컨텍스트 캡처)
     ├── security/          # JWT, SecurityConfig, 내부 인증
     ├── storage/           # S3 presign
@@ -153,9 +154,10 @@ src/main/kotlin/kr/ai/flori/
 | Discord 에러 리포팅 | `common/error/DiscordErrorReporter.kt` |
 | Auditing 베이스 엔티티 | `common/entity/BaseEntity.kt` |
 | S3 presign | `common/storage/S3PresignService.kt` |
-| 푸시 라우팅 + 수신설정 게이팅 | `common/push/PushDispatcher.kt` |
+| 푸시 라우팅 + 수신설정 게이팅 + 발송 로깅 | `common/push/PushDispatcher.kt` (발송마다 `notification_send_logs` 기록 — 브로드캐스트 제외) |
 | 푸시 타입 SSOT (TOGGLEABLE 포함) | `common/push/PushTypes.kt` |
 | 푸시 메시지 템플릿 SSOT | `common/push/PushTemplates.kt` |
+| 푸시 딥링크 SSOT | `common/push/PushLink.kt` (`PushLink`·`PushLinks` — web `/admin/*` + 모바일 `type`/`id`) |
 | 푸시 구독 서비스 (FCM / 로깅 fallback) | `common/push/PushService.kt`, `FirebasePushService.kt` |
 | 수신 설정 엔티티/서비스/레포 | `settings/entity/NotificationPreference.kt`, `settings/service/NotificationPreferenceService.kt`, `settings/repository/NotificationPreferenceRepository.kt` |
 | 백그라운드 작업 실행 래퍼 | `common/job/JobRunRecorder.kt` |

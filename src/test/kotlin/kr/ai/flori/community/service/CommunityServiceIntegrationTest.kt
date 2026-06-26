@@ -8,6 +8,7 @@ import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.community.dto.CommentCreateRequest
+import kr.ai.flori.community.dto.CommentUpdateRequest
 import kr.ai.flori.community.dto.PostCreateRequest
 import kr.ai.flori.community.dto.PostUpdateRequest
 import kr.ai.flori.community.error.CommunityErrorCode
@@ -234,6 +235,42 @@ class CommunityServiceIntegrationTest {
         assertThat(comments).hasSize(1)
         assertThat(comments.first().isDeleted).isTrue()
         assertThat(comments.first().content).isEmpty()
+    }
+
+    @Test
+    fun `댓글 수정은 작성자 본인만 가능하고 운영자도 불가`() {
+        val author = newUser()
+        switchTo(author)
+        val p = communityService.createPost(post())
+        val c = communityService.createComment(p.id, CommentCreateRequest("원본", null, false))
+
+        // 작성자 본인 수정 성공
+        val updated = communityService.updateComment(c.id, CommentUpdateRequest("수정됨"))
+        assertThat(updated.content).isEqualTo("수정됨")
+        assertThat(communityService.listComments(p.id).first().content).isEqualTo("수정됨")
+
+        // 다른 사용자(운영자라도) 수정 불가
+        val admin = newUser()
+        makeAdmin(admin)
+        switchTo(admin)
+        assertThatThrownBy { communityService.updateComment(c.id, CommentUpdateRequest("침범")) }
+            .isInstanceOfSatisfying(AppException::class.java) {
+                assertThat(it.errorCode).isEqualTo(CommunityErrorCode.FORBIDDEN)
+            }
+    }
+
+    @Test
+    fun `삭제된 댓글은 수정할 수 없다`() {
+        val author = newUser()
+        switchTo(author)
+        val p = communityService.createPost(post())
+        val c = communityService.createComment(p.id, CommentCreateRequest("원본", null, false))
+        communityService.deleteComment(c.id)
+
+        assertThatThrownBy { communityService.updateComment(c.id, CommentUpdateRequest("부활")) }
+            .isInstanceOfSatisfying(AppException::class.java) {
+                assertThat(it.errorCode).isEqualTo(CommunityErrorCode.COMMENT_NOT_FOUND)
+            }
     }
 
     @Test

@@ -119,6 +119,8 @@ class TenantIsolationGuardTest {
             // 빌링 — 구독 신원 원장: identity_hash 조회 — 탈퇴 유저 포함 전체 원장 대상 어뷰징 방어 조회.
             // user_id가 없는 설계(탈퇴 후도 유지 목적) — 서비스가 hash로만 접근.
             "SubscriptionEligibilityRepository#findByIdentityHash",
+            // 스토리지 증설 요청 운영 콘솔 조회: cross-tenant — @RequiresAdmin 하위에서만 사용.
+            "StorageIncreaseRequestRepository#search",
         )
 
     @Test

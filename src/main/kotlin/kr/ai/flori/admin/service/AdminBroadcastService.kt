@@ -9,6 +9,7 @@ import kr.ai.flori.admin.repository.BroadcastRepository
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.push.PushDispatcher
+import kr.ai.flori.common.push.PushLink
 import kr.ai.flori.common.push.PushTypes
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.common.util.Paging
@@ -87,7 +88,14 @@ class AdminBroadcastService(
         var failedCount = 0
         userIds.forEach { uid ->
             val delivered =
-                pushDispatcher.sendToUser(uid, broadcast.title, broadcast.body, broadcast.deepLink, PushTypes.BROADCAST)
+                pushDispatcher.sendToUser(
+                    uid,
+                    broadcast.title,
+                    broadcast.body,
+                    // open-redirect 방어: 내부 상대경로(/...)만 딥링크로 허용(외부 URL·javascript: 차단)
+                    broadcast.deepLink?.takeIf { it.startsWith("/") }?.let { PushLink(webUrl = it) },
+                    PushTypes.BROADCAST,
+                )
             if (delivered > 0) sentCount++ else failedCount++
         }
         broadcast.status = STATUS_SENT

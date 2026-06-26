@@ -55,7 +55,7 @@ class InsightPushService(
             try {
                 if (claimOnce(userId, PushTypes.AUCTION_SCRAP_UPDATE, today.toString())) {
                     val content = PushTemplates.auctionScrapUpdate(pumNames)
-                    pushDispatcher.sendToUser(userId, content.title, content.body, content.url, PushTypes.AUCTION_SCRAP_UPDATE)
+                    pushDispatcher.sendToUser(userId, content.title, content.body, content.link, PushTypes.AUCTION_SCRAP_UPDATE)
                     sent++
                 }
             } catch (e: DataAccessException) {
@@ -83,7 +83,7 @@ class InsightPushService(
         jdbcTemplate.queryForList("SELECT id FROM users WHERE is_active", Long::class.java).forEach { userId ->
             try {
                 if (claimOnce(userId, PushTypes.GRANT_NEW, today.toString())) {
-                    pushDispatcher.sendToUser(userId, content.title, content.body, content.url, PushTypes.GRANT_NEW)
+                    pushDispatcher.sendToUser(userId, content.title, content.body, content.link, PushTypes.GRANT_NEW)
                     sent++
                 }
             } catch (e: DataAccessException) {
@@ -125,7 +125,7 @@ class InsightPushService(
             try {
                 if (claimOnce(userId, PushTypes.GRANT_DEADLINE, "$programId-$today")) {
                     val content = PushTemplates.grantDeadline(title, daysLeft)
-                    pushDispatcher.sendToUser(userId, content.title, content.body, content.url, PushTypes.GRANT_DEADLINE)
+                    pushDispatcher.sendToUser(userId, content.title, content.body, content.link, PushTypes.GRANT_DEADLINE)
                     sent++
                 }
             } catch (e: DataAccessException) {

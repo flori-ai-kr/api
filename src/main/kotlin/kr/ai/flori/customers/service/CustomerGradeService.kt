@@ -6,6 +6,7 @@ import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.customers.dto.CustomerGradeCreateRequest
 import kr.ai.flori.customers.dto.CustomerGradeResponse
 import kr.ai.flori.customers.dto.CustomerGradeUpdateRequest
+import kr.ai.flori.customers.dto.GradeChangePreviewItem
 import kr.ai.flori.customers.entity.CustomerGrade
 import kr.ai.flori.customers.repository.CustomerGradeRepository
 import kr.ai.flori.customers.repository.CustomerQueryRepository
@@ -62,13 +63,19 @@ class CustomerGradeService(
             }
             grade.name = it
         }
+        val previousThreshold = grade.threshold
         if (req.clearThreshold) {
             grade.threshold = null
         } else {
             req.threshold?.let { grade.threshold = it }
         }
         req.sortOrder?.let { grade.sortOrder = it }
-        return CustomerGradeResponse.from(gradeRepository.save(grade))
+        val saved = gradeRepository.save(grade)
+        // 임계값이 실제로 바뀐 경우에만 기존 고객 등급을 즉시 일괄 재산정(잠금 고객 제외).
+        if (saved.threshold != previousThreshold) {
+            recomputeAllGrades()
+        }
+        return CustomerGradeResponse.from(saved)
     }
 
     @Transactional
@@ -86,15 +93,68 @@ class CustomerGradeService(
         gradeRepository.delete(grade)
     }
 
-    /** 구매횟수 기준 적정 등급 id. threshold 있는 등급 중 threshold<=count 최대, 없으면 최저 sort_order. */
+    /** 구매횟수 기준 적정 등급 id. threshold 있는 등급 중 threshold<=count 최대, 미달이면 fallback. */
     fun gradeIdFor(
         userId: Long,
         purchaseCount: Int,
+    ): Long? = resolveGradeId(gradeRepository.findByUserIdOrderBySortOrderAsc(userId), purchaseCount)
+
+    private data class GradeRow(
+        val id: Long,
+        val threshold: Int?,
+        val sortOrder: Int,
+    )
+
+    private fun List<CustomerGrade>.toRows() = map { GradeRow(requireNotNull(it.id), it.threshold, it.sortOrder) }
+
+    private fun resolveGradeId(
+        grades: List<CustomerGrade>,
+        purchaseCount: Int,
+    ): Long? = resolveGradeIdFromRows(grades.toRows(), purchaseCount)
+
+    /**
+     * 등급 행(id·threshold·sortOrder)과 구매횟수로 적정 등급 id를 고른다(순수 함수).
+     * threshold<=count 인 등급 중 threshold 최대값, 모든 임계값 미만이면 fallback:
+     * threshold가 가장 낮은(non-null) 등급(예: 신규 0회), 전부 null이면 최저 sort_order.
+     */
+    private fun resolveGradeIdFromRows(
+        rows: List<GradeRow>,
+        purchaseCount: Int,
     ): Long? {
+        if (rows.isEmpty()) return null
+        val eligible = rows.filter { it.threshold != null && it.threshold <= purchaseCount }.maxByOrNull { it.threshold!! }
+        val fallback =
+            rows.filter { it.threshold != null }.minByOrNull { it.threshold!! }
+                ?: rows.minByOrNull { it.sortOrder }
+        return (eligible ?: fallback)?.id
+    }
+
+    /**
+     * 임계값을 newThreshold(null=수동전용)로 바꿨을 때 등급이 바뀔 잠금 아닌 고객 목록 미리보기(저장 안 함).
+     * 실제 적용은 update() 호출 시 recomputeAllGrades 가 수행한다.
+     */
+    @Transactional(readOnly = true)
+    fun previewThresholdChange(
+        gradeId: Long,
+        newThreshold: Int?,
+    ): List<GradeChangePreviewItem> {
+        val userId = TenantContext.currentUserId()
         val grades = gradeRepository.findByUserIdOrderBySortOrderAsc(userId)
-        if (grades.isEmpty()) return null
-        val eligible = grades.filter { it.threshold != null && it.threshold!! <= purchaseCount }.maxByOrNull { it.threshold!! }
-        return (eligible ?: grades.minByOrNull { it.sortOrder })?.id
+        if (grades.none { it.id == gradeId }) {
+            throw AppException(CommonErrorCode.NOT_FOUND, "등급을 찾을 수 없습니다")
+        }
+        val nameById = grades.associate { requireNotNull(it.id) to it.name }
+        // 대상 등급의 threshold 만 가설로 교체한 행 목록으로 재산정 결과를 계산.
+        val rows = grades.toRows().map { if (it.id == gradeId) it.copy(threshold = newThreshold) else it }
+        val counts = queryRepository.purchaseCounts(userId)
+        return customerRepository.findByUserIdAndGradeLockedFalse(userId).mapNotNull { c ->
+            val newGradeId = resolveGradeIdFromRows(rows, counts[c.id] ?: 0)
+            if (newGradeId != null && newGradeId != c.gradeId) {
+                GradeChangePreviewItem(c.name, c.gradeId?.let { nameById[it] }, requireNotNull(nameById[newGradeId]))
+            } else {
+                null
+            }
+        }
     }
 
     /** 자동 등급 재계산(잠금 아니면). 매출 변경/되돌리기 후 호출. */
@@ -108,6 +168,26 @@ class CustomerGradeService(
         if (newGradeId != null && newGradeId != customer.gradeId) {
             customer.gradeId = newGradeId
             customerRepository.save(customer)
+        }
+    }
+
+    /**
+     * 임계값 변경 시 해당 테넌트의 잠금 아닌 고객 전원을 일괄 재산정(변경분만 저장).
+     * 구매횟수는 1쿼리 bulk 집계(purchaseCounts), 등급 목록도 1회만 로드해 고객별 재조회를 피한다.
+     * userId 는 TenantContext 에서만 도출한다(외부 임의 호출 차단을 위해 private; 호출자 update()의 트랜잭션에서 실행).
+     */
+    private fun recomputeAllGrades() {
+        val userId = TenantContext.currentUserId()
+        val grades = gradeRepository.findByUserIdOrderBySortOrderAsc(userId)
+        if (grades.isEmpty()) return
+        val counts = queryRepository.purchaseCounts(userId)
+        customerRepository.findByUserIdAndGradeLockedFalse(userId).forEach { customer ->
+            val count = counts[customer.id] ?: 0
+            val newGradeId = resolveGradeId(grades, count)
+            if (newGradeId != null && newGradeId != customer.gradeId) {
+                customer.gradeId = newGradeId
+                customerRepository.save(customer)
+            }
         }
     }
 

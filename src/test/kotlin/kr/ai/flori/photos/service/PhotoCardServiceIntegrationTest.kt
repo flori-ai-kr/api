@@ -13,6 +13,7 @@ import kr.ai.flori.photos.dto.PhotoCardCreateRequest
 import kr.ai.flori.photos.dto.PhotoCardUpdateRequest
 import kr.ai.flori.photos.entity.PhotoFile
 import kr.ai.flori.photos.repository.PhotoCardRepository
+import kr.ai.flori.storage.service.StorageQuotaService
 import kr.ai.flori.support.TestAccounts
 import kr.ai.flori.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
@@ -55,6 +56,9 @@ class PhotoCardServiceIntegrationTest {
     @Autowired
     lateinit var userRepository: UserRepository
 
+    @Autowired
+    lateinit var storageQuotaService: StorageQuotaService
+
     // 자격증명이 있는 presigner로 업로드 타깃 성공경로 검증(로컬 서명, 네트워크 불요)
     private val presignService =
         S3PresignService(
@@ -74,7 +78,9 @@ class PhotoCardServiceIntegrationTest {
                 cloudfront = StorageProperties.CloudFront("cdn.flori.dev"),
             ),
         )
-    private val signingService by lazy { PhotoCardService(photoCardRepository, presignService, saleRepository, customerRepository) }
+    private val signingService by lazy {
+        PhotoCardService(photoCardRepository, presignService, saleRepository, customerRepository, storageQuotaService)
+    }
 
     @AfterEach
     fun tearDown() = TenantContext.clear()

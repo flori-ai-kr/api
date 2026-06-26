@@ -13,6 +13,11 @@ object PushTypes {
     const val AUCTION_SCRAP_UPDATE = "auction_scrap_update"
     const val GRANT_NEW = "grant_new"
     const val GRANT_DEADLINE = "grant_deadline"
+    const val STORAGE_RESOLVED = "storage_resolved"
+
+    // 비토글(항상 발송) — 발송 로그 타입 라벨용.
+    const val INQUIRY_ANSWERED = "inquiry_answered"
+    const val TEST = "test"
 
     /**
      * 점주 수신설정으로 끌 수 있는 타입(콘솔/설정 노출 순서). community_notice(공지)는 강제 발송이라 제외 —
