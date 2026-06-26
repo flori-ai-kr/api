@@ -34,6 +34,8 @@ object PushLinks {
 
     fun insights(): PushLink = PushLink(webUrl = "/admin/insights", mobileType = "insight")
 
+    fun gallery(): PushLink = PushLink(webUrl = "/admin/gallery", mobileType = "gallery")
+
     fun support(inquiryId: Long): PushLink =
         PushLink(webUrl = "/admin/support/$inquiryId", mobileType = "support", id = inquiryId.toString())
 

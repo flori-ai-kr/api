@@ -96,6 +96,8 @@ class TenantIsolationGuardTest {
             // user_id 격리가 없고 누구나 같은 큐레이션을 본다. 개인 데이터는 insight_scraps(전부 ...UserId 격리)뿐.
             "SupportProgramRepository#findFeed",
             "SupportProgramRepository#findByIdIn",
+            // 스토리지 증설 요청 운영 콘솔 조회: cross-tenant — @RequiresAdmin 하위에서만 사용.
+            "StorageIncreaseRequestRepository#search",
         )
 
     @Test

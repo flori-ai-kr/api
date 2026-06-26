@@ -44,6 +44,10 @@ class PhotoCardDocsTest : RestDocsSupport() {
                 .type(JsonFieldType.STRING)
                 .optional()
                 .description("원본 파일명"),
+            fieldWithPath("photos[].size")
+                .type(JsonFieldType.NUMBER)
+                .optional()
+                .description("파일 크기 (바이트, 미입력 시 0)"),
             fieldWithPath("saleId")
                 .type(JsonFieldType.NUMBER)
                 .optional()
@@ -213,6 +217,10 @@ class PhotoCardDocsTest : RestDocsSupport() {
                                     .type(JsonFieldType.STRING)
                                     .optional()
                                     .description("원본 파일명"),
+                                fieldWithPath("photos[].size")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("파일 크기 (바이트, 미입력 시 0)"),
                                 fieldWithPath("saleId")
                                     .type(JsonFieldType.NUMBER)
                                     .optional()
@@ -479,6 +487,10 @@ class PhotoCardDocsTest : RestDocsSupport() {
                                 fieldWithPath("photos[].originalName")
                                     .type(JsonFieldType.STRING)
                                     .description("원본 파일명"),
+                                fieldWithPath("photos[].size")
+                                    .type(JsonFieldType.NUMBER)
+                                    .optional()
+                                    .description("파일 크기 (바이트, 미입력 시 0)"),
                             ),
                         responseFields = photoCardResponseFields,
                     ),

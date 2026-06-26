@@ -61,6 +61,7 @@ src/main/kotlin/kr/ai/flori/
 ├── reservations/          # 예약 (판매 전환, 픽업)
 ├── schedules/             # 일정 (리마인더 푸시)
 ├── photos/                # 갤러리 (presigned 업로드) · 태그 · 고객 연결(customer_id 직접 필터)
+├── storage/               # 갤러리 스토리지 쿼터 (user_storage 카운터·기본3GB) — presign 한도검사 + 카드 증감 + @Scheduled 정합 + 증설요청(Discord SUPPORT·관리자 콘솔 quota 상향)
 ├── settings/              # 카드사 · 매출/지출 설정 · 하단바 · 푸시 구독 · 타입별 수신 설정(GET·PUT /push/preferences)
 ├── community/             # 커뮤니티 게시판(단일 공유) · 비밀댓글·대댓글·좋아요·soft delete · 공지/댓글 이벤트 발행 → CommunityPushListener(AFTER_COMMIT 비동기 푸시)
 ├── verification/          # 사업자 인증 (신청·상태조회·presigned 업로드·게이팅) + 결과 알림톡(접수/승인/거절, SOLAPI) — 발송 결과는 notification_send_logs(source=alimtalk, type=business_verification)

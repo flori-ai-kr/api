@@ -162,9 +162,28 @@ object PushTemplates {
             PushContent(title = "지원사업 마감 임박", body = "$title 마감이 ${daysLeft}일 남았습니다", link = PushLinks.insights())
         }
 
+    // ── 스토리지 증설 ─────────────────────────────────────────────────────────
+
+    fun storageApproved(quotaBytes: Long): PushContent {
+        val gb = quotaBytes / GB_BYTES
+        return PushContent(
+            title = "저장 용량 증설 완료",
+            body = "요청하신 저장 용량이 ${gb}GB로 증설되었습니다",
+            link = PushLinks.gallery(),
+        )
+    }
+
+    fun storageRejected(reason: String): PushContent =
+        PushContent(
+            title = "저장 용량 증설 거절",
+            body = "증설 요청이 거절되었습니다: ${truncate(reason)}",
+            link = PushLinks.gallery(),
+        )
+
     private fun truncate(text: String): String = if (text.length > BODY_MAX) text.take(BODY_MAX) + "…" else text
 
     private fun formatTime(time: LocalTime): String = "%02d:%02d".format(time.hour, time.minute)
 
     private const val BODY_MAX = 50
+    private const val GB_BYTES = 1_073_741_824L
 }

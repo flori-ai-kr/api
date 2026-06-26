@@ -13,6 +13,7 @@ object PushTypes {
     const val AUCTION_SCRAP_UPDATE = "auction_scrap_update"
     const val GRANT_NEW = "grant_new"
     const val GRANT_DEADLINE = "grant_deadline"
+    const val STORAGE_RESOLVED = "storage_resolved"
 
     // 비토글(항상 발송) — 발송 로그 타입 라벨용.
     const val INQUIRY_ANSWERED = "inquiry_answered"

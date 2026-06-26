@@ -1,6 +1,6 @@
 # Flori API — 에러 코드 표
 
-> 최종 업데이트: 2026-06-21
+> 최종 업데이트: 2026-06-26
 
 표준 에러 응답 바디의 `code` 필드는 안정적인 `E-{DOMAIN}-{NNN}` 식별자다.
 웹/앱 클라이언트는 **메시지 텍스트가 아니라 이 `code` 값으로 에러를 분기**한다.
@@ -133,3 +133,14 @@
 | 코드 | 의미 | HTTP | 발생 지점 |
 |------|------|------|-----------|
 | `E-IV-001` | ALREADY_APPLIED (중복 신청) | 409 | 이미 신청된 전화번호(정규화 후 UNIQUE 비교)로 재신청 시도 |
+
+## E-STG-* (스토리지)
+
+> `storage/error/StorageErrorCode`. 갤러리 이미지 업로드 용량 한도 관리. 멀티테넌시: `user_id` 격리.
+
+| 코드 | 의미 | HTTP | 발생 지점 |
+|------|------|------|-----------|
+| `E-STG-001` | QUOTA_EXCEEDED (저장 용량 한도 초과) | 409 | presign 발급 전 한도 검사 — `used_bytes + 업로드 예정 크기 > quota_bytes` 시 업로드 차단(증설 요청 유도) |
+| `E-STG-002` | DUPLICATE_PENDING (중복 증설 요청) | 409 | PENDING 상태 요청이 이미 존재할 때 재요청 차단 |
+| `E-STG-003` | REQUEST_NOT_FOUND (증설 요청 없음) | 404 | 존재하지 않는 요청 ID로 approve/reject 시도 |
+| `E-STG-004` | ALREADY_PROCESSED (이미 처리된 요청) | 409 | APPROVED/REJECTED 상태의 요청을 중복 처리 시도 |
