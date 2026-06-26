@@ -1,6 +1,7 @@
 package kr.ai.flori.storage
 
 import kr.ai.flori.common.notification.discord.DiscordChannel
+import kr.ai.flori.common.notification.discord.DiscordMessage
 import kr.ai.flori.common.notification.discord.DiscordNotifier
 import kr.ai.flori.storage.event.StorageIncreaseRequestedEvent
 import kr.ai.flori.storage.listener.StorageIncreaseRequestedListener
@@ -24,14 +25,15 @@ class StorageIncreaseNotifyTest {
     private val listener = StorageIncreaseRequestedListener(notifier)
 
     @Test
-    fun `증설 요청 이벤트를 받으면 SUPPORT 채널로 Discord 알림이 발송된다`() {
+    fun `증설 요청 이벤트를 받으면 SUPPORT 채널로 본문을 갖춘 Discord 알림이 발송된다`() {
+        // GB 환산이 깔끔하도록 정수 GiB 값 사용(4GiB→"4.00", 5GiB→"5.00").
         val event =
             StorageIncreaseRequestedEvent(
                 requestId = 1L,
                 userId = 42L,
                 reason = "용량 부족",
-                nickname = "홍길동",
-                storeName = "꽃집",
+                nickname = "플로리사장",
+                storeName = "플로리 꽃집",
                 usedBytes = 4L * 1024 * 1024 * 1024,
                 quotaBytes = 5L * 1024 * 1024 * 1024,
             )
@@ -41,5 +43,15 @@ class StorageIncreaseNotifyTest {
         val invocations = Mockito.mockingDetails(notifier).invocations.toList()
         assertThat(invocations).hasSize(1)
         assertThat(invocations[0].arguments[0]).isEqualTo(DiscordChannel.SUPPORT)
+
+        val content = (invocations[0].arguments[1] as DiscordMessage).content
+        // 본문에 작성자·used/quota GB·사유가 포함되는지 검증(시각은 동적이라 제외).
+        assertThat(content)
+            .contains("플로리사장")
+            .contains("(userId: 42)")
+            .contains("4.00GB")
+            .contains("5.00GB")
+            .contains("용량 부족")
+            .contains("플로리 꽃집")
     }
 }
