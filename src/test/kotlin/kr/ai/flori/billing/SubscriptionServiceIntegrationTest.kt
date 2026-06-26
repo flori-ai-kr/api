@@ -24,9 +24,10 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 
+/** SubscriptionService 통합 테스트. HTTP 레이어(@Valid·인터셉터)는 별도 MockMvc 테스트로 커버 필요. */
 @AutoConfigureEmbeddedDatabase(provider = DatabaseProvider.ZONKY)
 @SpringBootTest
-class BillingControllerTest {
+class SubscriptionServiceIntegrationTest {
     @Autowired lateinit var service: SubscriptionService
 
     @Autowired lateinit var subscriptionRepository: SubscriptionRepository

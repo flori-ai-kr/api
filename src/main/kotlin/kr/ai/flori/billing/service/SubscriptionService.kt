@@ -17,6 +17,7 @@ import kr.ai.flori.billing.repository.CouponRedemptionRepository
 import kr.ai.flori.billing.repository.PaymentHistoryRepository
 import kr.ai.flori.billing.repository.SubscriptionEligibilityRepository
 import kr.ai.flori.billing.repository.SubscriptionRepository
+import kr.ai.flori.billing.support.BillingPeriods
 import kr.ai.flori.billing.support.IdentityHasher
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
@@ -27,7 +28,6 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
-import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.UUID
 
@@ -202,8 +202,8 @@ class SubscriptionService(
         pending.forEach { r ->
             next = next.plusDays(r.grantedDays.toLong())
             r.subscriptionId = sub.id
-            redemptionRepository.save(r)
         }
+        redemptionRepository.saveAll(pending)
         sub.nextBillingAt = next.toInstant()
         sub.currentPeriodEnd = next.toInstant()
         subscriptionRepository.save(sub)
@@ -294,15 +294,10 @@ class SubscriptionService(
     private fun periodEndFor(
         plan: String,
         from: ZonedDateTime,
-    ): Instant =
-        when (plan) {
-            "MONTHLY" -> from.plusMonths(1).toInstant()
-            "YEARLY" -> from.plusYears(1).toInstant()
-            else -> throw AppException(CommonErrorCode.VALIDATION, "알 수 없는 플랜입니다")
-        }
+    ): Instant = BillingPeriods.next(plan, from).toInstant()
 
     companion object {
-        val KST: ZoneId = ZoneId.of("Asia/Seoul")
+        val KST = BillingPeriods.KST
         const val TRIAL_DAYS = 14L
         const val MONTHLY_AMOUNT = 14900
         const val YEARLY_AMOUNT = 154800

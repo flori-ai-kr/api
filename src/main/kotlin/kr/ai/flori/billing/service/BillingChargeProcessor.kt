@@ -4,13 +4,13 @@ import kr.ai.flori.billing.entity.Subscription
 import kr.ai.flori.billing.event.PaymentChargedEvent
 import kr.ai.flori.billing.event.SubscriptionExpiredEvent
 import kr.ai.flori.billing.repository.SubscriptionRepository
+import kr.ai.flori.billing.support.BillingPeriods
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 
 /**
  * 정기결제 건별 처리(트랜잭션 격리).
@@ -94,7 +94,7 @@ class BillingChargeProcessor(
     }
 
     private companion object {
-        val KST: ZoneId = ZoneId.of("Asia/Seoul")
+        val KST = BillingPeriods.KST
         const val GRACE_DAYS = 3L
     }
 }

@@ -74,6 +74,7 @@ src/main/kotlin/kr/ai/flori/
 ├── admin/                 # 운영자 콘솔 API (/admin/**, @RequiresAdmin · cross-tenant) — 통계(funnel/churn-reasons/retention 추가)·인증심사·유저(감사로그)·브로드캐스트·커뮤니티 모더레이션·알림발송이력·AI헬스 프록시
 ├── ai/                    # AI 게이트웨이 (/ai/**) — web↔ai-server(FastAPI) 중개 + 모든 AI 호출 DB 로깅. 채팅/proactive/OCR예약/confirm. ai-server는 내부망 stateless
 ├── insights/              # 정보 피드 (/insights/**) — 경매시세(aT f001 적재, 단일시장 양재)·지원사업(K-Startup·기업마당 적재) 읽기 + 스크랩(개인). 적재는 모두 @Scheduled + JobRunRecorder 래핑, 키 미설정 시 no-op. 공유 읽기 2테이블(flower_auction_prices·support_programs) + insight_scraps(user_id). InsightPushService: 경매 스크랩 시세 업데이트·지원사업 신규·마감 임박 3 cron 푸시. FK 없음 간접참조
+├── billing/               # 구독·결제 (/billing/**, /coupons/**, /admin/coupons, /admin/subscriptions, /toss/webhook) — 토스페이먼츠 빌링키 자동결제(Subscription·BillingKey·PaymentHistory), 쿠폰(Coupon·CouponRedemption), 구독 자격(SubscriptionEligibility). RecurringBillingScheduler(04:00 KST). 웹훅 HMAC 검증 후 이벤트 처리. BillingKeyCryptoConverter(AES-256 암호화). Discord BILLING 채널
 └── common/                # 횡단 관심사
     ├── config/            # CORS, OpenAPI, Async, Schedule, Web
     ├── domain/            # 공통 enum (PaymentMethods, ReservationStatuses)
@@ -171,7 +172,7 @@ src/main/kotlin/kr/ai/flori/
 | 인사이트 푸시 서비스 (경매/지원사업 cron 3종) | `insights/service/InsightPushService.kt` |
 | 사업자 인증 게이팅 | `verification/gating/RequiresBusinessVerified.kt`, `BusinessVerifiedInterceptor.kt` |
 | 운영자 콘솔 게이팅 | `admin/gating/RequiresAdmin.kt`, `AdminInterceptor.kt` (User.isAdmin 재검증, `/admin/**`) |
-| Discord 알림 | `common/notification/discord/DiscordNotifier.kt`, `DiscordChannel.kt`, `DiscordProperties.kt` — 채널: SIGNUP·VERIFICATION·WAITLIST·INTERVIEW·SUPPORT |
+| Discord 알림 | `common/notification/discord/DiscordNotifier.kt`, `DiscordChannel.kt`, `DiscordProperties.kt` — 채널: SIGNUP·VERIFICATION·WAITLIST·INTERVIEW·SUPPORT·BILLING |
 | CORS / OpenAPI 설정 | `common/config/CorsConfig.kt`, `OpenApiConfig.kt` |
 | 헬스체크 | `common/health/HealthController.kt` |
 | 입력 길이 상한 SSOT | `common/validation/FieldLimits.kt` |
@@ -179,6 +180,14 @@ src/main/kotlin/kr/ai/flori/
 | 네이티브 SQL 집계 (QueryRepository 패턴) | `customers/repository/CustomerQueryRepository.kt`, `sales/repository/SaleSummaryQueryRepository.kt`, `expenses/repository/ExpenseSummaryQueryRepository.kt` — SQL은 서비스가 아닌 repository 레이어에 |
 | 테스트 공용 헬퍼 | `src/test/.../support/` — `TestTenants`(테넌트 부트스트랩), `Fixtures`(엔티티 빌더·라벨 id 조회), `TestAccounts`(가입 경로) |
 | AI 일일 사용량 캡 (원자적 강제) | `ai/service/AiUsageGuard.kt` |
+| 빌링키 암호화 컨버터 | `billing/crypto/BillingKeyCryptoConverter.kt` (AES-256 AttributeConverter) |
+| 구독 서비스 | `billing/service/SubscriptionService.kt` |
+| 결제 처리 서비스 | `billing/service/PaymentService.kt`, `billing/service/BillingChargeProcessor.kt` |
+| 쿠폰 서비스 | `billing/service/CouponService.kt`, `billing/service/AdminCouponService.kt` |
+| 자동결제 스케줄러 | `billing/service/RecurringBillingScheduler.kt` (04:00 KST, JobRunRecorder 래핑) |
+| 토스 웹훅 처리 | `billing/service/TossWebhookService.kt`, `billing/controller/TossWebhookController.kt` |
+| 빌링 외부 HTTP 클라이언트 | `billing/client/BillingClient.kt` (api.tosspayments.com) |
+| 빌링 에러 코드 | `billing/error/BillingErrorCode.kt` (E-BIL-*) |
 
 ---
 

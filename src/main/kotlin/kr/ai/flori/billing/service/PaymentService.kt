@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 enum class ChargeOutcome { SUCCESS, FAILED, ALREADY_PAID }
@@ -96,7 +95,7 @@ class PaymentService(
     private fun orderName(plan: String): String = if (plan == "YEARLY") "Flori 연간 구독" else "Flori 월간 구독"
 
     private companion object {
-        val KST: ZoneId = ZoneId.of("Asia/Seoul")
+        val KST = BillingPeriods.KST
         val YYYYMMDD: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
     }
 }
