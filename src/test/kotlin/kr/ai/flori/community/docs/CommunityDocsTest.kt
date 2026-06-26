@@ -447,6 +447,53 @@ class CommunityDocsTest : RestDocsSupport() {
             }
     }
 
+    // ── 9-1. 댓글 수정 ─────────────────────────────────────────────────────────
+
+    @Test
+    fun `댓글 수정 문서화`() {
+        val token = signupVerifiedAndToken()
+        val id = createPost(token)
+        val commentId = createComment(token, id)
+
+        mockMvc
+            .patch("/community/comments/$commentId") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/community/comments/{id}")
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content = json(mapOf("content" to "내용을 수정했습니다"))
+            }.andExpect { status { isOk() } }
+            .andDo {
+                handle(
+                    docs(
+                        identifier = "community-comment-update",
+                        requestSchema = "CommentUpdateRequest",
+                        responseSchema = "CommentResponse",
+                        tag = "Community",
+                        summary = "댓글 수정 (작성자 본인만 — 운영자도 불가, 본문만 변경)",
+                        pathParameters = listOf(parameterWithName("id").description("댓글 ID")),
+                        requestFields =
+                            listOf(
+                                fieldWithPath("content").type(JsonFieldType.STRING).description("수정할 내용 (필수)"),
+                            ),
+                        responseFields =
+                            listOf(
+                                fieldWithPath("id").type(JsonFieldType.NUMBER).description("댓글 ID"),
+                                fieldWithPath("postId").type(JsonFieldType.NUMBER).description("게시글 ID"),
+                                fieldWithPath("parentId").type(JsonFieldType.NUMBER).optional().description("부모 댓글 ID(없으면 null)"),
+                                fieldWithPath("authorNickname").type(JsonFieldType.STRING).description("작성자 닉네임"),
+                                fieldWithPath("authorIsAdmin").type(JsonFieldType.BOOLEAN).description("작성자 운영자 여부"),
+                                fieldWithPath("content").type(JsonFieldType.STRING).description("수정된 내용"),
+                                fieldWithPath("isSecret").type(JsonFieldType.BOOLEAN).description("비밀댓글 여부"),
+                                fieldWithPath("isMine").type(JsonFieldType.BOOLEAN).description("현재 사용자 작성 여부"),
+                                fieldWithPath("canView").type(JsonFieldType.BOOLEAN).description("열람 권한"),
+                                fieldWithPath("isDeleted").type(JsonFieldType.BOOLEAN).description("삭제 여부"),
+                                fieldWithPath("createdAt").type(JsonFieldType.STRING).description("생성 시각(ISO-8601)"),
+                            ),
+                    ),
+                )
+            }
+    }
+
     // ── 10. 댓글 삭제 ──────────────────────────────────────────────────────────
 
     @Test
