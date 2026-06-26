@@ -4,6 +4,7 @@ import kr.ai.flori.billing.entity.Subscription
 import kr.ai.flori.billing.event.PaymentChargedEvent
 import kr.ai.flori.billing.event.SubscriptionExpiredEvent
 import kr.ai.flori.billing.repository.SubscriptionRepository
+import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -21,12 +22,20 @@ class BillingChargeProcessor(
     private val paymentService: PaymentService,
     private val eventPublisher: ApplicationEventPublisher,
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @Transactional
     fun process(
         subscription: Subscription,
         now: Instant,
     ) {
         val subId = requireNotNull(subscription.id)
+        // 무카드 체험: 카드(빌링키) 없으면 토스 호출 없이 만료. 카드 등록은 결제벽(subscribe)에서만.
+        if (subscription.billingKeyId == null) {
+            log.info("무카드 체험 만료 처리 subId={}", subId)
+            expire(subscription, "무카드 체험 만료")
+            return
+        }
         if (subscription.cancelAtPeriodEnd) {
             expire(subscription, "해지 예약")
             return

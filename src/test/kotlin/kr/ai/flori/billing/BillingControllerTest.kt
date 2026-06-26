@@ -11,8 +11,10 @@ import kr.ai.flori.billing.repository.SubscriptionRepository
 import kr.ai.flori.billing.service.SubscriptionService
 import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.common.tenant.TenantContext
+import kr.ai.flori.support.Fixtures
 import kr.ai.flori.support.TestTenants
 import kr.ai.flori.user.repository.UserRepository
+import kr.ai.flori.verification.repository.BusinessVerificationRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
@@ -35,12 +37,20 @@ class BillingControllerTest {
 
     @Autowired lateinit var userRepository: UserRepository
 
+    @Autowired lateinit var businessVerificationRepository: BusinessVerificationRepository
+
     @MockitoBean lateinit var billingClient: BillingClient
 
     @AfterEach fun cleanup() = TenantContext.clear()
 
-    private fun subscribedUser(): Long {
+    private fun verifiedUser(): Long {
         val userId = TestTenants.bootstrap(authService, tokenProvider, userRepository)
+        businessVerificationRepository.save(Fixtures.approvedVerification(userId))
+        return userId
+    }
+
+    private fun subscribedUser(): Long {
+        val userId = verifiedUser()
         Mockito
             .`when`(billingClient.issueBillingKey(anyString(), anyString()))
             .thenReturn(IssuedBilling("bk_1", "신한", "1234****", "체크"))
@@ -55,6 +65,24 @@ class BillingControllerTest {
         assertThat(me.subscription).isNotNull
         assertThat(me.subscription!!.card?.numberMasked).isEqualTo("1234****")
         assertThat(me.recentPayments).isEmpty()
+    }
+
+    @Test
+    fun `me trialEligible - 인증된 미구독자는 true`() {
+        verifiedUser()
+        assertThat(service.me().trialEligible).isTrue()
+    }
+
+    @Test
+    fun `me trialEligible - 구독자는 false`() {
+        subscribedUser()
+        assertThat(service.me().trialEligible).isFalse()
+    }
+
+    @Test
+    fun `me trialEligible - 미인증자는 false`() {
+        TestTenants.bootstrap(authService, tokenProvider, userRepository)
+        assertThat(service.me().trialEligible).isFalse()
     }
 
     @Test

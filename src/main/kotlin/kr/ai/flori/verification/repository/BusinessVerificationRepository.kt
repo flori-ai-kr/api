@@ -16,6 +16,12 @@ interface BusinessVerificationRepository : JpaRepository<BusinessVerification, L
     /** 상태 조회용: 사용자의 최신 신청 1건. */
     fun findFirstByUserIdOrderByCreatedAtDesc(userId: Long): BusinessVerification?
 
+    /** 빌링 체험 자격 키 산출용: 사용자의 특정 상태(APPROVED) 최신 신청 1건. */
+    fun findFirstByUserIdAndStatusOrderByCreatedAtDesc(
+        userId: Long,
+        status: BusinessVerificationStatuses,
+    ): BusinessVerification?
+
     /** 운영 콘솔: 상태별 신청 목록(최신순). cross-tenant — @RequiresAdmin 하위에서만 사용. */
     fun findByStatusOrderByCreatedAtDesc(
         status: BusinessVerificationStatuses,

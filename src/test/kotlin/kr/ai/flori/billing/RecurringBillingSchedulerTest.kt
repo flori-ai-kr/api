@@ -38,11 +38,13 @@ class RecurringBillingSchedulerTest {
         status: String,
         cancel: Boolean = false,
         graceDaysAgo: Long? = null,
+        withCard: Boolean = true,
     ): Subscription {
-        billingKeyRepository.save(BillingKey(userId, "cust_$userId", "bk_$userId"))
+        val cardId = if (withCard) billingKeyRepository.save(BillingKey(userId, "cust_$userId", "bk_$userId")).id else null
         val past = Instant.now().minus(1, ChronoUnit.HOURS)
         return subscriptionRepository.save(
             Subscription(userId, "MONTHLY", status, 14900, past).apply {
+                billingKeyId = cardId
                 currentPeriodStart = past
                 currentPeriodEnd = past
                 cancelAtPeriodEnd = cancel
@@ -86,6 +88,14 @@ class RecurringBillingSchedulerTest {
     @Test
     fun `해지예약 due 구독은 결제없이 EXPIRED`() {
         val sub = due(204L, "ACTIVE", cancel = true)
+        scheduler.runDueCharges(Instant.now())
+        assertThat(subscriptionRepository.findById(sub.id!!).get().status).isEqualTo("EXPIRED")
+        Mockito.verifyNoInteractions(billingClient)
+    }
+
+    @Test
+    fun `무카드(billingKeyId null) 체험 due 는 토스 호출없이 EXPIRED`() {
+        val sub = due(205L, "TRIALING", withCard = false)
         scheduler.runDueCharges(Instant.now())
         assertThat(subscriptionRepository.findById(sub.id!!).get().status).isEqualTo("EXPIRED")
         Mockito.verifyNoInteractions(billingClient)

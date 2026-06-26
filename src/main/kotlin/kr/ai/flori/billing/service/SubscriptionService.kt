@@ -21,7 +21,8 @@ import kr.ai.flori.billing.support.IdentityHasher
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
-import kr.ai.flori.user.repository.UserRepository
+import kr.ai.flori.verification.error.VerificationErrorCode
+import kr.ai.flori.verification.service.BusinessVerificationService
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -36,7 +37,7 @@ class SubscriptionService(
     private val billingKeyRepository: BillingKeyRepository,
     private val eligibilityRepository: SubscriptionEligibilityRepository,
     private val redemptionRepository: CouponRedemptionRepository,
-    private val userRepository: UserRepository,
+    private val businessVerificationService: BusinessVerificationService,
     private val billingClient: BillingClient,
     private val identityHasher: IdentityHasher,
     private val eventPublisher: ApplicationEventPublisher,
@@ -75,10 +76,8 @@ class SubscriptionService(
             }
         val savedCard = billingKeyRepository.save(card)
 
-        // 체험 자격(신원 기준)
-        val user = userRepository.findById(userId).orElseThrow { AppException(CommonErrorCode.UNAUTHORIZED) }
-        val idHash = identityHasher.hash(user.provider, user.providerId)
-        val elig = eligibilityRepository.findByIdentityHash(idHash) ?: SubscriptionEligibility(idHash)
+        // 체험 자격(사업자등록번호 기준 — 소셜 신원 우회 방지)
+        val elig = resolveEligibility(userId)
         val trialEligible = elig.trialUsedAt == null
 
         val nowKst = ZonedDateTime.now(KST)
@@ -124,6 +123,75 @@ class SubscriptionService(
         return SubscriptionResponse.of(savedSub, savedCard)
     }
 
+    /**
+     * 카드 없이 무료체험 시작(토스 PG 미준비 출시 대응). billingKeyId=null로 TRIALING 생성하고,
+     * nextBillingAt 도래 시 스케줄러가 과금 대신 EXPIRED 처리한다. 카드 등록/결제는 체험 종료 후
+     * 기존 결제벽(subscribe/checkout)에서만 받는다.
+     *
+     * 멱등: 이미 구독이 있으면 그 구독을 그대로 반환(중복 생성 금지).
+     * 자격: 사업자등록번호 해시 기준 1회. APPROVED 인증이 없으면 가드(NOT_VERIFIED).
+     */
+    @Transactional
+    fun startTrial(): SubscriptionResponse {
+        val userId = TenantContext.currentUserId()
+        // 멱등 — 어떤 상태든 구독이 이미 있으면 그대로 반환
+        subscriptionRepository.findByUserId(userId)?.let {
+            return SubscriptionResponse.of(it, billingKeyRepository.findByUserId(userId))
+        }
+
+        val elig = resolveEligibility(userId)
+        if (elig.trialUsedAt != null) {
+            throw AppException(BillingErrorCode.TRIAL_ALREADY_USED)
+        }
+
+        val plan = "MONTHLY" // placeholder — 실제 플랜은 체험 종료 결제벽에서 선택
+        val amount = amountFor(plan)
+        val nowKst = ZonedDateTime.now(KST)
+        val now = nowKst.toInstant()
+        val periodEnd = nowKst.plusDays(TRIAL_DAYS).toInstant()
+
+        elig.trialUsedAt = now
+        eligibilityRepository.save(elig)
+
+        val sub =
+            Subscription(userId, plan, "TRIALING", amount, periodEnd).apply {
+                billingKeyId = null // 무카드 체험
+                currentPeriodStart = now
+                currentPeriodEnd = periodEnd
+                cancelAtPeriodEnd = false
+            }
+        val savedSub = subscriptionRepository.save(sub)
+
+        subscriptionRepository.flush()
+        eventPublisher.publishEvent(
+            SubscriptionStartedEvent(userId, savedSub.id!!, plan, amount, trial = true),
+        )
+        return SubscriptionResponse.of(savedSub, null)
+    }
+
+    /**
+     * 체험 1회 제한 자격 행을 사업자등록번호 해시로 해석한다(없으면 새 행). APPROVED 인증이 없으면 가드.
+     * 게이트가 APPROVED를 보장하지만 방어적으로 검사한다.
+     */
+    private fun resolveEligibility(userId: Long): SubscriptionEligibility {
+        val businessNumber =
+            businessVerificationService.approvedBusinessNumber(userId)
+                ?: throw AppException(VerificationErrorCode.NOT_VERIFIED)
+        val idHash = identityHasher.hashBusiness(businessNumber)
+        return eligibilityRepository.findByIdentityHash(idHash) ?: SubscriptionEligibility(idHash)
+    }
+
+    /** me 응답용: 무카드 체험 시작 가능 여부. 구독이 없고 사업자번호 기준 체험 미사용일 때만 true(미인증이면 false). */
+    private fun computeTrialEligible(
+        userId: Long,
+        sub: Subscription?,
+    ): Boolean {
+        if (sub != null) return false
+        val businessNumber = businessVerificationService.approvedBusinessNumber(userId) ?: return false
+        val idHash = identityHasher.hashBusiness(businessNumber)
+        return eligibilityRepository.findByIdentityHash(idHash)?.trialUsedAt == null
+    }
+
     private fun applyPendingCoupons(
         userId: Long,
         sub: Subscription,
@@ -150,7 +218,11 @@ class SubscriptionService(
             sub?.id?.let {
                 paymentHistoryRepository.findTop10BySubscriptionIdOrderByCreatedAtDesc(it).map(PaymentSummary::from)
             } ?: emptyList()
-        return MeResponse(sub?.let { SubscriptionResponse.of(it, card) }, payments)
+        return MeResponse(
+            subscription = sub?.let { SubscriptionResponse.of(it, card) },
+            recentPayments = payments,
+            trialEligible = computeTrialEligible(userId, sub),
+        )
     }
 
     @Transactional

@@ -9,7 +9,7 @@ import jakarta.persistence.Table
 import kr.ai.flori.common.entity.BaseEntity
 import java.time.Instant
 
-/** 어뷰징 방어 신원 원장. identity_hash = SHA-256(provider:providerId). 탈퇴해도 유지. */
+/** 어뷰징 방어 신원 원장. identity_hash = SHA-256("biz:"+businessNumber)(사업자등록번호 기준). 탈퇴해도 유지. */
 @Entity
 @Table(name = "subscription_eligibility")
 class SubscriptionEligibility(

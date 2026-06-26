@@ -73,4 +73,6 @@ data class PaymentSummary(
 data class MeResponse(
     val subscription: SubscriptionResponse?,
     val recentPayments: List<PaymentSummary>,
+    /** 무카드 체험 시작 가능 여부 — 활성 구독이 없고 사업자번호 기준 체험 미사용일 때 true. web가 체험시작 vs 결제벽 분기에 사용. */
+    val trialEligible: Boolean = false,
 )
