@@ -157,7 +157,12 @@ class PhotoCardService(
         photos: List<PhotoFile>,
     ): PhotoCardResponse {
         val card = load(id)
+        // reorder는 본래 동일 집합 재배열이지만, 사진 추가·size 조작으로 쿼터·장수제한을 우회당하지 않도록
+        // update 와 동일하게 장수 제한 + 사용량 델타 증감을 적용한다.
+        requirePhotoLimit(photos.size)
+        val before = card.photos.sumOf { it.size }
         card.photos = photos
+        storageQuotaService.addUsage(card.userId, photos.sumOf { it.size } - before)
         return toResponse(photoCardRepository.save(card))
     }
 
