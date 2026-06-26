@@ -175,6 +175,35 @@ class CustomerGradeRecomputeTest {
     }
 
     @Test
+    fun `previewThresholdChange는 저장 없이 바뀔 고객만 반환하고 잠금 고객은 제외한다`() {
+        val userId = newTenant()
+        // 단골 자동 고객(5건)
+        val auto = create()
+        addSales(auto.id, 5)
+        gradeService.recomputeGrade(auto.id)
+        assertThat(gradeName(auto.id)).isEqualTo("단골")
+
+        val grades = gradeRepository.findByUserIdOrderBySortOrderAsc(userId)
+        val regularId = requireNotNull(grades.first { it.name == "단골" }.id)
+        val vipId = requireNotNull(grades.first { it.name == "VIP" }.id)
+
+        // 잠금 고객(VIP 고정)
+        val locked = create()
+        addSales(locked.id, 5)
+        customerService.updateGrade(locked.id, vipId)
+
+        // 단골 임계값 5 → 8 미리보기
+        val preview = gradeService.previewThresholdChange(regularId, 8)
+
+        // 자동 고객만 단골→신규 로 변경 예정, 잠금 고객은 미포함
+        assertThat(preview).hasSize(1)
+        assertThat(preview.first().fromGrade).isEqualTo("단골")
+        assertThat(preview.first().toGrade).isEqualTo("신규")
+        // 미리보기는 저장하지 않음 → 실제 등급은 그대로 단골
+        assertThat(gradeName(auto.id)).isEqualTo("단골")
+    }
+
+    @Test
     fun `잠금 상태면 높은 구매횟수에도 자동 재계산이 등급을 바꾸지 않는다`() {
         val userId = newTenant()
         val c = create()

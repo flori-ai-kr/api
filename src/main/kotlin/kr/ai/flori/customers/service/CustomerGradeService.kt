@@ -6,6 +6,7 @@ import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.customers.dto.CustomerGradeCreateRequest
 import kr.ai.flori.customers.dto.CustomerGradeResponse
 import kr.ai.flori.customers.dto.CustomerGradeUpdateRequest
+import kr.ai.flori.customers.dto.GradeChangePreviewItem
 import kr.ai.flori.customers.entity.CustomerGrade
 import kr.ai.flori.customers.repository.CustomerGradeRepository
 import kr.ai.flori.customers.repository.CustomerQueryRepository
@@ -98,21 +99,60 @@ class CustomerGradeService(
         purchaseCount: Int,
     ): Long? = resolveGradeId(gradeRepository.findByUserIdOrderBySortOrderAsc(userId), purchaseCount)
 
-    /**
-     * 등급 목록과 구매횟수로 적정 등급 id를 고른다(순수 함수).
-     * threshold<=count 인 등급 중 threshold 최대값, 모든 임계값 미만이면 fallback:
-     * threshold가 가장 낮은(non-null) 등급(예: 신규 0회), 전부 null이면 최저 sort_order.
-     */
+    private data class GradeRow(
+        val id: Long,
+        val threshold: Int?,
+        val sortOrder: Int,
+    )
+
+    private fun List<CustomerGrade>.toRows() = map { GradeRow(requireNotNull(it.id), it.threshold, it.sortOrder) }
+
     private fun resolveGradeId(
         grades: List<CustomerGrade>,
         purchaseCount: Int,
+    ): Long? = resolveGradeIdFromRows(grades.toRows(), purchaseCount)
+
+    /**
+     * 등급 행(id·threshold·sortOrder)과 구매횟수로 적정 등급 id를 고른다(순수 함수).
+     * threshold<=count 인 등급 중 threshold 최대값, 모든 임계값 미만이면 fallback:
+     * threshold가 가장 낮은(non-null) 등급(예: 신규 0회), 전부 null이면 최저 sort_order.
+     */
+    private fun resolveGradeIdFromRows(
+        rows: List<GradeRow>,
+        purchaseCount: Int,
     ): Long? {
-        if (grades.isEmpty()) return null
-        val eligible = grades.filter { it.threshold != null && it.threshold!! <= purchaseCount }.maxByOrNull { it.threshold!! }
+        if (rows.isEmpty()) return null
+        val eligible = rows.filter { it.threshold != null && it.threshold <= purchaseCount }.maxByOrNull { it.threshold!! }
         val fallback =
-            grades.filter { it.threshold != null }.minByOrNull { it.threshold!! }
-                ?: grades.minByOrNull { it.sortOrder }
+            rows.filter { it.threshold != null }.minByOrNull { it.threshold!! }
+                ?: rows.minByOrNull { it.sortOrder }
         return (eligible ?: fallback)?.id
+    }
+
+    /**
+     * 임계값을 newThreshold(null=수동전용)로 바꿨을 때 등급이 바뀔 잠금 아닌 고객 목록 미리보기(저장 안 함).
+     * 실제 적용은 update() 호출 시 recomputeAllGrades 가 수행한다.
+     */
+    @Transactional(readOnly = true)
+    fun previewThresholdChange(
+        gradeId: Long,
+        newThreshold: Int?,
+    ): List<GradeChangePreviewItem> {
+        val userId = TenantContext.currentUserId()
+        val grades = gradeRepository.findByUserIdOrderBySortOrderAsc(userId)
+        if (grades.none { it.id == gradeId }) return emptyList()
+        val nameById = grades.associate { requireNotNull(it.id) to it.name }
+        // 대상 등급의 threshold 만 가설로 교체한 행 목록으로 재산정 결과를 계산.
+        val rows = grades.toRows().map { if (it.id == gradeId) it.copy(threshold = newThreshold) else it }
+        val counts = queryRepository.purchaseCounts(userId)
+        return customerRepository.findByUserIdAndGradeLockedFalse(userId).mapNotNull { c ->
+            val newGradeId = resolveGradeIdFromRows(rows, counts[c.id] ?: 0)
+            if (newGradeId != null && newGradeId != c.gradeId) {
+                GradeChangePreviewItem(c.name, c.gradeId?.let { nameById[it] }, requireNotNull(nameById[newGradeId]))
+            } else {
+                null
+            }
+        }
     }
 
     /** 자동 등급 재계산(잠금 아니면). 매출 변경/되돌리기 후 호출. */
