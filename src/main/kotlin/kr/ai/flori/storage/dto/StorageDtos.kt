@@ -26,9 +26,11 @@ data class StorageRequestResponse(
     val status: String,
     val reason: String?,
     val resolvedBytes: Long?,
+    val rejectReason: String?,
     val createdAt: Instant,
 ) {
     companion object {
-        fun from(r: StorageIncreaseRequest) = StorageRequestResponse(r.id!!, r.status, r.reason, r.resolvedBytes, r.createdAt)
+        fun from(r: StorageIncreaseRequest) =
+            StorageRequestResponse(r.id!!, r.status, r.reason, r.resolvedBytes, r.rejectReason, r.createdAt)
     }
 }

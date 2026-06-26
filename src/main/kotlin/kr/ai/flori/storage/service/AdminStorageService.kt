@@ -1,26 +1,30 @@
 package kr.ai.flori.storage.service
 
 import kr.ai.flori.admin.service.AdminAuditService
+import kr.ai.flori.common.error.AppException
+import kr.ai.flori.common.push.PushDispatcher
+import kr.ai.flori.common.push.PushTemplates
+import kr.ai.flori.common.push.PushTypes
 import kr.ai.flori.common.util.Paging
 import kr.ai.flori.storage.dto.AdminStorageRequestResponse
-import kr.ai.flori.storage.dto.StorageUsageResponse
 import kr.ai.flori.storage.entity.StorageIncreaseRequest
+import kr.ai.flori.storage.error.StorageErrorCode
 import kr.ai.flori.storage.repository.StorageIncreaseRequestRepository
 import kr.ai.flori.user.repository.UserProfileRepository
 import kr.ai.flori.user.repository.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
-/** 운영 콘솔: 증설 요청 목록(cross-tenant) + 유저 quota 상향. @RequiresAdmin 하위에서만 호출. */
+/** 운영 콘솔: 증설 요청 목록(cross-tenant) + 승인/거절. @RequiresAdmin 하위에서만 호출. */
 @Service
 class AdminStorageService(
     private val requestRepository: StorageIncreaseRequestRepository,
     private val quotaService: StorageQuotaService,
     private val userRepository: UserRepository,
     private val userProfileRepository: UserProfileRepository,
+    private val pushDispatcher: PushDispatcher,
     private val audit: AdminAuditService,
 ) {
-    // readOnly 불가: toResponse → quotaService.usage()가 user_storage 행이 없으면 lazy 생성(INSERT)하므로 쓰기 트랜잭션이어야 한다.
     @Transactional
     fun list(
         status: String?,
@@ -33,23 +37,42 @@ class AdminStorageService(
             .map { toResponse(it) }
 
     @Transactional
-    fun updateQuota(
-        userId: Long,
+    fun approve(
+        requestId: Long,
         quotaBytes: Long,
-    ): StorageUsageResponse {
-        quotaService.setQuota(userId, quotaBytes)
-        // 해당 유저의 PENDING 요청 모두 해결 처리. managed 엔티티라 dirty-check로 flush됨(save 불필요).
-        requestRepository.findByUserIdAndStatus(userId, StorageIncreaseRequest.STATUS_PENDING).forEach {
-            it.resolve(quotaBytes)
-        }
+    ): AdminStorageRequestResponse {
+        val req = requestRepository.findById(requestId).orElseThrow { AppException(StorageErrorCode.REQUEST_NOT_FOUND) }
+        req.approve(quotaBytes)
+        quotaService.setQuota(req.userId, quotaBytes)
         audit.record(
-            action = "STORAGE_QUOTA_UPDATE",
-            targetType = "user_storage",
-            targetId = userId.toString(),
-            summary = "스토리지 한도 상향: $quotaBytes",
-            metadata = mapOf("userId" to userId, "quotaBytes" to quotaBytes),
+            action = "STORAGE_APPROVE",
+            targetType = "storage_increase_requests",
+            targetId = requestId.toString(),
+            summary = "증설 승인: ${quotaBytes}B",
+            metadata = mapOf("userId" to req.userId, "quotaBytes" to quotaBytes),
         )
-        return StorageUsageResponse.from(quotaService.usage(userId))
+        val push = PushTemplates.storageApproved(quotaBytes)
+        pushDispatcher.sendToUser(req.userId, push.title, push.body, push.url, PushTypes.STORAGE_RESOLVED)
+        return toResponse(req)
+    }
+
+    @Transactional
+    fun reject(
+        requestId: Long,
+        rejectReason: String,
+    ): AdminStorageRequestResponse {
+        val req = requestRepository.findById(requestId).orElseThrow { AppException(StorageErrorCode.REQUEST_NOT_FOUND) }
+        req.reject(rejectReason)
+        audit.record(
+            action = "STORAGE_REJECT",
+            targetType = "storage_increase_requests",
+            targetId = requestId.toString(),
+            summary = "증설 거절: $rejectReason",
+            metadata = mapOf("userId" to req.userId, "reason" to rejectReason),
+        )
+        val push = PushTemplates.storageRejected(rejectReason)
+        pushDispatcher.sendToUser(req.userId, push.title, push.body, push.url, PushTypes.STORAGE_RESOLVED)
+        return toResponse(req)
     }
 
     private fun toResponse(r: StorageIncreaseRequest): AdminStorageRequestResponse {
@@ -61,6 +84,8 @@ class AdminStorageService(
             storeName = userProfileRepository.findById(r.userId).orElse(null)?.storeName,
             reason = r.reason,
             status = r.status,
+            rejectReason = r.rejectReason,
+            resolvedBytes = r.resolvedBytes,
             usedBytes = usage.usedBytes,
             quotaBytes = usage.quotaBytes,
             createdAt = r.createdAt,

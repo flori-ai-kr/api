@@ -963,6 +963,7 @@ CREATE TABLE storage_increase_requests (
   reason TEXT,
   status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
   resolved_bytes BIGINT,
+  reject_reason TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

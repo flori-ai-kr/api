@@ -59,9 +59,10 @@ class StorageDocsTest : RestDocsSupport() {
                         responseFields =
                             listOf(
                                 fieldWithPath("id").type(JsonFieldType.NUMBER).description("요청 ID"),
-                                fieldWithPath("status").type(JsonFieldType.STRING).description("PENDING | RESOLVED"),
+                                fieldWithPath("status").type(JsonFieldType.STRING).description("PENDING | APPROVED | REJECTED"),
                                 fieldWithPath("reason").type(JsonFieldType.STRING).optional().description("사유"),
-                                fieldWithPath("resolvedBytes").type(JsonFieldType.NUMBER).optional().description("처리 시 상향된 한도"),
+                                fieldWithPath("resolvedBytes").type(JsonFieldType.NUMBER).optional().description("승인 시 상향된 한도"),
+                                fieldWithPath("rejectReason").type(JsonFieldType.STRING).optional().description("거절 사유"),
                                 fieldWithPath("createdAt").type(JsonFieldType.STRING).description("요청 시각"),
                             ),
                     ),

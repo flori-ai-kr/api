@@ -14,6 +14,9 @@ interface StorageIncreaseRequestRepository : JpaRepository<StorageIncreaseReques
         pageable: Pageable,
     ): Page<StorageIncreaseRequest>
 
+    /** 점주 본인 최신 1건. */
+    fun findTopByUserIdOrderByCreatedAtDesc(userId: Long): StorageIncreaseRequest?
+
     /** 중복 요청 방지/표시용: 본인의 특정 상태 요청들. */
     fun findByUserIdAndStatus(
         userId: Long,

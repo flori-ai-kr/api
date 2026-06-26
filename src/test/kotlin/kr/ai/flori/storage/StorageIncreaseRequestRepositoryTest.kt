@@ -16,20 +16,30 @@ class StorageIncreaseRequestRepositoryTest {
     @Autowired private lateinit var repository: StorageIncreaseRequestRepository
 
     @Test
-    fun `요청은 PENDING으로 저장되고 resolve로 RESOLVED 전이된다`() {
+    fun `요청은 PENDING으로 저장되고 approve로 APPROVED 전이된다`() {
         val saved = repository.save(StorageIncreaseRequest(userId = 7001L, reason = "사진 많아요"))
         assertThat(saved.status).isEqualTo("PENDING")
-        saved.resolve(5L * 1024 * 1024 * 1024)
+        saved.approve(5L * 1024 * 1024 * 1024)
         repository.save(saved)
         val reloaded = repository.findById(saved.id!!).get()
-        assertThat(reloaded.status).isEqualTo("RESOLVED")
+        assertThat(reloaded.status).isEqualTo("APPROVED")
         assertThat(reloaded.resolvedBytes).isEqualTo(5L * 1024 * 1024 * 1024)
+    }
+
+    @Test
+    fun `reject로 REJECTED 전이되고 사유가 저장된다`() {
+        val saved = repository.save(StorageIncreaseRequest(userId = 7006L, reason = "더 필요"))
+        saved.reject("불필요한 요청")
+        repository.save(saved)
+        val reloaded = repository.findById(saved.id!!).get()
+        assertThat(reloaded.status).isEqualTo("REJECTED")
+        assertThat(reloaded.rejectReason).isEqualTo("불필요한 요청")
     }
 
     @Test
     fun `status 필터 검색은 PENDING만 반환한다`() {
         repository.save(StorageIncreaseRequest(userId = 7002L, reason = "a"))
-        repository.save(StorageIncreaseRequest(userId = 7003L, reason = "b").apply { resolve(1) })
+        repository.save(StorageIncreaseRequest(userId = 7003L, reason = "b").apply { approve(1) })
         val pending = repository.search("PENDING", PageRequest.of(0, 50))
         assertThat(pending.content).allMatch { it.status == "PENDING" }
         assertThat(pending.content).isNotEmpty
@@ -38,9 +48,9 @@ class StorageIncreaseRequestRepositoryTest {
     @Test
     fun `status가 null이면 모든 상태를 반환한다`() {
         repository.save(StorageIncreaseRequest(userId = 7004L, reason = "c"))
-        repository.save(StorageIncreaseRequest(userId = 7005L, reason = "d").apply { resolve(1) })
+        repository.save(StorageIncreaseRequest(userId = 7005L, reason = "d").apply { approve(1) })
         val all = repository.search(null, PageRequest.of(0, 50))
         assertThat(all.content).anyMatch { it.status == "PENDING" }
-        assertThat(all.content).anyMatch { it.status == "RESOLVED" }
+        assertThat(all.content).anyMatch { it.status == "APPROVED" }
     }
 }

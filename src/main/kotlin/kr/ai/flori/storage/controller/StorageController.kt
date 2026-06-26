@@ -21,6 +21,9 @@ class StorageController(
     @GetMapping("/usage")
     fun usage(): StorageUsageResponse = service.usage()
 
+    @GetMapping("/increase-request/latest")
+    fun latestRequest(): StorageRequestResponse? = service.latestRequest()
+
     @PostMapping("/increase-request")
     @ResponseStatus(HttpStatus.CREATED)
     fun requestIncrease(
