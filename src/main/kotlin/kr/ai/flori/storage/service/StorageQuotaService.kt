@@ -41,7 +41,7 @@ class StorageQuotaService(
     @Transactional
     fun usage(userId: Long): StorageUsage {
         val s = getOrCreate(userId)
-        val percent = if (s.quotaBytes <= 0) 0 else ((s.usedBytes * 100) / s.quotaBytes).toInt()
+        val percent = if (s.quotaBytes <= 0) 0 else ((s.usedBytes * PERCENT_MULTIPLIER) / s.quotaBytes).toInt()
         val status =
             when {
                 s.usedBytes >= s.quotaBytes -> STATUS_FULL
@@ -96,6 +96,7 @@ class StorageQuotaService(
 
     companion object {
         const val WARN_PERCENT = 90
+        const val PERCENT_MULTIPLIER = 100
         const val STATUS_OK = "OK"
         const val STATUS_WARN = "WARN"
         const val STATUS_FULL = "FULL"
