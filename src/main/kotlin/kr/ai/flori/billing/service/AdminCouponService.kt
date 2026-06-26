@@ -30,7 +30,8 @@ class AdminCouponService(
 ) {
     @Transactional
     fun issue(request: CouponIssueRequest): CouponResponse {
-        val code = request.code?.trim()?.takeIf { it.isNotBlank() } ?: codeGenerator.generate()
+        // 코드는 대문자로 통일 저장(자동생성 코드도 대문자). redeem도 대문자 정규화해 대소문자 무관 일치.
+        val code = request.code?.trim()?.uppercase()?.takeIf { it.isNotBlank() } ?: codeGenerator.generate()
         if (couponRepository.existsByCode(code)) throw AppException(CommonErrorCode.CONFLICT, "이미 존재하는 코드입니다")
         val coupon =
             Coupon(code = code, days = request.days).apply {

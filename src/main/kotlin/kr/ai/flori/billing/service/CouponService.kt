@@ -22,7 +22,8 @@ class CouponService(
     @Transactional
     fun redeem(code: String): RedeemResponse {
         val userId = TenantContext.currentUserId()
-        val coupon = couponRepository.findByCode(code) ?: throw AppException(BillingErrorCode.COUPON_NOT_FOUND)
+        // 코드는 대문자로 통일 저장되므로 입력도 대문자 정규화(대소문자 무관 입력 허용).
+        val coupon = couponRepository.findByCode(code.trim().uppercase()) ?: throw AppException(BillingErrorCode.COUPON_NOT_FOUND)
         validateStatus(coupon)
         validatePeriod(coupon)
         validateExhausted(coupon, userId)
