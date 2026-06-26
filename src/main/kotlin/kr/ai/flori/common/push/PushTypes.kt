@@ -17,6 +17,7 @@ object PushTypes {
 
     // 비토글(항상 발송) — 발송 로그 타입 라벨용.
     const val INQUIRY_ANSWERED = "inquiry_answered"
+    const val BILLING = "billing" // 구독·결제(시작/실패/만료/결제예정) — 거래성 알림이라 항상 발송.
     const val TEST = "test"
 
     /**

@@ -39,7 +39,7 @@ class BillingReminderSchedulerTest {
                     ArgumentMatchers.anyString(),
                     ArgumentMatchers.anyString(),
                     ArgumentMatchers.any(),
-                    ArgumentMatchers.any(),
+                    ArgumentMatchers.anyString(),
                 ),
             ).thenReturn(1)
 
@@ -51,7 +51,7 @@ class BillingReminderSchedulerTest {
             ArgumentMatchers.anyString(),
             ArgumentMatchers.anyString(),
             ArgumentMatchers.any(),
-            ArgumentMatchers.any(),
+            ArgumentMatchers.anyString(),
         )
     }
 

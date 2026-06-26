@@ -2,6 +2,7 @@ package kr.ai.flori.billing.service
 
 import kr.ai.flori.billing.repository.SubscriptionRepository
 import kr.ai.flori.common.push.PushDispatcher
+import kr.ai.flori.common.push.PushTypes
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
@@ -28,7 +29,7 @@ class BillingReminderScheduler(
         val targets = subscriptionRepository.findByStatusInAndNextBillingAtBetween(REMIND_STATES, from, to)
         var sent = 0
         targets.forEach { sub ->
-            sent += pushDispatcher.sendToUser(sub.userId, "결제 예정 안내", "3일 후 구독료가 결제될 예정이에요.")
+            sent += pushDispatcher.sendToUser(sub.userId, "결제 예정 안내", "3일 후 구독료가 결제될 예정이에요.", type = PushTypes.BILLING)
         }
         return sent
     }
