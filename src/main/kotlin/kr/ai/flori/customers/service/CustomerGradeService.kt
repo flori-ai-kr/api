@@ -73,7 +73,7 @@ class CustomerGradeService(
         val saved = gradeRepository.save(grade)
         // 임계값이 실제로 바뀐 경우에만 기존 고객 등급을 즉시 일괄 재산정(잠금 고객 제외).
         if (saved.threshold != previousThreshold) {
-            recomputeAllGrades(userId)
+            recomputeAllGrades()
         }
         return CustomerGradeResponse.from(saved)
     }
@@ -140,7 +140,9 @@ class CustomerGradeService(
     ): List<GradeChangePreviewItem> {
         val userId = TenantContext.currentUserId()
         val grades = gradeRepository.findByUserIdOrderBySortOrderAsc(userId)
-        if (grades.none { it.id == gradeId }) return emptyList()
+        if (grades.none { it.id == gradeId }) {
+            throw AppException(CommonErrorCode.NOT_FOUND, "등급을 찾을 수 없습니다")
+        }
         val nameById = grades.associate { requireNotNull(it.id) to it.name }
         // 대상 등급의 threshold 만 가설로 교체한 행 목록으로 재산정 결과를 계산.
         val rows = grades.toRows().map { if (it.id == gradeId) it.copy(threshold = newThreshold) else it }
@@ -172,9 +174,10 @@ class CustomerGradeService(
     /**
      * 임계값 변경 시 해당 테넌트의 잠금 아닌 고객 전원을 일괄 재산정(변경분만 저장).
      * 구매횟수는 1쿼리 bulk 집계(purchaseCounts), 등급 목록도 1회만 로드해 고객별 재조회를 피한다.
+     * userId 는 TenantContext 에서만 도출한다(외부 임의 호출 차단을 위해 private; 호출자 update()의 트랜잭션에서 실행).
      */
-    @Transactional
-    fun recomputeAllGrades(userId: Long) {
+    private fun recomputeAllGrades() {
+        val userId = TenantContext.currentUserId()
         val grades = gradeRepository.findByUserIdOrderBySortOrderAsc(userId)
         if (grades.isEmpty()) return
         val counts = queryRepository.purchaseCounts(userId)
