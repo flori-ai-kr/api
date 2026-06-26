@@ -169,7 +169,7 @@ object PushTemplates {
         return PushContent(
             title = "저장 용량 증설 완료",
             body = "요청하신 저장 용량이 ${gb}GB로 증설되었습니다",
-            url = "/gallery",
+            link = PushLinks.gallery(),
         )
     }
 
@@ -177,7 +177,7 @@ object PushTemplates {
         PushContent(
             title = "저장 용량 증설 거절",
             body = "증설 요청이 거절되었습니다: ${truncate(reason)}",
-            url = "/gallery",
+            link = PushLinks.gallery(),
         )
 
     private fun truncate(text: String): String = if (text.length > BODY_MAX) text.take(BODY_MAX) + "…" else text

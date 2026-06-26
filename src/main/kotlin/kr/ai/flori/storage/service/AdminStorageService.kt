@@ -55,7 +55,7 @@ class AdminStorageService(
             metadata = mapOf("userId" to req.userId, "quotaBytes" to quotaBytes),
         )
         val push = PushTemplates.storageApproved(quotaBytes)
-        pushDispatcher.sendToUser(req.userId, push.title, push.body, push.url, PushTypes.STORAGE_RESOLVED)
+        pushDispatcher.sendToUser(req.userId, push.title, push.body, push.link, PushTypes.STORAGE_RESOLVED)
         return toResponse(req)
     }
 
@@ -77,7 +77,7 @@ class AdminStorageService(
             metadata = mapOf("userId" to req.userId, "reason" to rejectReason),
         )
         val push = PushTemplates.storageRejected(rejectReason)
-        pushDispatcher.sendToUser(req.userId, push.title, push.body, push.url, PushTypes.STORAGE_RESOLVED)
+        pushDispatcher.sendToUser(req.userId, push.title, push.body, push.link, PushTypes.STORAGE_RESOLVED)
         return toResponse(req)
     }
 
