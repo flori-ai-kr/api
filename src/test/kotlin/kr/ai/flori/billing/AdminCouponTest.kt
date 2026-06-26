@@ -63,7 +63,6 @@ class AdminCouponTest {
                     validFrom = null,
                     validUntil = null,
                     maxRedemptions = 100,
-                    perUserLimit = 1,
                     source = "PROMO",
                     memo = "테스트",
                 ),
@@ -85,7 +84,6 @@ class AdminCouponTest {
                     validFrom = null,
                     validUntil = null,
                     maxRedemptions = null,
-                    perUserLimit = 1,
                     source = "EVENT",
                     memo = null,
                 ),
@@ -98,7 +96,7 @@ class AdminCouponTest {
         admin()
         val issued =
             adminCouponService.issue(
-                CouponIssueRequest("CODEX", 10, null, null, null, 1, "PROMO", null),
+                CouponIssueRequest("CODEX", 10, null, null, null, "PROMO", null),
             )
         val detail = adminCouponService.detail(issued.id)
         assertThat(detail.coupon.code).isEqualTo("CODEX")
@@ -110,7 +108,7 @@ class AdminCouponTest {
         admin()
         val issued =
             adminCouponService.issue(
-                CouponIssueRequest("KILLME", 10, null, null, null, 1, "PROMO", null),
+                CouponIssueRequest("KILLME", 10, null, null, null, "PROMO", null),
             )
         val disabled = adminCouponService.disable(issued.id)
         assertThat(disabled.effectiveStatus).isEqualTo("DISABLED")
@@ -121,7 +119,7 @@ class AdminCouponTest {
         admin()
         val issued =
             adminCouponService.issue(
-                CouponIssueRequest("FILLED", 10, null, null, null, 1, "PROMO", null),
+                CouponIssueRequest("FILLED", 10, null, null, null, "PROMO", null),
             )
         // 별도 점주 가입(닉네임/가게명 고유) 후 그 유저의 사용기록 1건 적재
         val nick = "사장님-FILLED-${UUID.randomUUID()}"
@@ -146,7 +144,7 @@ class AdminCouponTest {
         admin()
         val issued =
             adminCouponService.issue(
-                CouponIssueRequest("EDITME", 10, null, null, 5, 1, "EVENT", "old"),
+                CouponIssueRequest("EDITME", 10, null, null, 5, "EVENT", "old"),
             )
         val from = Instant.parse("2026-07-01T00:00:00Z")
         val until = Instant.parse("2026-08-01T00:00:00Z")
@@ -159,7 +157,6 @@ class AdminCouponTest {
                     validFrom = from,
                     validUntil = until,
                     maxRedemptions = 50,
-                    perUserLimit = 2,
                     memo = "new",
                 ),
             )
@@ -168,7 +165,6 @@ class AdminCouponTest {
         assertThat(updated.validFrom).isEqualTo(from)
         assertThat(updated.validUntil).isEqualTo(until)
         assertThat(updated.maxRedemptions).isEqualTo(50)
-        assertThat(updated.perUserLimit).isEqualTo(2)
         assertThat(updated.memo).isEqualTo("new")
         // code·source는 불변(식별자/용도)
         assertThat(updated.code).isEqualTo("EDITME")
