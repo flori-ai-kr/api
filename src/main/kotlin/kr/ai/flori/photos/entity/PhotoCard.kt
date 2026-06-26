@@ -10,10 +10,11 @@ import kr.ai.flori.common.entity.BaseEntity
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 
-/** 사진 파일(jsonb 배열 요소). */
+/** 사진 파일(jsonb 배열 요소). size는 바이트 단위 — jsonb 직렬화라 DDL 변경 없음. 구 데이터는 size=0. */
 data class PhotoFile(
     val url: String = "",
     val originalName: String = "",
+    val size: Long = 0,
 )
 
 /**
