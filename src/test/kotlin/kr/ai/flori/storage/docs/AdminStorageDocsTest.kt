@@ -1,6 +1,8 @@
 package kr.ai.flori.storage.docs
 
 import kr.ai.flori.common.docs.RestDocsSupport
+import kr.ai.flori.storage.entity.StorageIncreaseRequest
+import kr.ai.flori.storage.repository.StorageIncreaseRequestRepository
 import kr.ai.flori.support.TestAccounts
 import kr.ai.flori.user.repository.UserRepository
 import org.junit.jupiter.api.Test
@@ -17,6 +19,9 @@ import org.springframework.test.web.servlet.patch
 class AdminStorageDocsTest : RestDocsSupport() {
     @Autowired
     private lateinit var userRepository: UserRepository
+
+    @Autowired
+    private lateinit var storageIncreaseRequestRepository: StorageIncreaseRequestRepository
 
     /** 가입 후 isAdmin=true 로 승격한 운영자 토큰. */
     private fun adminToken(): String {
@@ -36,6 +41,12 @@ class AdminStorageDocsTest : RestDocsSupport() {
     @Test
     fun `관리자 증설 요청 목록 문서화`() {
         val token = adminToken()
+        // item 스키마 문서화를 위해 PENDING 요청 1건 시드(빈 배열이면 OpenAPI에 원소 타입이 없어 mobile orval 타입이 깨진다).
+        val ownerId = createOwnerUserId()
+        storageIncreaseRequestRepository.save(
+            StorageIncreaseRequest(userId = ownerId, reason = "사진이 많아요"),
+        )
+
         mockMvc
             .get("/admin/storage/requests?status=PENDING") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
@@ -49,7 +60,15 @@ class AdminStorageDocsTest : RestDocsSupport() {
                         summary = "스토리지 증설 요청 목록(상태 필터)",
                         responseFields =
                             listOf(
-                                fieldWithPath("[]").type(JsonFieldType.ARRAY).description("요청 목록"),
+                                fieldWithPath("[].id").type(JsonFieldType.NUMBER).description("요청 ID"),
+                                fieldWithPath("[].userId").type(JsonFieldType.NUMBER).description("요청 유저"),
+                                fieldWithPath("[].nickname").type(JsonFieldType.STRING).optional().description("닉네임"),
+                                fieldWithPath("[].storeName").type(JsonFieldType.STRING).optional().description("가게명"),
+                                fieldWithPath("[].reason").type(JsonFieldType.STRING).optional().description("사유"),
+                                fieldWithPath("[].status").type(JsonFieldType.STRING).description("PENDING | RESOLVED"),
+                                fieldWithPath("[].usedBytes").type(JsonFieldType.NUMBER).description("현재 사용량"),
+                                fieldWithPath("[].quotaBytes").type(JsonFieldType.NUMBER).description("현재 한도"),
+                                fieldWithPath("[].createdAt").type(JsonFieldType.STRING).description("요청 시각"),
                             ),
                     ),
                 )

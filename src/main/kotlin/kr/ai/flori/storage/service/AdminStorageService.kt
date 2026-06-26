@@ -20,7 +20,8 @@ class AdminStorageService(
     private val userProfileRepository: UserProfileRepository,
     private val audit: AdminAuditService,
 ) {
-    @Transactional(readOnly = true)
+    // readOnly 불가: toResponse → quotaService.usage()가 user_storage 행이 없으면 lazy 생성(INSERT)하므로 쓰기 트랜잭션이어야 한다.
+    @Transactional
     fun list(
         status: String?,
         page: Int,
@@ -37,10 +38,9 @@ class AdminStorageService(
         quotaBytes: Long,
     ): StorageUsageResponse {
         quotaService.setQuota(userId, quotaBytes)
-        // 해당 유저의 PENDING 요청 모두 해결 처리
+        // 해당 유저의 PENDING 요청 모두 해결 처리. managed 엔티티라 dirty-check로 flush됨(save 불필요).
         requestRepository.findByUserIdAndStatus(userId, StorageIncreaseRequest.STATUS_PENDING).forEach {
             it.resolve(quotaBytes)
-            requestRepository.save(it)
         }
         audit.record(
             action = "STORAGE_QUOTA_UPDATE",
