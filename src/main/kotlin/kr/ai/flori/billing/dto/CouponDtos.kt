@@ -21,7 +21,6 @@ data class CouponIssueRequest(
     val validFrom: Instant? = null,
     val validUntil: Instant? = null,
     val maxRedemptions: Int? = null,
-    val perUserLimit: Int = 1,
     val source: String = "PROMO",
     val memo: String? = null,
 )
@@ -41,7 +40,6 @@ data class CouponUpdateRequest(
     val validFrom: Instant? = null,
     val validUntil: Instant? = null,
     val maxRedemptions: Int? = null,
-    val perUserLimit: Int = 1,
     val memo: String? = null,
 )
 
@@ -58,7 +56,6 @@ data class CouponResponse(
     val effectiveStatus: String,
     val redeemedCount: Int,
     val maxRedemptions: Int?,
-    val perUserLimit: Int,
     val validFrom: Instant?,
     val validUntil: Instant?,
     val source: String,
@@ -78,7 +75,6 @@ data class CouponResponse(
                 effectiveStatus = effective(c, now),
                 redeemedCount = c.redeemedCount,
                 maxRedemptions = c.maxRedemptions,
-                perUserLimit = c.perUserLimit,
                 validFrom = c.validFrom,
                 validUntil = c.validUntil,
                 source = c.source,

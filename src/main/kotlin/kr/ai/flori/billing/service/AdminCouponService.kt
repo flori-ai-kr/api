@@ -39,7 +39,6 @@ class AdminCouponService(
                 validFrom = request.validFrom
                 validUntil = request.validUntil
                 maxRedemptions = request.maxRedemptions
-                perUserLimit = request.perUserLimit
                 source = request.source
                 memo = request.memo
                 createdBy = TenantContext.currentUserId()
@@ -96,7 +95,6 @@ class AdminCouponService(
         coupon.validFrom = request.validFrom
         coupon.validUntil = request.validUntil
         coupon.maxRedemptions = request.maxRedemptions
-        coupon.perUserLimit = request.perUserLimit
         coupon.memo = request.memo
         val saved = couponRepository.save(coupon)
         auditService.record(
@@ -108,7 +106,6 @@ class AdminCouponService(
                 mapOf(
                     "days" to request.days,
                     "maxRedemptions" to request.maxRedemptions,
-                    "perUserLimit" to request.perUserLimit,
                 ),
         )
         return CouponResponse.of(saved, Instant.now())
