@@ -6,6 +6,7 @@ import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.customers.dto.CustomerCreateRequest
+import kr.ai.flori.customers.dto.CustomerGradeUpdateRequest
 import kr.ai.flori.customers.dto.PhotoThumbnail
 import kr.ai.flori.customers.repository.CustomerGradeRepository
 import kr.ai.flori.sales.dto.SaleCreateRequest
@@ -140,6 +141,66 @@ class CustomerGradeRecomputeTest {
         addSales(c10.id, 10)
         gradeService.recomputeGrade(c10.id)
         assertThat(gradeName(c10.id)).isEqualTo("VIP")
+    }
+
+    @Test
+    fun `임계값을 올리면 잠금 아닌 고객은 일괄 재산정으로 강등되고 잠금 고객은 유지된다`() {
+        val userId = newTenant()
+
+        // 자동 고객: 5건 → 단골(자동 승급). create()가 기본 등급을 시드한다.
+        val auto = create()
+        addSales(auto.id, 5)
+        gradeService.recomputeGrade(auto.id)
+        assertThat(gradeName(auto.id)).isEqualTo("단골")
+
+        val grades = gradeRepository.findByUserIdOrderBySortOrderAsc(userId)
+        val regularId = requireNotNull(grades.first { it.name == "단골" }.id)
+        val vipId = requireNotNull(grades.first { it.name == "VIP" }.id)
+
+        // 잠금 고객: 5건이지만 수동으로 VIP 고정(잠금)
+        val locked = create()
+        addSales(locked.id, 5)
+        customerService.updateGrade(locked.id, vipId)
+        assertThat(customerService.get(locked.id).gradeLocked).isTrue()
+
+        // 단골 임계값 5 → 8 로 상향 → 기존 고객 일괄 재산정 트리거
+        gradeService.update(regularId, CustomerGradeUpdateRequest(threshold = 8))
+
+        // 자동 고객(5건 < 8): 단골 자격 상실 → 신규로 강등
+        assertThat(gradeName(auto.id)).isEqualTo("신규")
+        // 잠금 고객: 재산정 제외 → VIP 유지
+        val lockedAfter = customerService.get(locked.id)
+        assertThat(lockedAfter.grade).isEqualTo("VIP")
+        assertThat(lockedAfter.gradeLocked).isTrue()
+    }
+
+    @Test
+    fun `previewThresholdChange는 저장 없이 바뀔 고객만 반환하고 잠금 고객은 제외한다`() {
+        val userId = newTenant()
+        // 단골 자동 고객(5건)
+        val auto = create()
+        addSales(auto.id, 5)
+        gradeService.recomputeGrade(auto.id)
+        assertThat(gradeName(auto.id)).isEqualTo("단골")
+
+        val grades = gradeRepository.findByUserIdOrderBySortOrderAsc(userId)
+        val regularId = requireNotNull(grades.first { it.name == "단골" }.id)
+        val vipId = requireNotNull(grades.first { it.name == "VIP" }.id)
+
+        // 잠금 고객(VIP 고정)
+        val locked = create()
+        addSales(locked.id, 5)
+        customerService.updateGrade(locked.id, vipId)
+
+        // 단골 임계값 5 → 8 미리보기
+        val preview = gradeService.previewThresholdChange(regularId, 8)
+
+        // 자동 고객만 단골→신규 로 변경 예정, 잠금 고객은 미포함
+        assertThat(preview).hasSize(1)
+        assertThat(preview.first().fromGrade).isEqualTo("단골")
+        assertThat(preview.first().toGrade).isEqualTo("신규")
+        // 미리보기는 저장하지 않음 → 실제 등급은 그대로 단골
+        assertThat(gradeName(auto.id)).isEqualTo("단골")
     }
 
     @Test

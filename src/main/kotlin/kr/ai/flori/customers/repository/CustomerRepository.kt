@@ -29,6 +29,9 @@ interface CustomerRepository : JpaRepository<Customer, Long> {
 
     fun findByUserIdOrderByCreatedAtDesc(userId: Long): List<Customer>
 
+    /** 자동 등급 대상(잠금 아님) 고객 전체. 임계값 변경 시 일괄 재산정에 사용. */
+    fun findByUserIdAndGradeLockedFalse(userId: Long): List<Customer>
+
     fun findByUserIdAndIdIn(
         userId: Long,
         ids: Collection<Long>,

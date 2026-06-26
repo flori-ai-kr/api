@@ -256,7 +256,7 @@ fun handleUnexpected(ex: Exception, request: WebRequest): ResponseEntity<ErrorRe
 
 - 지출총액: `unit_price * quantity`
 - 고정비 발생 판정: 주/월/연·격주·말일 클램핑 — `RecurringScheduleEvaluator`(순수 로직)가 `RecurringExpenseGenerator`에서 분리
-- **고객 등급 자동승급**: `SaleService`가 매출 생성·수정·삭제 후 `CustomerGradeService.recomputeGrade(customerId)` 훅을 호출 → `customer_grades.threshold` 기준으로 구매횟수에 맞는 가장 높은 등급 배정(`grade_locked=false` 고객만). 수동 잠금(`grade_locked=true`)은 재계산 대상에서 제외되며 `PATCH /customers/{id}/grade/auto`로 해제
+- **고객 등급 자동승급**: `SaleService`가 매출 생성·수정·삭제 후 `CustomerGradeService.recomputeGrade(customerId)` 훅을 호출 → `customer_grades.threshold` 기준으로 구매횟수에 맞는 가장 높은 등급 배정(`grade_locked=false` 고객만). 수동 잠금(`grade_locked=true`)은 재계산 대상에서 제외되며 `PATCH /customers/{id}/grade/auto`로 해제. **임계값 변경**(PATCH /customer-grades/{id}): 임계값이 실제로 바뀌면 `CustomerGradeService.recomputeAllGrades`로 해당 테넌트의 잠금 아닌 고객 전원을 일괄 재산정한다(구매횟수 bulk 집계 1쿼리, 등급 목록 1회 로드). 변경 전 영향 범위는 `POST /customer-grades/{id}/preview`로 저장 없이 미리 확인할 수 있다
 
 예: `RecurringScheduleEvaluator`(발생 판정 순수 함수)와 `RecurringExpenseGenerator`(@Scheduled 진입점)가 역할을 나눈다. 서비스는 "언제 생성할지", 계산기는 "어떻게 판정할지"를 담당.
 

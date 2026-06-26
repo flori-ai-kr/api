@@ -3,6 +3,7 @@ package kr.ai.flori.community.controller
 import jakarta.validation.Valid
 import kr.ai.flori.community.dto.CommentCreateRequest
 import kr.ai.flori.community.dto.CommentResponse
+import kr.ai.flori.community.dto.CommentUpdateRequest
 import kr.ai.flori.community.dto.CommunityUploadTargetResponse
 import kr.ai.flori.community.dto.CommunityUploadTargetsRequest
 import kr.ai.flori.community.dto.LikeToggleResponse
@@ -99,6 +100,12 @@ class CommunityController(
         @PathVariable id: Long,
         @Valid @RequestBody request: CommentCreateRequest,
     ): CommentResponse = communityService.createComment(id, request)
+
+    @PatchMapping("/comments/{id}")
+    fun updateComment(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: CommentUpdateRequest,
+    ): CommentResponse = communityService.updateComment(id, request)
 
     @DeleteMapping("/comments/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
