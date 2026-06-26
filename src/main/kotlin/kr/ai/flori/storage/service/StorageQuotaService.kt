@@ -24,12 +24,16 @@ data class StorageUsage(
 class StorageQuotaService(
     private val repository: UserStorageRepository,
 ) {
-    /** 행 보장(없으면 기본 한도로 생성). 동시 생성 경합은 UNIQUE 위반을 잡아 재조회. */
+    /**
+     * 행 보장(없으면 기본 한도로 생성). 동시 생성 경합은 UNIQUE 위반을 잡아 재조회.
+     * saveAndFlush로 INSERT를 try 블록 안에서 즉시 실행 → commit이 아닌 이 지점에서
+     * [DataIntegrityViolationException]가 터져 catch가 동작한다.
+     */
     @Transactional
     fun getOrCreate(userId: Long): UserStorage =
         repository.findByUserId(userId)
             ?: try {
-                repository.save(UserStorage(userId = userId))
+                repository.saveAndFlush(UserStorage(userId = userId))
             } catch (e: DataIntegrityViolationException) {
                 repository.findByUserId(userId) ?: throw e
             }
@@ -70,7 +74,7 @@ class StorageQuotaService(
         repository.addUsedBytes(userId, deltaBytes)
     }
 
-    /** 관리자 증설: 한도를 절대값으로 설정. */
+    /** 관리자 증설: 한도를 절대값으로 설정. managed 엔티티라 dirty-check로 flush됨. */
     @Transactional
     fun setQuota(
         userId: Long,
@@ -78,7 +82,6 @@ class StorageQuotaService(
     ) {
         val s = getOrCreate(userId)
         s.quotaBytes = quotaBytes
-        repository.save(s)
     }
 
     /** 정합: 사용량을 DB 실측값으로 덮어쓴다. */

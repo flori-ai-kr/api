@@ -59,4 +59,20 @@ class StorageQuotaServiceTest {
         service.reconcile(8006L, 123)
         assertThat(service.usage(8006L).usedBytes).isEqualTo(123)
     }
+
+    @Test
+    fun `정확히 90퍼센트는 WARN, 정확히 100퍼센트는 FULL`() {
+        service.setQuota(8007L, 1000)
+        service.addUsage(8007L, 900) // 정확히 90%
+        assertThat(service.usage(8007L).status).isEqualTo("WARN")
+        service.addUsage(8007L, 100) // 정확히 100%
+        assertThat(service.usage(8007L).status).isEqualTo("FULL")
+    }
+
+    @Test
+    fun `used + 추가 == 한도는 통과한다`() {
+        service.setQuota(8008L, 1000)
+        service.addUsage(8008L, 600)
+        service.requireWithinQuota(8008L, 400) // 합 1000 == 한도(경계) → 예외 없음
+    }
 }
