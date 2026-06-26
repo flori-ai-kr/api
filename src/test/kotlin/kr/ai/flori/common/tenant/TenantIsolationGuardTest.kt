@@ -99,7 +99,6 @@ class TenantIsolationGuardTest {
             // 빌링 — 구독 스케줄러(@Scheduled): 전체 테넌트 대상 시스템 작업.
             // 결제일 도래 배치 / D-3 사전알림 배치는 cross-tenant 시스템 작업이므로 의도적 전역.
             "SubscriptionRepository#findByStatusInAndNextBillingAtLessThanEqual",
-            "SubscriptionRepository#findByStatusInAndNextBillingAtBetween",
             // 빌링 — 어드민 구독 집계/목록(@RequiresAdmin): cross-tenant 운영 콘솔 조회.
             "SubscriptionRepository#countByStatus",
             "SubscriptionRepository#findByStatusOrderByCreatedAtDesc",

@@ -13,13 +13,6 @@ interface SubscriptionRepository : JpaRepository<Subscription, Long> {
         at: Instant,
     ): List<Subscription>
 
-    // D-3 사전알림 대상.
-    fun findByStatusInAndNextBillingAtBetween(
-        statuses: Collection<String>,
-        from: Instant,
-        to: Instant,
-    ): List<Subscription>
-
     // 어드민 구독 집계.
     fun countByStatus(status: String): Long
 
