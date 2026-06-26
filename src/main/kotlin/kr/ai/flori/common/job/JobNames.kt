@@ -14,6 +14,7 @@ object JobNames {
     const val AUCTION_SCRAP_PUSH = "auction_scrap_push"
     const val GRANT_NEW_PUSH = "grant_new_push"
     const val GRANT_DEADLINE_PUSH = "grant_deadline_push"
+    const val STORAGE_RECONCILE = "storage_reconcile"
 
     /** 수동 트리거 허용 목록(콘솔 노출 순서). */
     val ALL =
@@ -27,5 +28,6 @@ object JobNames {
             AUCTION_SCRAP_PUSH,
             GRANT_NEW_PUSH,
             GRANT_DEADLINE_PUSH,
+            STORAGE_RECONCILE,
         )
 }
