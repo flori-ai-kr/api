@@ -1082,3 +1082,19 @@ CREATE INDEX idx_storage_increase_requests_user ON storage_increase_requests(use
 
 CREATE TRIGGER update_storage_increase_requests_updated_at
   BEFORE UPDATE ON storage_increase_requests FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- =============================================
+-- 성능 복합 인덱스 (2026-06-27, session2-perf)
+-- 대시보드/통계/목록 핫 경로는 user_id 등치 + date 범위·정렬을 함께 필터하는데 단일컬럼
+-- 인덱스(user_id|date)만 있어 복합으로 보강. 재방문 상관 서브쿼리(customer_phone)·
+-- 리마인더 due 스캔(reminder_at 부분 인덱스)·갤러리 키셋 페이지네이션(updated_at,id)도 보강.
+-- ⚠️ 프로덕션(라이브 RDS) 적용은 migration/26-06-27-perf-indexes.sql 의 CREATE INDEX CONCURRENTLY
+--    로 무중단 생성한다. 이 DDL(테스트/신규 빌드)은 단일 스크립트 실행이라 CONCURRENTLY 불가 → 일반 CREATE INDEX.
+-- =============================================
+CREATE INDEX IF NOT EXISTS idx_sales_user_date ON sales(user_id, date);
+CREATE INDEX IF NOT EXISTS idx_expenses_user_date ON expenses(user_id, date);
+CREATE INDEX IF NOT EXISTS idx_reservations_user_date ON reservations(user_id, date);
+CREATE INDEX IF NOT EXISTS idx_sales_user_customer ON sales(user_id, customer_id) WHERE customer_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_sales_user_phone_date ON sales(user_id, customer_phone, date) WHERE customer_phone IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_reservations_due ON reservations(reminder_at) WHERE reminder_sent = FALSE;
+CREATE INDEX IF NOT EXISTS idx_photo_cards_user_updated ON photo_cards(user_id, updated_at DESC, id DESC);

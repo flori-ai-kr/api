@@ -1,5 +1,6 @@
 package kr.ai.flori.reservations.service
 
+import kr.ai.flori.common.domain.ReservationStatuses
 import kr.ai.flori.common.job.JobNames
 import kr.ai.flori.common.job.JobOutcome
 import kr.ai.flori.common.job.JobRunRecorder
@@ -90,12 +91,15 @@ class ReservationNotificationService(
     }
 
     /**
-     * 당일 비취소 예약이 있는 사용자에게 픽업 요약을 1회 발송한다.
+     * 당일 예약(취소·픽업완료 제외)이 있는 사용자에게 픽업 요약을 1회 발송한다.
      * notification_log 원자적 claim으로 재기동/중복 트리거 시에도 1회만 발송. 건별 격리.
      * @return 실제로 발송한(claim에 성공한) 사용자 수.
      */
     fun sendDailySummary(today: LocalDate): Int {
-        val byUser = reservationRepository.findByDateAndStatusNot(today, "cancelled").groupBy { it.userId }
+        val byUser =
+            reservationRepository
+                .findByDateAndStatusNotIn(today, listOf(ReservationStatuses.CANCELLED, ReservationStatuses.COMPLETED))
+                .groupBy { it.userId }
         var sent = 0
         byUser.forEach { (userId, reservations) ->
             try {

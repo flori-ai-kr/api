@@ -12,6 +12,8 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest
 import java.net.URI
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.time.Duration
 
 /**
@@ -69,9 +71,16 @@ class S3PresignService(
                 .bucket(properties.s3.bucket)
                 .key(keyFromUrl(fileUrl))
         if (!fileName.isNullOrBlank()) {
-            // 헤더 인젝션 방지: 따옴표/개행 제거 후 Content-Disposition에 사용.
+            // 헤더 인젝션 방지: 따옴표/개행 제거.
             val safeName = fileName.replace(Regex("[\"\\r\\n]"), "")
-            getRequestBuilder.responseContentDisposition("attachment; filename=\"$safeName\"")
+            // S3 responseContentDisposition 값은 ISO-8859-1만 허용 → 한글 등 비ASCII 파일명을 그대로 넣으면
+            // S3가 400 InvalidArgument 를 반환한다. RFC 5987 filename* 로 UTF-8 인코딩하고, 구형 대비
+            // ASCII 폴백 filename 을 함께 준다(헤더 값 자체는 순수 ASCII → 브라우저가 한글로 복원).
+            val asciiFallback = safeName.replace(Regex("[^\\x20-\\x7E]"), "_")
+            val encoded = URLEncoder.encode(safeName, StandardCharsets.UTF_8).replace("+", "%20")
+            getRequestBuilder.responseContentDisposition(
+                "attachment; filename=\"$asciiFallback\"; filename*=UTF-8''$encoded",
+            )
         }
         val presignRequest =
             GetObjectPresignRequest
