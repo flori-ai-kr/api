@@ -43,6 +43,7 @@ discord:
   verification-webhook-url: ${DISCORD_VERIFICATION_WEBHOOK_URL:}    # 사업자 인증 신청 알림
   waitlist-webhook-url: ${DISCORD_WAITLIST_WEBHOOK_URL:}            # 사전등록 알림
   interview-webhook-url: ${DISCORD_INTERVIEW_WEBHOOK_URL:}          # 유저 인터뷰 신청 알림
+  billing-webhook-url: ${DISCORD_BILLING_WEBHOOK_URL:}               # 빌링 이벤트 알림
   support-webhook-url: ${DISCORD_SUPPORT_WEBHOOK_URL:}              # 1:1 문의 접수 알림
 
 # SOLAPI 알림톡/SMS (미설정 시 콘솔 폴백). 알림톡은 카카오 비즈채널 인증 후 pf-id/template-id 발급.
@@ -106,6 +107,17 @@ flori:
 # 내부 API(수집/브로드캐스트) Bearer 키. 미설정 시 내부 API 접근 차단.
 internal:
   api-key: ${INTERNAL_API_KEY:}
+
+# 토스페이먼츠 자동결제(빌링)
+toss:
+  secret-key: ${TOSS_SECRET_KEY:test_sk_REPLACE_WITH_SANDBOX_KEY}
+  base-url: ${TOSS_BILLING_BASE_URL:https://api.tosspayments.com}
+  connect-timeout-ms: ${TOSS_CONNECT_TIMEOUT_MS:3000}
+  read-timeout-ms: ${TOSS_READ_TIMEOUT_MS:10000}
+
+# 토스 빌링키 암호화(AES-256-GCM). 운영에서는 반드시 32바이트 Base64 강한 키로 교체(환경변수 주입).
+billing:
+  encryption-key: ${BILLING_ENCRYPTION_KEY:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
 
 # RevenueCat 구독 웹훅 Bearer 시크릿. 미설정 시 웹훅 접근 차단(실제 키는 운영에서 env 주입).
 revenuecat:

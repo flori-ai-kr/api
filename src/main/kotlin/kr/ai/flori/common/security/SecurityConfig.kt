@@ -49,6 +49,7 @@ class SecurityConfig(
                 authorize("/waitlist", permitAll)
                 authorize("/waitlist/count", permitAll)
                 authorize("/interview", permitAll)
+                authorize("/webhooks/**", permitAll) // 토스 웹훅(본문 비신뢰 — paymentKey 재조회로 검증)
                 authorize("/health", permitAll)
                 authorize("/actuator/health/**", permitAll) // 헬스만 공개, 그 외 actuator는 인증 필요
                 authorize("/actuator/info", permitAll)
@@ -56,8 +57,8 @@ class SecurityConfig(
                 authorize("/swagger-ui/**", permitAll)
                 authorize("/swagger-ui.html", permitAll)
                 authorize("/docs/open-api-3.0.1.json", permitAll) // 테스트 생성 OpenAPI 스펙(이 파일만 공개)
-                // /internal/**·/webhooks/**: 해당 컨트롤러(인사이트 ingest·RevenueCat 웹훅) 제거됨 → 공개 경로도 제거.
-                // 향후 내부/웹훅 엔드포인트 추가 시 별도 인증과 함께 명시적으로 다시 연다.
+                // /internal/**는 해당 컨트롤러(인사이트 ingest) 제거됨 → 공개 경로도 제거.
+                // 향후 내부 엔드포인트 추가 시 별도 인증과 함께 명시적으로 다시 연다.
                 authorize(anyRequest, authenticated)
             }
             exceptionHandling {

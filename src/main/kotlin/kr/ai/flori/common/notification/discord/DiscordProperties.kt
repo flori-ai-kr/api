@@ -16,6 +16,8 @@ data class DiscordProperties(
     val waitlistWebhookUrl: String = "",
     /** 유저 인터뷰 신청 알림 채널 (DISCORD_INTERVIEW_WEBHOOK_URL). */
     val interviewWebhookUrl: String = "",
+    /** 빌링 이벤트 알림 채널 (DISCORD_BILLING_WEBHOOK_URL). */
+    val billingWebhookUrl: String = "",
     /** 1:1 문의 접수 알림 채널 (DISCORD_SUPPORT_WEBHOOK_URL). */
     val supportWebhookUrl: String = "",
 )

@@ -1,6 +1,6 @@
 # Flori API — 아키텍처 & 기술 선정 이유
 
-> 최종 업데이트: 2026-06-26 (인사이트 트렌드 기능 제거 + 기업마당(bizinfo) collector 추가 + GrantRelevance·HtmlText·flower_item_scraps 신설 + 지원사업 만료필터 KST화 / support 모듈: Discord SUPPORT 채널 알림 + 이미지 업로드 + AdminInquiryResponse / 온보딩: users.name 필드 + ownerAgeRange·referralSources 필수화 + /me/profile ownerName·phoneNumber 노출 / 푸시: 타입별 수신 설정 + 작업 실행 로깅 + 커뮤니티·인사이트 푸시 확장 / 커뮤니티: 댓글 수정(PATCH /community/comments/{id}·작성자 전용·운영자 불가) / 등급: 임계값 변경 시 잠금 아닌 고객 일괄 재산정(recomputeAllGrades) + 변경 미리보기(POST /customer-grades/{id}/preview) + gradeIdFor fallback 개선(최저 non-null threshold 등급))
+> 최종 업데이트: 2026-06-26 (인사이트 트렌드 기능 제거 + 기업마당(bizinfo) collector 추가 + GrantRelevance·HtmlText·flower_item_scraps 신설 + 지원사업 만료필터 KST화 / support 모듈: Discord SUPPORT 채널 알림 + 이미지 업로드 + AdminInquiryResponse / 온보딩: users.name 필드 + ownerAgeRange·referralSources 필수화 + /me/profile ownerName·phoneNumber 노출 / 푸시: 타입별 수신 설정 + 작업 실행 로깅 + 커뮤니티·인사이트 푸시 확장 / 커뮤니티: 댓글 수정(PATCH /community/comments/{id}·작성자 전용·운영자 불가) / 등급: 임계값 변경 시 잠금 아닌 고객 일괄 재산정(recomputeAllGrades) + 변경 미리보기(POST /customer-grades/{id}/preview) + gradeIdFor fallback 개선(최저 non-null threshold 등급) / **빌링**: 토스페이먼츠 구독·자동결제·쿠폰 도메인 신설 — Subscription·BillingKey·PaymentHistory·Coupon·CouponRedemption·SubscriptionEligibility + RecurringBillingScheduler(04:00 KST) + Discord BILLING 채널)
 
 이 문서는 Flori(꽃집 어드민) **모바일 앱 백엔드 API**의 기술 스택과 아키텍처를 설명한다. 단순히 "무엇을 쓰는가"가 아니라 **"왜 이것을 골랐는가"**에 초점을 맞춘다. 모든 선택에는 *기존 Next.js+Supabase 웹앱의 비즈니스 로직을 네이티브 앱이 호출 가능한 REST API로 재구현하고, 자체 AWS 인프라 위에 올린다*는 도메인 맥락이 반영되어 있다.
 
@@ -38,6 +38,7 @@ flowchart TB
         KakaoApi[kapi.kakao.com<br/>카카오 프로필조회]
         AtFlower[flower.at.or.kr<br/>aT 화훼유통정보 f001<br/>경매 시세]
         Solapi[api.solapi.com<br/>카카오 알림톡 중계<br/>사업자 인증 접수·승인·거절]
+        Toss[api.tosspayments.com<br/>토스페이먼츠<br/>빌링키 발급·자동결제]
     end
 
     App -->|"REST + Bearer JWT"| Sec
@@ -48,6 +49,7 @@ flowchart TB
     Sched --> Svc
     Sched -.->|"f001 경매시세 적재"| AtFlower
     Svc -.->|"인증 접수·승인·거절<br/>알림톡(AFTER_COMMIT @Async)"| Solapi
+    Svc -.->|"빌링키 발급·자동결제<br/>(BillingClient)"| Toss
     Svc -->|"PushDispatcher<br/>(FCM or VAPID)"| FCM
     Svc -->|"PushDispatcher<br/>(p256dh/auth 있으면)"| VAPID
     Adv -.->|"예기치 못한 오류"| Discord
@@ -63,7 +65,7 @@ flowchart TB
     class App,Collector client
     class Sec,Ctrl,Svc,Repo,Sched,Adv server
     class RDS,S3 store
-    class FCM,VAPID,Discord,KakaoAuth,KakaoApi,AtFlower,Solapi ext
+    class FCM,VAPID,Discord,KakaoAuth,KakaoApi,AtFlower,Solapi,Toss ext
 ```
 
 핵심 원칙: **앱은 표시만 하고, 계산·검증·격리는 서버가 책임진다.** 지출총액 등은 서버가 SSOT로 계산해 응답하고, 멀티테넌시(사용자별 데이터 격리)는 RLS 없이 애플리케이션이 유일한 방어선으로 강제한다. 기존 웹앱은 당분간 Supabase 위에서 그대로 동작하며, 이 백엔드는 독립 인프라로 분리 운영한다.
@@ -123,6 +125,7 @@ flowchart LR
 | `announcement` | 공지 배너 CMS (`announcements` — modal/bar 2종). 운영자 CRUD+활성토글(`/admin/announcements`, `@RequiresAdmin`). 점주 노출/클릭(`/announcements`). soft-delete. `AdminAuditService`로 변경 감사 기록 |
 | `admin` (job-runs) | **백그라운드 작업 로그 조회 + 수동 트리거**(`/admin/job-runs`, `@RequiresAdmin`). `AdminJobRunService`가 `job_run_status`(작업당 최신 1행) 요약과 `job_run_logs`(이력) 목록을 반환하고, `JobRegistry`가 등록된 작업 본문을 수동으로 실행(`POST /admin/job-runs/{jobName}/trigger`). 실행 결과는 `JobRunRecorder`가 manual 트리거로 기록 |
 | `support` | 1:1 문의·피드백 인박스 (`support_inquiries`). 점주 제출+본인 목록(`/inquiries`) + 이미지 presigned 업로드(`POST /inquiries/upload-targets`, S3 prefix `support/`). 새 문의 접수 시 `InquiryCreatedEvent` → Discord SUPPORT 채널 비동기 알림. 운영자 인박스+답변+상태관리(`/admin/inquiries`, `@RequiresAdmin`, 응답 `AdminInquiryResponse` — 작성자 닉네임·가게명 포함). 운영자 답변 시 `InquiryAnsweredEvent` → 점주 푸시. 감사 기록(INQUIRY_ANSWER/INQUIRY_STATUS) |
+| `billing` | 구독·자동결제·쿠폰. 토스페이먼츠 빌링키 등록(`/billing/prepare`, `/billing/subscribe`, `/billing/trial`) + 구독 조회·해지·재개·카드변경(`/billing/me`, `DELETE /billing/cancel`, `POST /billing/resume`, `PUT /billing/card`) + 쿠폰 사용(`POST /coupons/redeem`) + 운영자 쿠폰 CRUD(`/admin/coupons`) + 운영자 구독 목록(`GET /admin/subscriptions`) + 토스 웹훅(`POST /toss/webhook`, HMAC 검증). 엔티티: `Subscription`·`BillingKey`(AES-256 암호화)·`PaymentHistory`·`Coupon`·`CouponRedemption`·`SubscriptionEligibility`. Discord BILLING 채널. 외부 의존: `BillingClient` → `api.tosspayments.com` |
 
 ---
 
@@ -571,6 +574,11 @@ erDiagram
 | 운영자 통계(확장) | `GET /admin/stats/funnel`, `GET /admin/stats/churn-reasons`(?days), `GET /admin/stats/retention` | Auth + **is_admin** |
 | AI 프롬프트 레지스트리(운영자) | `GET/POST /admin/prompts`(?channel), `GET/PATCH/DELETE /admin/prompts/{id}`, `POST /admin/prompts/{id}/activate`, `POST /admin/prompts/preview`(플레이그라운드, 저장X) — 마케팅 프롬프트 버전·활성화·튜닝 (SPEC-AI-008) | Auth + **is_admin** |
 | 작업 실행 로그(운영자) | `GET /admin/job-runs/summary`(작업별 최신 상태 카드), `GET /admin/job-runs`(?jobName&status&page&size, 실행 이력), `POST /admin/job-runs/{jobName}/trigger`(즉시 실행·감사 기록) | Auth + **is_admin** |
+| 빌링(점주) | `POST /billing/prepare`(빌링키 등록 준비), `POST /billing/subscribe`(정기구독 시작), `POST /billing/trial`(트라이얼 시작), `GET /billing/me`(구독 현황), `DELETE /billing/cancel`, `POST /billing/resume`, `PUT /billing/card`(카드 변경) | Auth |
+| 쿠폰(점주) | `POST /coupons/redeem`(쿠폰 사용) | Auth |
+| 쿠폰(운영자) | `GET /admin/coupons`, `POST /admin/coupons`, `GET /admin/coupons/{id}`, `PATCH /admin/coupons/{id}`, `POST /admin/coupons/{id}/disable` | Auth + **is_admin** |
+| 구독(운영자) | `GET /admin/subscriptions`(?status) | Auth + **is_admin** |
+| 토스 웹훅 | `POST /toss/webhook` (HMAC 검증 후 결제/구독 이벤트 처리) | 토스 서명 검증 |
 | 사전등록 | `POST /waitlist`(201, 이메일+가게명 등록), `GET /waitlist/count`(카운트 조회) | **Public** (인증 불필요) |
 | 인터뷰 모집 | `POST /interview`(201, 이름+전화번호 신청) | **Public** (인증 불필요) |
 
@@ -593,6 +601,7 @@ erDiagram
 | `auction_scrap_push` | `0 35 6 * * *` | `InsightPushService` — 오늘 적재된 경매 품목 스크랩 유저에게 시세 업데이트 푸시 | `notification_log(user_id, type, dedup_key)` 원자적 claim. 수신설정(`auction_scrap_update`) 존중 |
 | `grant_new_push` | `0 40 6 * * *` | `InsightPushService` — 오늘 신규 지원사업 N건 → 전체 활성 유저 발송 | `notification_log` claim. 수신설정(`grant_new`) 존중 |
 | `grant_deadline_push` | `0 45 6 * * *` | `InsightPushService` — 스크랩한 지원사업 D-day·D-1 마감 임박 발송 | `notification_log` claim. 수신설정(`grant_deadline`) 존중 |
+| `recurring_billing` | `0 0 4 * * *` | `RecurringBillingScheduler` — 만료 임박 구독 자동결제(`BillingChargeProcessor`) | `subscriptions.status` 검사 + 결제 성공/실패 이벤트(`PaymentChargedEvent`·`SubscriptionExpiredEvent`) |
 
 ---
 
@@ -632,7 +641,8 @@ AppException(errorCode: ErrorCode, message)
     ├── CommunityErrorCode    (community/error)       — 도메인 코드 E-CMNT-* (001~009)
     ├── VerificationErrorCode (verification/error)   — 도메인 코드 E-VRF-*
     ├── WaitlistErrorCode     (waitlist/error)       — 도메인 코드 E-WL-*
-    └── InterviewErrorCode    (interview/error)      — 도메인 코드 E-IV-*
+    ├── InterviewErrorCode    (interview/error)      — 도메인 코드 E-IV-*
+    └── BillingErrorCode      (billing/error)        — 도메인 코드 E-BIL-*
         (새 도메인은 <domain>/error 에 enum 추가)
 ```
 
@@ -708,6 +718,10 @@ flowchart LR
 | `SOLAPI_APPROVAL_TEMPLATE_ID` | 사업자 인증 승인 알림톡 템플릿 ID |
 | `SOLAPI_SUBMITTED_TEMPLATE_ID` | 사업자 인증 접수 알림톡 템플릿 ID |
 | `SOLAPI_REJECTED_TEMPLATE_ID` | 사업자 인증 거절 알림톡 템플릿 ID |
+| `TOSS_SECRET_KEY` | 토스페이먼츠 시크릿 키 (빌링키 발급·결제 API 인증). 미설정 시 빌링 API 호출 불가 |
+| `TOSS_WEBHOOK_SECRET` | 토스 웹훅 HMAC 서명 검증 키 |
+| `BILLING_KEY_ENCRYPTION_KEY` | `BillingKey` 필드 AES-256 암호화 키 (32자) |
+| `DISCORD_BILLING_WEBHOOK_URL` | 결제·구독 이벤트 알림 (`DiscordChannel.BILLING`) |
 | `FLOWER_API_SERVICE_KEY` | aT 화훼유통정보 경매시세 적재 인증키. 미설정 시 `FlowerAuctionIngestService` no-op |
 | `KSTARTUP_API_SERVICE_KEY` | data.go.kr K-Startup 사업공고 인증키(일반 인증키, IP 등록 불필요). 미설정 시 `SupportProgramIngestService` no-op |
 | `BIZINFO_API_CRTFC_KEY` | 기업마당 정책정보 개방 인증키(data.go.kr 아님, **IP 바인딩**). 미설정 시 `BizinfoIngestService` no-op |

@@ -4,6 +4,7 @@ import kr.ai.flori.customers.entity.Customer
 import kr.ai.flori.expenses.entity.Expense
 import kr.ai.flori.sales.entity.Sale
 import kr.ai.flori.settings.repository.LabelSettingRepository
+import kr.ai.flori.verification.entity.BusinessVerification
 import java.time.LocalDate
 
 /**
@@ -64,6 +65,25 @@ object Fixtures {
     ): Customer = Customer(userId, name, phone)
 
     private val phoneSeq =
+        java.util.concurrent.atomic
+            .AtomicLong(0)
+
+    /**
+     * APPROVED 사업자 인증 1건(빌링 체험 자격 키 산출용). businessNumber 기본값은 단조 증가 시퀀스로
+     * 매번 고유 — 임베디드 DB가 테스트 메서드 간 데이터를 유지하므로 체험 자격(트라이얼 1회) 충돌을 막는다.
+     * 반환은 미저장 엔티티(다른 픽스처와 동일) — 호출 측이 repository.save 한다.
+     */
+    fun approvedVerification(
+        userId: Long,
+        businessNumber: String = "%010d".format(bizSeq.incrementAndGet()),
+        businessName: String = "테스트 가게",
+        representativeName: String = "홍길동",
+        businessLicenseUrl: String = "https://example.com/license.jpg",
+    ): BusinessVerification =
+        BusinessVerification(userId, businessNumber, businessName, representativeName, businessLicenseUrl)
+            .apply { approve() }
+
+    private val bizSeq =
         java.util.concurrent.atomic
             .AtomicLong(0)
 

@@ -104,6 +104,16 @@ class BusinessVerificationService(
     @Transactional(readOnly = true)
     fun isVerified(userId: Long): Boolean = repository.existsByUserIdAndStatus(userId, BusinessVerificationStatuses.APPROVED)
 
+    /**
+     * 빌링 체험 자격 키 산출용: 사용자의 최신 APPROVED 사업자등록번호(없으면 null).
+     * 미인증 사용자는 null이 반환되므로 호출 측이 자격 없음으로 처리할 수 있다.
+     */
+    @Transactional(readOnly = true)
+    fun approvedBusinessNumber(userId: Long): String? =
+        repository
+            .findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, BusinessVerificationStatuses.APPROVED)
+            ?.businessNumber
+
     /** 게이팅 가드: 현재 사용자가 미인증이면 403. */
     @Transactional(readOnly = true)
     fun requireVerified() {

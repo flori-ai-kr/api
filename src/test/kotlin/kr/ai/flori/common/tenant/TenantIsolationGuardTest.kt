@@ -96,6 +96,29 @@ class TenantIsolationGuardTest {
             // user_id 격리가 없고 누구나 같은 큐레이션을 본다. 개인 데이터는 insight_scraps(전부 ...UserId 격리)뿐.
             "SupportProgramRepository#findFeed",
             "SupportProgramRepository#findByIdIn",
+            // 빌링 — 구독 스케줄러(@Scheduled): 전체 테넌트 대상 시스템 작업.
+            // 결제일 도래 배치 / D-3 사전알림 배치는 cross-tenant 시스템 작업이므로 의도적 전역.
+            "SubscriptionRepository#findByStatusInAndNextBillingAtLessThanEqual",
+            // 빌링 — 어드민 구독 집계/목록(@RequiresAdmin): cross-tenant 운영 콘솔 조회.
+            "SubscriptionRepository#countByStatus",
+            "SubscriptionRepository#findByStatusOrderByCreatedAtDesc",
+            "SubscriptionRepository#findAllByOrderByCreatedAtDesc",
+            // 빌링 — 결제 이력: subscriptionId는 이미 테넌트 검증된 부모로 접근.
+            // orderId는 토스 페이먼츠 웹훅 수신 시 콜백 매칭 — 전역 유일 식별자로 서비스가 소유권 검증 후 처리.
+            "PaymentHistoryRepository#existsBySubscriptionIdAndBillingCycleAndStatus",
+            "PaymentHistoryRepository#countBySubscriptionIdAndBillingCycle",
+            "PaymentHistoryRepository#findTop10BySubscriptionIdOrderByCreatedAtDesc",
+            "PaymentHistoryRepository#findByOrderId",
+            "PaymentHistoryRepository#findByTossPaymentKey", // 웹훅 콜백 매칭(전역 paymentKey)
+            // 빌링 — 쿠폰: 코드는 전역 유일(운영자가 발행) — 유저가 입력한 코드로 조회 후 서비스가 사용 권한 검증.
+            "CouponRepository#findByCode",
+            "CouponRepository#findByCodeForUpdate", // PESSIMISTIC_WRITE — redeem 동시성 보호
+            "CouponRepository#existsByCode",
+            // 빌링 — 쿠폰 사용 이력: couponId 기준 어드민 조회 — @RequiresAdmin으로 보호된 운영자 조회.
+            "CouponRedemptionRepository#findByCouponIdOrderByCreatedAtDesc",
+            // 빌링 — 구독 신원 원장: identity_hash 조회 — 탈퇴 유저 포함 전체 원장 대상 어뷰징 방어 조회.
+            // user_id가 없는 설계(탈퇴 후도 유지 목적) — 서비스가 hash로만 접근.
+            "SubscriptionEligibilityRepository#findByIdentityHash",
             // 스토리지 증설 요청 운영 콘솔 조회: cross-tenant — @RequiresAdmin 하위에서만 사용.
             "StorageIncreaseRequestRepository#search",
         )

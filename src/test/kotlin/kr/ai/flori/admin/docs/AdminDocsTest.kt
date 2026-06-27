@@ -252,6 +252,10 @@ class AdminDocsTest : RestDocsSupport() {
                                 fieldWithPath("verifications.pending").type(JsonFieldType.NUMBER).description("인증 대기 수"),
                                 fieldWithPath("verifications.approved").type(JsonFieldType.NUMBER).description("인증 승인 수"),
                                 fieldWithPath("verifications.rejected").type(JsonFieldType.NUMBER).description("인증 거절 수"),
+                                fieldWithPath("subscriptions.active").type(JsonFieldType.NUMBER).description("활성 구독 수"),
+                                fieldWithPath("subscriptions.trialing").type(JsonFieldType.NUMBER).description("트라이얼 구독 수"),
+                                fieldWithPath("subscriptions.inGrace").type(JsonFieldType.NUMBER).description("유예 구독 수"),
+                                fieldWithPath("subscriptions.expired").type(JsonFieldType.NUMBER).description("만료 구독 수"),
                                 fieldWithPath(
                                     "comparison",
                                 ).type(JsonFieldType.OBJECT).optional().description("직전 동기간 대비(range=all이면 null)"),

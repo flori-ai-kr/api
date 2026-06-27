@@ -18,11 +18,19 @@ data class VerificationCounts(
     val rejected: Long,
 )
 
+data class SubscriptionCounts(
+    val active: Long,
+    val trialing: Long,
+    val inGrace: Long,
+    val expired: Long,
+)
+
 /** 운영 콘솔 개요. cross-tenant 단일 집계. */
 data class AdminOverviewResponse(
     val users: UserCounts,
     val sales: SalesCounts,
     val verifications: VerificationCounts,
+    val subscriptions: SubscriptionCounts,
     val comparison: OverviewComparison?,
 )
 
