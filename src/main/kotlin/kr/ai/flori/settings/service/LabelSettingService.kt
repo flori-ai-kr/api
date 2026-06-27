@@ -1,5 +1,6 @@
 package kr.ai.flori.settings.service
 
+import kr.ai.flori.common.config.CacheConfig
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
@@ -8,6 +9,7 @@ import kr.ai.flori.settings.entity.LabelDomains
 import kr.ai.flori.settings.entity.LabelKinds
 import kr.ai.flori.settings.entity.LabelSetting
 import kr.ai.flori.settings.repository.LabelSettingRepository
+import org.springframework.cache.annotation.CacheEvict
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -29,6 +31,7 @@ abstract class LabelSettingService(
             .map(::toResponse)
 
     @Transactional
+    @CacheEvict(cacheNames = [CacheConfig.LABEL_MAP_CACHE], allEntries = true)
     open fun add(
         label: String,
         value: String?,
@@ -43,6 +46,7 @@ abstract class LabelSettingService(
     }
 
     @Transactional
+    @CacheEvict(cacheNames = [CacheConfig.LABEL_MAP_CACHE], allEntries = true)
     open fun update(
         id: Long,
         label: String,
@@ -53,6 +57,7 @@ abstract class LabelSettingService(
     }
 
     @Transactional
+    @CacheEvict(cacheNames = [CacheConfig.LABEL_MAP_CACHE], allEntries = true)
     open fun delete(id: Long) {
         repository.delete(load(id))
     }
@@ -60,6 +65,9 @@ abstract class LabelSettingService(
     /**
      * 순서 변경. orderedIds 는 현재 (user,domain,kind) 전체 항목 id 와 정확히 일치해야 한다(부분/외부 id 거부).
      * 나열 순서대로 sort_order 를 1..N 으로 재부여한다.
+     *
+     * @CacheEvict 없음(의도): sort_order 만 바꾸고 label 문자열은 그대로라 labelMap(id→label) 캐시는
+     * 무효화 불필요하다(소비자는 id→label 조회용으로만 쓰고 정렬은 list()에서 가져온다). 불필요한 전체 evict 회피.
      */
     @Transactional
     open fun reorder(orderedIds: List<Long>): List<LabelSettingResponse> {

@@ -48,7 +48,7 @@ class TenantIsolationGuardTest {
             // 스케줄러: 전체 테넌트 대상 시스템 작업(@Scheduled)
             "RecurringExpenseRepository#findActiveDueCandidates",
             "ReservationRepository#findDueReminders",
-            "ReservationRepository#findByDateAndStatusNot",
+            "ReservationRepository#findByDateAndStatusNotIn",
             // 자식 엔티티: 이미 테넌트 검증된 부모(recurringId)로 접근
             "RecurringSkipRepository#existsByRecurringIdAndSkipDate",
             "RecurringSkipRepository#findByRecurringIdInAndSkipDate",

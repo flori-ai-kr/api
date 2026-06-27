@@ -1,11 +1,13 @@
 package kr.ai.flori.settings.service
 
+import kr.ai.flori.common.config.CacheConfig
 import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.error.CommonErrorCode
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.settings.entity.LabelDomains
 import kr.ai.flori.settings.entity.LabelKinds
 import kr.ai.flori.settings.repository.LabelSettingRepository
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 
 /**
@@ -17,7 +19,16 @@ import org.springframework.stereotype.Service
 class LabelSettingReader(
     private val repository: LabelSettingRepository,
 ) {
-    /** 현재 테넌트의 (domain,kind) 라벨을 id→label 맵으로 반환(목록/통계 응답에서 라벨 해석용). */
+    /**
+     * 현재 테넌트의 (domain,kind) 라벨을 id→label 맵으로 반환(목록/통계 응답에서 라벨 해석용).
+     * 대시보드/통계 한 요청에서 3~4회 반복 호출되므로 캐싱(키에 테넌트 userId 포함 → 테넌트 격리).
+     * TenantContext 는 Kotlin object 라 SpEL 에서 `.INSTANCE.currentUserId()` 로 접근한다.
+     * 라벨 CRUD 시 LabelSettingService 의 @CacheEvict(allEntries) 로 무효화된다.
+     */
+    @Cacheable(
+        cacheNames = [CacheConfig.LABEL_MAP_CACHE],
+        key = "T(kr.ai.flori.common.tenant.TenantContext).INSTANCE.currentUserId() + ':' + #domain + ':' + #kind",
+    )
     fun labelMap(
         domain: String,
         kind: String,

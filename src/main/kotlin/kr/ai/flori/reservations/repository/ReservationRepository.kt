@@ -43,19 +43,19 @@ interface ReservationRepository : JpaRepository<Reservation, Long> {
         @Param("cutoff") cutoff: Instant,
     ): List<Reservation>
 
-    /** 발송 대상 리마인더(스케줄러, 전체 테넌트): 미발송·도달·취소 제외. */
+    /** 발송 대상 리마인더(스케줄러, 전체 테넌트): 미발송·도달, 취소·픽업완료(completed) 제외. */
     @Query(
-        "SELECT r FROM Reservation r WHERE r.status <> 'cancelled' AND r.reminderSent = false " +
+        "SELECT r FROM Reservation r WHERE r.status NOT IN ('cancelled', 'completed') AND r.reminderSent = false " +
             "AND r.reminderAt IS NOT NULL AND r.reminderAt <= :now",
     )
     fun findDueReminders(
         @Param("now") now: Instant,
     ): List<Reservation>
 
-    /** 일일 요약(스케줄러, 전체 테넌트): 해당 날짜의 비취소 예약. */
-    fun findByDateAndStatusNot(
+    /** 일일 요약(스케줄러, 전체 테넌트): 해당 날짜 예약 중 취소·픽업완료(completed) 제외. */
+    fun findByDateAndStatusNotIn(
         date: LocalDate,
-        status: String,
+        statuses: Collection<String>,
     ): List<Reservation>
 
     @Query(
