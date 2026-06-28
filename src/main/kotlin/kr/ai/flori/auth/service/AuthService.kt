@@ -20,7 +20,9 @@ import kr.ai.flori.common.security.JwtProperties
 import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.user.dto.UserResponse
 import kr.ai.flori.user.entity.User
+import kr.ai.flori.user.entity.UserConsent
 import kr.ai.flori.user.entity.UserProfile
+import kr.ai.flori.user.repository.UserConsentRepository
 import kr.ai.flori.user.repository.UserProfileRepository
 import kr.ai.flori.user.repository.UserRepository
 import kr.ai.flori.user.service.toResponse
@@ -45,6 +47,7 @@ import java.util.Base64
  * - refresh 회전: 사용 시 기존 토큰 무효화 후 새 토큰 발급.
  */
 @Service
+@Suppress("LongParameterList") // DI 의존(repo·provider·publisher 등) 다수 — 가입 동의 저장소 추가로 10개
 class AuthService(
     private val userRepository: UserRepository,
     private val refreshTokenRepository: RefreshTokenRepository,
@@ -52,6 +55,7 @@ class AuthService(
     private val jwtProperties: JwtProperties,
     private val seeder: DefaultDataSeeder,
     private val userProfileRepository: UserProfileRepository,
+    private val userConsentRepository: UserConsentRepository,
     // 제공자 일반화: 빈 이름(KAKAO/GOOGLE/NAVER)을 키로 소셜 클라이언트 주입. 새 제공자는 빈 추가만으로 확장.
     private val socialClients: Map<String, SocialOAuthClient>,
     private val eventPublisher: ApplicationEventPublisher,
@@ -170,6 +174,8 @@ class AuthService(
             tokenProvider.parseRegisterToken(request.registerToken)
                 ?: throw AppException(CommonErrorCode.INVALID_TOKEN, "가입 토큰이 유효하지 않거나 만료되었습니다")
         verifyRegisterable(principal.provider, principal.providerId, request.email, request.nickname)
+        // 필수 동의 불변식 — 컨트롤러 @Valid/@AssertTrue와 별개의 2차 방어선(비-HTTP 직접 호출 시에도 미동의 가입 차단).
+        require(request.termsAgreed && request.privacyAgreed) { "필수 약관 동의 없이 가입할 수 없습니다" }
 
         val user =
             try {
@@ -203,6 +209,17 @@ class AuthService(
                 specialties = request.specialties?.toTypedArray() ?: emptyArray()
                 referralSources = request.referralSources.toTypedArray()
             },
+        )
+        // 가입 동의 기록(입증 근거). 필수는 @AssertTrue + 위 require 가드로 이중 강제되어 여기선 true가 보장된다.
+        userConsentRepository.save(
+            UserConsent(
+                userId = userId,
+                termsAgreed = request.termsAgreed,
+                privacyAgreed = request.privacyAgreed,
+                marketingAgreed = request.marketingAgreed,
+                policyVersion = request.policyVersion ?: DEFAULT_POLICY_VERSION,
+                agreedAt = Instant.now(),
+            ),
         )
         seeder.seedForNewUser(userId)
         eventPublisher.publishEvent(
@@ -411,5 +428,8 @@ class AuthService(
         const val DUP_IDENTITY = "이미 가입된 계정입니다"
         const val DUP_EMAIL = "이미 사용 중인 이메일입니다"
         const val DUP_NICKNAME = "이미 사용 중인 닉네임입니다"
+
+        // 약관/처리방침 시행일 = 동의 버전 식별자. 웹이 policyVersion 미전송 시 서버 기본값.
+        const val DEFAULT_POLICY_VERSION = "2026-06-19"
     }
 }

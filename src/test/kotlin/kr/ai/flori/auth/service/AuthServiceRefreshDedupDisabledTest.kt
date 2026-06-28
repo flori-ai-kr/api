@@ -53,6 +53,8 @@ class AuthServiceRefreshDedupDisabledTest {
                     regionSido = "서울특별시",
                     ownerAgeRange = "30대",
                     referralSources = listOf("인스타그램"),
+                    termsAgreed = true,
+                    privacyAgreed = true,
                 ),
             )
 

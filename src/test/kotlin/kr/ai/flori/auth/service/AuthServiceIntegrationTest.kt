@@ -105,6 +105,8 @@ class AuthServiceIntegrationTest {
         regionSido = "서울특별시",
         ownerAgeRange = "30대",
         referralSources = listOf("인스타그램"),
+        termsAgreed = true,
+        privacyAgreed = true,
     )
 
     @Test
@@ -141,6 +143,16 @@ class AuthServiceIntegrationTest {
         val user = userRepository.findByProviderAndProviderId("GOOGLE", pid)!!
         assertThat(user.email).isEqualTo(email)
         assertThat(user.nickname).isEqualTo("닉네임")
+        // 가입 동의가 user_consents에 기록됐는지 검증
+        val consent =
+            jdbcTemplate.queryForMap(
+                "SELECT terms_agreed, privacy_agreed, marketing_agreed, policy_version FROM user_consents WHERE user_id = ?",
+                user.id,
+            )
+        assertThat(consent["terms_agreed"]).isEqualTo(true)
+        assertThat(consent["privacy_agreed"]).isEqualTo(true)
+        assertThat(consent["marketing_agreed"]).isEqualTo(false)
+        assertThat(consent["policy_version"]).isEqualTo("2026-06-19")
     }
 
     @Test
