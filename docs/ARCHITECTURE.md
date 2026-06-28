@@ -1,6 +1,6 @@
 # Flori API — 아키텍처 & 기술 선정 이유
 
-> 최종 업데이트: 2026-06-26 (인사이트 트렌드 기능 제거 + 기업마당(bizinfo) collector 추가 + GrantRelevance·HtmlText·flower_item_scraps 신설 + 지원사업 만료필터 KST화 / support 모듈: Discord SUPPORT 채널 알림 + 이미지 업로드 + AdminInquiryResponse / 온보딩: users.name 필드 + ownerAgeRange·referralSources 필수화 + /me/profile ownerName·phoneNumber 노출 / 푸시: 타입별 수신 설정 + 작업 실행 로깅 + 커뮤니티·인사이트 푸시 확장 / 커뮤니티: 댓글 수정(PATCH /community/comments/{id}·작성자 전용·운영자 불가) / 등급: 임계값 변경 시 잠금 아닌 고객 일괄 재산정(recomputeAllGrades) + 변경 미리보기(POST /customer-grades/{id}/preview) + gradeIdFor fallback 개선(최저 non-null threshold 등급) / **빌링**: 토스페이먼츠 구독·자동결제·쿠폰 도메인 신설 — Subscription·BillingKey·PaymentHistory·Coupon·CouponRedemption·SubscriptionEligibility + RecurringBillingScheduler(04:00 KST) + Discord BILLING 채널)
+> 최종 업데이트: 2026-06-28 (인사이트 트렌드 기능 제거 + 기업마당(bizinfo) collector 추가 + GrantRelevance·HtmlText·flower_item_scraps 신설 + 지원사업 만료필터 KST화 / support 모듈: Discord SUPPORT 채널 알림 + 이미지 업로드 + AdminInquiryResponse / 온보딩: users.name 필드 + ownerAgeRange·referralSources 필수화 + /me/profile ownerName·phoneNumber 노출 + **가입 동의 수집·user_consents 저장**(termsAgreed·privacyAgreed 필수/@AssertTrue, marketingAgreed 선택, 입증 근거·응답 비노출) / 푸시: 타입별 수신 설정 + 작업 실행 로깅 + 커뮤니티·인사이트 푸시 확장 / 커뮤니티: 댓글 수정(PATCH /community/comments/{id}·작성자 전용·운영자 불가) / 등급: 임계값 변경 시 잠금 아닌 고객 일괄 재산정(recomputeAllGrades) + 변경 미리보기(POST /customer-grades/{id}/preview) + gradeIdFor fallback 개선(최저 non-null threshold 등급) / **빌링**: 토스페이먼츠 구독·자동결제·쿠폰 도메인 신설 — Subscription·BillingKey·PaymentHistory·Coupon·CouponRedemption·SubscriptionEligibility + RecurringBillingScheduler(04:00 KST) + Discord BILLING 채널)
 
 이 문서는 Flori(꽃집 어드민) **모바일 앱 백엔드 API**의 기술 스택과 아키텍처를 설명한다. 단순히 "무엇을 쓰는가"가 아니라 **"왜 이것을 골랐는가"**에 초점을 맞춘다. 모든 선택에는 *기존 Next.js+Supabase 웹앱의 비즈니스 로직을 네이티브 앱이 호출 가능한 REST API로 재구현하고, 자체 AWS 인프라 위에 올린다*는 도메인 맥락이 반영되어 있다.
 
@@ -107,7 +107,7 @@ flowchart LR
 
 | 도메인 패키지 | 책임 |
 |---|---|
-| `auth` | 회원가입(기본 설정 시드)·로그인·**카카오 소셜 로그인**·refresh 회전·로그아웃·`/me`. 가입 완료(`/auth/register/complete`) 시 `ownerName`(→`users.name`)·`ownerAgeRange`·`referralSources` 필수 수집 + `phoneNumber` 필수 수집(PII) |
+| `auth` | 회원가입(기본 설정 시드)·로그인·**카카오 소셜 로그인**·refresh 회전·로그아웃·`/me`. 가입 완료(`/auth/register/complete`) 시 `ownerName`(→`users.name`)·`ownerAgeRange`·`referralSources` 필수 수집 + `phoneNumber` 필수 수집(PII) + **가입 동의** `termsAgreed`·`privacyAgreed` 필수(`@AssertTrue`)·`marketingAgreed` 선택 → `user_consents` 저장(입증 근거, 응답 비노출) |
 | `user` | 프로필 수정·아바타 업로드·탈퇴(`DELETE /me`). 탈퇴 시 email·nickname·**provider_id** 스크럽(재가입 허용) |
 | `sales` | 매출 CRUD·무한스크롤·필터·**요약(GET /sales/summary)**·미수·**서버 입금계산**·**이름+전화번호로 고객 자동연결(findOrCreate)** |
 | `expenses` | 지출 + 고정비(this/all 분기·**@Scheduled 자동생성**)·**목록 페이지네이션(무한스크롤)**·**요약 집계(GET /expenses/summary)** |
@@ -305,7 +305,7 @@ sequenceDiagram
     else 신규 사용자(미가입)
         AS-->>U: registerToken 발급(가입 미완료 — 온보딩 필요, socialEmail 프리필)
         U->>AS: POST /auth/register/complete (registerToken + 프로필)
-        AS->>DB: User + user_profiles + 기본설정 시드를 한 트랜잭션에 생성 (온보딩 완료 = 가입 완료)
+        AS->>DB: User + user_profiles + user_consents + 기본설정 시드를 한 트랜잭션에 생성 (온보딩 완료 = 가입 완료)
     end
     AS->>DB: refresh 저장(SHA-256 해시)
     AS-->>U: { accessToken(JWT), refreshToken(불투명) }
@@ -551,7 +551,7 @@ erDiagram
 
 | 도메인 | 대표 엔드포인트 | 권한 |
 |---|---|---|
-| 인증 | `POST /auth/oauth/{kakao,google,naver}`, `POST /auth/register/complete`(+`phoneNumber`), `POST /auth/{refresh,logout}`, `GET /me`, `DELETE /me` | Public / Auth |
+| 인증 | `POST /auth/oauth/{kakao,google,naver}`, `POST /auth/register/complete`(+`phoneNumber`+동의필드), `POST /auth/{refresh,logout}`, `GET /me`, `DELETE /me` | Public / Auth |
 | 매출 | `GET/POST/PATCH/DELETE /sales`, `GET /sales/summary`, `/sales/{id}/complete-unpaid`·`/revert-unpaid`, `/sales/suggestions` | Auth |
 | 지출·고정비 | `/expenses`(+`/expenses/summary`), `/recurring-expenses`(+`/toggle`·`/instances/{id}?scope=this\|all`) | Auth |
 | 고객 | `/customers`(+`/search`·`/check-phone`·`/{id}/sales`·`/find-or-create`·`/{id}/grade`·`/{id}/grade/auto`), `GET/POST/PATCH/DELETE /customer-grades`, `POST /customer-grades/{id}/preview` | Auth |

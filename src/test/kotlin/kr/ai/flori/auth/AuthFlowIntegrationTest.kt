@@ -99,6 +99,8 @@ class AuthFlowIntegrationTest {
                             "ownerName" to "홍길동",
                             "ownerAgeRange" to "30대",
                             "referralSources" to listOf("인스타그램"),
+                            "termsAgreed" to true,
+                            "privacyAgreed" to true,
                         )
                 }.andReturn()
                 .response.contentAsString
@@ -201,6 +203,8 @@ class AuthFlowIntegrationTest {
                         "ownerName" to "홍길동",
                         "ownerAgeRange" to "30대",
                         "referralSources" to listOf("인스타그램"),
+                        "termsAgreed" to true,
+                        "privacyAgreed" to true,
                     )
             }.andExpect { status { isConflict() } }
     }
@@ -217,6 +221,50 @@ class AuthFlowIntegrationTest {
                         "nickname" to "헤이즐",
                         "email" to "flow-${UUID.randomUUID()}@flori.dev",
                         "regionSido" to "서울특별시",
+                    )
+            }.andExpect { status { isBadRequest() } }
+    }
+
+    @Test
+    fun `이용약관 미동의(termsAgreed=false) 가입 완료는 400`() {
+        mockMvc
+            .post("/auth/register/complete") {
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    body(
+                        "registerToken" to kakaoRegisterToken(),
+                        "storeName" to "헤이즐 플라워",
+                        "phoneNumber" to "01012345678",
+                        "nickname" to "헤이즐-${UUID.randomUUID()}",
+                        "email" to "flow-${UUID.randomUUID()}@flori.dev",
+                        "regionSido" to "서울특별시",
+                        "ownerName" to "홍길동",
+                        "ownerAgeRange" to "30대",
+                        "referralSources" to listOf("인스타그램"),
+                        "termsAgreed" to false,
+                        "privacyAgreed" to true,
+                    )
+            }.andExpect { status { isBadRequest() } }
+    }
+
+    @Test
+    fun `개인정보 수집·이용 미동의(privacyAgreed=false) 가입 완료는 400`() {
+        mockMvc
+            .post("/auth/register/complete") {
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    body(
+                        "registerToken" to kakaoRegisterToken(),
+                        "storeName" to "헤이즐 플라워",
+                        "phoneNumber" to "01012345678",
+                        "nickname" to "헤이즐-${UUID.randomUUID()}",
+                        "email" to "flow-${UUID.randomUUID()}@flori.dev",
+                        "regionSido" to "서울특별시",
+                        "ownerName" to "홍길동",
+                        "ownerAgeRange" to "30대",
+                        "referralSources" to listOf("인스타그램"),
+                        "termsAgreed" to true,
+                        "privacyAgreed" to false,
                     )
             }.andExpect { status { isBadRequest() } }
     }
@@ -255,6 +303,8 @@ class AuthFlowIntegrationTest {
                         "ownerName" to "홍길동",
                         "ownerAgeRange" to "30대",
                         "referralSources" to listOf("인스타그램"),
+                        "termsAgreed" to true,
+                        "privacyAgreed" to true,
                     )
             }.andExpect { status { isUnauthorized() } }
     }
@@ -286,6 +336,8 @@ class AuthFlowIntegrationTest {
                         "ownerName" to "홍길동",
                         "ownerAgeRange" to "30대",
                         "referralSources" to listOf("인스타그램"),
+                        "termsAgreed" to true,
+                        "privacyAgreed" to true,
                     )
             }.andExpect { status { isCreated() } }
 
@@ -316,6 +368,8 @@ class AuthFlowIntegrationTest {
                             "ownerName" to "홍길동",
                             "ownerAgeRange" to "30대",
                             "referralSources" to listOf("인스타그램"),
+                            "termsAgreed" to true,
+                            "privacyAgreed" to true,
                         )
                 }.andExpect { status { isCreated() } }
                 .andReturn()

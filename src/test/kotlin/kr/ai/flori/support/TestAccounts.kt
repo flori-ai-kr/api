@@ -45,6 +45,8 @@ object TestAccounts {
                 regionSido = regionSido,
                 ownerAgeRange = ownerAgeRange,
                 referralSources = referralSources,
+                termsAgreed = true,
+                privacyAgreed = true,
             ),
         )
     }
