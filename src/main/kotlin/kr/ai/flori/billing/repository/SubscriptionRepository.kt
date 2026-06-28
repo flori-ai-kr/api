@@ -1,0 +1,27 @@
+package kr.ai.flori.billing.repository
+
+import kr.ai.flori.billing.entity.Subscription
+import org.springframework.data.jpa.repository.JpaRepository
+import java.time.Instant
+
+interface SubscriptionRepository : JpaRepository<Subscription, Long> {
+    fun findByUserId(userId: Long): Subscription?
+
+    // 결제일 도래분(스케줄러). status 목록은 호출부가 지정.
+    fun findByStatusInAndNextBillingAtLessThanEqual(
+        statuses: Collection<String>,
+        at: Instant,
+    ): List<Subscription>
+
+    // 어드민 구독 집계.
+    fun countByStatus(status: String): Long
+
+    // 어드민 구독 목록 (상태 필터).
+    fun findByStatusOrderByCreatedAtDesc(
+        status: String,
+        pageable: org.springframework.data.domain.Pageable,
+    ): List<Subscription>
+
+    // 어드민 구독 목록 (전체).
+    fun findAllByOrderByCreatedAtDesc(pageable: org.springframework.data.domain.Pageable): List<Subscription>
+}

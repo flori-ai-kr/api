@@ -8,6 +8,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
+import java.math.BigDecimal
 
 // ─── 게이트웨이 → ai-server(FastAPI, 내부망) 계약 ───────────────────
 // 인증: X-Internal-Key(게이트웨이 신뢰) + Authorization Bearer(유저 JWT — ai-server가 Spring 도구 호출에 사용)
@@ -63,6 +64,59 @@ data class AiOcrResult(
     @get:JsonProperty("output_tokens") @param:JsonProperty("output_tokens") val outputTokens: Int? = null,
 )
 
+// ─── 마케팅(블로그 초안) 계약(snake_case) ─────────────────────────
+data class AiStoreContext(
+    @get:JsonProperty("shop_name") @param:JsonProperty("shop_name") val shopName: String? = null,
+    @get:JsonProperty("avg_order_value") @param:JsonProperty("avg_order_value") val avgOrderValue: Long? = null,
+    @get:JsonProperty("upcoming_season") @param:JsonProperty("upcoming_season") val upcomingSeason: String? = null,
+    @get:JsonProperty("top_products") @param:JsonProperty("top_products") val topProducts: List<String> = emptyList(),
+)
+
+// 게이트웨이가 DB active 프롬프트(SPEC-AI-008)를 ai-server에 주입하는 오버라이드(부분 적용). 어드민 신뢰 입력.
+data class AiPromptOverride(
+    @get:JsonProperty("system_md") @param:JsonProperty("system_md") val systemMd: String? = null,
+    @get:JsonProperty("rules_md") @param:JsonProperty("rules_md") val rulesMd: String? = null,
+    @get:JsonProperty("output_spec_md") @param:JsonProperty("output_spec_md") val outputSpecMd: String? = null,
+    val model: String? = null,
+    val temperature: BigDecimal? = null,
+)
+
+data class AiBlogCall(
+    val channel: String,
+    val keyword: String,
+    val situation: String? = null,
+    val memo: String? = null,
+    @get:JsonProperty("photo_urls") @param:JsonProperty("photo_urls") val photoUrls: List<String> = emptyList(),
+    @get:JsonProperty("tone_samples") @param:JsonProperty("tone_samples") val toneSamples: List<String> = emptyList(),
+    @get:JsonProperty("store_context") @param:JsonProperty("store_context") val storeContext: AiStoreContext? = null,
+    val model: String? = null,
+    @get:JsonProperty("prompt_override") @param:JsonProperty("prompt_override") val promptOverride: AiPromptOverride? = null,
+)
+
+data class AiBlogSection(
+    val heading: String = "",
+    val body: String = "",
+)
+
+data class AiBlogFaq(
+    val q: String = "",
+    val a: String = "",
+)
+
+data class AiBlogDraft(
+    val title: String = "",
+    val sections: List<AiBlogSection> = emptyList(),
+    val faq: List<AiBlogFaq> = emptyList(),
+    val hashtags: List<String> = emptyList(),
+)
+
+data class AiBlogResult(
+    val draft: AiBlogDraft = AiBlogDraft(),
+    val model: String? = null,
+    @get:JsonProperty("input_tokens") @param:JsonProperty("input_tokens") val inputTokens: Int? = null,
+    @get:JsonProperty("output_tokens") @param:JsonProperty("output_tokens") val outputTokens: Int? = null,
+)
+
 @Component
 class AiServerClient(
     private val properties: AiGatewayProperties,
@@ -104,6 +158,13 @@ class AiServerClient(
         userId: Long,
         imageUrl: String,
     ): AiOcrResult = post("/ocr/reservation", userJwt, userId, AiOcrCall(imageUrl, properties.chatModel), AiOcrResult::class.java)
+
+    fun generateBlog(
+        userJwt: String,
+        userId: Long,
+        call: AiBlogCall,
+    ): AiBlogResult =
+        post("/marketing/blog", userJwt, userId, call.copy(model = call.model ?: properties.chatModel), AiBlogResult::class.java)
 
     @Suppress("TooGenericExceptionCaught") // ai-server 호출은 다양한 예외 발생 가능 — 일괄 wrap
     private fun <T> post(

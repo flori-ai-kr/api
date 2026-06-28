@@ -67,16 +67,15 @@ class CommunityDocsTest : RestDocsSupport() {
             fieldWithPath("${prefix}authorIsAdmin").type(JsonFieldType.BOOLEAN).description("작성자 운영자 여부"),
             fieldWithPath("${prefix}category").type(JsonFieldType.STRING).description("카테고리"),
             fieldWithPath("${prefix}title").type(JsonFieldType.STRING).description("제목"),
-            subsectionWithPath("${prefix}content").type(JsonFieldType.OBJECT).description("본문(Tiptap JSON). 비권한 비밀글은 빈 객체"),
-            fieldWithPath("${prefix}contentText").type(JsonFieldType.STRING).description("본문 plain text(비권한 비밀글은 빈 문자열)"),
+            subsectionWithPath("${prefix}content").type(JsonFieldType.OBJECT).description("본문(Tiptap JSON)"),
+            fieldWithPath("${prefix}contentText").type(JsonFieldType.STRING).description("본문 plain text"),
             fieldWithPath("${prefix}imageUrls").type(JsonFieldType.ARRAY).description("이미지 URL 목록"),
-            fieldWithPath("${prefix}isSecret").type(JsonFieldType.BOOLEAN).description("비밀글 여부"),
             fieldWithPath("${prefix}isPinned").type(JsonFieldType.BOOLEAN).description("고정글 여부"),
             fieldWithPath("${prefix}likeCount").type(JsonFieldType.NUMBER).description("좋아요 수"),
             fieldWithPath("${prefix}commentCount").type(JsonFieldType.NUMBER).description("댓글 수"),
             fieldWithPath("${prefix}liked").type(JsonFieldType.BOOLEAN).description("현재 사용자 좋아요 여부"),
             fieldWithPath("${prefix}isMine").type(JsonFieldType.BOOLEAN).description("현재 사용자 작성 여부"),
-            fieldWithPath("${prefix}canView").type(JsonFieldType.BOOLEAN).description("열람 권한(false면 본문 마스킹)"),
+            fieldWithPath("${prefix}viewerIsAdmin").type(JsonFieldType.BOOLEAN).description("현재 사용자 운영자 여부(고정 등 관리자 액션 노출 판단)"),
             fieldWithPath("${prefix}createdAt").type(JsonFieldType.STRING).description("생성 시각(ISO-8601)"),
             fieldWithPath("${prefix}updatedAt").type(JsonFieldType.STRING).description("수정 시각(ISO-8601)"),
         )
@@ -109,7 +108,6 @@ class CommunityDocsTest : RestDocsSupport() {
                                 "title" to "오늘의 꽃 작업",
                                 "contentJson" to mapOf("type" to "doc", "content" to emptyList<Any>()),
                                 "contentText" to "오늘 작업한 내용입니다",
-                                "isSecret" to false,
                                 "imageUrls" to listOf("https://cdn.flori.dev/community/1/a.jpg"),
                             ),
                         )
@@ -150,7 +148,6 @@ class CommunityDocsTest : RestDocsSupport() {
                             "title" to "수국 관리 질문",
                             "contentJson" to mapOf("type" to "doc", "content" to emptyList<Any>()),
                             "contentText" to "수국이 시들어요",
-                            "isSecret" to false,
                             "imageUrls" to emptyList<String>(),
                         ),
                     )
@@ -171,7 +168,6 @@ class CommunityDocsTest : RestDocsSupport() {
                                 fieldWithPath("title").type(JsonFieldType.STRING).description("제목 (필수)"),
                                 subsectionWithPath("contentJson").type(JsonFieldType.OBJECT).description("본문 Tiptap JSON (필수)"),
                                 fieldWithPath("contentText").type(JsonFieldType.STRING).optional().description("본문 plain text(검색/미리보기)"),
-                                fieldWithPath("isSecret").type(JsonFieldType.BOOLEAN).optional().description("비밀글 여부(기본 false)"),
                                 fieldWithPath("imageUrls").type(JsonFieldType.ARRAY).optional().description("이미지 URL 목록"),
                             ),
                         responseFields = postResponseFields(""),
@@ -229,7 +225,7 @@ class CommunityDocsTest : RestDocsSupport() {
                         identifier = "community-post-get",
                         responseSchema = "PostResponse",
                         tag = "Community",
-                        summary = "게시글 단건 조회 (비권한 비밀글은 마스킹)",
+                        summary = "게시글 단건 조회",
                         pathParameters = listOf(parameterWithName("id").description("게시글 ID")),
                         responseFields = postResponseFields(""),
                     ),
@@ -249,7 +245,7 @@ class CommunityDocsTest : RestDocsSupport() {
                 requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/community/posts/{id}")
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
-                content = json(mapOf("title" to "수정된 제목", "isSecret" to true))
+                content = json(mapOf("title" to "수정된 제목"))
             }.andExpect { status { isOk() } }
             .andDo {
                 handle(
@@ -266,7 +262,6 @@ class CommunityDocsTest : RestDocsSupport() {
                                 fieldWithPath("title").type(JsonFieldType.STRING).optional().description("제목 변경"),
                                 subsectionWithPath("contentJson").type(JsonFieldType.OBJECT).optional().description("본문 변경"),
                                 fieldWithPath("contentText").type(JsonFieldType.STRING).optional().description("본문 텍스트 변경"),
-                                fieldWithPath("isSecret").type(JsonFieldType.BOOLEAN).optional().description("비밀글 여부 변경"),
                                 fieldWithPath("imageUrls").type(JsonFieldType.ARRAY).optional().description("이미지 URL 변경"),
                             ),
                         responseFields = postResponseFields(""),
@@ -441,6 +436,53 @@ class CommunityDocsTest : RestDocsSupport() {
                                 fieldWithPath("authorNickname").type(JsonFieldType.STRING).description("작성자 닉네임"),
                                 fieldWithPath("authorIsAdmin").type(JsonFieldType.BOOLEAN).description("작성자 운영자 여부"),
                                 fieldWithPath("content").type(JsonFieldType.STRING).description("내용"),
+                                fieldWithPath("isSecret").type(JsonFieldType.BOOLEAN).description("비밀댓글 여부"),
+                                fieldWithPath("isMine").type(JsonFieldType.BOOLEAN).description("현재 사용자 작성 여부"),
+                                fieldWithPath("canView").type(JsonFieldType.BOOLEAN).description("열람 권한"),
+                                fieldWithPath("isDeleted").type(JsonFieldType.BOOLEAN).description("삭제 여부"),
+                                fieldWithPath("createdAt").type(JsonFieldType.STRING).description("생성 시각(ISO-8601)"),
+                            ),
+                    ),
+                )
+            }
+    }
+
+    // ── 9-1. 댓글 수정 ─────────────────────────────────────────────────────────
+
+    @Test
+    fun `댓글 수정 문서화`() {
+        val token = signupVerifiedAndToken()
+        val id = createPost(token)
+        val commentId = createComment(token, id)
+
+        mockMvc
+            .patch("/community/comments/$commentId") {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/community/comments/{id}")
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content = json(mapOf("content" to "내용을 수정했습니다"))
+            }.andExpect { status { isOk() } }
+            .andDo {
+                handle(
+                    docs(
+                        identifier = "community-comment-update",
+                        requestSchema = "CommentUpdateRequest",
+                        responseSchema = "CommentResponse",
+                        tag = "Community",
+                        summary = "댓글 수정 (작성자 본인만 — 운영자도 불가, 본문만 변경)",
+                        pathParameters = listOf(parameterWithName("id").description("댓글 ID")),
+                        requestFields =
+                            listOf(
+                                fieldWithPath("content").type(JsonFieldType.STRING).description("수정할 내용 (필수)"),
+                            ),
+                        responseFields =
+                            listOf(
+                                fieldWithPath("id").type(JsonFieldType.NUMBER).description("댓글 ID"),
+                                fieldWithPath("postId").type(JsonFieldType.NUMBER).description("게시글 ID"),
+                                fieldWithPath("parentId").type(JsonFieldType.NUMBER).optional().description("부모 댓글 ID(없으면 null)"),
+                                fieldWithPath("authorNickname").type(JsonFieldType.STRING).description("작성자 닉네임"),
+                                fieldWithPath("authorIsAdmin").type(JsonFieldType.BOOLEAN).description("작성자 운영자 여부"),
+                                fieldWithPath("content").type(JsonFieldType.STRING).description("수정된 내용"),
                                 fieldWithPath("isSecret").type(JsonFieldType.BOOLEAN).description("비밀댓글 여부"),
                                 fieldWithPath("isMine").type(JsonFieldType.BOOLEAN).description("현재 사용자 작성 여부"),
                                 fieldWithPath("canView").type(JsonFieldType.BOOLEAN).description("열람 권한"),

@@ -14,7 +14,9 @@ import kr.ai.flori.photos.dto.UploadTargetResponse
 import kr.ai.flori.photos.entity.PhotoCard
 import kr.ai.flori.photos.entity.PhotoFile
 import kr.ai.flori.photos.repository.PhotoCardRepository
+import kr.ai.flori.sales.entity.Sale
 import kr.ai.flori.sales.repository.SaleRepository
+import kr.ai.flori.storage.service.StorageQuotaService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -30,6 +32,7 @@ class PhotoCardService(
     private val s3PresignService: S3PresignService,
     private val saleRepository: SaleRepository,
     private val customerRepository: CustomerRepository,
+    private val storageQuotaService: StorageQuotaService,
 ) {
     @Transactional(readOnly = true)
     fun list(
@@ -79,9 +82,15 @@ class PhotoCardService(
         card.memo = request.memo
         card.tags = request.tags.toTypedArray()
         card.photos = request.photos
-        card.saleId = request.saleId?.also { verifySaleOwnership(it) }
-        card.customerId = request.customerId?.also { verifyCustomerOwnership(it) }
-        return toResponse(photoCardRepository.save(card))
+        val sale = request.saleId?.let { requireSale(it) }
+        card.saleId = sale?.id
+        // 고객 연결: 명시한 customerId가 우선, 없으면 연동 매출의 고객을 상속한다.
+        // (사진첩 고객 필터·고객 상세 집계가 photo_cards.customer_id 만 보므로, 매출/캘린더 플로우처럼
+        //  saleId 만 오는 경우에도 고객 연결이 누락되지 않게 한다.)
+        card.customerId = request.customerId?.also { verifyCustomerOwnership(it) } ?: sale?.customerId
+        val saved = photoCardRepository.save(card)
+        storageQuotaService.addUsage(saved.userId, saved.photos.sumOf { it.size })
+        return toResponse(saved)
     }
 
     @Transactional
@@ -98,20 +107,24 @@ class PhotoCardService(
         }
         request.photos?.let {
             requirePhotoLimit(it.size)
+            val before = card.photos.sumOf { p -> p.size }
             card.photos = it
+            storageQuotaService.addUsage(card.userId, it.sumOf { p -> p.size } - before)
         }
-        request.saleId?.let {
-            verifySaleOwnership(it)
-            card.saleId = it
-        }
+        val requestSale = request.saleId?.let { requireSale(it) }
+        requestSale?.let { card.saleId = it.id }
         // saleId 와 동일하게 null=미변경. 연결 해제는 clearCustomer 플래그로만 처리.
         if (request.clearCustomer) {
             card.customerId = null
-        } else {
-            request.customerId?.let {
-                verifyCustomerOwnership(it)
-                card.customerId = it
-            }
+        } else if (request.customerId != null) {
+            verifyCustomerOwnership(request.customerId)
+            card.customerId = request.customerId
+        } else if (card.customerId == null) {
+            // 고객 지정/해제 신호가 없고 아직 미연결이면, 연동 매출의 고객을 상속(과거 데이터·매출 플로우 백필).
+            // 이미 고객이 연결된 카드는 건드리지 않는다 — 사진첩에서 수동 연결한 고객을 매출 고객으로 덮어쓰지 않기 위함.
+            // 이번 요청으로 검증·조회한 sale을 우선 재사용하고, 없으면 카드의 기존 sale_id로 조회(2차 쿼리 회피).
+            val sale = requestSale ?: card.saleId?.let { findSale(it) }
+            card.customerId = sale?.customerId
         }
         return toResponse(photoCardRepository.save(card))
     }
@@ -121,6 +134,7 @@ class PhotoCardService(
     fun delete(id: Long) {
         val card = load(id)
         card.photos.forEach { s3PresignService.deleteByUrl(it.url) }
+        storageQuotaService.addUsage(card.userId, -card.photos.sumOf { it.size })
         photoCardRepository.delete(card)
     }
 
@@ -143,7 +157,12 @@ class PhotoCardService(
         photos: List<PhotoFile>,
     ): PhotoCardResponse {
         val card = load(id)
+        // reorder는 본래 동일 집합 재배열이지만, 사진 추가·size 조작으로 쿼터·장수제한을 우회당하지 않도록
+        // update 와 동일하게 장수 제한 + 사용량 델타 증감을 적용한다.
+        requirePhotoLimit(photos.size)
+        val before = card.photos.sumOf { it.size }
         card.photos = photos
+        storageQuotaService.addUsage(card.userId, photos.sumOf { it.size } - before)
         return toResponse(photoCardRepository.save(card))
     }
 
@@ -154,7 +173,11 @@ class PhotoCardService(
     ): PhotoCardResponse {
         val card = load(id)
         // 단건 삭제도 S3 객체까지 정리(전체 카드 삭제와 동일) — 안 그러면 CloudFront에 고아 객체가 공개로 남는다.
-        if (card.photos.any { it.url == photoUrl }) s3PresignService.deleteByUrl(photoUrl)
+        val removed = card.photos.firstOrNull { it.url == photoUrl }
+        if (removed != null) {
+            s3PresignService.deleteByUrl(photoUrl)
+            storageQuotaService.addUsage(card.userId, -removed.size)
+        }
         card.photos = card.photos.filterNot { it.url == photoUrl }
         return toResponse(photoCardRepository.save(card))
     }
@@ -166,6 +189,7 @@ class PhotoCardService(
     fun createUploadTargets(files: List<FileMetaRequest>): List<UploadTargetResponse> {
         val userId = TenantContext.currentUserId()
         requirePhotoLimit(files.size)
+        storageQuotaService.requireWithinQuota(userId, files.sumOf { it.size })
         return files.map { file ->
             val contentType = requireNotNull(file.type)
             validateImageMeta(contentType, file.size)
@@ -175,7 +199,7 @@ class PhotoCardService(
         }
     }
 
-    /** presigned PUT 발급: 소유권 확인 + 카드당 최대 장수 + 이미지 메타 검증. */
+    /** presigned PUT 발급: 소유권 확인 + 카드당 최대 장수 + 이미지 메타 검증 + 쿼터 검사. */
     @Transactional(readOnly = true)
     fun createUploadTargets(
         cardId: Long,
@@ -188,6 +212,7 @@ class PhotoCardService(
                 "사진은 최대 ${MAX_PHOTOS_PER_CARD}장까지 등록할 수 있습니다 (현재 ${card.photos.size}장)",
             )
         }
+        storageQuotaService.requireWithinQuota(card.userId, files.sumOf { it.size })
         return files.map { file ->
             val contentType = requireNotNull(file.type)
             validateImageMeta(contentType, file.size)
@@ -240,12 +265,13 @@ class PhotoCardService(
         photoCardRepository.findByIdAndUserId(id, TenantContext.currentUserId())
             ?: throw AppException(CommonErrorCode.NOT_FOUND, "사진 카드를 찾을 수 없습니다")
 
-    /** 매출 연동(sale_id) 소유권 검증 — 타 테넌트 매출 연결 차단. */
-    private fun verifySaleOwnership(saleId: Long) {
-        if (saleRepository.findByIdAndUserId(saleId, TenantContext.currentUserId()) == null) {
-            throw AppException(CommonErrorCode.VALIDATION, "유효하지 않은 매출입니다")
-        }
-    }
+    /** 매출 연동(sale_id) 소유권 검증 후 매출 반환 — 타 테넌트 매출 연결 차단 + 고객 상속에 사용. */
+    private fun requireSale(saleId: Long): Sale =
+        saleRepository.findByIdAndUserId(saleId, TenantContext.currentUserId())
+            ?: throw AppException(CommonErrorCode.VALIDATION, "유효하지 않은 매출입니다")
+
+    /** 매출 조회(테넌트 격리, 없으면 null). 이미 저장된 card.saleId 처럼 throw 없이 고객을 상속받을 때 사용. */
+    private fun findSale(saleId: Long): Sale? = saleRepository.findByIdAndUserId(saleId, TenantContext.currentUserId())
 
     /** 고객 연동(customer_id) 소유권 검증 — 타 테넌트 고객 연결 차단. */
     private fun verifyCustomerOwnership(customerId: Long) {

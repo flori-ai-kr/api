@@ -97,11 +97,14 @@ class AuthServiceIntegrationTest {
         nickname: String = "헤이즐-${UUID.randomUUID()}",
     ) = RegisterCompleteRequest(
         registerToken = registerToken,
+        ownerName = "홍길동",
         storeName = storeName,
         phoneNumber = phoneNumber,
         nickname = nickname,
         email = email,
         regionSido = "서울특별시",
+        ownerAgeRange = "30대",
+        referralSources = listOf("인스타그램"),
     )
 
     @Test

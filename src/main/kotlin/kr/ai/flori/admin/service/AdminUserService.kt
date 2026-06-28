@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional
 class AdminUserService(
     private val jdbc: JdbcTemplate,
     private val userRepository: UserRepository,
+    private val audit: AdminAuditService,
 ) {
     @Transactional(readOnly = true)
     fun list(
@@ -28,6 +29,7 @@ class AdminUserService(
         page: Int,
         size: Int,
     ): AdminUserPage {
+        // raw SQL LIMIT/OFFSET 직빌딩이라 Pageable 기반 Paging 헬퍼 적용 대상이 아님 — 보정만 동일 규칙 유지.
         val safePage = page.coerceAtLeast(0)
         val safeSize = size.coerceIn(1, MAX_PAGE_SIZE)
         val like = query?.takeIf { it.isNotBlank() }?.let { "%$it%" }
@@ -67,6 +69,13 @@ class AdminUserService(
         // saveAndFlush: JdbcTemplate(native SQL) 읽기는 Hibernate autoflush를 트리거하지 않으므로
         // rowById의 raw SQL이 변경을 보도록 명시적으로 DB에 flush한다.
         userRepository.saveAndFlush(user)
+        audit.record(
+            action = if (active) "USER_ACTIVATE" else "USER_DEACTIVATE",
+            targetType = "user",
+            targetId = id.toString(),
+            summary = "${user.nickname} ${if (active) "활성화" else "비활성화"}",
+            metadata = mapOf("after" to mapOf("isActive" to active)),
+        )
         return rowById(id)
     }
 

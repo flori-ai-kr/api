@@ -1,13 +1,17 @@
 package kr.ai.flori.settings.controller
 
 import jakarta.validation.Valid
+import kr.ai.flori.settings.dto.NotificationPreferenceListResponse
+import kr.ai.flori.settings.dto.NotificationPreferenceUpdateRequest
 import kr.ai.flori.settings.dto.PushStatusResponse
 import kr.ai.flori.settings.dto.PushSubscribeRequest
 import kr.ai.flori.settings.dto.PushTestResponse
+import kr.ai.flori.settings.service.NotificationPreferenceService
 import kr.ai.flori.settings.service.PushSubscriptionService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -18,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/push")
 class PushSubscriptionController(
     private val pushSubscriptionService: PushSubscriptionService,
+    private val notificationPreferenceService: NotificationPreferenceService,
 ) {
     @PostMapping("/subscribe")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -44,5 +49,18 @@ class PushSubscriptionController(
     fun status(): PushStatusResponse = pushSubscriptionService.status()
 
     @PostMapping("/test")
-    fun test(): PushTestResponse = PushTestResponse(pushSubscriptionService.testPush())
+    fun test(
+        @RequestParam(required = false) type: String?,
+    ): PushTestResponse = PushTestResponse(pushSubscriptionService.testPush(type))
+
+    @GetMapping("/preferences")
+    fun preferences(): NotificationPreferenceListResponse = NotificationPreferenceListResponse(notificationPreferenceService.list())
+
+    @PutMapping("/preferences")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun updatePreference(
+        @Valid @RequestBody request: NotificationPreferenceUpdateRequest,
+    ) {
+        notificationPreferenceService.set(requireNotNull(request.type), requireNotNull(request.enabled))
+    }
 }

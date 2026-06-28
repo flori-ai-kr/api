@@ -31,6 +31,7 @@ class RegisterCompleteDocsTest : RestDocsSupport() {
                     json(
                         mapOf(
                             "registerToken" to registerToken,
+                            "ownerName" to "홍길동",
                             "storeName" to "헤이즐 플라워",
                             "phoneNumber" to "01012345678",
                             "nickname" to "헤이즐",
@@ -40,6 +41,7 @@ class RegisterCompleteDocsTest : RestDocsSupport() {
                             "ownerAgeRange" to "30대",
                             "interests" to listOf("웨딩", "개업화환"),
                             "specialties" to listOf("꽃다발", "화분"),
+                            "referralSources" to listOf("지인 추천", "인스타그램"),
                         ),
                     )
             }.andExpect { status { isCreated() } }
@@ -54,15 +56,17 @@ class RegisterCompleteDocsTest : RestDocsSupport() {
                         requestFields =
                             listOf(
                                 fieldWithPath("registerToken").type(JsonFieldType.STRING).description("소셜 로그인이 반환한 registerToken(5분 TTL)"),
+                                fieldWithPath("ownerName").type(JsonFieldType.STRING).description("사장님 실명(필수, 소셜 이름 프리필)"),
                                 fieldWithPath("storeName").type(JsonFieldType.STRING).description("가게명(필수)"),
                                 fieldWithPath("phoneNumber").type(JsonFieldType.STRING).description("휴대폰 번호(숫자만, 하이픈 없음)"),
                                 fieldWithPath("nickname").type(JsonFieldType.STRING).description("계정 표시명(기본값=소셜 닉네임, 필수)"),
                                 fieldWithPath("email").type(JsonFieldType.STRING).description("로그인 이메일(기본값=소셜 이메일, 필수)"),
                                 fieldWithPath("regionSido").type(JsonFieldType.STRING).description("시/도(필수, 웹 enum 값)"),
                                 fieldWithPath("regionSigungu").type(JsonFieldType.STRING).optional().description("시군구(선택)"),
-                                fieldWithPath("ownerAgeRange").type(JsonFieldType.STRING).optional().description("나이대(선택, 단일)"),
+                                fieldWithPath("ownerAgeRange").type(JsonFieldType.STRING).description("나이대(필수, 단일)"),
                                 fieldWithPath("interests").type(JsonFieldType.ARRAY).optional().description("관심사(선택, 복수)"),
                                 fieldWithPath("specialties").type(JsonFieldType.ARRAY).optional().description("가게 주력(선택, 복수)"),
+                                fieldWithPath("referralSources").type(JsonFieldType.ARRAY).description("알게 된 경로(필수, 1개 이상)"),
                             ),
                         responseFields =
                             listOf(

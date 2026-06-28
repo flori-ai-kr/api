@@ -3,14 +3,18 @@ package kr.ai.flori.community.controller
 import jakarta.validation.Valid
 import kr.ai.flori.community.dto.CommentCreateRequest
 import kr.ai.flori.community.dto.CommentResponse
+import kr.ai.flori.community.dto.CommentUpdateRequest
 import kr.ai.flori.community.dto.CommunityUploadTargetResponse
 import kr.ai.flori.community.dto.CommunityUploadTargetsRequest
 import kr.ai.flori.community.dto.LikeToggleResponse
+import kr.ai.flori.community.dto.PinRequest
 import kr.ai.flori.community.dto.PostCreateRequest
 import kr.ai.flori.community.dto.PostResponse
 import kr.ai.flori.community.dto.PostUpdateRequest
 import kr.ai.flori.community.dto.PostsPageResponse
+import kr.ai.flori.community.dto.ReportCreateRequest
 import kr.ai.flori.community.service.CommunityService
+import kr.ai.flori.community.service.CommunityUploadService
 import kr.ai.flori.verification.gating.RequiresBusinessVerified
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -33,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequiresBusinessVerified
 class CommunityController(
     private val communityService: CommunityService,
+    private val communityUploadService: CommunityUploadService,
 ) {
     @GetMapping("/posts")
     fun listPosts(
@@ -40,11 +45,7 @@ class CommunityController(
         @RequestParam(required = false) search: String?,
         @RequestParam(defaultValue = "0") offset: Int,
         @RequestParam(defaultValue = "20") limit: Int,
-    ): PostsPageResponse {
-        val safeLimit = limit.coerceIn(MIN_LIMIT, MAX_LIMIT)
-        val safeOffset = offset.coerceAtLeast(0)
-        return communityService.listPosts(category, search, safeOffset, safeLimit)
-    }
+    ): PostsPageResponse = communityService.listPosts(category, search, offset, limit)
 
     @GetMapping("/posts/{id}")
     fun getPost(
@@ -76,10 +77,17 @@ class CommunityController(
         @PathVariable id: Long,
     ): LikeToggleResponse = communityService.toggleLike(id)
 
+    /** 게시글 고정/해제(관리자 전용 — 서비스에서 강제). */
+    @PostMapping("/posts/{id}/pin")
+    fun setPinned(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: PinRequest,
+    ): PostResponse = communityService.setPinned(id, requireNotNull(request.pinned))
+
     @PostMapping("/upload-targets")
     fun uploadTargets(
         @Valid @RequestBody request: CommunityUploadTargetsRequest,
-    ): List<CommunityUploadTargetResponse> = communityService.createUploadTargets(requireNotNull(request.files))
+    ): List<CommunityUploadTargetResponse> = communityUploadService.createUploadTargets(requireNotNull(request.files))
 
     @GetMapping("/posts/{id}/comments")
     fun listComments(
@@ -93,6 +101,12 @@ class CommunityController(
         @Valid @RequestBody request: CommentCreateRequest,
     ): CommentResponse = communityService.createComment(id, request)
 
+    @PatchMapping("/comments/{id}")
+    fun updateComment(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: CommentUpdateRequest,
+    ): CommentResponse = communityService.updateComment(id, request)
+
     @DeleteMapping("/comments/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteComment(
@@ -101,8 +115,21 @@ class CommunityController(
         communityService.deleteComment(id)
     }
 
-    private companion object {
-        const val MIN_LIMIT = 1
-        const val MAX_LIMIT = 100
+    @PostMapping("/posts/{id}/report")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun reportPost(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: ReportCreateRequest,
+    ) {
+        communityService.reportPost(id, request)
+    }
+
+    @PostMapping("/comments/{id}/report")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun reportComment(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: ReportCreateRequest,
+    ) {
+        communityService.reportComment(id, request)
     }
 }

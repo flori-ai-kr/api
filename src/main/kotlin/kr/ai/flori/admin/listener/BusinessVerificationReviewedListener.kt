@@ -4,7 +4,9 @@ import kr.ai.flori.admin.event.BusinessVerificationReviewedEvent
 import kr.ai.flori.common.notification.discord.DiscordChannel
 import kr.ai.flori.common.notification.discord.DiscordMessage
 import kr.ai.flori.common.notification.discord.DiscordNotifier
+import kr.ai.flori.common.notification.solapi.SolapiNotifier
 import kr.ai.flori.common.util.KST
+import kr.ai.flori.user.repository.UserProfileRepository
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
@@ -12,12 +14,15 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 /**
- * 인증 심사 결과 → Discord 알림. DB 커밋 후(AFTER_COMMIT) 비동기 발송(DiscordNotifier @Async).
- * 신청 알림(BusinessVerificationEventListener)과 동일 채널을 사용한다.
+ * 인증 심사 결과 → ① 운영자 Discord 알림 ② 승인 시 점주에게 알림톡(SOLAPI) 통보.
+ * DB 커밋 후(AFTER_COMMIT) 비동기 발송(각 Notifier @Async).
+ * 신청 알림(BusinessVerificationEventListener)과 동일 Discord 채널을 사용한다.
  */
 @Component
 class BusinessVerificationReviewedListener(
     private val discordNotifier: DiscordNotifier,
+    private val solapiNotifier: SolapiNotifier,
+    private val userProfileRepository: UserProfileRepository,
 ) {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun handle(event: BusinessVerificationReviewedEvent) {
@@ -32,6 +37,14 @@ class BusinessVerificationReviewedListener(
             - 상호: ${event.businessName}$reasonLine
             """.trimIndent()
         discordNotifier.notify(DiscordChannel.VERIFICATION, DiscordMessage.of(message))
+
+        // 점주에게 결과 알림톡(전화번호는 프로필에서 조회). 승인=완료 안내, 거절=사유 안내.
+        val phone = userProfileRepository.findById(event.userId).map { it.phoneNumber }.orElse("")
+        if (event.approved) {
+            solapiNotifier.sendBusinessApproved(event.userId, phone, event.businessName)
+        } else {
+            solapiNotifier.sendBusinessRejected(event.userId, phone, event.businessName, event.reason.orEmpty())
+        }
     }
 
     private companion object {

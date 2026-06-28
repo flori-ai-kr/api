@@ -1,6 +1,6 @@
 # Flori API — 에러 코드 표
 
-> 최종 업데이트: 2026-06-10
+> 최종 업데이트: 2026-06-26
 
 표준 에러 응답 바디의 `code` 필드는 안정적인 `E-{DOMAIN}-{NNN}` 식별자다.
 웹/앱 클라이언트는 **메시지 텍스트가 아니라 이 `code` 값으로 에러를 분기**한다.
@@ -69,18 +69,42 @@
 | 동시성 경쟁(unique 제약) 폴백: email | `E-AUTH-002` |
 | 동시성 경쟁(unique 제약) 폴백: `uq_users_nickname` | `E-AUTH-003` |
 
+## E-ADM-* (운영자 콘솔)
+
+> `admin/error/AdminErrorCode`. `@RequiresAdmin`(`/admin/**`) 하위에서만 발생. cross-tenant — 일반 점주는 403으로 차단.
+
+| 코드 | 의미 | HTTP | 발생 지점 |
+|------|------|------|-----------|
+| `E-ADM-001` | NOT_ADMIN (운영자 권한 없음) | 403 | `@RequiresAdmin` 게이트 — `is_admin=false` 사용자 |
+| `E-ADM-002` | VERIFICATION_NOT_FOUND (인증 없음) | 404 | 존재하지 않는 사업자 인증 심사 조회 |
+| `E-ADM-003` | INVALID_VERIFICATION_STATE (이미 처리됨) | 409 | 이미 처리된 인증 신청 재승인/거절 시도 |
+| `E-ADM-004` | USER_NOT_FOUND (사용자 없음) | 404 | 존재하지 않는 사용자 조회 |
+| `E-ADM-005` | CANNOT_DEACTIVATE_SELF (자신 비활성화 불가) | 422 | 운영자가 자신을 비활성화 시도 |
+| `E-ADM-006` | REPORT_NOT_FOUND (신고 없음) | 404 | 존재하지 않는 신고 처리 시도 |
+| `E-ADM-007` | POST_NOT_FOUND (게시글 없음, 모더레이션) | 404 | 운영자 게시글 숨김/삭제 시 대상 미존재 |
+| `E-ADM-008` | COMMENT_NOT_FOUND (댓글 없음, 모더레이션) | 404 | 운영자 댓글 숨김/삭제 시 대상 미존재 |
+| `E-ADM-009` | ALREADY_BANNED (이미 차단됨) | 409 | 이미 활성 차단 중인 사용자 재차단 시도 |
+| `E-ADM-010` | BAN_NOT_FOUND (차단 내역 없음) | 404 | 존재하지 않는 차단 해제 시도 |
+| `E-ADM-011` | BROADCAST_NOT_FOUND (브로드캐스트 없음) | 404 | 존재하지 않는 브로드캐스트 발송/삭제 시도 |
+| `E-ADM-012` | INVALID_BROADCAST_STATE (발송 불가 상태) | 409 | 이미 발송됐거나 발송할 수 없는 브로드캐스트 재발송/삭제 시도 |
+| `E-ADM-013` | ANNOUNCEMENT_NOT_FOUND (공지 없음) | 404 | 존재하지 않거나 soft-delete된 공지 조회·수정·삭제 시도 |
+| `E-ADM-014` | INQUIRY_NOT_FOUND (문의 없음) | 404 | 존재하지 않는 1:1 문의 조회·답변·상태변경 시도 |
+
 ## E-CMNT-* (커뮤니티)
 
 > `community/error/CommunityErrorCode`. 단일 커뮤니티(공유) — 권한/마스킹은 서버가 뷰어(JWT)+`author_user_id`로 계산한다.
 
 | 코드 | 의미 | HTTP | 발생 지점 |
 |------|------|------|-----------|
-| `E-CMNT-001` | POST_NOT_FOUND (게시글 없음) | 404 | 미존재/삭제된(soft) 게시글 조회·수정·삭제·좋아요·댓글 |
+| `E-CMNT-001` | POST_NOT_FOUND (게시글 없음) | 404 | 미존재/삭제된(soft) 또는 운영자 숨김 게시글 조회·수정·삭제·좋아요·댓글 |
 | `E-CMNT-002` | COMMENT_NOT_FOUND (댓글 없음) | 404 | 미존재/삭제된 댓글 삭제 |
 | `E-CMNT-003` | INVALID_CATEGORY (카테고리 오류) | 400 | 허용되지 않은 카테고리(notice/daily/question/knowledge/review/etc 외) |
 | `E-CMNT-004` | NOTICE_ADMIN_ONLY (공지 권한) | 403 | 비관리자가 `notice` 작성 시도 |
 | `E-CMNT-005` | FORBIDDEN (권한 없음) | 403 | 타인 글 수정(작성자만)·타인 글/댓글 삭제(작성자+관리자 외) |
 | `E-CMNT-006` | INVALID_PARENT (부모 댓글 오류) | 400 | 다른 글의 댓글·이미 대댓글인 댓글에 대댓글 시도 |
+| `E-CMNT-007` | PIN_ADMIN_ONLY (고정 권한) | 403 | 비관리자가 게시글 고정 시도 |
+| `E-CMNT-008` | INVALID_REASON (신고 사유 오류) | 400 | 허용되지 않은 신고 사유(spam/abuse/privacy/sexual/etc 외) |
+| `E-CMNT-009` | BANNED (커뮤니티 차단) | 403 | 활성 차단 사용자가 게시글/댓글 작성 시도 |
 
 ## E-VRF-* (사업자 인증)
 
@@ -109,3 +133,14 @@
 | 코드 | 의미 | HTTP | 발생 지점 |
 |------|------|------|-----------|
 | `E-IV-001` | ALREADY_APPLIED (중복 신청) | 409 | 이미 신청된 전화번호(정규화 후 UNIQUE 비교)로 재신청 시도 |
+
+## E-STG-* (스토리지)
+
+> `storage/error/StorageErrorCode`. 갤러리 이미지 업로드 용량 한도 관리. 멀티테넌시: `user_id` 격리.
+
+| 코드 | 의미 | HTTP | 발생 지점 |
+|------|------|------|-----------|
+| `E-STG-001` | QUOTA_EXCEEDED (저장 용량 한도 초과) | 409 | presign 발급 전 한도 검사 — `used_bytes + 업로드 예정 크기 > quota_bytes` 시 업로드 차단(증설 요청 유도) |
+| `E-STG-002` | DUPLICATE_PENDING (중복 증설 요청) | 409 | PENDING 상태 요청이 이미 존재할 때 재요청 차단 |
+| `E-STG-003` | REQUEST_NOT_FOUND (증설 요청 없음) | 404 | 존재하지 않는 요청 ID로 approve/reject 시도 |
+| `E-STG-004` | ALREADY_PROCESSED (이미 처리된 요청) | 409 | APPROVED/REJECTED 상태의 요청을 중복 처리 시도 |

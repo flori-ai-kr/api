@@ -7,6 +7,7 @@ import kr.ai.flori.auth.oauth.SocialOAuthClient
 import kr.ai.flori.auth.oauth.SocialUserInfo
 import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.user.repository.UserProfileRepository
+import kr.ai.flori.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -45,6 +46,9 @@ class AuthFlowIntegrationTest {
 
     @Autowired
     lateinit var userProfileRepository: UserProfileRepository
+
+    @Autowired
+    lateinit var userRepository: UserRepository
 
     /** 매 인증마다 고유 (provider, providerId)를 반환해 항상 "신규 신원"이 되게 하는 스텁. */
     @TestConfiguration
@@ -92,6 +96,9 @@ class AuthFlowIntegrationTest {
                             "nickname" to "헤이즐-${UUID.randomUUID()}",
                             "email" to email,
                             "regionSido" to "서울특별시",
+                            "ownerName" to "홍길동",
+                            "ownerAgeRange" to "30대",
+                            "referralSources" to listOf("인스타그램"),
                         )
                 }.andReturn()
                 .response.contentAsString
@@ -191,6 +198,9 @@ class AuthFlowIntegrationTest {
                         "nickname" to "다른 닉",
                         "email" to "dup-${UUID.randomUUID()}@flori.dev",
                         "regionSido" to "서울특별시",
+                        "ownerName" to "홍길동",
+                        "ownerAgeRange" to "30대",
+                        "referralSources" to listOf("인스타그램"),
                     )
             }.andExpect { status { isConflict() } }
     }
@@ -242,6 +252,9 @@ class AuthFlowIntegrationTest {
                         "nickname" to "헤이즐",
                         "email" to "flow-${UUID.randomUUID()}@flori.dev",
                         "regionSido" to "서울특별시",
+                        "ownerName" to "홍길동",
+                        "ownerAgeRange" to "30대",
+                        "referralSources" to listOf("인스타그램"),
                     )
             }.andExpect { status { isUnauthorized() } }
     }
@@ -270,6 +283,9 @@ class AuthFlowIntegrationTest {
                         "nickname" to nickname,
                         "email" to "nick-${UUID.randomUUID()}@flori.dev",
                         "regionSido" to "서울특별시",
+                        "ownerName" to "홍길동",
+                        "ownerAgeRange" to "30대",
+                        "referralSources" to listOf("인스타그램"),
                     )
             }.andExpect { status { isCreated() } }
 
@@ -279,5 +295,55 @@ class AuthFlowIntegrationTest {
                 status { isConflict() }
                 jsonPath("$.code") { value("E-AUTH-003") }
             }
+    }
+
+    @Test
+    fun `register complete - ownerName 포함 시 201 및 users_name 저장`() {
+        val registerToken = kakaoRegisterToken()
+        val email = "owner-${UUID.randomUUID()}@flori.dev"
+        val response =
+            mockMvc
+                .post("/auth/register/complete") {
+                    contentType = MediaType.APPLICATION_JSON
+                    content =
+                        body(
+                            "registerToken" to registerToken,
+                            "storeName" to "꽃가게",
+                            "phoneNumber" to "01012345678",
+                            "nickname" to "사장님-${UUID.randomUUID()}",
+                            "email" to email,
+                            "regionSido" to "서울특별시",
+                            "ownerName" to "홍길동",
+                            "ownerAgeRange" to "30대",
+                            "referralSources" to listOf("인스타그램"),
+                        )
+                }.andExpect { status { isCreated() } }
+                .andReturn()
+                .response.contentAsString
+        val accessToken = objectMapper.readTree(response).get("accessToken").asText()
+        val userId = tokenProvider.parse(accessToken)!!.userId
+        val user = userRepository.findById(userId).orElseThrow()
+        assertThat(user.name).isEqualTo("홍길동")
+    }
+
+    @Test
+    fun `register complete - ownerName 누락 시 400`() {
+        val body =
+            body(
+                "registerToken" to kakaoRegisterToken(),
+                "storeName" to "꽃가게",
+                "phoneNumber" to "01012345678",
+                "nickname" to "사장님-${UUID.randomUUID()}",
+                "email" to "noname-${UUID.randomUUID()}@flori.dev",
+                "regionSido" to "서울특별시",
+                // ownerName 누락
+                "ownerAgeRange" to "30대",
+                "referralSources" to listOf("인스타그램"),
+            )
+        mockMvc
+            .post("/auth/register/complete") {
+                contentType = MediaType.APPLICATION_JSON
+                content = body
+            }.andExpect { status { isBadRequest() } }
     }
 }

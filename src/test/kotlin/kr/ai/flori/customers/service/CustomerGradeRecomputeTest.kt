@@ -6,6 +6,7 @@ import kr.ai.flori.auth.service.AuthService
 import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.customers.dto.CustomerCreateRequest
+import kr.ai.flori.customers.dto.CustomerGradeUpdateRequest
 import kr.ai.flori.customers.dto.PhotoThumbnail
 import kr.ai.flori.customers.repository.CustomerGradeRepository
 import kr.ai.flori.sales.dto.SaleCreateRequest
@@ -33,6 +34,9 @@ import java.util.UUID
 class CustomerGradeRecomputeTest {
     @Autowired
     lateinit var customerService: CustomerService
+
+    @Autowired
+    lateinit var gradeService: CustomerGradeService
 
     @Autowired
     lateinit var saleService: SaleService
@@ -117,26 +121,86 @@ class CustomerGradeRecomputeTest {
 
         // 0건 → 신규
         val c0 = create()
-        customerService.recomputeGrade(c0.id)
+        gradeService.recomputeGrade(c0.id)
         assertThat(gradeName(c0.id)).isEqualTo("신규")
 
         // 4건 → 신규 (단골 임계 5 미만)
         val c4 = create()
         addSales(c4.id, 4)
-        customerService.recomputeGrade(c4.id)
+        gradeService.recomputeGrade(c4.id)
         assertThat(gradeName(c4.id)).isEqualTo("신규")
 
         // 5건 → 단골
         val c5 = create()
         addSales(c5.id, 5)
-        customerService.recomputeGrade(c5.id)
+        gradeService.recomputeGrade(c5.id)
         assertThat(gradeName(c5.id)).isEqualTo("단골")
 
         // 10건 → VIP
         val c10 = create()
         addSales(c10.id, 10)
-        customerService.recomputeGrade(c10.id)
+        gradeService.recomputeGrade(c10.id)
         assertThat(gradeName(c10.id)).isEqualTo("VIP")
+    }
+
+    @Test
+    fun `임계값을 올리면 잠금 아닌 고객은 일괄 재산정으로 강등되고 잠금 고객은 유지된다`() {
+        val userId = newTenant()
+
+        // 자동 고객: 5건 → 단골(자동 승급). create()가 기본 등급을 시드한다.
+        val auto = create()
+        addSales(auto.id, 5)
+        gradeService.recomputeGrade(auto.id)
+        assertThat(gradeName(auto.id)).isEqualTo("단골")
+
+        val grades = gradeRepository.findByUserIdOrderBySortOrderAsc(userId)
+        val regularId = requireNotNull(grades.first { it.name == "단골" }.id)
+        val vipId = requireNotNull(grades.first { it.name == "VIP" }.id)
+
+        // 잠금 고객: 5건이지만 수동으로 VIP 고정(잠금)
+        val locked = create()
+        addSales(locked.id, 5)
+        customerService.updateGrade(locked.id, vipId)
+        assertThat(customerService.get(locked.id).gradeLocked).isTrue()
+
+        // 단골 임계값 5 → 8 로 상향 → 기존 고객 일괄 재산정 트리거
+        gradeService.update(regularId, CustomerGradeUpdateRequest(threshold = 8))
+
+        // 자동 고객(5건 < 8): 단골 자격 상실 → 신규로 강등
+        assertThat(gradeName(auto.id)).isEqualTo("신규")
+        // 잠금 고객: 재산정 제외 → VIP 유지
+        val lockedAfter = customerService.get(locked.id)
+        assertThat(lockedAfter.grade).isEqualTo("VIP")
+        assertThat(lockedAfter.gradeLocked).isTrue()
+    }
+
+    @Test
+    fun `previewThresholdChange는 저장 없이 바뀔 고객만 반환하고 잠금 고객은 제외한다`() {
+        val userId = newTenant()
+        // 단골 자동 고객(5건)
+        val auto = create()
+        addSales(auto.id, 5)
+        gradeService.recomputeGrade(auto.id)
+        assertThat(gradeName(auto.id)).isEqualTo("단골")
+
+        val grades = gradeRepository.findByUserIdOrderBySortOrderAsc(userId)
+        val regularId = requireNotNull(grades.first { it.name == "단골" }.id)
+        val vipId = requireNotNull(grades.first { it.name == "VIP" }.id)
+
+        // 잠금 고객(VIP 고정)
+        val locked = create()
+        addSales(locked.id, 5)
+        customerService.updateGrade(locked.id, vipId)
+
+        // 단골 임계값 5 → 8 미리보기
+        val preview = gradeService.previewThresholdChange(regularId, 8)
+
+        // 자동 고객만 단골→신규 로 변경 예정, 잠금 고객은 미포함
+        assertThat(preview).hasSize(1)
+        assertThat(preview.first().fromGrade).isEqualTo("단골")
+        assertThat(preview.first().toGrade).isEqualTo("신규")
+        // 미리보기는 저장하지 않음 → 실제 등급은 그대로 단골
+        assertThat(gradeName(auto.id)).isEqualTo("단골")
     }
 
     @Test
@@ -148,7 +212,7 @@ class CustomerGradeRecomputeTest {
         // 수동으로 신규 고정
         customerService.updateGrade(c.id, newGradeId)
         addSales(c.id, 12)
-        customerService.recomputeGrade(c.id)
+        gradeService.recomputeGrade(c.id)
 
         val after = customerService.get(c.id)
         assertThat(after.grade).isEqualTo("신규")
@@ -189,7 +253,7 @@ class CustomerGradeRecomputeTest {
         val userId = newTenant()
         val c = create()
         addSales(c.id, 5)
-        customerService.recomputeGrade(c.id)
+        gradeService.recomputeGrade(c.id)
 
         // 사진첩 카드 4장(각 1장 이상의 photo) — 대표 썸네일은 최신순 최대 6개이므로 4장 모두 반환된다.
         val cardIds =

@@ -18,11 +18,19 @@ data class VerificationCounts(
     val rejected: Long,
 )
 
+data class SubscriptionCounts(
+    val active: Long,
+    val trialing: Long,
+    val inGrace: Long,
+    val expired: Long,
+)
+
 /** 운영 콘솔 개요. cross-tenant 단일 집계. */
 data class AdminOverviewResponse(
     val users: UserCounts,
     val sales: SalesCounts,
     val verifications: VerificationCounts,
+    val subscriptions: SubscriptionCounts,
     val comparison: OverviewComparison?,
 )
 
@@ -36,4 +44,24 @@ data class OverviewComparison(
 data class TimeseriesPoint(
     val date: java.time.LocalDate,
     val count: Long,
+)
+
+/** 활성화 퍼널 1단계. */
+data class FunnelStage(
+    val key: String,
+    val label: String,
+    val count: Long,
+)
+
+/** 탈퇴 사유 집계 1건(최근 N일). */
+data class ChurnReasonSlice(
+    val reason: String,
+    val count: Long,
+)
+
+/** 주간 리텐션 코호트 1행. cohortWeek 가입 주, retention[i] = W{i} 잔존율(0~1). */
+data class RetentionCohortRow(
+    val cohortWeek: java.time.LocalDate,
+    val cohortSize: Long,
+    val retention: List<Double?>,
 )

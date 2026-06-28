@@ -40,6 +40,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
+    // 캐시 추상화(@EnableCaching/@Cacheable) + spring-context-support(CaffeineCacheManager). 라벨 설정 등 변경이 드문 조회 캐싱.
+    implementation("org.springframework.boot:spring-boot-starter-cache")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$springdocVersion")
@@ -117,6 +119,8 @@ tasks.withType<Test> {
     outputs.dir(snippetsDir)
     // 테스트는 임베디드 PG에 docs/sql DDL을 spring.sql.init로 적용한다(test 프로필). local은 OAuth 스텁/기본값 유지.
     systemProperty("spring.profiles.active", "local,test")
+    // 전체 테스트 스위트 OOM 방지 — SpringBootTest 컨텍스트 + Zonky 임베디드 PG 다수 동시 보유 시 heap 초과
+    jvmArgs("-Xmx2g")
 }
 
 openapi3 {

@@ -1,6 +1,6 @@
 # Flori API — 아키텍처 & 기술 선정 이유
 
-> 최종 업데이트: 2026-06-10 (세션1-launch: interview 모집 모듈 + Discord WAITLIST·INTERVIEW 채널 + waitlist 식별자 phone→email 전환)
+> 최종 업데이트: 2026-06-26 (인사이트 트렌드 기능 제거 + 기업마당(bizinfo) collector 추가 + GrantRelevance·HtmlText·flower_item_scraps 신설 + 지원사업 만료필터 KST화 / support 모듈: Discord SUPPORT 채널 알림 + 이미지 업로드 + AdminInquiryResponse / 온보딩: users.name 필드 + ownerAgeRange·referralSources 필수화 + /me/profile ownerName·phoneNumber 노출 / 푸시: 타입별 수신 설정 + 작업 실행 로깅 + 커뮤니티·인사이트 푸시 확장 / 커뮤니티: 댓글 수정(PATCH /community/comments/{id}·작성자 전용·운영자 불가) / 등급: 임계값 변경 시 잠금 아닌 고객 일괄 재산정(recomputeAllGrades) + 변경 미리보기(POST /customer-grades/{id}/preview) + gradeIdFor fallback 개선(최저 non-null threshold 등급) / **빌링**: 토스페이먼츠 구독·자동결제·쿠폰 도메인 신설 — Subscription·BillingKey·PaymentHistory·Coupon·CouponRedemption·SubscriptionEligibility + RecurringBillingScheduler(04:00 KST) + Discord BILLING 채널)
 
 이 문서는 Flori(꽃집 어드민) **모바일 앱 백엔드 API**의 기술 스택과 아키텍처를 설명한다. 단순히 "무엇을 쓰는가"가 아니라 **"왜 이것을 골랐는가"**에 초점을 맞춘다. 모든 선택에는 *기존 Next.js+Supabase 웹앱의 비즈니스 로직을 네이티브 앱이 호출 가능한 REST API로 재구현하고, 자체 AWS 인프라 위에 올린다*는 도메인 맥락이 반영되어 있다.
 
@@ -14,7 +14,7 @@
 flowchart TB
     subgraph Clients["클라이언트"]
         App([React Native 앱<br/>flori-ai/mobile])
-        Collector([수집 워커<br/>트렌드/인스타])
+        Collector([수집 워커<br/>지원사업])
     end
 
     subgraph AWS["AWS Cloud (ap-northeast-2)"]
@@ -33,9 +33,12 @@ flowchart TB
     subgraph External["외부 서비스"]
         FCM[FCM<br/>모바일 푸시]
         VAPID[Web Push/VAPID<br/>브라우저(PWA) 푸시]
-        Discord[Discord<br/>에러·가입·인증 웹훅]
+        Discord[Discord<br/>에러·가입·인증·문의 웹훅]
         KakaoAuth[kauth.kakao.com<br/>카카오 토큰교환]
         KakaoApi[kapi.kakao.com<br/>카카오 프로필조회]
+        AtFlower[flower.at.or.kr<br/>aT 화훼유통정보 f001<br/>경매 시세]
+        Solapi[api.solapi.com<br/>카카오 알림톡 중계<br/>사업자 인증 접수·승인·거절]
+        Toss[api.tosspayments.com<br/>토스페이먼츠<br/>빌링키 발급·자동결제]
     end
 
     App -->|"REST + Bearer JWT"| Sec
@@ -44,6 +47,9 @@ flowchart TB
     Svc -->|"presigned PUT/GET"| S3
     App -.->|"직접 업로드"| S3
     Sched --> Svc
+    Sched -.->|"f001 경매시세 적재"| AtFlower
+    Svc -.->|"인증 접수·승인·거절<br/>알림톡(AFTER_COMMIT @Async)"| Solapi
+    Svc -.->|"빌링키 발급·자동결제<br/>(BillingClient)"| Toss
     Svc -->|"PushDispatcher<br/>(FCM or VAPID)"| FCM
     Svc -->|"PushDispatcher<br/>(p256dh/auth 있으면)"| VAPID
     Adv -.->|"예기치 못한 오류"| Discord
@@ -59,7 +65,7 @@ flowchart TB
     class App,Collector client
     class Sec,Ctrl,Svc,Repo,Sched,Adv server
     class RDS,S3 store
-    class FCM,VAPID,Discord,KakaoAuth,KakaoApi ext
+    class FCM,VAPID,Discord,KakaoAuth,KakaoApi,AtFlower,Solapi,Toss ext
 ```
 
 핵심 원칙: **앱은 표시만 하고, 계산·검증·격리는 서버가 책임진다.** 지출총액 등은 서버가 SSOT로 계산해 응답하고, 멀티테넌시(사용자별 데이터 격리)는 RLS 없이 애플리케이션이 유일한 방어선으로 강제한다. 기존 웹앱은 당분간 Supabase 위에서 그대로 동작하며, 이 백엔드는 독립 인프라로 분리 운영한다.
@@ -76,7 +82,8 @@ flowchart LR
         CTen[tenant<br/>TenantContext]
         CErr[error<br/>AppException·Discord]
         CSto[storage<br/>S3 presign/delete]
-        CPush[push<br/>FCM + Web Push/VAPID<br/>PushDispatcher 라우팅]
+        CPush[push<br/>PushDispatcher(라우팅·수신설정 게이팅)<br/>PushTypes·PushTemplates SSOT]
+        CJob[job<br/>JobRunRecorder·JobNames<br/>JobOutcome·JobRunLog]
         CCfg[config<br/>CORS·Async·Schedule·WebConfig]
         CLog[log<br/>LoggingInterceptor·TraceIdFilter·logback]
         CReq[request<br/>ClientContext·ClientContextFilter]
@@ -92,7 +99,7 @@ flowchart LR
 
     classDef common fill:#0277bd,color:#fff,stroke:#01579b
     classDef dom fill:#ef6c00,color:#fff,stroke:#e65100
-    class CSec,CTen,CErr,CSto,CPush,CCfg,CLog,CReq,CNoti common
+    class CSec,CTen,CErr,CSto,CPush,CJob,CCfg,CLog,CReq,CNoti common
     class D dom
 ```
 
@@ -100,20 +107,25 @@ flowchart LR
 
 | 도메인 패키지 | 책임 |
 |---|---|
-| `auth` | 회원가입(기본 설정 시드)·로그인·**카카오 소셜 로그인**·refresh 회전·로그아웃·`/me`. 가입 완료(`/auth/register/complete`) 시 `phoneNumber` 필수 수집(PII — 응답 DTO 비노출) |
+| `auth` | 회원가입(기본 설정 시드)·로그인·**카카오 소셜 로그인**·refresh 회전·로그아웃·`/me`. 가입 완료(`/auth/register/complete`) 시 `ownerName`(→`users.name`)·`ownerAgeRange`·`referralSources` 필수 수집 + `phoneNumber` 필수 수집(PII) |
 | `user` | 프로필 수정·아바타 업로드·탈퇴(`DELETE /me`). 탈퇴 시 email·nickname·**provider_id** 스크럽(재가입 허용) |
 | `sales` | 매출 CRUD·무한스크롤·필터·**요약(GET /sales/summary)**·미수·**서버 입금계산**·**이름+전화번호로 고객 자동연결(findOrCreate)** |
 | `expenses` | 지출 + 고정비(this/all 분기·**@Scheduled 자동생성**)·**목록 페이지네이션(무한스크롤)**·**요약 집계(GET /expenses/summary)** |
-| `customers` | 고객 CRUD·findOrCreate·**실시간 구매통계**·**커스텀 등급 CRUD + 구매횟수 자동승급/수동잠금** |
+| `customers` | 고객 CRUD·findOrCreate·**실시간 구매통계**·**커스텀 등급 CRUD + 구매횟수 자동승급/수동잠금** · **임계값 변경 시 잠금 아닌 고객 일괄 재산정(`recomputeAllGrades`) + 변경 미리보기(`POST /customer-grades/{id}/preview`)** |
 | `reservations` / `schedules` | 예약(매출 전환·픽업)·일정·**리마인더/요약 푸시** |
 | `photos` | 사진카드(presigned 업로드·삭제·**다운로드**)·**#해시태그(색상 없음·카드당 최대 3)**·**고객 직접 연결(customer_id 필터·소유권 검증)**·**총계 집계(totalCards/totalPhotos)·기간필터(created_at)** |
-| `community` | 단일 커뮤니티 게시판(게시글·댓글·대댓글·좋아요·비밀글·soft delete)·이미지 업로드. **`@RequiresBusinessVerified` 게이팅 적용**. `PostResponse`·`CommentResponse`에 `authorIsAdmin` 노출(작성자 관리자 배지용) |
+| `community` | 단일 커뮤니티 게시판(게시글·댓글·대댓글·좋아요·비밀댓글·soft delete)·이미지 업로드. **`@RequiresBusinessVerified` 게이팅 적용**. `PostResponse`·`CommentResponse`에 `authorIsAdmin` 노출(작성자 관리자 배지용). **댓글 수정(`PATCH /community/comments/{id}`) — 작성자 전용(운영자 포함 타인 불가), 본문만 변경.** **공지글 작성·댓글/답글 생성 시 `ApplicationEventPublisher`로 이벤트 발행** → `CommunityPushListener`(AFTER_COMMIT 비동기)가 발송. 공지는 강제 발송, 댓글은 수신설정 존중(`community_comment`) |
 | `verification` | 사업자 인증 신청·상태 조회(PENDING/APPROVED/REJECTED/NONE)·presigned 업로드·게이팅(`@RequiresBusinessVerified`) |
 | `waitlist` | 출시 전 선착순 100명 사전등록(공개 모집). 인증/테넌시 없음. `POST /waitlist`(이메일+가게명), `GET /waitlist/count`. 등록 시 Discord WAITLIST 채널 비동기 알림 |
 | `interview` | 유저 인터뷰 모집(공개). 인증/테넌시 없음. `POST /interview`(이름+전화번호). 신청 시 Discord INTERVIEW 채널 비동기 알림. `/waitlist`·`/interview`(POST) 공용 레이트리밋 인터셉터 적용 |
-| `settings` | 매출/지출 설정·하단바·사용자 설정·푸시 구독·**테스트 발송** |
+| `settings` | 매출/지출 설정·하단바·사용자 설정·푸시 구독·**테스트 발송**·**타입별 수신 설정(`GET/PUT /push/preferences`)** — `NotificationPreferenceService`가 `PushTypes.TOGGLEABLE` 목록 기준으로 on/off 관리. 행 없으면 기본 켜짐 |
 | `dashboard` | 오늘/월 집계·**네이티브 SQL 통계** |
 | `statistics` | 기간별 통계 KPI + 일별 시계열 + 분포 — 매출·지출·예약·고객 4도메인. `StatisticsSupport`(공용 비율·증감·직전 기간 계산), `StatisticsService`(파사드). 미수 제외(`payment_method_id IS NOT NULL`), 최대 731일 범위 |
+| `insights` | 정보 피드 — 경매시세(aT f001 적재 `@Scheduled`·단일시장 양재·요약/드릴다운/등락 중앙값)·지원사업(K-Startup·기업마당 적재) 읽기 + 스크랩(개인 `insight_scraps`·`flower_item_scraps`). 공유 읽기 2테이블(`flower_auction_prices`·`support_programs`) + 개인 2테이블. 수집기는 적재만, 읽기는 InsightService. **InsightPushService**: 경매 스크랩 시세 업데이트·지원사업 신규(전체 활성유저)·마감 임박(D-day·D-1) 3 cron — 멱등 claim(`notification_log`) + `JobRunRecorder` 래핑 |
+| `announcement` | 공지 배너 CMS (`announcements` — modal/bar 2종). 운영자 CRUD+활성토글(`/admin/announcements`, `@RequiresAdmin`). 점주 노출/클릭(`/announcements`). soft-delete. `AdminAuditService`로 변경 감사 기록 |
+| `admin` (job-runs) | **백그라운드 작업 로그 조회 + 수동 트리거**(`/admin/job-runs`, `@RequiresAdmin`). `AdminJobRunService`가 `job_run_status`(작업당 최신 1행) 요약과 `job_run_logs`(이력) 목록을 반환하고, `JobRegistry`가 등록된 작업 본문을 수동으로 실행(`POST /admin/job-runs/{jobName}/trigger`). 실행 결과는 `JobRunRecorder`가 manual 트리거로 기록 |
+| `support` | 1:1 문의·피드백 인박스 (`support_inquiries`). 점주 제출+본인 목록(`/inquiries`) + 이미지 presigned 업로드(`POST /inquiries/upload-targets`, S3 prefix `support/`). 새 문의 접수 시 `InquiryCreatedEvent` → Discord SUPPORT 채널 비동기 알림. 운영자 인박스+답변+상태관리(`/admin/inquiries`, `@RequiresAdmin`, 응답 `AdminInquiryResponse` — 작성자 닉네임·가게명 포함). 운영자 답변 시 `InquiryAnsweredEvent` → 점주 푸시. 감사 기록(INQUIRY_ANSWER/INQUIRY_STATUS) |
+| `billing` | 구독·자동결제·쿠폰. 토스페이먼츠 빌링키 등록(`/billing/prepare`, `/billing/subscribe`, `/billing/trial`) + 구독 조회·해지·재개·카드변경(`/billing/me`, `DELETE /billing/cancel`, `POST /billing/resume`, `PUT /billing/card`) + 쿠폰 사용(`POST /coupons/redeem`) + 운영자 쿠폰 CRUD(`/admin/coupons`) + 운영자 구독 목록(`GET /admin/subscriptions`) + 토스 웹훅(`POST /toss/webhook`, HMAC 검증). 엔티티: `Subscription`·`BillingKey`(AES-256 암호화)·`PaymentHistory`·`Coupon`·`CouponRedemption`·`SubscriptionEligibility`. Discord BILLING 채널. 외부 의존: `BillingClient` → `api.tosspayments.com` |
 
 ---
 
@@ -268,7 +280,7 @@ flowchart TB
 3. **교차 참조 검증**: 매출의 `customer_id`, 예약·사진의 `saleId` 등 외부에서 받은 식별자는 **소유권을 재확인**한 뒤에만 사용.
 4. **테스트**: 도메인마다 "다른 user의 데이터 접근 차단" 케이스를 필수로 포함.
 
-> **공유 읽기 예외**: **커뮤니티**(`community_posts`/`community_comments`/`community_likes`)는 공유 데이터 — `user_id` 행 격리 대상이 아니며, 비밀글·소유권·마스킹은 서비스가 뷰어(JWT) + `author_user_id`로 계산한다.
+> **공유 읽기 예외**: **커뮤니티**(`community_posts`/`community_comments`/`community_likes`)는 공유 데이터 — `user_id` 행 격리 대상이 아니며, 비밀댓글·소유권·마스킹은 서비스가 뷰어(JWT) + `author_user_id`로 계산한다.
 
 ---
 
@@ -346,7 +358,7 @@ flowchart LR
     class DB d
 ```
 
-앱은 날짜·금액·결제수단을 보내고, 미수(`unpaid`)는 `is_unpaid` 영구 마커로 표시하고 총매출에서 제외한다. 결제수단 `card`는 지출의 `cardCompany`와 별개 — 매출에 카드사/수수료 필드는 없다. **고객 자동연결**: `customerId`가 없어도 이름·전화번호가 모두 제공되면 `CustomerService.findOrCreate`(전화번호 기준)로 고객을 조회 또는 생성해 `sales.customer_id`에 연결한다. 매출 수정 시 고객명·연락처가 변경되면 재해석하고, 연결된 예약(픽업)의 고객명·연락처도 동기화한다. **등급 재계산 훅**: 매출 생성·수정·삭제 시 연결 고객(`customer_id`)이 있으면 `CustomerGradeService.recompute`를 호출해 구매횟수 기준 자동 등급을 갱신한다(`grade_locked=false` 고객만).
+앱은 날짜·금액·결제수단을 보내고, 미수(`unpaid`)는 `is_unpaid` 영구 마커로 표시하고 총매출에서 제외한다. 결제수단 `card`는 지출의 `cardCompany`와 별개 — 매출에 카드사/수수료 필드는 없다. **고객 자동연결**: `customerId`가 없어도 이름·전화번호가 모두 제공되면 `CustomerService.findOrCreate`(전화번호 기준)로 고객을 조회 또는 생성해 `sales.customer_id`에 연결한다. 매출 수정 시 고객명·연락처가 변경되면 재해석하고, 연결된 예약(픽업)의 고객명·연락처도 동기화한다. **등급 재계산 훅**: 매출 생성·수정·삭제 시 연결 고객(`customer_id`)이 있으면 `CustomerGradeService.recomputeGrade`를 호출해 구매횟수 기준 자동 등급을 갱신한다(`grade_locked=false` 고객만). **임계값 변경 시**: 등급 임계값이 실제로 바뀌면 `recomputeAllGrades`로 해당 테넌트 잠금 아닌 고객 전원을 일괄 재산정한다(구매횟수 bulk 집계 1쿼리, 등급 목록 1회 로드).
 
 ### 고정비 자동생성 — @Scheduled (KST 00:30)
 
@@ -430,6 +442,7 @@ erDiagram
         bigint id PK
         string email UK "NOT NULL (소셜에서 채움)"
         string nickname "표시명/소셜 닉네임, NOT NULL UNIQUE"
+        string name "사장님 실명, NOT NULL (register/complete ownerName)"
         string provider "KAKAO|GOOGLE|NAVER, NOT NULL"
         string provider_id "소셜 고유 ID, nullable"
         boolean is_active
@@ -494,7 +507,6 @@ erDiagram
         string category "notice|daily|question|knowledge|review|etc"
         string title
         jsonb content "Tiptap JSON"
-        boolean is_secret
         boolean is_pinned
         int like_count "비정규화"
         int comment_count "비정규화"
@@ -516,10 +528,21 @@ erDiagram
     }
 ```
 
+**운영 콘솔 전용 테이블** (26-06-21-console-ops.sql, 테넌트 격리 없음 — `@RequiresAdmin` 보호):
+`admin_audit_logs`(운영자 감사로그, append-only) · `notification_send_logs`(발송이력, append-only) · `broadcasts`(브로드캐스트 캠페인) · `community_reports`(신고큐) · `community_bans`(활동차단) · `announcements`(공지배너 CMS) · `support_inquiries`(1:1문의) · `withdrawal_logs`(탈퇴사유 이탈분석). `community_posts`·`community_comments`에 `hidden_at`/`hidden_by` 컬럼 추가(운영자 가역 숨김 — 삭제 `deleted_at`과 분리).
+
+**푸시·작업 로깅 신규 테이블** (26-06-25, 3종):
+
+| 테이블 | 설명 |
+|---|---|
+| `notification_preferences` | 점주별 푸시 타입 수신 on/off. `(user_id, type)` UNIQUE. 행 없으면 기본 켜짐(true). `PushDispatcher`가 `PushTypes.TOGGLEABLE` 타입 발송 전 조회해 off면 0 반환 |
+| `job_run_status` | 작업(`job_name` PK)당 최신 실행 상태 1행. 매 실행 upsert — "마지막으로 언제 돌았나" 추적용 |
+| `job_run_logs` | 의미있는 실행만 append-only(처리>0 OR 실패 OR 수동실행). 0건 정상 실행은 기록 생략(노이즈 방지). `trigger` 컬럼으로 schedule/manual 구분 |
+
 핵심 설계 결정:
 - **예약 → 매출 논리참조**: `reservations.sale_id`가 `sales`를 논리 참조(예약→매출 전환). DB FK 제약 없음 — 매출 삭제 시 앱이 `sale_id`를 NULL 처리. (`sales.reservation_id`는 보유하지 않음 — 통계는 sales에서 집계.)
 - **고정비 멱등 자동생성**: `expenses(recurring_id, date)` UNIQUE + `recurring_skips`("이것만 삭제" 시 재발 방지).
-- **polymorphic 스크랩**: `(user_id, target_type, target_id)` 복합 unique. FK 없이 트렌드/포스트 공용.
+- **polymorphic 스크랩**: `insight_scraps(user_id, target_type, target_id)` 복합 unique — target_type='grant'만 허용. 경매 품목 스크랩은 별도 `flower_item_scraps(user_id, pum_name)` UNIQUE. FK 없음.
 - **드리프트 반영**: 원본 `schema.sql`이 누락했던 `sales.is_unpaid`, `reservations.reminder_sent/pickup_completed`, `schedules`까지 실제 운영 스키마 기준으로 이식.
 
 ---
@@ -531,14 +554,31 @@ erDiagram
 | 인증 | `POST /auth/oauth/{kakao,google,naver}`, `POST /auth/register/complete`(+`phoneNumber`), `POST /auth/{refresh,logout}`, `GET /me`, `DELETE /me` | Public / Auth |
 | 매출 | `GET/POST/PATCH/DELETE /sales`, `GET /sales/summary`, `/sales/{id}/complete-unpaid`·`/revert-unpaid`, `/sales/suggestions` | Auth |
 | 지출·고정비 | `/expenses`(+`/expenses/summary`), `/recurring-expenses`(+`/toggle`·`/instances/{id}?scope=this\|all`) | Auth |
-| 고객 | `/customers`(+`/search`·`/check-phone`·`/{id}/sales`·`/find-or-create`·`/{id}/grade`·`/{id}/grade/auto`), `GET/POST/PATCH/DELETE /customer-grades` | Auth |
+| 고객 | `/customers`(+`/search`·`/check-phone`·`/{id}/sales`·`/find-or-create`·`/{id}/grade`·`/{id}/grade/auto`), `GET/POST/PATCH/DELETE /customer-grades`, `POST /customer-grades/{id}/preview` | Auth |
 | 예약·일정 | `/reservations`(+`/upcoming`·`/reminders`·`/convert-to-sale`·`/add-pickup`), `/schedules` | Auth |
 | 사진첩 | `GET/POST/PATCH/DELETE /photo-cards`, `POST /photo-cards/upload-targets`(신규 카드용), `POST /photo-cards/{id}/upload-targets`, `GET /photo-cards/{id}/photos/download`, `/photos/reorder`, `/photo-tags` | Auth |
-| 커뮤니티 | `GET/POST /community/posts`, `GET/PATCH/DELETE /community/posts/{id}`, `POST /community/posts/{id}/like`, `GET/POST /community/posts/{id}/comments`, `DELETE /community/comments/{id}`, `POST /community/upload-targets` | Auth + **사업자 인증** |
+| 커뮤니티 | `GET/POST /community/posts`, `GET/PATCH/DELETE /community/posts/{id}`, `POST /community/posts/{id}/like`, `GET/POST /community/posts/{id}/comments`, `PATCH /community/comments/{id}`, `DELETE /community/comments/{id}`, `POST /community/upload-targets` | Auth + **사업자 인증** |
 | 사업자 인증 | `POST /verification/business/upload-target`, `POST /verification/business`, `GET /verification/business/me` | Auth |
-| 설정 | `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}`(CRUD), `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}/order`(순서 변경 `PUT`), `/settings/preferences`, `/push/{subscribe,unsubscribe,status,test}` | Auth |
+| 설정 | `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}`(CRUD), `/settings/{sale-categories,payment-methods,sale-channels,expense-categories,expense-payment-methods}/order`(순서 변경 `PUT`), `/settings/preferences`, `/push/{subscribe,unsubscribe,status,test}`, `GET /push/preferences`(수신설정 목록), `PUT /push/preferences`(타입별 on/off 토글) | Auth |
 | 대시보드 | `GET /dashboard/today`·`/dashboard/month` | Auth |
 | 통계 | `GET /statistics/sales`, `GET /statistics/expenses`, `GET /statistics/reservations`, `GET /statistics/customers` (공통 쿼리파라미터: `from=yyyy-MM-dd&to=yyyy-MM-dd`, 최대 731일) — KPI(직전 동일 기간 증감) + 일별 시계열 + 분포 반환 | Auth |
+| 공지 배너(점주) | `GET /announcements`(?placement=modal|bar), `POST /announcements/{id}/click` | Auth |
+| 공지 배너(운영자) | `GET/POST /admin/announcements`, `PATCH /admin/announcements/{id}`, `POST /admin/announcements/{id}/active`, `DELETE /admin/announcements/{id}` | Auth + **is_admin** |
+| 1:1 문의(점주) | `POST /inquiries`(201), `GET /inquiries`(본인 목록), `POST /inquiries/upload-targets`(이미지 presigned URL 발급, S3 prefix `support/`) | Auth |
+| 1:1 문의(운영자) | `GET /admin/inquiries`, `GET /admin/inquiries/{id}`, `POST /admin/inquiries/{id}/answer`, `POST /admin/inquiries/{id}/status` | Auth + **is_admin** |
+| 커뮤니티 신고(점주) | `POST /community/posts/{id}/report`, `POST /community/comments/{id}/report` | Auth + **사업자 인증** |
+| 커뮤니티 모더레이션(운영자) | `GET /admin/community/reports`(?status), `POST /admin/community/reports/{id}/resolve`, `POST /admin/community/posts/{id}/hide`·`/unhide`, `DELETE /admin/community/posts/{id}`, `POST /admin/community/comments/{id}/hide`·`/unhide`, `DELETE /admin/community/comments/{id}`, `GET/POST /admin/community/bans`, `DELETE /admin/community/bans/{id}` | Auth + **is_admin** |
+| 브로드캐스트(운영자) | `GET/POST /admin/broadcasts`, `GET /admin/broadcasts/segments/preview`, `POST /admin/broadcasts/{id}/send`, `DELETE /admin/broadcasts/{id}` | Auth + **is_admin** |
+| 알림 발송 이력(운영자) | `GET /admin/notification-logs`(?type&source&status) | Auth + **is_admin** |
+| 감사 로그(운영자) | `GET /admin/audit-logs`(?action&actorUserId) | Auth + **is_admin** |
+| 운영자 통계(확장) | `GET /admin/stats/funnel`, `GET /admin/stats/churn-reasons`(?days), `GET /admin/stats/retention` | Auth + **is_admin** |
+| AI 프롬프트 레지스트리(운영자) | `GET/POST /admin/prompts`(?channel), `GET/PATCH/DELETE /admin/prompts/{id}`, `POST /admin/prompts/{id}/activate`, `POST /admin/prompts/preview`(플레이그라운드, 저장X) — 마케팅 프롬프트 버전·활성화·튜닝 (SPEC-AI-008) | Auth + **is_admin** |
+| 작업 실행 로그(운영자) | `GET /admin/job-runs/summary`(작업별 최신 상태 카드), `GET /admin/job-runs`(?jobName&status&page&size, 실행 이력), `POST /admin/job-runs/{jobName}/trigger`(즉시 실행·감사 기록) | Auth + **is_admin** |
+| 빌링(점주) | `POST /billing/prepare`(빌링키 등록 준비), `POST /billing/subscribe`(정기구독 시작), `POST /billing/trial`(트라이얼 시작), `GET /billing/me`(구독 현황), `DELETE /billing/cancel`, `POST /billing/resume`, `PUT /billing/card`(카드 변경) | Auth |
+| 쿠폰(점주) | `POST /coupons/redeem`(쿠폰 사용) | Auth |
+| 쿠폰(운영자) | `GET /admin/coupons`, `POST /admin/coupons`, `GET /admin/coupons/{id}`, `PATCH /admin/coupons/{id}`, `POST /admin/coupons/{id}/disable` | Auth + **is_admin** |
+| 구독(운영자) | `GET /admin/subscriptions`(?status) | Auth + **is_admin** |
+| 토스 웹훅 | `POST /toss/webhook` (HMAC 검증 후 결제/구독 이벤트 처리) | 토스 서명 검증 |
 | 사전등록 | `POST /waitlist`(201, 이메일+가게명 등록), `GET /waitlist/count`(카운트 조회) | **Public** (인증 불필요) |
 | 인터뷰 모집 | `POST /interview`(201, 이름+전화번호 신청) | **Public** (인증 불필요) |
 
@@ -548,13 +588,20 @@ erDiagram
 
 ## 스케줄러 (@Scheduled · Vercel Cron 대체)
 
-| 작업 | cron (KST) | 구현 | 멱등성 |
-|---|---|---|---|
-| 고정비 자동생성 | `0 30 0 * * *` | `RecurringExpenseGenerator` | `(recurring_id,date)` UNIQUE + ON CONFLICT |
-| 예약 리마인더 발송 | `0 */5 * * * *` | `ReservationNotificationService` | `reminder_sent` 플래그 |
-| 당일 픽업 요약 | `0 0 8 * * *` | `ReservationNotificationService` | 사용자별 1회 발송 |
+모든 스케줄 작업은 `JobRunRecorder.record(JobNames.XXX) { runXxx(...) }` 패턴으로 래핑되어 `job_run_status`(upsert) + `job_run_logs`(의미있는 실행만 append)에 기록된다. 스케줄 트리거와 실제 본문(`runXxx`)을 분리해 수동 트리거(`/admin/job-runs/{jobName}/trigger`)와 테스트에서 동일 본문을 재사용한다.
 
-스케줄 트리거와 실제 로직(`generateForDate(date)`, `markAndNotifyDueReminders(now)`)을 분리해 테스트에서 직접 호출·검증한다.
+| 작업 (JobNames 상수) | cron (KST) | 구현 | 멱등성 |
+|---|---|---|---|
+| `recurring_expense_generate` | `0 30 0 * * *` | `RecurringExpenseGenerator` | `(recurring_id,date)` UNIQUE + ON CONFLICT |
+| `reservation_reminder` | `0 */5 * * * *` | `ReservationNotificationService` | `reminder_sent` 플래그 |
+| `daily_pickup_summary` | `0 0 8 * * *` | `ReservationNotificationService` | 사용자별 1회 발송(`notification_log` claim) |
+| `flower_auction_ingest` | `0 30 6 * * *` | `FlowerAuctionIngestService` (aT f001, 최근 3일 × 4구분) | `(sale_date,flower_gubn,pum_name,good_name,lv_nm)` UNIQUE + ON CONFLICT DO UPDATE. key/baseUrl 미설정 시 skipped |
+| `support_program_ingest` | `0 31 6 * * *` | `SupportProgramIngestService` (data.go.kr, 소상공인 관련도 필터) | `(source, source_id)` UNIQUE + ON CONFLICT DO UPDATE. serviceKey 미설정 시 skipped |
+| `bizinfo_ingest` | `0 32 6 * * *` | `BizinfoIngestService` (bizinfo.go.kr, 소상공인 관련도 필터) | `(source, source_id)` UNIQUE + ON CONFLICT DO UPDATE. crtfcKey/baseUrl 미설정 시 skipped |
+| `auction_scrap_push` | `0 35 6 * * *` | `InsightPushService` — 오늘 적재된 경매 품목 스크랩 유저에게 시세 업데이트 푸시 | `notification_log(user_id, type, dedup_key)` 원자적 claim. 수신설정(`auction_scrap_update`) 존중 |
+| `grant_new_push` | `0 40 6 * * *` | `InsightPushService` — 오늘 신규 지원사업 N건 → 전체 활성 유저 발송 | `notification_log` claim. 수신설정(`grant_new`) 존중 |
+| `grant_deadline_push` | `0 45 6 * * *` | `InsightPushService` — 스크랩한 지원사업 D-day·D-1 마감 임박 발송 | `notification_log` claim. 수신설정(`grant_deadline`) 존중 |
+| `recurring_billing` | `0 0 4 * * *` | `RecurringBillingScheduler` — 만료 임박 구독 자동결제(`BillingChargeProcessor`) | `subscriptions.status` 검사 + 결제 성공/실패 이벤트(`PaymentChargedEvent`·`SubscriptionExpiredEvent`) |
 
 ---
 
@@ -574,7 +621,7 @@ erDiagram
 | **입력 검증** | Jakarta Validation `@Valid`, 결제수단/등급/상태 화이트리스트 | 잘못된 입력 |
 | **SQL 인젝션** | JPA 파라미터 바인딩, 네이티브도 `?`/`:param` 바인딩 전용 | 인젝션 |
 | **S3** | presigned PUT/GET 짧은 만료, 소유권/이미지 메타·최대 장수 검증 후 발급; 삭제는 best-effort(DB 정리 우선) | 무단 업로드·비인가 다운로드 |
-| **커뮤니티 권한** | `users.is_admin`으로 공지(notice) 작성·비밀글/댓글 열람·타인 글 삭제 판정. 수정은 작성자만 | 권한 없는 콘텐츠 수정·열람 |
+| **커뮤니티 권한** | `users.is_admin`으로 공지(notice) 작성·비밀댓글 열람·타인 글 삭제 판정. 수정은 작성자만 | 권한 없는 콘텐츠 수정·열람 |
 | **사업자 인증 게이팅** | `@RequiresBusinessVerified` 어노테이션 → `BusinessVerifiedInterceptor`가 APPROVED 행 보유 여부 검증. 미인증 시 E-VRF-001(403). `/verification/business/**`(인증 입구)는 게이팅 제외 | 미인증 사용자의 커뮤니티 접근 |
 | **사전등록·인터뷰 공개 라우트** | `SecurityConfig`에서 `/waitlist`, `/waitlist/count`, `/interview` `permitAll`. 이메일 UNIQUE(waitlist) / 전화번호 UNIQUE(interview) + 정원(100, waitlist) 서비스 레이어 강제. `/waitlist`·`/interview`(POST) 공용 레이트리밋 인터셉터(`WebConfig`) | 공개 모집 중복 등록·도배 방지 |
 | **CORS / 헤더** | origin 화이트리스트, `X-Frame-Options: DENY`·`nosniff`·`Referrer-Policy` | XSS/클릭재킹/크로스사이트 |
@@ -590,10 +637,12 @@ AppException(errorCode: ErrorCode, message)
 └── ErrorCode (인터페이스: code·status·defaultMessage)
     ├── CommonErrorCode       (common/error)         — 횡단 코드  E-CMN-*
     ├── AuthErrorCode         (auth/error)            — 도메인 코드 E-AUTH-*
-    ├── CommunityErrorCode    (community/error)       — 도메인 코드 E-CMNT-*
+    ├── AdminErrorCode        (admin/error)           — 도메인 코드 E-ADM-* (001~014)
+    ├── CommunityErrorCode    (community/error)       — 도메인 코드 E-CMNT-* (001~009)
     ├── VerificationErrorCode (verification/error)   — 도메인 코드 E-VRF-*
     ├── WaitlistErrorCode     (waitlist/error)       — 도메인 코드 E-WL-*
-    └── InterviewErrorCode    (interview/error)      — 도메인 코드 E-IV-*
+    ├── InterviewErrorCode    (interview/error)      — 도메인 코드 E-IV-*
+    └── BillingErrorCode      (billing/error)        — 도메인 코드 E-BIL-*
         (새 도메인은 <domain>/error 에 enum 추가)
 ```
 
@@ -657,11 +706,25 @@ flowchart LR
 | `DISCORD_VERIFICATION_WEBHOOK_URL` | 사업자 인증 신청 알림 (`DiscordChannel.VERIFICATION`) |
 | `DISCORD_WAITLIST_WEBHOOK_URL` | 사전등록 알림 (`DiscordChannel.WAITLIST`) |
 | `DISCORD_INTERVIEW_WEBHOOK_URL` | 인터뷰 신청 알림 (`DiscordChannel.INTERVIEW`) |
+| `DISCORD_SUPPORT_WEBHOOK_URL` | 1:1 문의 접수 알림 (`DiscordChannel.SUPPORT`) |
 | `INTERNAL_API_KEY` | 내부 수집 API |
 | `CORS_ALLOWED_ORIGINS` | 앱/웹 origin 화이트리스트 |
 | `KAKAO_REST_API_KEY` / `KAKAO_CLIENT_SECRET` | 카카오 OAuth (시크릿 '사용 안 함'이면 빈 값) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | 구글 OAuth |
 | `NAVER_CLIENT_ID` / `NAVER_CLIENT_SECRET` | 네이버 OAuth |
+| `SOLAPI_API_KEY` / `SOLAPI_API_SECRET` | SOLAPI 알림톡 API 자격증명 |
+| `SOLAPI_SENDER_PHONE` | 등록된 SMS 발신번호(알림톡 실패 시 폴백) |
+| `SOLAPI_PF_ID` | 카카오 발신프로필 ID (비즈채널 인증 후 발급) |
+| `SOLAPI_APPROVAL_TEMPLATE_ID` | 사업자 인증 승인 알림톡 템플릿 ID |
+| `SOLAPI_SUBMITTED_TEMPLATE_ID` | 사업자 인증 접수 알림톡 템플릿 ID |
+| `SOLAPI_REJECTED_TEMPLATE_ID` | 사업자 인증 거절 알림톡 템플릿 ID |
+| `TOSS_SECRET_KEY` | 토스페이먼츠 시크릿 키 (빌링키 발급·결제 API 인증). 미설정 시 빌링 API 호출 불가 |
+| `TOSS_WEBHOOK_SECRET` | 토스 웹훅 HMAC 서명 검증 키 |
+| `BILLING_KEY_ENCRYPTION_KEY` | `BillingKey` 필드 AES-256 암호화 키 (32자) |
+| `DISCORD_BILLING_WEBHOOK_URL` | 결제·구독 이벤트 알림 (`DiscordChannel.BILLING`) |
+| `FLOWER_API_SERVICE_KEY` | aT 화훼유통정보 경매시세 적재 인증키. 미설정 시 `FlowerAuctionIngestService` no-op |
+| `KSTARTUP_API_SERVICE_KEY` | data.go.kr K-Startup 사업공고 인증키(일반 인증키, IP 등록 불필요). 미설정 시 `SupportProgramIngestService` no-op |
+| `BIZINFO_API_CRTFC_KEY` | 기업마당 정책정보 개방 인증키(data.go.kr 아님, **IP 바인딩**). 미설정 시 `BizinfoIngestService` no-op |
 
 ---
 

@@ -3,6 +3,7 @@ package kr.ai.flori.reservations.service
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider
 import kr.ai.flori.auth.service.AuthService
+import kr.ai.flori.common.domain.ReservationStatuses
 import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.reservations.dto.ReservationCreateRequest
@@ -90,5 +91,32 @@ class ReservationNotificationServiceTest {
 
         assertThat(notificationService.sendDailySummary(day)).isEqualTo(1) // 첫 발송
         assertThat(notificationService.sendDailySummary(day)).isEqualTo(0) // 중복 트리거 → claim 실패로 스킵
+    }
+
+    @Test
+    fun `픽업 완료(completed) 예약은 리마인더 발송 대상에서 제외된다`() {
+        newTenant()
+        val r = reservationService.create(ReservationCreateRequest(LocalDate.of(2026, 6, 1), null, "홍길동", null, "픽업"))
+        // 리마인더는 도달(과거)시켰지만 상태를 completed(픽업완료)로 변경
+        reservationService.update(
+            r.id,
+            ReservationUpdateRequest(status = ReservationStatuses.COMPLETED, reminderAt = Instant.now().minusSeconds(60)),
+        )
+
+        notificationService.markAndNotifyDueReminders(Instant.now())
+
+        // completed 라 findDueReminders 에서 빠져 발송되지 않음 → reminder_sent 마킹 안 됨
+        assertThat(requireNotNull(reservationRepository.findById(r.id).orElse(null)).reminderSent).isFalse()
+    }
+
+    @Test
+    fun `픽업 완료(completed) 예약만 있는 사용자는 일일 요약 대상에서 제외된다`() {
+        newTenant()
+        val day = LocalDate.of(2026, 8, 1)
+        val r = reservationService.create(ReservationCreateRequest(day, null, "홍길동", null, "픽업A"))
+        reservationService.update(r.id, ReservationUpdateRequest(status = ReservationStatuses.COMPLETED))
+
+        // 그날 이 사용자의 예약이 completed 뿐 → 요약 발송 0
+        assertThat(notificationService.sendDailySummary(day)).isEqualTo(0)
     }
 }

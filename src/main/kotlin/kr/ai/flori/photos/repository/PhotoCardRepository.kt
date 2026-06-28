@@ -108,4 +108,15 @@ interface PhotoCardRepository : JpaRepository<PhotoCard, Long> {
         @Param("userId") userId: Long,
         @Param("customerId") customerId: Long,
     ): Int
+
+    /** 정합용: 유저별 갤러리 사진 size 합(jsonb 펼쳐 합산). cross-tenant — @Scheduled 정합에서만 사용. */
+    @Query(
+        value = """
+            SELECT pc.user_id AS userId, COALESCE(SUM((elem->>'size')::bigint), 0) AS bytes
+            FROM photo_cards pc, LATERAL jsonb_array_elements(pc.photos) elem
+            GROUP BY pc.user_id
+        """,
+        nativeQuery = true,
+    )
+    fun sumPhotoBytesByUser(): List<Array<Any>>
 }

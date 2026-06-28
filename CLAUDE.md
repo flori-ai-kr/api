@@ -57,33 +57,39 @@ src/main/kotlin/kr/ai/flori/
 ├── user/                  # 사용자 / 내 정보(/me) · 프로필 수정 · 탈퇴
 ├── sales/                 # 매출 기록 · 미수(unpaid) 처리
 ├── expenses/              # 지출 + 고정비 자동 생성(@Scheduled)
-├── customers/             # 고객 (find-or-create, 실시간 통계, 커스텀 등급·자동승급·수동잠금)
+├── customers/             # 고객 (find-or-create, 실시간 통계, 커스텀 등급·자동승급·수동잠금·임계값 변경 시 잠금 아닌 고객 일괄 재산정(`recomputeAllGrades`)·변경 미리보기(`POST /customer-grades/{id}/preview`))
 ├── reservations/          # 예약 (판매 전환, 픽업)
 ├── schedules/             # 일정 (리마인더 푸시)
 ├── photos/                # 갤러리 (presigned 업로드) · 태그 · 고객 연결(customer_id 직접 필터)
-├── settings/              # 카드사 · 매출/지출 설정 · 하단바 · 푸시 구독
-├── community/             # 커뮤니티 게시판(단일 공유) · 비밀글/댓글·대댓글·좋아요·soft delete
-├── verification/          # 사업자 인증 (신청·상태조회·presigned 업로드·게이팅)
+├── storage/               # 갤러리 스토리지 쿼터 (user_storage 카운터·기본3GB) — presign 한도검사 + 카드 증감 + @Scheduled 정합 + 증설요청(Discord SUPPORT·관리자 콘솔 quota 상향)
+├── settings/              # 카드사 · 매출/지출 설정 · 하단바 · 푸시 구독 · 타입별 수신 설정(GET·PUT /push/preferences)
+├── community/             # 커뮤니티 게시판(단일 공유) · 비밀댓글·대댓글·좋아요·soft delete · 댓글 수정(`PATCH /community/comments/{id}` — 작성자 전용, 운영자 포함 타인 불가) · 공지/댓글 이벤트 발행 → CommunityPushListener(AFTER_COMMIT 비동기 푸시)
+├── verification/          # 사업자 인증 (신청·상태조회·presigned 업로드·게이팅) + 결과 알림톡(접수/승인/거절, SOLAPI) — 발송 결과는 notification_send_logs(source=alimtalk, type=business_verification)
 ├── waitlist/              # 사전등록 공개 모집 (인증 불필요 — POST /waitlist, GET /waitlist/count). 식별자: 이메일(정규화 UNIQUE)
 ├── interview/             # 유저 인터뷰 모집 (공개 — POST /interview, 이름+전화번호). 신청 시 Discord INTERVIEW 채널 비동기 알림
 ├── dashboard/             # 오늘/월 집계 · 네이티브 SQL 통계
 ├── statistics/            # 기간별 통계 API (/statistics/**) — 매출·지출·예약·고객 KPI + 일별 시계열 + 분포. JdbcTemplate 네이티브 SQL. 도메인별 서비스(Sales/Expenses/Reservation/CustomerStatisticsService) + StatisticsSupport(공용 증감·비율·기간 계산) + 파사드(StatisticsService) + StatisticsController
-├── admin/                 # 운영자 콘솔 API (/admin/**, @RequiresAdmin · cross-tenant) — 통계·인증심사·유저·AI헬스 프록시
+├── announcement/          # 공지 배너 CMS (announcements) — 운영자 CRUD(/admin/announcements) + 점주 노출/클릭(/announcements). 활성토글+기간+클릭집계. soft-delete
+├── support/               # 1:1 문의·피드백 인박스 (support_inquiries) — 점주 제출(/inquiries) + 이미지 presigned 업로드(POST /inquiries/upload-targets, S3 prefix `support/`) + 운영자 답변/상태관리(/admin/inquiries, AdminInquiryResponse=작성자 닉네임·가게명 포함). 새 문의 접수 시 Discord SUPPORT 채널 알림, 운영자 답변 시 점주 푸시. @RequiresAdmin 격리
+├── admin/                 # 운영자 콘솔 API (/admin/**, @RequiresAdmin · cross-tenant) — 통계(funnel/churn-reasons/retention 추가)·인증심사·유저(감사로그)·브로드캐스트·커뮤니티 모더레이션·알림발송이력·AI헬스 프록시
 ├── ai/                    # AI 게이트웨이 (/ai/**) — web↔ai-server(FastAPI) 중개 + 모든 AI 호출 DB 로깅. 채팅/proactive/OCR예약/confirm. ai-server는 내부망 stateless
+├── insights/              # 정보 피드 (/insights/**) — 경매시세(aT f001 적재, 단일시장 양재)·지원사업(K-Startup·기업마당 적재) 읽기 + 스크랩(개인). 적재는 모두 @Scheduled + JobRunRecorder 래핑, 키 미설정 시 no-op. 공유 읽기 2테이블(flower_auction_prices·support_programs) + insight_scraps(user_id). InsightPushService: 경매 스크랩 시세 업데이트·지원사업 신규·마감 임박 3 cron 푸시. FK 없음 간접참조
+├── billing/               # 구독·결제 (/billing/**, /coupons/**, /admin/coupons, /admin/subscriptions, /toss/webhook) — 토스페이먼츠 빌링키 자동결제(Subscription·BillingKey·PaymentHistory), 쿠폰(Coupon·CouponRedemption), 구독 자격(SubscriptionEligibility). RecurringBillingScheduler(04:00 KST). 웹훅 HMAC 검증 후 이벤트 처리. BillingKeyCryptoConverter(AES-256 암호화). Discord BILLING 채널
 └── common/                # 횡단 관심사
     ├── config/            # CORS, OpenAPI, Async, Schedule, Web
     ├── domain/            # 공통 enum (PaymentMethods, ReservationStatuses)
     ├── entity/            # BaseEntity (Auditing)
     ├── error/             # GlobalExceptionHandler, AppException, ErrorCode, Discord 리포팅
     ├── health/            # 헬스체크
+    ├── job/               # 백그라운드 작업 실행 로깅 SSOT — JobRunRecorder(cron 래퍼), JobNames(식별자 상수), JobOutcome(결과), JobRunLog(엔티티), JobRunLogRepository
     ├── log/               # TraceIdFilter, LoggingInterceptor
     ├── notification/      # Discord 알림 채널 (DiscordNotifier, DiscordChannel, DiscordProperties)
-    ├── push/              # PushService (FCM / 로깅 fallback)
+    ├── push/              # PushDispatcher(FCM/VAPID 라우팅 + 수신설정 게이팅 + 발송마다 notification_send_logs 기록·브로드캐스트 제외), PushTypes(타입 SSOT + TOGGLEABLE), PushTemplates(메시지 SSOT), PushLink/PushLinks(딥링크 SSOT — web /admin 경로 + 모바일 type/id), PushService(FCM / 로깅 fallback)
     ├── request/           # ClientContext(ThreadLocal) + ClientContextFilter (요청 컨텍스트 캡처)
     ├── security/          # JWT, SecurityConfig, 내부 인증
     ├── storage/           # S3 presign
     ├── tenant/            # TenantContext (멀티테넌시)
-    ├── util/              # DateRanges 등
+    ├── util/              # DateRanges, Paging 등
     └── validation/        # 입력 길이 상한 SSOT (FieldLimits)
 ```
 
@@ -149,14 +155,39 @@ src/main/kotlin/kr/ai/flori/
 | Discord 에러 리포팅 | `common/error/DiscordErrorReporter.kt` |
 | Auditing 베이스 엔티티 | `common/entity/BaseEntity.kt` |
 | S3 presign | `common/storage/S3PresignService.kt` |
-| 푸시 | `common/push/PushService.kt`, `FirebasePushService.kt` |
+| 푸시 라우팅 + 수신설정 게이팅 + 발송 로깅 | `common/push/PushDispatcher.kt` (발송마다 `notification_send_logs` 기록 — 브로드캐스트 제외) |
+| 푸시 타입 SSOT (TOGGLEABLE 포함) | `common/push/PushTypes.kt` |
+| 푸시 메시지 템플릿 SSOT | `common/push/PushTemplates.kt` |
+| 푸시 딥링크 SSOT | `common/push/PushLink.kt` (`PushLink`·`PushLinks` — web `/admin/*` + 모바일 `type`/`id`) |
+| 푸시 구독 서비스 (FCM / 로깅 fallback) | `common/push/PushService.kt`, `FirebasePushService.kt` |
+| 수신 설정 엔티티/서비스/레포 | `settings/entity/NotificationPreference.kt`, `settings/service/NotificationPreferenceService.kt`, `settings/repository/NotificationPreferenceRepository.kt` |
+| 백그라운드 작업 실행 래퍼 | `common/job/JobRunRecorder.kt` |
+| 작업 식별자 상수 SSOT | `common/job/JobNames.kt` |
+| 작업 결과 타입 | `common/job/JobOutcome.kt` |
+| 작업 실행 이력 엔티티/레포 | `common/job/JobRunLog.kt`, `common/job/JobRunLogRepository.kt` |
+| 수동 트리거 레지스트리 | `admin/service/JobRegistry.kt` |
+| 작업 로그 조회·수동 트리거 서비스/컨트롤러 | `admin/service/AdminJobRunService.kt`, `admin/controller/AdminJobRunController.kt` |
+| 커뮤니티 푸시 이벤트 | `community/event/CommunityPushEvents.kt` |
+| 커뮤니티 푸시 리스너 (AFTER_COMMIT 비동기) | `community/listener/CommunityPushListener.kt` |
+| 인사이트 푸시 서비스 (경매/지원사업 cron 3종) | `insights/service/InsightPushService.kt` |
 | 사업자 인증 게이팅 | `verification/gating/RequiresBusinessVerified.kt`, `BusinessVerifiedInterceptor.kt` |
 | 운영자 콘솔 게이팅 | `admin/gating/RequiresAdmin.kt`, `AdminInterceptor.kt` (User.isAdmin 재검증, `/admin/**`) |
-| Discord 알림 | `common/notification/discord/DiscordNotifier.kt`, `DiscordChannel.kt`, `DiscordProperties.kt` — 채널: SIGNUP·VERIFICATION·WAITLIST·INTERVIEW |
+| Discord 알림 | `common/notification/discord/DiscordNotifier.kt`, `DiscordChannel.kt`, `DiscordProperties.kt` — 채널: SIGNUP·VERIFICATION·WAITLIST·INTERVIEW·SUPPORT·BILLING |
 | CORS / OpenAPI 설정 | `common/config/CorsConfig.kt`, `OpenApiConfig.kt` |
 | 헬스체크 | `common/health/HealthController.kt` |
 | 입력 길이 상한 SSOT | `common/validation/FieldLimits.kt` |
+| 페이지네이션 변환 SSOT | `common/util/Paging.kt` (offsetLimit/pageSize — coerce·offset→page 공식 통일) |
+| 네이티브 SQL 집계 (QueryRepository 패턴) | `customers/repository/CustomerQueryRepository.kt`, `sales/repository/SaleSummaryQueryRepository.kt`, `expenses/repository/ExpenseSummaryQueryRepository.kt` — SQL은 서비스가 아닌 repository 레이어에 |
+| 테스트 공용 헬퍼 | `src/test/.../support/` — `TestTenants`(테넌트 부트스트랩), `Fixtures`(엔티티 빌더·라벨 id 조회), `TestAccounts`(가입 경로) |
 | AI 일일 사용량 캡 (원자적 강제) | `ai/service/AiUsageGuard.kt` |
+| 빌링키 암호화 컨버터 | `billing/crypto/BillingKeyCryptoConverter.kt` (AES-256 AttributeConverter) |
+| 구독 서비스 | `billing/service/SubscriptionService.kt` |
+| 결제 처리 서비스 | `billing/service/PaymentService.kt`, `billing/service/BillingChargeProcessor.kt` |
+| 쿠폰 서비스 | `billing/service/CouponService.kt`, `billing/service/AdminCouponService.kt` |
+| 자동결제 스케줄러 | `billing/service/RecurringBillingScheduler.kt` (04:00 KST, JobRunRecorder 래핑) |
+| 토스 웹훅 처리 | `billing/service/TossWebhookService.kt`, `billing/controller/TossWebhookController.kt` |
+| 빌링 외부 HTTP 클라이언트 | `billing/client/BillingClient.kt` (api.tosspayments.com) |
+| 빌링 에러 코드 | `billing/error/BillingErrorCode.kt` (E-BIL-*) |
 
 ---
 
@@ -183,6 +214,7 @@ docs/
 ├── conventions/           # 컨벤션 ADR (결정과 근거, 작업 전 필독)
 ├── guides/                # how-to 가이드
 ├── plans/                 # 구현 계획
+├── refactoring/           # 리팩터링 기록 (문제→이유→개선)
 └── troubleshooting/       # 문제 해결 기록
 ```
 
@@ -190,4 +222,4 @@ docs/
 
 - 모든 문서는 한국어로 작성한다. 코드/식별자/함수명/타입은 영어.
 - 코드와 문서를 함께 갱신한다.
-- `docs/conventions/`·`guides/`·`plans/`·`troubleshooting/` 하위 문서 파일명은 `yy-mm-dd-{슬러그}.md`(2자리 연도). 단, 루트의 대문자 레퍼런스 문서(`ARCHITECTURE.md` 등)는 네이밍을 그대로 유지한다.
+- `docs/conventions/`·`guides/`·`plans/`·`refactoring/`·`troubleshooting/` 하위 문서 파일명은 `yy-mm-dd-{슬러그}.md`(2자리 연도). 단, 루트의 대문자 레퍼런스 문서(`ARCHITECTURE.md` 등)는 네이밍을 그대로 유지한다.

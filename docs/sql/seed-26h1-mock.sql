@@ -564,8 +564,8 @@ BEGIN
   -- 카운트(like_count/comment_count)는 아래 실데이터와 수기로 일치시킴 (검증 쿼리로 재확인)
   INSERT INTO community_posts(author_user_id,category,title,content,content_text,is_pinned,like_count,comment_count,created_at,updated_at) VALUES
     (v_uid,'notice','플로리 커뮤니티 이용 안내',
-     '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"꽃집 사장님들을 위한 공간입니다. 서로 존중하는 말로 소통해요."}]},{"type":"paragraph","content":[{"type":"text","text":"거래처 단가 등 민감한 정보는 비밀글 기능을 활용해 주세요."}]}]}'::jsonb,
-     '꽃집 사장님들을 위한 공간입니다. 서로 존중하는 말로 소통해요. 거래처 단가 등 민감한 정보는 비밀글 기능을 활용해 주세요.',
+     '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"꽃집 사장님들을 위한 공간입니다. 서로 존중하는 말로 소통해요."}]},{"type":"paragraph","content":[{"type":"text","text":"거래처 단가 등 민감한 정보는 비밀댓글 기능을 활용해 주세요."}]}]}'::jsonb,
+     '꽃집 사장님들을 위한 공간입니다. 서로 존중하는 말로 소통해요. 거래처 단가 등 민감한 정보는 비밀댓글 기능을 활용해 주세요.',
      true,2,0,'2026-01-05 10:00+09','2026-01-05 10:00+09') RETURNING id INTO p1;
   INSERT INTO community_posts(author_user_id,category,title,content,content_text,like_count,comment_count,created_at,updated_at) VALUES
     (v_u1,'question','네이버 예약 수수료 다들 어떻게 하세요?',
@@ -612,11 +612,11 @@ BEGIN
      '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"올해는 D-7에 1차 대량, D-4에 2차 보충으로 갔는데 단가가 D-5부터 급등했습니다. 내년엔 1차를 D-8로 당기는 게 좋겠어요."}]},{"type":"paragraph","content":[{"type":"text","text":"참고로 올해 양재 기준 한 단 시세가 작년 대비 15%쯤 올랐습니다."}]}]}'::jsonb,
      '올해는 D-7에 1차 대량, D-4에 2차 보충으로 갔는데 단가가 D-5부터 급등했습니다. 내년엔 1차를 D-8로 당기는 게 좋겠어요. 참고로 올해 양재 기준 한 단 시세가 작년 대비 15%쯤 올랐습니다.',
      2,3,'2026-05-11 20:00+09','2026-05-11 20:00+09') RETURNING id INTO p9;
-  INSERT INTO community_posts(author_user_id,category,title,content,content_text,is_secret,like_count,comment_count,created_at,updated_at) VALUES
-    (v_u1,'review','양재 공판장 ○○상회 단가 후기 (비밀)',
-     '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"민감한 내용이라 비밀글로 올립니다. 장미 한 단 기준 시세보다 10% 저렴한데 등급이 들쭉날쭉해요. 직접 보고 고르실 분만 추천."}]}]}'::jsonb,
-     '민감한 내용이라 비밀글로 올립니다. 장미 한 단 기준 시세보다 10% 저렴한데 등급이 들쭉날쭉해요. 직접 보고 고르실 분만 추천.',
-     true,0,1,'2026-05-27 21:00+09','2026-05-27 21:00+09') RETURNING id INTO p11;
+  INSERT INTO community_posts(author_user_id,category,title,content,content_text,like_count,comment_count,created_at,updated_at) VALUES
+    (v_u1,'review','양재 공판장 ○○상회 단가 후기',
+     '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"거래처 단가 공유합니다. 장미 한 단 기준 시세보다 10% 저렴한데 등급이 들쭉날쭉해요. 직접 보고 고르실 분만 추천."}]}]}'::jsonb,
+     '거래처 단가 공유합니다. 장미 한 단 기준 시세보다 10% 저렴한데 등급이 들쭉날쭉해요. 직접 보고 고르실 분만 추천.',
+     0,1,'2026-05-27 21:00+09','2026-05-27 21:00+09') RETURNING id INTO p11;
   INSERT INTO community_posts(author_user_id,category,title,content,content_text,like_count,comment_count,created_at,updated_at) VALUES
     (v_uid,'etc','중고 화기(유리 화병 12개) 나눔합니다',
      '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"매장 정리하면서 유리 화병 12개 나눔해요. 흠집 거의 없습니다. 선착순 댓글 주세요."}]}]}'::jsonb,

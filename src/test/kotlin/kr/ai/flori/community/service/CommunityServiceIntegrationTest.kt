@@ -8,6 +8,7 @@ import kr.ai.flori.common.error.AppException
 import kr.ai.flori.common.security.JwtTokenProvider
 import kr.ai.flori.common.tenant.TenantContext
 import kr.ai.flori.community.dto.CommentCreateRequest
+import kr.ai.flori.community.dto.CommentUpdateRequest
 import kr.ai.flori.community.dto.PostCreateRequest
 import kr.ai.flori.community.dto.PostUpdateRequest
 import kr.ai.flori.community.error.CommunityErrorCode
@@ -77,13 +78,11 @@ class CommunityServiceIntegrationTest {
     private fun post(
         category: String = "daily",
         title: String = "제목",
-        secret: Boolean = false,
     ) = PostCreateRequest(
         category = category,
         title = title,
         contentJson = content("본문"),
         contentText = "본문",
-        isSecret = secret,
         imageUrls = emptyList(),
     )
 
@@ -99,14 +98,13 @@ class CommunityServiceIntegrationTest {
     }
 
     @Test
-    fun `게시글 생성·조회는 작성자에게 isMine·canView true`() {
+    fun `게시글 생성·조회는 작성자에게 isMine true`() {
         val me = newUser()
         switchTo(me)
         val created = communityService.createPost(post())
         val fetched = communityService.getPost(created.id)
 
         assertThat(fetched.isMine).isTrue()
-        assertThat(fetched.canView).isTrue()
         assertThat(fetched.contentText).isEqualTo("본문")
         assertThat(fetched.authorNickname).isNotBlank()
     }
@@ -167,27 +165,6 @@ class CommunityServiceIntegrationTest {
     }
 
     @Test
-    fun `비밀글은 비권한자에게 마스킹되고 작성자·관리자는 열람 가능`() {
-        val author = newUser()
-        switchTo(author)
-        val secret = communityService.createPost(post(secret = true, title = "비밀"))
-
-        // 타 사용자: canView=false, 본문 마스킹
-        val other = newUser()
-        switchTo(other)
-        val masked = communityService.getPost(secret.id)
-        assertThat(masked.canView).isFalse()
-        assertThat(masked.contentText).isEmpty()
-        assertThat(masked.title).isEqualTo("비밀") // 제목은 노출
-
-        // 관리자: 열람 가능
-        val admin = newUser()
-        makeAdmin(admin)
-        switchTo(admin)
-        assertThat(communityService.getPost(secret.id).canView).isTrue()
-    }
-
-    @Test
     fun `수정은 작성자만, 삭제는 작성자+관리자`() {
         val author = newUser()
         switchTo(author)
@@ -219,9 +196,8 @@ class CommunityServiceIntegrationTest {
         val me = newUser()
         switchTo(me)
         val p = communityService.createPost(post())
-        val updated = communityService.updatePost(p.id, PostUpdateRequest(title = "수정됨", isSecret = true))
+        val updated = communityService.updatePost(p.id, PostUpdateRequest(title = "수정됨"))
         assertThat(updated.title).isEqualTo("수정됨")
-        assertThat(updated.isSecret).isTrue()
     }
 
     @Test
@@ -259,6 +235,42 @@ class CommunityServiceIntegrationTest {
         assertThat(comments).hasSize(1)
         assertThat(comments.first().isDeleted).isTrue()
         assertThat(comments.first().content).isEmpty()
+    }
+
+    @Test
+    fun `댓글 수정은 작성자 본인만 가능하고 운영자도 불가`() {
+        val author = newUser()
+        switchTo(author)
+        val p = communityService.createPost(post())
+        val c = communityService.createComment(p.id, CommentCreateRequest("원본", null, false))
+
+        // 작성자 본인 수정 성공
+        val updated = communityService.updateComment(c.id, CommentUpdateRequest("수정됨"))
+        assertThat(updated.content).isEqualTo("수정됨")
+        assertThat(communityService.listComments(p.id).first().content).isEqualTo("수정됨")
+
+        // 다른 사용자(운영자라도) 수정 불가
+        val admin = newUser()
+        makeAdmin(admin)
+        switchTo(admin)
+        assertThatThrownBy { communityService.updateComment(c.id, CommentUpdateRequest("침범")) }
+            .isInstanceOfSatisfying(AppException::class.java) {
+                assertThat(it.errorCode).isEqualTo(CommunityErrorCode.FORBIDDEN)
+            }
+    }
+
+    @Test
+    fun `삭제된 댓글은 수정할 수 없다`() {
+        val author = newUser()
+        switchTo(author)
+        val p = communityService.createPost(post())
+        val c = communityService.createComment(p.id, CommentCreateRequest("원본", null, false))
+        communityService.deleteComment(c.id)
+
+        assertThatThrownBy { communityService.updateComment(c.id, CommentUpdateRequest("부활")) }
+            .isInstanceOfSatisfying(AppException::class.java) {
+                assertThat(it.errorCode).isEqualTo(CommunityErrorCode.COMMENT_NOT_FOUND)
+            }
     }
 
     @Test
