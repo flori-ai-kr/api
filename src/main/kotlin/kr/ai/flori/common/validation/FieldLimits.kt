@@ -13,6 +13,7 @@ object FieldLimits {
     const val PHONE = 20 // *.customer_phone·customers.phone VARCHAR(20)
     const val REGION = 50
     const val AGE_RANGE = 20
+    const val POLICY_VERSION = 20 // user_consents.policy_version (약관/처리방침 버전 식별자, 예: 시행일 "2026-06-19")
     const val LABEL = 100 // *_settings.label VARCHAR(100)
     const val VALUE = 100 // label_settings.value VARCHAR(100)
     const val ITEM_NAME = 200 // expenses.item_name TEXT

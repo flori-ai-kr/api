@@ -77,6 +77,25 @@ CREATE TRIGGER update_user_profiles_updated_at
   BEFORE UPDATE ON user_profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- =============================================
+-- 가입 동의 기록 (users와 1:1) — PK이자 신원인 user_id
+-- 분쟁 시 "동의받은 사실"의 입증 근거. 필수(이용약관·개인정보)는 미동의면 가입 불성립이라 항상 true.
+-- marketing 은 선택(정보통신망법 제50조 광고성 정보 수신동의/철회 기준).
+-- =============================================
+CREATE TABLE user_consents (
+  user_id BIGINT PRIMARY KEY,
+  terms_agreed BOOLEAN NOT NULL,
+  privacy_agreed BOOLEAN NOT NULL,
+  marketing_agreed BOOLEAN NOT NULL DEFAULT FALSE,
+  policy_version TEXT NOT NULL,
+  agreed_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TRIGGER update_user_consents_updated_at
+  BEFORE UPDATE ON user_consents FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- =============================================
 -- refresh token 저장소 (회전/세션 추적 + 통계)
 -- 보안: 원문 대신 SHA-256 해시만 저장(원문 DB 저장 금지 — HARD).
 -- 통계: 발급 컨텍스트(채널/기기/UA/IP) + 회전 계보(parent/세션시작/재발급수) + 종료 사유(status)를 축적해

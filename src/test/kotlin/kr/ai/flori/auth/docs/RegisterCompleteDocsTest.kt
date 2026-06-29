@@ -42,6 +42,10 @@ class RegisterCompleteDocsTest : RestDocsSupport() {
                             "interests" to listOf("웨딩", "개업화환"),
                             "specialties" to listOf("꽃다발", "화분"),
                             "referralSources" to listOf("지인 추천", "인스타그램"),
+                            "termsAgreed" to true,
+                            "privacyAgreed" to true,
+                            "marketingAgreed" to false,
+                            "policyVersion" to "2026-06-19",
                         ),
                     )
             }.andExpect { status { isCreated() } }
@@ -67,6 +71,10 @@ class RegisterCompleteDocsTest : RestDocsSupport() {
                                 fieldWithPath("interests").type(JsonFieldType.ARRAY).optional().description("관심사(선택, 복수)"),
                                 fieldWithPath("specialties").type(JsonFieldType.ARRAY).optional().description("가게 주력(선택, 복수)"),
                                 fieldWithPath("referralSources").type(JsonFieldType.ARRAY).description("알게 된 경로(필수, 1개 이상)"),
+                                fieldWithPath("termsAgreed").type(JsonFieldType.BOOLEAN).description("이용약관 동의(필수, true여야 가입 가능)"),
+                                fieldWithPath("privacyAgreed").type(JsonFieldType.BOOLEAN).description("개인정보 수집·이용 동의(필수, true여야 가입 가능)"),
+                                fieldWithPath("marketingAgreed").type(JsonFieldType.BOOLEAN).optional().description("마케팅·혜택 정보 수신 동의(선택)"),
+                                fieldWithPath("policyVersion").type(JsonFieldType.STRING).optional().description("동의한 약관/처리방침 버전(시행일)"),
                             ),
                         responseFields =
                             listOf(

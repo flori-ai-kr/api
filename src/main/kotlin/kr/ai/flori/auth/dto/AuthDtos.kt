@@ -177,4 +177,16 @@ data class RegisterCompleteRequest(
         @Size(max = FieldLimits.LABEL, message = "참여경로 값이 너무 깁니다")
         String,
     >,
+    // 가입 동의(필수 2 + 선택 1). 필수는 @AssertTrue 로 컨트롤러 경계에서 강제 → 미동의면 400, 가입 불성립.
+    @field:AssertTrue(message = "이용약관 동의는 필수입니다")
+    @field:Schema(description = "이용약관 동의(필수 — true여야 가입 가능)", example = "true")
+    val termsAgreed: Boolean = false,
+    @field:AssertTrue(message = "개인정보 수집·이용 동의는 필수입니다")
+    @field:Schema(description = "개인정보 수집·이용 동의(필수 — true여야 가입 가능)", example = "true")
+    val privacyAgreed: Boolean = false,
+    @field:Schema(description = "마케팅·혜택 정보 수신 동의(선택)", example = "false")
+    val marketingAgreed: Boolean = false,
+    @field:Size(max = FieldLimits.POLICY_VERSION, message = "약관 버전이 너무 깁니다")
+    @field:Schema(description = "동의한 약관/처리방침 버전(시행일). 미지정 시 서버 기본값.", example = "2026-06-19")
+    val policyVersion: String? = null,
 )

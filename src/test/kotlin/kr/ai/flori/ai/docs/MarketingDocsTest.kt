@@ -264,6 +264,84 @@ class MarketingDocsTest : RestDocsSupport() {
             }
     }
 
+    @Test
+    fun `마케팅 콘텐츠 수정 문서화`() {
+        val token = signupAndToken()
+        val id = seedContent(token)
+
+        mockMvc
+            .put("/ai/marketing/contents/{id}", id) {
+                requestAttr(RestDocumentationGenerator.ATTRIBUTE_NAME_URL_TEMPLATE, "/ai/marketing/contents/{id}")
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    json(
+                        mapOf(
+                            "title" to "어버이날 카네이션 꽃다발 추천(수정)",
+                            "sections" to listOf(mapOf("heading" to "고른 이유", "body" to "오래가고 무난합니다.")),
+                            "faq" to listOf(mapOf("q" to "당일배송 되나요?", "a" to "네 가능합니다.")),
+                            "hashtags" to listOf("#어버이날꽃", "#카네이션"),
+                        ),
+                    )
+            }.andExpect { status { isOk() } }
+            .andDo {
+                handle(
+                    docs(
+                        identifier = "ai-marketing-content-update",
+                        requestSchema = "MarketingContentUpdateRequest",
+                        responseSchema = "MarketingContentDetail",
+                        tag = "AI 마케팅",
+                        summary = "마케팅 콘텐츠(블로그 초안) 수정 — output(초안)만 갱신, 입력 메타는 불변",
+                        pathParameters = listOf(parameterWithName("id").description("콘텐츠 ID")),
+                        requestFields =
+                            listOf(
+                                fieldWithPath("title").type(JsonFieldType.STRING).description("제목(필수, 최대 300자)"),
+                                fieldWithPath("sections").type(JsonFieldType.ARRAY).description("본문 단락(1~30개)"),
+                                fieldWithPath("sections[].heading").type(JsonFieldType.STRING).description("소제목(최대 300자)"),
+                                fieldWithPath("sections[].body").type(JsonFieldType.STRING).description("단락 본문(최대 10000자)"),
+                                fieldWithPath("faq").type(JsonFieldType.ARRAY).optional().description("FAQ(최대 30개)"),
+                                fieldWithPath("faq[].q").type(JsonFieldType.STRING).description("질문(최대 1000자)"),
+                                fieldWithPath("faq[].a").type(JsonFieldType.STRING).description("답변(최대 4000자)"),
+                                fieldWithPath("hashtags").type(JsonFieldType.ARRAY).optional().description("해시태그(최대 30개, 각 최대 100자)"),
+                            ),
+                        responseFields =
+                            listOf(
+                                fieldWithPath("id").type(JsonFieldType.STRING).description("콘텐츠 ID"),
+                                fieldWithPath("channel").type(JsonFieldType.STRING).description("채널(blog)"),
+                                fieldWithPath("title").type(JsonFieldType.STRING).description("수정된 초안 제목"),
+                                fieldWithPath("keyword").type(JsonFieldType.STRING).description("타깃 키워드(불변)"),
+                                fieldWithPath("createdAt").type(JsonFieldType.STRING).description("생성 시각(ISO-8601, 불변)"),
+                                fieldWithPath("situation").type(JsonFieldType.STRING).optional().description("상황/시즌(불변)"),
+                                fieldWithPath("memo").type(JsonFieldType.STRING).optional().description("사장님 메모(불변)"),
+                                fieldWithPath("photoUrls").type(JsonFieldType.ARRAY).description("사진 URL 목록(불변)"),
+                                fieldWithPath("draft.title").type(JsonFieldType.STRING).description("제목"),
+                                fieldWithPath("draft.sections").type(JsonFieldType.ARRAY).description("소제목 단락"),
+                                fieldWithPath("draft.sections[].heading").type(JsonFieldType.STRING).description("소제목"),
+                                fieldWithPath("draft.sections[].body").type(JsonFieldType.STRING).description("단락 본문"),
+                                fieldWithPath("draft.faq").type(JsonFieldType.ARRAY).description("FAQ"),
+                                fieldWithPath("draft.faq[].q").type(JsonFieldType.STRING).description("질문"),
+                                fieldWithPath("draft.faq[].a").type(JsonFieldType.STRING).description("답변"),
+                                fieldWithPath("draft.hashtags").type(JsonFieldType.ARRAY).description("해시태그"),
+                            ),
+                    ),
+                )
+            }
+    }
+
+    @Test
+    fun `마케팅 콘텐츠 수정 - sections 누락 시 400`() {
+        val token = signupAndToken()
+        val id = seedContent(token)
+
+        // sections 키를 생략 → @NotNull 발동(없으면 @Size(min=1)이 null을 통과시켜 빈 초안 저장됨)
+        mockMvc
+            .put("/ai/marketing/contents/{id}", id) {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content = json(mapOf("title" to "제목만", "faq" to emptyList<Any>(), "hashtags" to emptyList<Any>()))
+            }.andExpect { status { isBadRequest() } }
+    }
+
     /** 문서화용 콘텐츠 1건을 시드하고 id를 반환한다. 입력/출력 JSON을 모두 채워 상세 응답 필드가 결정적이게 한다. */
     private fun seedContent(token: String): Long {
         val userId = tokenProvider.parse(token)!!.userId
