@@ -5,6 +5,7 @@ import jakarta.validation.Valid
 import kr.ai.flori.ai.dto.BlogGenerateRequest
 import kr.ai.flori.ai.dto.BlogGenerateResponse
 import kr.ai.flori.ai.dto.MarketingContentDetail
+import kr.ai.flori.ai.dto.MarketingContentUpdateRequest
 import kr.ai.flori.ai.dto.MarketingContentsResponse
 import kr.ai.flori.ai.dto.ToneProfileResponse
 import kr.ai.flori.ai.dto.ToneProfileUpdateRequest
@@ -58,6 +59,12 @@ class MarketingController(
     fun getContent(
         @PathVariable id: Long,
     ): MarketingContentDetail = marketingService.getContent(id)
+
+    @PutMapping("/contents/{id}")
+    fun updateContent(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: MarketingContentUpdateRequest,
+    ): MarketingContentDetail = marketingService.updateContent(id, request)
 
     @DeleteMapping("/contents/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

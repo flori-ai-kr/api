@@ -1,5 +1,6 @@
 package kr.ai.flori.ai.dto
 
+import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 import java.math.BigDecimal
@@ -176,4 +177,45 @@ data class MarketingContentDetail(
     val memo: String?,
     val photoUrls: List<String>,
     val draft: BlogDraft,
+)
+
+/**
+ * 블로그 초안 수정 요청. 사장이 생성된 초안을 손봐 저장한다.
+ * 입력 메타(키워드/상황/메모/사진)는 생성 시점 그대로 불변 — output(draft)만 갱신한다.
+ */
+data class MarketingContentUpdateRequest(
+    @field:NotBlank(message = "제목을 입력해 주세요")
+    @field:Size(max = 300, message = "제목이 너무 깁니다")
+    val title: String?,
+    @field:Valid
+    @field:Size(min = 1, max = 30, message = "본문 단락은 1~30개여야 해요")
+    val sections: List<BlogSectionInput>?,
+    @field:Valid
+    @field:Size(max = 30, message = "FAQ는 최대 30개까지 등록할 수 있어요")
+    val faq: List<BlogFaqInput> = emptyList(),
+    @field:Size(max = 30, message = "해시태그는 최대 30개까지 등록할 수 있어요")
+    val hashtags: List<
+        @Size(max = 100, message = "해시태그가 너무 깁니다")
+        String,
+    > = emptyList(),
+)
+
+/** 수정 요청의 본문 단락(소제목 + 본문). 응답용 [BlogSection]과 분리해 입력 검증을 단다. */
+data class BlogSectionInput(
+    @field:NotBlank(message = "소제목을 입력해 주세요")
+    @field:Size(max = 300, message = "소제목이 너무 깁니다")
+    val heading: String?,
+    @field:NotBlank(message = "본문을 입력해 주세요")
+    @field:Size(max = 10_000, message = "본문이 너무 깁니다")
+    val body: String?,
+)
+
+/** 수정 요청의 FAQ 한 항목(질문/답변). 응답용 [BlogFaq]과 분리해 입력 검증을 단다. */
+data class BlogFaqInput(
+    @field:NotBlank(message = "질문을 입력해 주세요")
+    @field:Size(max = 1_000, message = "질문이 너무 깁니다")
+    val q: String?,
+    @field:NotBlank(message = "답변을 입력해 주세요")
+    @field:Size(max = 4_000, message = "답변이 너무 깁니다")
+    val a: String?,
 )
