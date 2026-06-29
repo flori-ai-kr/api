@@ -8,7 +8,10 @@ import kr.ai.flori.ai.client.AiBlogFaq
 import kr.ai.flori.ai.client.AiBlogResult
 import kr.ai.flori.ai.client.AiBlogSection
 import kr.ai.flori.ai.client.AiServerClient
+import kr.ai.flori.ai.dto.BlogFaqInput
 import kr.ai.flori.ai.dto.BlogGenerateRequest
+import kr.ai.flori.ai.dto.BlogSectionInput
+import kr.ai.flori.ai.dto.MarketingContentUpdateRequest
 import kr.ai.flori.ai.dto.ToneProfileUpdateRequest
 import kr.ai.flori.ai.entity.AiChatMessage
 import kr.ai.flori.ai.entity.AiChatSession
@@ -286,4 +289,110 @@ class MarketingServiceTest {
                 assertThat(it.errorCode).isEqualTo(CommonErrorCode.NOT_FOUND)
             }
     }
+
+    @Test
+    fun `contents 수정 - output(초안)을 갱신하고 입력 메타·생성시각은 보존한다`() {
+        newTenant()
+        stubBlog()
+        val created =
+            marketingService.generateBlog(
+                "jwt",
+                BlogGenerateRequest(
+                    keyword = "꽃바구니",
+                    situation = "개업",
+                    memo = "리본 추가",
+                    photoUrls = listOf("https://cdn.example.com/p/1.jpg"),
+                ),
+            )
+        val contentId = created.contentId.toLong()
+        val createdAt = marketingService.getContent(contentId).createdAt
+
+        val updated =
+            marketingService.updateContent(
+                contentId,
+                MarketingContentUpdateRequest(
+                    title = "  내가 고친 제목  ",
+                    sections = listOf(BlogSectionInput("고친 소제목", "고친 본문")),
+                    faq = listOf(BlogFaqInput("고친 질문", "고친 답변")),
+                    hashtags = listOf("#수정", "   ", "#태그"),
+                ),
+            )
+
+        // 반환 상세 = 갱신된 초안(트림 + 공백 해시태그 제거)
+        assertThat(updated.draft.title).isEqualTo("내가 고친 제목")
+        assertThat(updated.draft.sections).hasSize(1)
+        assertThat(
+            updated.draft.sections
+                .first()
+                .heading,
+        ).isEqualTo("고친 소제목")
+        assertThat(
+            updated.draft.sections
+                .first()
+                .body,
+        ).isEqualTo("고친 본문")
+        assertThat(
+            updated.draft.faq
+                .first()
+                .q,
+        ).isEqualTo("고친 질문")
+        assertThat(updated.draft.hashtags).containsExactly("#수정", "#태그")
+        // title 요약 필드도 새 제목을 반영
+        assertThat(updated.title).isEqualTo("내가 고친 제목")
+        // 입력 메타·생성시각은 불변(output만 갱신)
+        assertThat(updated.keyword).isEqualTo("꽃바구니")
+        assertThat(updated.situation).isEqualTo("개업")
+        assertThat(updated.memo).isEqualTo("리본 추가")
+        assertThat(updated.photoUrls).containsExactly("https://cdn.example.com/p/1.jpg")
+        assertThat(updated.createdAt).isEqualTo(createdAt)
+
+        // 재조회해도 갱신본이 영속된다(휘발 아님)
+        val reFetched = marketingService.getContent(contentId)
+        assertThat(reFetched.draft.title).isEqualTo("내가 고친 제목")
+        assertThat(reFetched.draft.hashtags).containsExactly("#수정", "#태그")
+    }
+
+    @Test
+    fun `contents 수정 - 없는 콘텐츠는 404`() {
+        newTenant()
+        assertThatThrownBy { marketingService.updateContent(999_999, validUpdate()) }
+            .isInstanceOfSatisfying(AppException::class.java) {
+                assertThat(it.errorCode).isEqualTo(CommonErrorCode.NOT_FOUND)
+            }
+    }
+
+    @Test
+    fun `contents 수정 - 소프트삭제된 콘텐츠는 404`() {
+        newTenant()
+        stubBlog()
+        val id = marketingService.generateBlog("jwt", BlogGenerateRequest(keyword = "꽃")).contentId.toLong()
+        marketingService.deleteContent(id)
+
+        assertThatThrownBy { marketingService.updateContent(id, validUpdate()) }
+            .isInstanceOfSatisfying(AppException::class.java) {
+                assertThat(it.errorCode).isEqualTo(CommonErrorCode.NOT_FOUND)
+            }
+    }
+
+    @Test
+    fun `멀티테넌시 - 다른 테넌트의 콘텐츠는 수정할 수 없다`() {
+        newTenant()
+        stubBlog()
+        val id = marketingService.generateBlog("jwt", BlogGenerateRequest(keyword = "소유자 콘텐츠")).contentId.toLong()
+
+        // 다른 사용자로 전환 후 같은 contentId 수정 시도 → 404(격리)
+        newTenant()
+        assertThatThrownBy { marketingService.updateContent(id, validUpdate()) }
+            .isInstanceOfSatisfying(AppException::class.java) {
+                assertThat(it.errorCode).isEqualTo(CommonErrorCode.NOT_FOUND)
+            }
+    }
+
+    private fun validUpdate() =
+        MarketingContentUpdateRequest(
+            title = "수정 제목",
+            sections = listOf(BlogSectionInput("소제목", "본문")),
+            faq = listOf(BlogFaqInput("질문", "답변")),
+            hashtags = listOf("#태그"),
+        )
 }

@@ -14,6 +14,7 @@ import kr.ai.flori.ai.dto.BlogPreviewResponse
 import kr.ai.flori.ai.dto.BlogSection
 import kr.ai.flori.ai.dto.MarketingContentDetail
 import kr.ai.flori.ai.dto.MarketingContentSummary
+import kr.ai.flori.ai.dto.MarketingContentUpdateRequest
 import kr.ai.flori.ai.dto.MarketingContentsResponse
 import kr.ai.flori.ai.dto.ToneProfileResponse
 import kr.ai.flori.ai.dto.ToneProfileUpdateRequest
@@ -195,6 +196,46 @@ class MarketingService(
         val content =
             contentRepository.findByIdAndUserIdAndDeletedAtIsNull(id, userId)
                 ?: throw AppException(CommonErrorCode.NOT_FOUND, "콘텐츠를 찾을 수 없어요.")
+        return toDetail(content)
+    }
+
+    /**
+     * 초안 수정 — output(draft)만 갱신한다. 입력 메타(키워드/상황/메모/사진)·생성시각·토큰은 불변.
+     * 멀티테넌시: user_id 격리(소유 아니면 404). 빈/공백 해시태그는 정리한다.
+     */
+    @Transactional
+    fun updateContent(
+        id: Long,
+        request: MarketingContentUpdateRequest,
+    ): MarketingContentDetail {
+        val userId = TenantContext.currentUserId()
+        val content =
+            contentRepository.findByIdAndUserIdAndDeletedAtIsNull(id, userId)
+                ?: throw AppException(CommonErrorCode.NOT_FOUND, "콘텐츠를 찾을 수 없어요.")
+        val draft =
+            BlogDraft(
+                title = request.title?.trim().orEmpty(),
+                sections = request.sections.orEmpty().map { BlogSection(it.heading?.trim().orEmpty(), it.body?.trim().orEmpty()) },
+                faq = request.faq.map { BlogFaq(it.q?.trim().orEmpty(), it.a?.trim().orEmpty()) },
+                hashtags = request.hashtags.map { it.trim() }.filter { it.isNotBlank() },
+            )
+        content.outputJson = objectMapper.valueToTree(draft)
+        val saved = contentRepository.save(content)
+        return toDetail(saved)
+    }
+
+    @Transactional
+    fun deleteContent(id: Long) {
+        val userId = TenantContext.currentUserId()
+        val content =
+            contentRepository.findByIdAndUserIdAndDeletedAtIsNull(id, userId)
+                ?: throw AppException(CommonErrorCode.NOT_FOUND, "콘텐츠를 찾을 수 없어요.")
+        content.deletedAt = Instant.now()
+        contentRepository.save(content)
+    }
+
+    /** AiMarketingContent 엔티티 → 상세 DTO(요약 필드 + 입력 복원 + 초안). getContent/updateContent 공용. */
+    private fun toDetail(content: AiMarketingContent): MarketingContentDetail {
         val input = content.inputJson
         val photoUrls =
             input.path("photoUrls").let { node ->
@@ -211,16 +252,6 @@ class MarketingService(
             photoUrls = photoUrls,
             draft = objectMapper.treeToValue(content.outputJson, BlogDraft::class.java),
         )
-    }
-
-    @Transactional
-    fun deleteContent(id: Long) {
-        val userId = TenantContext.currentUserId()
-        val content =
-            contentRepository.findByIdAndUserIdAndDeletedAtIsNull(id, userId)
-                ?: throw AppException(CommonErrorCode.NOT_FOUND, "콘텐츠를 찾을 수 없어요.")
-        content.deletedAt = Instant.now()
-        contentRepository.save(content)
     }
 
     private fun loadToneSamples(userId: Long): List<String> {
