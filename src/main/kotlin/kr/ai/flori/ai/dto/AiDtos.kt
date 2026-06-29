@@ -2,6 +2,7 @@ package kr.ai.flori.ai.dto
 
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import java.math.BigDecimal
 import java.time.Instant
@@ -187,6 +188,8 @@ data class MarketingContentUpdateRequest(
     @field:NotBlank(message = "제목을 입력해 주세요")
     @field:Size(max = 300, message = "제목이 너무 깁니다")
     val title: String?,
+    // @NotNull 없으면 sections 누락(null) 시 @Size(min=1)이 발동하지 않아 빈 초안이 저장된다(Bean Validation: null=valid).
+    @field:NotNull(message = "본문 단락을 입력해 주세요")
     @field:Valid
     @field:Size(min = 1, max = 30, message = "본문 단락은 1~30개여야 해요")
     val sections: List<BlogSectionInput>?,

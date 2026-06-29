@@ -220,8 +220,8 @@ class MarketingService(
                 hashtags = request.hashtags.map { it.trim() }.filter { it.isNotBlank() },
             )
         content.outputJson = objectMapper.valueToTree(draft)
-        contentRepository.save(content)
-        return toDetail(content)
+        val saved = contentRepository.save(content)
+        return toDetail(saved)
     }
 
     @Transactional

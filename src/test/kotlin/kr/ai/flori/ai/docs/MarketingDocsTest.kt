@@ -328,6 +328,20 @@ class MarketingDocsTest : RestDocsSupport() {
             }
     }
 
+    @Test
+    fun `마케팅 콘텐츠 수정 - sections 누락 시 400`() {
+        val token = signupAndToken()
+        val id = seedContent(token)
+
+        // sections 키를 생략 → @NotNull 발동(없으면 @Size(min=1)이 null을 통과시켜 빈 초안 저장됨)
+        mockMvc
+            .put("/ai/marketing/contents/{id}", id) {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content = json(mapOf("title" to "제목만", "faq" to emptyList<Any>(), "hashtags" to emptyList<Any>()))
+            }.andExpect { status { isBadRequest() } }
+    }
+
     /** 문서화용 콘텐츠 1건을 시드하고 id를 반환한다. 입력/출력 JSON을 모두 채워 상세 응답 필드가 결정적이게 한다. */
     private fun seedContent(token: String): Long {
         val userId = tokenProvider.parse(token)!!.userId
