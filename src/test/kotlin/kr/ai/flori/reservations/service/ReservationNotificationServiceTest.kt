@@ -89,7 +89,10 @@ class ReservationNotificationServiceTest {
         val day = LocalDate.of(2026, 7, 1)
         reservationService.create(ReservationCreateRequest(day, null, "홍길동", null, "픽업A"))
 
-        assertThat(notificationService.sendDailySummary(day)).isEqualTo(1) // 첫 발송
+        // sendDailySummary 는 크로스테넌트 cron(해당 날짜의 모든 유저 집계)이라, 공유 임베디드 DB에
+        // 다른 테스트가 같은 날짜(예: LocalDate.now())로 만든 예약이 섞이면 첫 발송 수가 1보다 클 수 있다.
+        // 멱등성 계약은 "재트리거 시 추가 발송 0"이므로 두 번째 호출이 0인지로 검증한다.
+        assertThat(notificationService.sendDailySummary(day)).isGreaterThanOrEqualTo(1) // 첫 발송(내 예약 포함)
         assertThat(notificationService.sendDailySummary(day)).isEqualTo(0) // 중복 트리거 → claim 실패로 스킵
     }
 

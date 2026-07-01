@@ -26,7 +26,7 @@ class BillingController(
         @Valid @RequestBody request: SubscribeRequest,
     ): SubscriptionResponse = subscriptionService.subscribe(request)
 
-    /** 카드 없이 14일 무료체험 시작. 요청 바디 없음. 멱등(이미 구독 있으면 그 구독 반환). */
+    /** 카드 없이 30일 무료체험 시작. 요청 바디 없음. 멱등(이미 구독 있으면 그 구독 반환). */
     @PostMapping("/trial")
     fun startTrial(): SubscriptionResponse = subscriptionService.startTrial()
 

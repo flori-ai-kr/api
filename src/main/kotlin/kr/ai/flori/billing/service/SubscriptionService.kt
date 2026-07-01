@@ -244,22 +244,27 @@ class SubscriptionService(
     @Transactional
     fun changeCard(req: CardChangeRequest): SubscriptionResponse {
         val userId = TenantContext.currentUserId()
+        val sub =
+            subscriptionRepository.findByUserId(userId)
+                ?: throw AppException(BillingErrorCode.SUBSCRIPTION_STATE, "구독이 없습니다")
         val issued = billingClient.issueBillingKey(req.authKey, req.customerKey)
+        // 카드(빌링키) upsert — 무카드 체험자는 카드가 없으므로 신규 생성, 기존 카드가 있으면 교체.
         val card =
-            (
-                billingKeyRepository.findByUserId(userId)
-                    ?: throw AppException(BillingErrorCode.SUBSCRIPTION_STATE, "등록된 카드가 없습니다")
-            ).apply {
+            (billingKeyRepository.findByUserId(userId) ?: BillingKey(userId, req.customerKey, issued.billingKey)).apply {
                 customerKey = req.customerKey
                 billingKey = issued.billingKey
                 issued.cardCompany?.let { cardCompany = it }
                 cardNumberMasked = issued.cardNumber
                 cardType = issued.cardType
+                status = "ACTIVE"
             }
         val savedCard = billingKeyRepository.save(card)
-        val sub =
-            subscriptionRepository.findByUserId(userId)
-                ?: throw AppException(BillingErrorCode.SUBSCRIPTION_STATE, "구독이 없습니다")
+        // 무카드 체험 중 첫 카드 등록: 구독에 빌링키를 연결하면 체험 종료 시 만료 대신 자동 결제로 전환된다.
+        // 남은 체험 기간·다음 결제일은 그대로 유지(즉시 과금하지 않음).
+        if (sub.billingKeyId == null) {
+            sub.billingKeyId = savedCard.id
+            subscriptionRepository.save(sub)
+        }
         return SubscriptionResponse.of(sub, savedCard)
     }
 
@@ -298,7 +303,7 @@ class SubscriptionService(
 
     companion object {
         val KST = BillingPeriods.KST
-        const val TRIAL_DAYS = 14L
+        const val TRIAL_DAYS = 30L
         const val MONTHLY_AMOUNT = 14900
         const val YEARLY_AMOUNT = 154800
         val ACTIVE_STATES = setOf("TRIALING", "ACTIVE", "IN_GRACE")
