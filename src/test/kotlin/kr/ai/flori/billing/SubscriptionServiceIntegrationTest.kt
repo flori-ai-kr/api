@@ -105,4 +105,26 @@ class SubscriptionServiceIntegrationTest {
         val me = service.me()
         assertThat(me.subscription!!.card?.numberMasked).isEqualTo("5678****")
     }
+
+    @Test
+    fun `무카드 체험 중 카드 등록 - 빌링키 연결 + TRIALING 유지 + 즉시 과금 없음`() {
+        val userId = verifiedUser()
+        // 무카드 체험 시작(billingKeyId=null, nextBillingAt=체험 종료일)
+        service.startTrial()
+        val before = subscriptionRepository.findByUserId(userId)!!
+        assertThat(before.billingKeyId).isNull()
+        val trialEnd = before.nextBillingAt
+
+        Mockito
+            .`when`(billingClient.issueBillingKey(anyString(), anyString()))
+            .thenReturn(IssuedBilling("bk_1", "신한", "1234****", "체크"))
+        service.changeCard(CardChangeRequest("auth_1", "cust_1"))
+
+        val after = subscriptionRepository.findByUserId(userId)!!
+        assertThat(after.billingKeyId).isNotNull // 빌링키 연결됨 → 종료 시 자동 결제 전환
+        assertThat(after.status).isEqualTo("TRIALING") // 체험 유지
+        assertThat(after.nextBillingAt).isEqualTo(trialEnd) // 다음 결제일 그대로(즉시 과금 없음)
+        val me = service.me()
+        assertThat(me.subscription!!.card?.numberMasked).isEqualTo("1234****")
+    }
 }

@@ -69,7 +69,7 @@ class SubscriptionServiceTest {
     }
 
     @Test
-    fun `신규 신원 구독시 TRIALING + 체험14일 + 카드저장 + 사업자번호 자격기록`() {
+    fun `신규 신원 구독시 TRIALING + 체험30일 + 카드저장 + 사업자번호 자격기록`() {
         val (userId, bizNo) = verifiedUser()
         Mockito
             .`when`(billingClient.issueBillingKey(anyString(), anyString()))
@@ -80,10 +80,10 @@ class SubscriptionServiceTest {
         assertThat(res.status).isEqualTo("TRIALING")
         val sub = subscriptionRepository.findByUserId(userId)!!
         assertThat(sub.amount).isEqualTo(14900)
-        // 체험 종료(=다음 결제)는 대략 now+14일
+        // 체험 종료(=다음 결제)는 대략 now+30일
         assertThat(sub.nextBillingAt).isBetween(
-            Instant.now().plus(13, ChronoUnit.DAYS),
-            Instant.now().plus(15, ChronoUnit.DAYS),
+            Instant.now().plus(29, ChronoUnit.DAYS),
+            Instant.now().plus(31, ChronoUnit.DAYS),
         )
         val card = billingKeyRepository.findByUserId(userId)!!
         assertThat(card.billingKey).isEqualTo("bk_1") // 복호화 원문
@@ -137,8 +137,8 @@ class SubscriptionServiceTest {
         assertThat(sub.billingKeyId).isNull()
         assertThat(sub.amount).isEqualTo(14900)
         assertThat(sub.nextBillingAt).isBetween(
-            Instant.now().plus(13, ChronoUnit.DAYS),
-            Instant.now().plus(15, ChronoUnit.DAYS),
+            Instant.now().plus(29, ChronoUnit.DAYS),
+            Instant.now().plus(31, ChronoUnit.DAYS),
         )
         val elig = eligibilityRepository.findByIdentityHash(identityHasher.hashBusiness(bizNo))!!
         assertThat(elig.trialUsedAt).isNotNull
